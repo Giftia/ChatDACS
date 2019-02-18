@@ -1,0 +1,101 @@
+<!doctype html>
+<html>
+<head>
+<link rel="icon" href="data:image/ico;base64,aWNv">
+<meta http-equiv="X-UA-Compatible" messages="IE=edge,chrome=1">
+<meta charset="utf-8">
+<meta name="viewport" messages="minimal-ui">
+<title>在线门禁控制</title>
+<style>
+	* {
+		margin: 0;
+		padding: 0;
+		box-sizing: border-box;
+		list-style: none;
+	}
+	body {
+		font: 13px Helvetica, Arial;
+		margin-bottom: 8%;
+		width: 100%;
+		height: 100%;
+	}
+	form {
+		background: #000;
+		padding: 3px;
+		position: fixed;
+		bottom: 0;
+		width: 100%;
+		height: 8%;
+	}
+	form input {
+		border: 0;
+		padding: auto;
+		width: 90%;
+		margin-right: .5%;
+		height: 95%;
+		min-height: 50px;
+		outline: none;
+		text-indent: 10px;
+		border-radius: 6px;
+	}
+	form button {
+		width: 9.5%;
+		background: DeepSkyBlue;
+		border: none;
+		padding: auto;
+		height: 95%;
+		font-size: 30px;
+		border-radius: 6px;
+		cursor: pointer;
+	}
+	#messages {
+		margin: 0;
+		padding: 0;
+	}
+	#messages li {
+		padding: 5px 10px;
+		display: inline;
+		line-height: auto;
+		height: auto;
+		word-break: break-all;
+		word-wrap: break-word;
+		overflow: auto;
+		background: #ccc;
+		font-size: 50px;
+	}
+	#messages li:nth-child(odd) {
+		background: #eee;
+	}
+</style>
+</head>
+<body>
+<div id="container">
+<div class="header">
+	<span style="float: left;">门禁控制</span>
+</div>
+	<ul id="messages"></ul>
+<div class="footer">
+	<div id="user_face_icon">
+		<img src="http://www.xttblog.com/icons/favicon.ico" alt="">
+	</div>
+    <form action="">
+		<input id="m" autocomplete="off" value="/开门" maxlength="100" style="font-size:30px;" placeholder="你可以发送 /开门 这个指令来开门" autofocus /><button id="send">发送</button>
+    </form>
+</div>
+</div>
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+<script>
+	var socket = io();
+	$('form').submit(function(){
+	socket.emit('chat message', $('#m').val());
+	$('#m').val('');
+	return false;
+	});
+	socket.on('chat message', function(msg){
+	$('#messages').append($('<li>').text(msg));
+	});
+</script>
+
+</body>
+</html>
