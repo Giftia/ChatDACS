@@ -5,13 +5,13 @@
 <meta http-equiv="X-UA-Compatible" messages="IE=edge,chrome=1">
 <meta charset="utf-8">
 <meta name="viewport" messages="minimal-ui">
-<title>在线门禁控制</title>
+<title>ChatDACS</title>
 <style>
 	* {
 		margin: 0;
 		list-style: none;
 		box-sizing: border-box;
-		font-family: '微软雅黑';
+		font-family: '思源黑体';
 	}
 	body {
 		margin-bottom: 8%;
@@ -153,11 +153,12 @@ window.onload = function(){
 	var content = document.getElementsByTagName('ul')[0];
 	var img = content.getElementsByTagName('img');
 	var span = content.getElementsByTagName('span');
+	var typing_status = document.getElementById('typing_status');
 	socket.on('chat message', function(msg){
 		time_now = new Date().getTime();
 	if(time_now - time_last < 300000){
 			content.innerHTML += '<li><img src="' + arrIcon[sorc] + '"><span>' + msg + '</span></li>';
-		}else{
+		} else {
 			content.innerHTML += '<div id="time">' + CurentTime() + '</div><li><img src="' + arrIcon[sorc] + '"><span>' + msg + '</span></li>';
 			time_last = new Date().getTime();
 		};
@@ -166,27 +167,34 @@ window.onload = function(){
 			img[liNow].className += 'imgright';
 			span[liNow].className += 'spanright';
 			sorc = 1;
-		}else{
+		} else {
 			img[liNow].className += 'imgleft';
 			span[liNow].className += 'spanleft';
-		}
-		window.scrollTo(0,document.body.scrollHeight);
+		};
+		window.scrollTo(0, document.body.scrollHeight);
 	});
 	socket.on('system message', function(msg){
 		content.innerHTML += '<br><div id="sysmsg">' + msg + '</div><br>';
-		window.scrollTo(0,document.body.scrollHeight);
+		window.scrollTo(0, document.body.scrollHeight);
 	});
+	socket.on('typing', function(msg){
+		typing_status.innerHTML = msg;
+	});
+	typing = function(){
+		socket.emit('typing');
+	};
 	btn.onclick = function(){
 		text.focus();
-		if(text.value ==''){
+		if(text.value == ''){
 			alert('不能发送空消息');
-		}else{
+		} else {
+			socket.emit('typing_over');
 			socket.emit('chat message', $('#text').val());
 			$('#text').val('');
 			sorc = 0;
-			window.scrollTo(0,document.body.scrollHeight);
+			window.scrollTo(0, document.body.scrollHeight);
 			return false;
-		}
+		};
 	};
 };
 function CurentTime(){
@@ -217,12 +225,13 @@ function CurentTime(){
 </head>
 <body>
 	<div class="header">
-		<span style="float: left;">门禁控制 beta 0.3.2</span>
+		<span style="float: left;">ChatDACS 0.3.4</span>
+		<span style="float: right; font-size: 70%;" id="typing_status"></span>
 	</div>
 	<ul class="content"></ul>
 	<div class="footer">
 		<form>
-		<input id="text" placeholder="发送 /开门 来开门" autocomplete="off" value="/开门" maxlength="100" style="font-size:30px;" autofocus />
+		<input id="text" placeholder="发送 /开门 密码 来开门" autocomplete="off" value="/开门 " maxlength="100" style="font-size:30px;" autofocus onkeypress="typing()"/>
 		<button id="btn">发送</button>
 		</form>
 	</div>
