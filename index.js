@@ -4,12 +4,16 @@ var io = require('socket.io')(http);
 var userip = '';
 var net = require('net');
 var request = require('request');
-var apikey = '';
+var sqlite3 = require('sqlite3').verbose();
+var db = new sqlite3.Database('/db.db');
+var apikey = '233333333333';	//replace apikey here
 
 http.listen(80, function(){
   console.log(CurentTime() + '系统启动，正在监听于端口80');
   Connjc();
 });
+
+db.run("CREATE TABLE IF NOT EXISTS messages(time char, ip char, message char)");
 
 app.get('/', function(req, res){
     var ip = req.headers['x-forwarded-for'] ||
@@ -22,16 +26,16 @@ app.get('/', function(req, res){
     };
 	ip = ip.replace('::ffff:', '');
     userip = ip;
-	res.sendfile('new.html');
+	res.sendFile(__dirname + '/new.html');
 });
 
 io.on('connection', function(socket){
 	console.log(CurentTime() + '用户 ' + userip + ' 已连接');
 	io.emit('system message', '系统消息：用户 ' + userip + ' 已连接。你可以发送 /开门 密码 来开门，密码是基地WiFi密码。');
-	//io.emit('chat message', '通知：工作室现已启用人脸开门，暂只支持安卓手机，请扫描门口二维码安装使用App。此处扫码开门仍可继续使用。');
+	io.emit('chat message', '系统消息：本项目已开源于<a href="https://github.com/Giftia/ChatDACS/">https://github.com/Giftia/ChatDACS/</a>，欢迎Star');
 	Getnews().then(function(data){
 			//console.log('resolved, and data:\r\n' + data);
-			//io.emit('chat message', data);
+			io.emit('chat message', data);
 		}, function(err, data){
 			console.log('rejected, and err:\r\n' + err);
 		});
@@ -47,15 +51,40 @@ io.on('connection', function(socket){
 	});
 	socket.on('chat message', function(msg){
 		console.log(CurentTime() + '收到用户 ' + userip + ' 消息: ' + msg);
+		db.run("INSERT INTO messages VALUES('" + CurentTime() + "', '" + userip + "', '" + msg + "')");
 		io.emit('chat message', userip + ' : ' + msg);
-			if(msg == '/开门 '){
-		//io.emit('chat message', '系统消息：由于门禁系统暂未配置，故每日7：20——22：20门常开，其他时段自动锁门，敬请谅解。');
-		io.emit('chat message', '系统消息：请输入正确密码');
+		if(msg == '/log'){
+			db.all("SELECT * FROM messages", function(e, sql){
+				if(!e){
+					var data = '';
+					for(i = 0; i < sql.length; i++){
+						var time = JSON.stringify(sql[i].time);
+						var ip = JSON.stringify(sql[i].ip);
+						var message = JSON.stringify(sql[i].message);
+						data = data + '<br><br>' + time + ip + message;
+					};
+					console.log(sql);
+					io.emit('chat message', '共有' + sql.length + '条记录：' + data);
+				} else {
+					console.log(e);
+					io.emit('chat message', e);
+				};
+			});
+		} else if(msg == '/cls'){
+			db.all("DELETE FROM messages", function(e, sql){
+				if(!e){
+					io.emit('chat message', '管理指令：聊天信息数据库清空完毕');
+					console.log(CurentTime() + '已清空聊天信息数据库');
+				} else {
+					console.log(e);
+					io.emit('chat message', e);
+				};
+			});
 		} else if(msg == '/开门 74037403'){
 			Opendoor();
 			io.emit('chat message', '系统消息：开门指令已发送');
 			io.emit('chat message', '计算机科创基地提醒您：道路千万条，安全第一条。开门不关门，亲人两行泪。');
-		console.log(CurentTime() + '用户 ' + userip + ' 开门操作');
+			console.log(CurentTime() + '用户 ' + userip + ' 开门操作');
 		};
 	});
 });
@@ -89,7 +118,7 @@ function Opendoor(){
 		}, 3000);
 	});
 	client.on('data', function(data){
-		//console.log(data);
+		console.log(data);
 	});
 	client.on('error', function(err){
 		io.emit('开门错误，错误为 %s', err.code);
