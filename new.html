@@ -14,20 +14,23 @@
 		font-family: '思源黑体';
 	}
 	body {
-		margin-bottom: 8%;
+		margin-bottom: 12%;
 		width: 100%;
 		height: 100%;
 		background: #eee;
-		margin-bottom: 100px;
 	}
 	.header {
 		background: #333;
 		width: 100%;
 		height: 100px;
 		color: #fff;
-		line-height: 34px;
+		line-height: 70%;
 		font-size: 300%;
 		padding: 3% 5%;
+		position: fixed;
+		top: 0;
+		border-bottom: 1px solid #888;
+		box-shadow: 0 0 5px #888;
 	}
 	.footer {
 		background: #666;
@@ -35,6 +38,7 @@
 		position: fixed;
 		bottom: 0;
 		width: 100%;
+		border-radius: 10px 10px 0 0;
 	}
 	.footer input {
 		border: 0;
@@ -69,7 +73,7 @@
 		width: 100%;
 		height: 100%;
 		overflow: auto;
-		padding: 5px;
+		padding: 8% 5px 5px 5px;
 		text-align: center;
 	}
 	.content li {
@@ -81,6 +85,7 @@
 		display: block;
 		clear: both;
 		overflow: hidden;
+		padding: 0 10px 0 10px;
 	}
 	.content li img {
 		float: left;
@@ -144,8 +149,7 @@ window.onload = function(){
 	var time_now = 0;
 	var time_last = 0;
 	var socket = io();
-	var arrIcon = ['https://gsp0.baidu.com/5aAHeD3nKhI2p27j8IqW0jdnxx1xbK/tb/editor/images/client/image_emoticon25.png','https://tb2.bdstatic.com/tb/editor/images/face/i_f33.png?t=20140803'];
-	//arrIcon[0] = client, arrIcon[1] = server;
+	var arrIcon = ['https://gsp0.baidu.com/5aAHeD3nKhI2p27j8IqW0jdnxx1xbK/tb/editor/images/client/image_emoticon25.png', 'https://tb2.bdstatic.com/tb/editor/images/face/i_f33.png?t=20140803'];	//arrIcon[0] = client icon, arrIcon[1] = server icon;
 	var sorc = 1;
 	var liNow = -1;
 	var btn = document.getElementById('btn');
@@ -178,7 +182,7 @@ window.onload = function(){
 		window.scrollTo(0, document.body.scrollHeight);
 	});
 	socket.on('typing', function(msg){
-		typing_status.innerHTML = msg;
+		if(text != '') typing_status.innerHTML = msg;
 	});
 	typing = function(){
 		socket.emit('typing');
@@ -225,13 +229,13 @@ function CurentTime(){
 </head>
 <body>
 	<div class="header">
-		<span style="float: left;">ChatDACS 0.3.4</span>
+		<span style="float: left;">ChatDACS 0.4.1</span>
 		<span style="float: right; font-size: 70%;" id="typing_status"></span>
 	</div>
 	<ul class="content"></ul>
 	<div class="footer">
 		<form>
-		<input id="text" placeholder="发送 /开门 密码 来开门" autocomplete="off" value="/开门 " maxlength="100" style="font-size:30px;" autofocus onkeypress="typing()"/>
+		<input id="text" placeholder="发送 /开门 密码 来开门" autocomplete="off" value="/开门 " maxlength="100" style="font-size:30px;" autofocus oninput="typing()"/>
 		<button id="btn">发送</button>
 		</form>
 	</div>
