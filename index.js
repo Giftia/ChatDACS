@@ -1,4 +1,5 @@
 var app = require('express')();
+var session = require('express-session');
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var userip = '';
@@ -7,11 +8,17 @@ var request = require('request');
 var sqlite3 = require('sqlite3').verbose();
 var db = new sqlite3.Database('/db.db');
 var apikey = '233333333333';	//replace apikey here
+var sign = false;
 
 http.listen(80, function(){
   console.log(CurentTime() + '系统启动，正在监听于端口80');
   Connjc();
 });
+
+app.use(session({
+    secret: 'NicoNicoNi~',
+    cookie: {maxage: 1000 * 60 * 60 * 24 * 30}
+  }));
 
 db.run("CREATE TABLE IF NOT EXISTS messages(time char, ip char, message char)");
 
@@ -27,11 +34,23 @@ app.get('/', function(req, res){
 	ip = ip.replace('::ffff:', '');
     userip = ip;
 	res.sendFile(__dirname + '/new.html');
+	if(req.session.sign){
+		console.log(CurentTime() + '用户 ' + userip + ' 已连接，req.session.name：' + req.session.name);
+		sign = true;
+	  } else {
+		console.log(CurentTime() + '新用户 ' + userip + ' 已连接，req.session.name：' + req.session.name);
+		req.session.sign = true;
+		req.session.name = userip;
+		sign = false;
+	  };
 });
 
 io.on('connection', function(socket){
-	console.log(CurentTime() + '用户 ' + userip + ' 已连接');
-	io.emit('system message', '系统消息：用户 ' + userip + ' 已连接。你可以发送 /开门 密码 来开门，密码是基地WiFi密码。');
+	if(sign){
+		io.emit('system message', '系统消息：欢迎回来，用户 ' + userip + ' 。');
+	} else {
+		io.emit('system message', '系统消息：新用户 ' + userip + ' 已连接。你是第一次访问，你可以发送 /开门 密码 来开门，密码是基地WiFi密码。');
+	};
 	io.emit('chat message', '系统消息：本项目已开源于<a href="https://github.com/Giftia/ChatDACS/">https://github.com/Giftia/ChatDACS/</a>，欢迎Star');
 	Getnews().then(function(data){
 			//console.log('resolved, and data:\r\n' + data);
