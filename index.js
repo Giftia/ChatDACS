@@ -49,7 +49,7 @@ io.on('connection', function(socket){
 	if(sign){
 		io.emit('system message', '系统消息：欢迎回来，用户 ' + userip + ' 。');
 	} else {
-		io.emit('system message', '系统消息：新用户 ' + userip + ' 已连接。你是第一次访问，你可以发送 /开门 密码 来开门，密码是基地WiFi密码。');
+		io.emit('system message', '系统消息：新用户 ' + userip + ' 已连接。你是第一次访问，你可以发送诸如 “/开门 233333” 的通关密码来开门（去掉双引号），密码是基地WiFi密码。');
 	};
 	io.emit('chat message', '系统消息：本项目已开源于<a href="https://github.com/Giftia/ChatDACS/">https://github.com/Giftia/ChatDACS/</a>，欢迎Star');
 	Getnews().then(function(data){
