@@ -7,8 +7,7 @@ var net = require('net');
 var request = require('request');
 var sqlite3 = require('sqlite3').verbose();
 var db = new sqlite3.Database('/db.db');
-var apikey = '23333333333333333';
-var sign = false;
+var apikey = '23333333333333333';	//replce your jcck_apikey here
 var reg = new RegExp('^/开门 [0-9]*$');
 
 http.listen(80, function(){
@@ -21,7 +20,7 @@ app.use(session({
   }));
 
 db.run("CREATE TABLE IF NOT EXISTS messages(time char, ip char PRIMARY KEY, message char)");
-db.run("CREATE TABLE IF NOT EXISTS users(nickname char, ip char PRIMARY KEY, logintimes long)");
+db.run("CREATE TABLE IF NOT EXISTS users(nickname char, ip char PRIMARY KEY, lastlogin char)");
 
 app.get('/', function(req, res){
     var ip = req.headers['x-forwarded-for'] ||
@@ -37,12 +36,12 @@ app.get('/', function(req, res){
     res.sendFile(__dirname + '/new.html');
     if(req.session.sign){
         console.log(CurentTime() + '用户 ' + userip + ' 已连接，req.session.name：' + req.session.name);
-        sign = true;
+	db.run("UPDATE users SET lastlogin = '" + CurentTime() + "' WHERE ip = '" + userip +"'");
       } else {
         console.log(CurentTime() + '新用户 ' + userip + ' 已连接，req.session.name：' + req.session.name);
         req.session.sign = true;
         req.session.name = userip;
-        sign = false;
+	db.run("INSERT INTO users VALUES('" + "无名氏" + "', '" + userip + "', '" + CurentTime() + "')");
       };
 });
 
@@ -74,15 +73,12 @@ io.on('connection', function(socket){
         db.run("INSERT INTO messages VALUES('" + CurentTime() + "', '" + userip + "', '" + msg + "')");
         io.emit('chat message', userip + ' : ' + msg);
 		if(reg.test(msg)){
-			console.log('catch1');
 			if(msg == '/开门 74037403'){
-				console.log('catch2');
 				Opendoor();
 				io.emit('chat message', '系统消息：开门指令已发送');
 				io.emit('chat message', '计算机科创基地提醒您：道路千万条，安全第一条。开门不关门，亲人两行泪。');
 				console.log(CurentTime() + '用户 ' + userip + ' 开门操作');
 			} else {
-				console.log('catch3');
 				io.emit('chat message', '系统消息：密码错误，请重试');
 			};
 		} else if(msg == '/log'){
