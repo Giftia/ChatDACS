@@ -20,7 +20,7 @@ app.use(session({
   }));
 
 db.run("CREATE TABLE IF NOT EXISTS messages(time char, ip char PRIMARY KEY, message char)");
-db.run("CREATE TABLE IF NOT EXISTS users(nickname char, ip char PRIMARY KEY, lastlogin char)");
+db.run("CREATE TABLE IF NOT EXISTS users(nickname char, ip char PRIMARY KEY, lastlogin char, logintimes long)");
 
 app.get('/', function(req, res){
     var ip = req.headers['x-forwarded-for'] ||
@@ -36,16 +36,20 @@ app.get('/', function(req, res){
     res.sendFile(__dirname + '/new.html');
     if(req.session.sign){
         console.log(CurentTime() + '用户 ' + userip + ' 已连接，req.session.name：' + req.session.name);
-	db.run("UPDATE users SET lastlogin = '" + CurentTime() + "' WHERE ip = '" + userip +"'");
+        db.run("UPDATE users SET lastlogin = '" + CurentTime() + "' WHERE ip = '" + userip +"'");
+		db.run("UPDATE users SET logintimes = logintimes + 1 WHERE ip = '" + userip + "'");
       } else {
         console.log(CurentTime() + '新用户 ' + userip + ' 已连接，req.session.name：' + req.session.name);
         req.session.sign = true;
         req.session.name = userip;
-	db.run("INSERT INTO users VALUES('" + "无名氏" + "', '" + userip + "', '" + CurentTime() + "')");
+        db.run("INSERT INTO users VALUES('" + "无名氏" + "', '" + userip + "', '" + CurentTime() + "', 1)");
       };
 });
 
 io.on('connection', function(socket){
+	db.all("SELECT logintimes FROM users WHERE ip = '" + userip + "'", function(e, sql){
+		
+	});
     if(sign){
         io.emit('system message', '系统消息：欢迎回来，用户 ' + userip + ' 。');
     } else {
