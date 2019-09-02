@@ -1,5 +1,4 @@
 var app = require('express')();
-var session = require('express-session');
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var userip = '';
@@ -7,20 +6,21 @@ var net = require('net');
 var request = require('request');
 var sqlite3 = require('sqlite3').verbose();
 var db = new sqlite3.Database('/db.db');
-var apikey = '23333333333333333';	//replce your jcck_apikey here
+var apikey = '2333333333333333'; //replace your jcck_apikey here
+var userdata = '';
+var nickname = '';
+var logintimes = '';
+var lastlogintime = '';
 var reg = new RegExp('^/开门 [0-9]*$');
+var rename_reg = new RegExp('^/rename [\u4e00-\u9fa5]*$');
 
 http.listen(80, function(){
   console.log(CurentTime() + '系统启动，正在监听于端口80');
   Connjc();
 });
 
-app.use(session({
-    secret: 'NicoNicoNi~'
-  }));
-
-db.run("CREATE TABLE IF NOT EXISTS messages(time char, ip char PRIMARY KEY, message char)");
-db.run("CREATE TABLE IF NOT EXISTS users(nickname char, ip char PRIMARY KEY, lastlogin char, logintimes long)");
+db.run("CREATE TABLE IF NOT EXISTS messages(time char, ip char, message char)");
+db.run("CREATE TABLE IF NOT EXISTS users(nickname char, ip char, logintimes long, lastlogintime char)");
 
 app.get('/', function(req, res){
     var ip = req.headers['x-forwarded-for'] ||
@@ -33,29 +33,44 @@ app.get('/', function(req, res){
     };
     ip = ip.replace('::ffff:', '');
     userip = ip;
+	if(userip == null) {userip = '未知ip';};
     res.sendFile(__dirname + '/new.html');
-    if(req.session.sign){
-        console.log(CurentTime() + '用户 ' + userip + ' 已连接，req.session.name：' + req.session.name);
-        db.run("UPDATE users SET lastlogin = '" + CurentTime() + "' WHERE ip = '" + userip +"'");
-		db.run("UPDATE users SET logintimes = logintimes + 1 WHERE ip = '" + userip + "'");
-      } else {
-        console.log(CurentTime() + '新用户 ' + userip + ' 已连接，req.session.name：' + req.session.name);
-        req.session.sign = true;
-        req.session.name = userip;
-        db.run("INSERT INTO users VALUES('" + "无名氏" + "', '" + userip + "', '" + CurentTime() + "', 1)");
-      };
 });
 
 io.on('connection', function(socket){
-	db.all("SELECT logintimes FROM users WHERE ip = '" + userip + "'", function(e, sql){
-		
+	db.all("SELECT * FROM users WHERE ip = '" + userip + "'", function(e, sql){
+		console.log(sql);
+		if(!e && sql[0]){
+			nickname = JSON.stringify(sql[0].nickname);
+			var ip = JSON.stringify(sql[0].ip);
+			logintimes = JSON.stringify(sql[0].logintimes);
+			lastlogintime = JSON.stringify(sql[0].lastlogintime);
+			userdata = nickname + ip + logintimes + lastlogintime;
+			console.log(userdata);
+		} else if(e) {
+			console.log('err: ' + e);
+			io.emit('chat message', e);
+		} else if(!sql[0]) {
+			console.log('sql null');
+			io.emit('system message', 'system error: sql null');
+		};
 	});
-    if(sign){
-        io.emit('system message', '系统消息：欢迎回来，用户 ' + userip + ' 。');
-    } else {
-        io.emit('system message', '系统消息：新用户 ' + userip + ' 已连接。你是第一次访问，你可以发送诸如 “/开门 233333” 的通关密码来开门（去掉双引号），密码是基地WiFi密码。');
-    };
-    io.emit('chat message', '系统消息：本项目已开源于<a href="https://github.com/Giftia/ChatDACS/">https://github.com/Giftia/ChatDACS/</a>，欢迎Star');
+	if(!userdata){
+		console.log(CurentTime() + '新用户 ' + userip + ' 已连接');
+		db.run("INSERT INTO users VALUES('匿名', '" + userip + "', '1', '" + CurentTime() + "')");
+		io.emit('system message', '系统消息：新用户 ' + userip + ' 已连接。你是第一次访问，你可以发送诸如 “/开门 233333” 的通关密码来开门（去掉双引号），密码是基地WiFi密码。');
+	} else {
+		console.log(CurentTime() + '用户 ' + nickname + '(' + userip + ')'+ ' 已连接');
+		db.run("UPDATE users SET logintimes = logintimes + 1 WHERE ip ='" + userip + "'");
+		db.run("UPDATE users SET lastlogintime = '" + CurentTime() +"' WHERE ip ='" + userip + "'");
+		logintimes++;
+		io.emit('system message', '系统消息：欢迎回来，' + nickname + '(' + userip + ')'+ ' 。这是你第' + logintimes + '次访问。上次访问时间：' + lastlogintime);
+		userdata = '';
+		nickname = '';
+		logintimes = '';
+		lastlogintime = '';
+	};
+    io.emit('system message', '系统消息：本项目已开源于<a href="https://github.com/Giftia/ChatDACS/">https://github.com/Giftia/ChatDACS/</a>，欢迎Star');
     Getnews().then(function(data){
             //console.log('resolved, and data:\r\n' + data);
             io.emit('chat message', data);
@@ -73,11 +88,13 @@ io.on('connection', function(socket){
         io.emit('typing', '');
     });
     socket.on('chat message', function(msg){
+		msg = msg.replace(/'/g, "[非法字符]");
+		//eval(msg); //debug
         console.log(CurentTime() + '收到用户 ' + userip + ' 消息: ' + msg);
         db.run("INSERT INTO messages VALUES('" + CurentTime() + "', '" + userip + "', '" + msg + "')");
-        io.emit('chat message', userip + ' : ' + msg);
+        io.emit('chat message', nickname + '(' + userip + ')' + ' : ' + msg);
 		if(reg.test(msg)){
-			if(msg == '/开门 74037403'){
+			if(msg == '/开门 233333'){
 				Opendoor();
 				io.emit('chat message', '系统消息：开门指令已发送');
 				io.emit('chat message', '计算机科创基地提醒您：道路千万条，安全第一条。开门不关门，亲人两行泪。');
@@ -112,6 +129,11 @@ io.on('connection', function(socket){
                     io.emit('chat message', e);
                 };
             });
+        } else if(rename_reg.test(msg)){
+			db.run("UPDATE users SET nickname = '" + msg + "' WHERE ip ='" + userip + "'");
+			io.emit('chat message', 'rename done');
+		} else if(msg == '苟利国家生死以'){
+            io.emit('chat message', '岂因祸福避趋之');
         };
     });
 });
