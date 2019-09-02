@@ -2,6 +2,7 @@
 <html lang="zh-cn">
 <head>
 <link rel="icon" href="data:image/ico;base64,aWNv">
+<meta name="theme-color" content="#ed90ba">
 <meta http-equiv="X-UA-Compatible" messages="IE=edge,chrome=1">
 <meta charset="utf-8">
 <meta name="viewport" messages="minimal-ui">
@@ -34,7 +35,7 @@
 	}
 	.footer {
 		background: #666;
-		padding: 3px;
+		padding: 9px 3px 9px 3px;
 		position: fixed;
 		bottom: 0;
 		width: 100%;
@@ -44,19 +45,17 @@
 		border: 0;
 		width: 90%;
 		margin-right: .5%;
-		height: 95%;
-		min-height: 100px;
+		min-height: 60px;
 		outline: none;
 		text-indent: 10px;
 		border-radius: 6px;
 	}
 	.footer button {
-		min-height: 100px;
+		min-height: 60px;
 		width: 8.5%;
 		background: DeepSkyBlue;
 		border: none;
-		height: 95%;
-		font-size: 30px;
+		font-size: 178%;
 		border-radius: 6px;
 		cursor: pointer;
 	}
@@ -125,6 +124,7 @@
 		color: White;
 		padding: 10px;
 		border-radius: 6px;
+		word-wrap: break-word;
 	}
 	#sysmsg {
 		background: #CCC;
@@ -137,6 +137,7 @@
 		border-radius: 6px;
 		max-width: 50%;
 		line-height: 150%;
+		word-wrap: break-word;
 	}
 	a {
 		text-decoration: none;
@@ -228,14 +229,17 @@ function CurentTime(){
 </script>
 </head>
 <body>
+	<a href="https://github.com/Giftia/ChatDACS">
+		<img style="position: fixed; top: 0; right: 0; border: 0; z-index: 2333; width: 110px; height: 110px;" src="https://github.blog/wp-content/uploads/2008/12/forkme_right_white_ffffff.png?resize=110%2C110" alt="Fork me on GitHub">
+	</a>
 	<div class="header">
-		<span style="float: left;">ChatDACS 1.0.1</span>
+		<span style="float: left;">ChatDACS 1.2.0</span>
 		<span style="float: right; font-size: 70%;" id="typing_status"></span>
 	</div>
 	<ul class="content"></ul>
 	<div class="footer">
 		<form>
-		<input id="text" placeholder="发送 “/开门 密码” 来开门" autocomplete="off" value="/开门 23333333" maxlength="100" style="font-size:30px;" autofocus oninput="typing()"/>
+		<input id="text" placeholder="发送 “/开门 密码” 来开门" autocomplete="off" value="/开门 233333" maxlength="100" style="font-size:30px;" autofocus oninput="typing()"/>
 		<button id="btn">发送</button>
 		</form>
 	</div>
