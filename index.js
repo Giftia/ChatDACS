@@ -12,7 +12,7 @@ var nickname = '';
 var logintimes = '';
 var lastlogintime = '';
 var reg = new RegExp('^/开门 [0-9]*$');
-var rename_reg = new RegExp('^/rename [\u4e00-\u9fa5]*$');
+var rename_reg = new RegExp('^/rename [\u4e00-\u9fa5]*$'); //只允许汉字昵称
 
 http.listen(80, function(){
   console.log(CurentTime() + '系统启动，正在监听于端口80');
@@ -33,49 +33,35 @@ app.get('/', function(req, res){
     };
     ip = ip.replace('::ffff:', '');
     userip = ip;
-	if(userip == null) {userip = '未知ip';};
+	if(userip == ' ') {userip = '未知ip';};
     res.sendFile(__dirname + '/new.html');
 });
 
 io.on('connection', function(socket){
-	db.all("SELECT * FROM users WHERE ip = '" + userip + "'", function(e, sql){
-		console.log(sql);
-		if(!e && sql[0]){
-			nickname = JSON.stringify(sql[0].nickname);
-			var ip = JSON.stringify(sql[0].ip);
-			logintimes = JSON.stringify(sql[0].logintimes);
-			lastlogintime = JSON.stringify(sql[0].lastlogintime);
-			userdata = nickname + ip + logintimes + lastlogintime;
-			console.log(userdata);
-		} else if(e) {
-			console.log('err: ' + e);
-			io.emit('chat message', e);
-		} else if(!sql[0]) {
-			console.log('sql null');
-			io.emit('system message', 'system error: sql null');
-		};
-	});
-	if(!userdata){
-		console.log(CurentTime() + '新用户 ' + userip + ' 已连接');
-		db.run("INSERT INTO users VALUES('匿名', '" + userip + "', '1', '" + CurentTime() + "')");
-		io.emit('system message', '系统消息：新用户 ' + userip + ' 已连接。你是第一次访问，你可以发送诸如 “/开门 233333” 的通关密码来开门（去掉双引号），密码是基地WiFi密码。');
-	} else {
-		console.log(CurentTime() + '用户 ' + nickname + '(' + userip + ')'+ ' 已连接');
-		db.run("UPDATE users SET logintimes = logintimes + 1 WHERE ip ='" + userip + "'");
-		db.run("UPDATE users SET lastlogintime = '" + CurentTime() +"' WHERE ip ='" + userip + "'");
-		logintimes++;
-		io.emit('system message', '系统消息：欢迎回来，' + nickname + '(' + userip + ')'+ ' 。这是你第' + logintimes + '次访问。上次访问时间：' + lastlogintime);
-		userdata = '';
-		nickname = '';
-		logintimes = '';
-		lastlogintime = '';
-	};
+	GetUserData().then(function(data){
+			io.emit('chat massage', data);
+			console.log(CurentTime() + '用户 ' + nickname + '(' + userip + ')'+ ' 已连接');
+			db.run("UPDATE users SET logintimes = logintimes + 1 WHERE ip ='" + userip + "'");
+			db.run("UPDATE users SET lastlogintime = '" + CurentTime() +"' WHERE ip ='" + userip + "'");
+			logintimes++;
+			io.emit('system message', '系统消息：欢迎回来，' + nickname + '(' + userip + ')'+ ' 。这是你第' + logintimes + '次访问。上次访问时间：' + lastlogintime);
+			userdata = '';
+			nickname = '';
+			logintimes = '';
+			lastlogintime = '';
+		}, function(err, data){
+			console.log('GetUserData(): rejected, and err:\r\n' + err);
+			io.emit('system massage', 'GetUserData() err:' + data);
+			console.log(CurentTime() + '新用户 ' + userip + ' 已连接');
+			db.run("INSERT INTO users VALUES('匿名', '" + userip + "', '1', '" + CurentTime() + "')");
+			io.emit('system message', '系统消息：新用户 ' + userip + ' 已连接。你是第一次访问，你可以发送诸如 “/开门 233333” 的通关密码来开门（去掉双引号），密码是基地WiFi密码。');
+		});
     io.emit('system message', '系统消息：本项目已开源于<a href="https://github.com/Giftia/ChatDACS/">https://github.com/Giftia/ChatDACS/</a>，欢迎Star');
     Getnews().then(function(data){
-            //console.log('resolved, and data:\r\n' + data);
             io.emit('chat message', data);
         }, function(err, data){
-            console.log('rejected, and err:\r\n' + err);
+            console.log('Getnews(): rejected, and err:\r\n' + err);
+			io.emit('system massage', 'Getnews() err:' + data);
         });
     socket.on('disconnect', function(){
         console.log(CurentTime() + '用户 ' + userip + ' 已断开连接');
@@ -89,7 +75,7 @@ io.on('connection', function(socket){
     });
     socket.on('chat message', function(msg){
 		msg = msg.replace(/'/g, "[非法字符]");
-		//eval(msg); //debug
+		//eval(msg); //调试选项，非需要请勿开启
         console.log(CurentTime() + '收到用户 ' + userip + ' 消息: ' + msg);
         db.run("INSERT INTO messages VALUES('" + CurentTime() + "', '" + userip + "', '" + msg + "')");
         io.emit('chat message', nickname + '(' + userip + ')' + ' : ' + msg);
@@ -218,6 +204,24 @@ function Getnews(){
                 reject('系统消息：获取新闻错误。\r\nerr: ' + err + '\r\nresponse: ' + response);
             };
         });
+    });
+    return p;
+};
+
+function GetUserData(){
+    var p = new Promise(function(resolve, reject){
+		db.all("SELECT * FROM users WHERE ip = '" + userip + "'", function(e, sql){
+		if(!e && sql[0]){
+				nickname = JSON.stringify(sql[0].nickname);
+				var ip = JSON.stringify(sql[0].ip);
+				logintimes = JSON.stringify(sql[0].logintimes);
+				lastlogintime = JSON.stringify(sql[0].lastlogintime);
+				userdata = nickname + ip + logintimes + lastlogintime;
+				resolve(userdata);
+			} else {
+				reject(e);
+			};
+		});
     });
     return p;
 };
