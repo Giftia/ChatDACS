@@ -1,4 +1,5 @@
 [![HitCount](http://hits.dwyl.io/Giftia/ChatDACS.svg)](http://hits.dwyl.io/Giftia/ChatDACS)
+![Uptime Robot ratio (30 days)](https://img.shields.io/uptimerobot/ratio/m783632550-7da46d24226cb151b978c810?style=flat-square)
 ![Website](https://img.shields.io/website?label=demo&style=flat-square&up_message=online&url=http%3A%2F%2F39.108.239.49)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/Giftia/ChatDACS?style=flat-square)
 ![GitHub](https://img.shields.io/github/license/Giftia/ChatDACS?style=flat-square)
