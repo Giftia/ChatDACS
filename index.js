@@ -127,7 +127,7 @@ io.on('connection', function (socket) {
 function Connjc() {
     var client = new net.Socket();
     client.setEncoding('utf8');
-    client.connect(8266, 'www.jcckiot.com', function () {
+    client.connect(8266, '112.74.59.29', function () {
         client.write('mode=bind&apikey=' + apikey + '&data={ck001000bind}');
         console.log('绑定成功');
     });
@@ -144,7 +144,7 @@ function Connjc() {
 function Opendoor() {
     var client = new net.Socket();
     client.setEncoding('utf8');
-    client.connect(8266, 'www.jcckiot.com', function () {
+    client.connect(8266, '112.74.59.29', function () {
         client.write('mode=exe&apikey=' + apikey + '&data={ck0040001}');
         setTimeout(function () {
             client.write('mode=exe&apikey=' + apikey + '&data={ck0040000}');
