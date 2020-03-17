@@ -253,6 +253,15 @@
 						span[liNow].className += 'spanleft';
 					};
 					window.scrollTo(0, document.body.scrollHeight);
+					if (sorc == 0) {
+						img[liNow].className += 'imgright';
+						span[liNow].className += 'spanright';
+						sorc = 1;
+					} else {
+						img[liNow].className += 'imgleft';
+						span[liNow].className += 'spanleft';
+					};
+					window.scrollTo(0, document.body.scrollHeight);
 				})
 				socket.on('system message', function (msg) {
 					content.innerHTML += '<br><div id="sysmsg">' + msg + '</div><br>';
