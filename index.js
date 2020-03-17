@@ -19,7 +19,7 @@ http.listen(80, function () {
     Connjc();
 });
 
-db.run("CREATE TABLE IF NOT EXISTS messages(time char, ip char, message char)");
+db.run("CREATE TABLE IF NOT EXISTS messages(yyyymmdd char, time char, ip char, message char)");
 db.run("CREATE TABLE IF NOT EXISTS users(nickname char, ip char, logintimes long, lastlogintime char)");
 
 app.get('/', function (req, res) {
@@ -40,9 +40,9 @@ app.get('/', function (req, res) {
 io.on('connection', function (socket) {
     GetUserData().then(function (data) {
         io.emit('chat massage', data);
-        console.log(CurentTime() + '用户 ' + nickname + '(' + userip + ')' + ' 已连接');
+        console.log(Curentyyyymmdd() + CurentTime() + '用户 ' + nickname + '(' + userip + ')' + ' 已连接');
         db.run("UPDATE users SET logintimes = logintimes + 1 WHERE ip ='" + userip + "'");
-        db.run("UPDATE users SET lastlogintime = '" + CurentTime() + "' WHERE ip ='" + userip + "'");
+        db.run("UPDATE users SET lastlogintime = '" + Curentyyyymmdd() + CurentTime() + "' WHERE ip ='" + userip + "'");
         logintimes++;
         io.emit('system message', '系统消息：欢迎回来，' + nickname + '(' + userip + ')' + ' 。这是你第' + logintimes + '次访问。上次访问时间：' + lastlogintime);
         userdata = '';
@@ -52,8 +52,8 @@ io.on('connection', function (socket) {
     }, function (err, data) {
         console.log('GetUserData(): rejected, and err:\r\n' + err);
         io.emit('system massage', 'GetUserData() err:' + data);
-        console.log(CurentTime() + '新用户 ' + userip + ' 已连接');
-        db.run("INSERT INTO users VALUES('匿名', '" + userip + "', '1', '" + CurentTime() + "')");
+        console.log(Curentyyyymmdd() + CurentTime() + '新用户 ' + userip + ' 已连接');
+        db.run("INSERT INTO users VALUES('匿名', '" + userip + "', '1', '" + Curentyyyymmdd() + CurentTime() + "')");
         io.emit('system message', '系统消息：新用户 ' + userip + ' 已连接。你是第一次访问，你可以发送诸如 “/开门 233333” 的通关密码来开门（去掉双引号），密码是基地WiFi密码。');
     });
     io.emit('system message', '系统消息：本项目已开源于<a href="https://github.com/Giftia/ChatDACS/">https://github.com/Giftia/ChatDACS/</a>，欢迎Star');
@@ -64,7 +64,7 @@ io.on('connection', function (socket) {
         io.emit('system massage', 'Getnews() err:' + data);
     });
     socket.on('disconnect', function () {
-        console.log(CurentTime() + '用户 ' + userip + ' 已断开连接');
+        console.log(Curentyyyymmdd() + CurentTime() + '用户 ' + userip + ' 已断开连接');
         io.emit('system message', '系统消息：用户 ' + userip + ' 已断开连接');
     });
     socket.on('typing', function (msg) {
@@ -76,15 +76,15 @@ io.on('connection', function (socket) {
     socket.on('chat message', function (msg) {
         msg = msg.replace(/'/g, "[非法字符]");
         //eval(msg); //调试选项，非需要请勿开启
-        console.log(CurentTime() + '收到用户 ' + userip + ' 消息: ' + msg);
-        db.run("INSERT INTO messages VALUES('" + CurentTime() + "', '" + userip + "', '" + msg + "')");
+        console.log(Curentyyyymmdd() + CurentTime() + '收到用户 ' + userip + ' 消息: ' + msg);
+        db.run("INSERT INTO messages VALUES('" + Curentyyyymmdd() + "', '" + CurentTime() + "', '" + userip + "', '" + msg + "')");
         io.emit('chat message', nickname + '(' + userip + ')' + ' : ' + msg);
         if (reg.test(msg)) {
             if (msg == '/开门 233333') {
                 Opendoor();
                 io.emit('chat message', '系统消息：开门指令已发送');
                 io.emit('chat message', '计算机科创基地提醒您：道路千万条，安全第一条。开门不关门，亲人两行泪。');
-                console.log(CurentTime() + '用户 ' + userip + ' 开门操作');
+                console.log(Curentyyyymmdd() + CurentTime() + '用户 ' + userip + ' 开门操作');
             } else {
                 io.emit('chat message', '系统消息：密码错误，请重试');
             };
@@ -109,7 +109,7 @@ io.on('connection', function (socket) {
             db.all("DELETE FROM messages", function (e, sql) {
                 if (!e) {
                     io.emit('chat message', '管理指令：聊天信息数据库清空完毕');
-                    console.log(CurentTime() + '已清空聊天信息数据库');
+                    console.log(Curentyyyymmdd() + CurentTime() + '已清空聊天信息数据库');
                 } else {
                     console.log(e);
                     io.emit('chat message', e);
@@ -120,6 +120,23 @@ io.on('connection', function (socket) {
             io.emit('chat message', 'rename done');
         } else if (msg == '苟利国家生死以') {
             io.emit('chat message', '岂因祸福避趋之');
+        } else if (msg == '/log_view') {
+            db.all("SELECT yyyymmdd, COUNT(*) As count FROM messages Group by yyyymmdd", function (e, sql) {
+                console.log(sql);
+                var data = [];
+                if (!e) {
+                    for (i = 0; i < sql.length; i++) {
+                        data.push([
+                            sql[i].yyyymmdd, sql[i].count
+                        ]);
+                    };
+                    console.log(data);
+                    io.emit('chart message', data);
+                } else {
+                    console.log(e);
+                    io.emit('chat message', e);
+                };
+            });
         };
     });
 });
@@ -149,7 +166,7 @@ function Opendoor() {
         setTimeout(function () {
             client.write('mode=exe&apikey=' + apikey + '&data={ck0040000}');
             io.emit('chat message', '系统消息：自动关门指令已发送');
-            //console.log(CurentTime() + '自动关门');
+            console.log(Curentyyyymmdd() + CurentTime() + '自动关门');
         }, 3000);
     });
     client.on('data', function (data) {
@@ -162,21 +179,27 @@ function Opendoor() {
     });
 };
 
-function CurentTime() {
+function Curentyyyymmdd() {
     var now = new Date();
     var year = now.getFullYear();
     var month = now.getMonth() + 1;
     var day = now.getDate();
+    var yyyymmdd = year + '-';
+    if (month < 10)
+        yyyymmdd += '0';
+    yyyymmdd += month + '-';
+    if (day < 10)
+        yyyymmdd += '0';
+    yyyymmdd += day;
+    return (yyyymmdd);
+}
+
+function CurentTime() {
+    var now = new Date();
     var hh = now.getHours();
     var mm = now.getMinutes();
     var ss = now.getSeconds();
-    var clock;// = year + '-';
-    //if(month < 10)
-    //    clock += '0';
-    clock = month + '月';
-    if (day < 10)
-        clock += '0';
-    clock += day + '日 ';
+    var clock = ' ';
     if (hh < 10)
         clock += '0';
     clock += hh + ':';
