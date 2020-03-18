@@ -140,15 +140,14 @@ io.on('connection', function (socket) {
         } else {
             msg = msg.replace('/', '');
             db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg + "%'", function (e, sql) {
-                if (!e) {
+                if (!e && sql.length > 0) {
                     console.log('对于对话: ' + msg + '，匹配到 ' + sql.length + ' 条回复');
-                    var ans = Math.floor(Math.random() * (sql.length - 0 + 1) + 0);
+                    var ans = Math.floor(Math.random() * (sql.length - 1 + 1) + 1);
                     var answer = JSON.stringify(sql[ans].answer);
                     console.log('随机选取回复：' + sql[ans].answer);
                     io.emit('chat message', answer);
                 } else {
-                    console.log(e);
-                    io.emit('chat message', e);
+                    console.log('聊天组件抛错：' + e);
                 };
             });
         };

@@ -253,15 +253,6 @@
 						span[liNow].className += 'spanleft';
 					};
 					window.scrollTo(0, document.body.scrollHeight);
-					if (sorc == 0) {
-						img[liNow].className += 'imgright';
-						span[liNow].className += 'spanright';
-						sorc = 1;
-					} else {
-						img[liNow].className += 'imgleft';
-						span[liNow].className += 'spanleft';
-					};
-					window.scrollTo(0, document.body.scrollHeight);
 				})
 				socket.on('system message', function (msg) {
 					content.innerHTML += '<br><div id="sysmsg">' + msg + '</div><br>';
@@ -321,7 +312,7 @@
 				alt="Fork me on GitHub">
 		</a>
 		<div class="header">
-			<span style="float: left;">ChatDACS 1.7.1</span>
+			<span style="float: left;">ChatDACS 1.7.2</span>
 			<span style="float: right; font-size: 70%;" id="typing_status"></span>
 		</div>
 		<ul class="content"></ul>
