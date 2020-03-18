@@ -138,6 +138,7 @@ io.on('connection', function (socket) {
                 };
             });
         } else {
+            msg = msg.replace('/', '');
             db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg + "%'", function (e, sql) {
                 if (!e) {
                     console.log('对于对话: ' + msg + '，匹配到 ' + sql.length + ' 条回复');
