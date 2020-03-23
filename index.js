@@ -1,3 +1,5 @@
+//ChatDACS 1.7.3
+
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
@@ -13,6 +15,7 @@ var logintimes = '';
 var lastlogintime = '';
 var reg = new RegExp('^/开门 [0-9]*$');
 var rename_reg = new RegExp('^/rename [\u4e00-\u9fa5]*$'); //只允许汉字昵称
+var bv2av__reg = new RegExp('^[a-zA-Z0-9_]{10,12}');  //匹配bv号
 
 http.listen(80, function () {
     console.log(CurentTime() + '系统启动，正在监听于端口80');
@@ -137,6 +140,14 @@ io.on('connection', function (socket) {
                     io.emit('chat message', e);
                 };
             });
+        } else if (bv2av__reg.test(msg)) {
+            msg = msg.replace(' ', '');
+            Bv2Av(msg).then(function (data) {
+                io.emit('chat message', data);
+            }, function (err, data) {
+                console.log('Getnews(): rejected, and err:\r\n' + err);
+                io.emit('system massage', 'Getnews() err:' + data);
+            });
         } else {
             msg = msg.replace('/', '');
             db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg + "%'", function (e, sql) {
@@ -256,6 +267,27 @@ function GetUserData() {
                 resolve(userdata);
             } else {
                 reject(e);
+            };
+        });
+    });
+    return p;
+};
+
+function Bv2Av(msg) {
+    var p = new Promise(function (resolve, reject) {
+        request('https://api.bilibili.com/x/web-interface/view?bvid=' + msg, function (err, response, body) {
+            if (!err && response.statusCode == 200) {
+                var content = '<a href="https://www.bilibili.com/video/av';
+                console.log(body);
+                var av = JSON.parse(body).data;
+                console.log(av);
+                var av_number = av.aid;
+                var av_title = av.title;
+                content = content + av_number + '" target="_blank">感谢您的使用，转换完毕，点击即可跳转至视频：' + av_title + '，av' + av_number + '</a>';
+                console.log(content);
+                resolve(content);
+            } else {
+                reject('系统消息：bv2av错误。\r\nerr: ' + err + '\r\nresponse: ' + response);
             };
         });
     });
