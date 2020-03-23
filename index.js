@@ -276,15 +276,13 @@ function GetUserData() {
 function Bv2Av(msg) {
     var p = new Promise(function (resolve, reject) {
         request('https://api.bilibili.com/x/web-interface/view?bvid=' + msg, function (err, response, body) {
-            if (!err && response.statusCode == 200) {
+            body = JSON.parse(body);
+            if (!err && response.statusCode == 200 && body.code == 0) {
                 var content = '<a href="https://www.bilibili.com/video/av';
-                console.log(body);
-                var av = JSON.parse(body).data;
-                console.log(av);
+                var av = body.data;
                 var av_number = av.aid;
                 var av_title = av.title;
                 content = content + av_number + '" target="_blank">感谢您的使用，转换完毕，点击即可跳转至视频：' + av_title + '，av' + av_number + '</a>';
-                console.log(content);
                 resolve(content);
             } else {
                 reject('系统消息：bv2av错误。\r\nerr: ' + err + '\r\nresponse: ' + response);
