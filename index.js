@@ -1,11 +1,18 @@
 //用户变量和开关，根据你的需要改动
 var version = 'ChatDACS 1.7.4';
+var chat_swich = 1; //是否开启自动聊天，需数据库中配置聊天表
 var news_swich = 0;   //是否开启首屏新闻
 var jc_swich = 0; //是否开启酱菜物联服务
+var password = '233333';    //配置开门密码
 var apikey = '2333333333333333';    //换成你自己申请的 jcck_apikey，非必须
+var eval_swich = 0;    //是否开启来信指令无条件执行，便于调试，但开启有极大风险
 
-//以下部分非必须则没有必要改动
 
+/*——————————————————
+
+注意：接下来的部分一般无需改动
+
+——————————————————*/
 
 //模块依赖
 var app = require('express')();
@@ -32,11 +39,33 @@ var bv2av__reg = new RegExp('^[a-zA-Z0-9]{10,12}'); //匹配bv号
 db.run("CREATE TABLE IF NOT EXISTS messages(yyyymmdd char, time char, ip char, message char)");
 db.run("CREATE TABLE IF NOT EXISTS users(nickname char, ip char, logintimes long, lastlogintime char)");
 
+if (chat_swich) {
+    console.log('用户配置：自动聊天开启');
+} else {
+    console.log('用户配置：自动聊天关闭');
+};
+
+if (news_swich) {
+    console.log('用户配置：首屏新闻开启');
+} else {
+    console.log('用户配置：首屏新闻关闭');
+};
+
+if (jc_swich) {
+    console.log('用户配置：酱菜物联服务开启');
+    Connjc();
+} else {
+    console.log('用户配置：酱菜物联服务关闭');
+};
+
+if (eval_swich) {
+    console.log('用户配置：来信指令无条件执行开启，系统将面临极大风险（逃');
+} else {
+    console.log('用户配置：来信指令无条件执行关闭');
+};
+
 http.listen(80, function () {
-    console.log(Curentyyyymmdd() + CurentTime() + '系统启动，正在监听于端口80');
-    if (jc_swich) {
-        Connjc();
-    }
+    console.log(Curentyyyymmdd() + CurentTime() + '配置完毕，系统启动，正在监听于端口80');
 });
 
 app.get('/', function (req, res) {
@@ -101,19 +130,25 @@ io.on('connection', function (socket) {
     });
 
     socket.on('chat message', function (msg) {
-        msg = msg.replace(/'/g, "[非法字符]");
-        //eval(msg); //调试选项，非需要请勿开启
+        msg = msg.replace(/'/g, "[非法字符]");  //遇到'就会爆炸
+        if (eval_swich) {
+            eval(msg);
+        };
         console.log(Curentyyyymmdd() + CurentTime() + '收到用户 ' + userip + ' 消息: ' + msg);
         db.run("INSERT INTO messages VALUES('" + Curentyyyymmdd() + "', '" + CurentTime() + "', '" + userip + "', '" + msg + "')");
         io.emit('chat message', nickname + '(' + userip + ')' + ' : ' + msg);
         if (door_reg.test(msg)) {
-            if (msg == '/开门 233333') {
-                Opendoor();
-                io.emit('chat message', '系统消息：密码已确认，开门指令已发送');
-                io.emit('chat message', '计算机科创基地提醒您：道路千万条，安全第一条。开门不关门，亲人两行泪。');
-                console.log(Curentyyyymmdd() + CurentTime() + '用户 ' + userip + ' 开门操作');
+            if (jc_swich) {
+                if (msg == '/开门 ' + password) {
+                    Opendoor();
+                    io.emit('chat message', '系统消息：密码已确认，开门指令已发送');
+                    io.emit('chat message', '计算机科创基地提醒您：道路千万条，安全第一条。开门不关门，亲人两行泪。');
+                    console.log(Curentyyyymmdd() + CurentTime() + '用户 ' + userip + ' 开门操作');
+                } else {
+                    io.emit('chat message', '系统消息：密码错误，请重试');
+                };
             } else {
-                io.emit('chat message', '系统消息：密码错误，请重试');
+                io.emit('chat message', '系统消息：酱菜物联服务未启动，故门禁服务一并禁用');
             };
         } else if (msg == '/log') {
             db.all("SELECT * FROM messages", function (e, sql) {
@@ -173,18 +208,20 @@ io.on('connection', function (socket) {
                 io.emit('system massage', 'Getnews() err:' + data);
             });
         } else {
-            msg = msg.replace('/', '');
-            db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg + "%'", function (e, sql) {
-                if (!e && sql.length > 0) {
-                    console.log('对于对话: ' + msg + '，匹配到 ' + sql.length + ' 条回复');
-                    var ans = Math.floor(Math.random() * (sql.length - 1 - 0 + 1) + 0);
-                    var answer = JSON.stringify(sql[ans].answer);
-                    console.log('随机选取第' + ans + '条回复：' + sql[ans].answer);
-                    io.emit('chat message', answer);
-                } else {
-                    console.log('聊天组件抛错：' + e);
-                };
-            });
+            if (chat_swich) {
+                msg = msg.replace('/', '');
+                db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg + "%'", function (e, sql) {
+                    if (!e && sql.length > 0) {
+                        console.log('对于对话: ' + msg + '，匹配到 ' + sql.length + ' 条回复');
+                        var ans = Math.floor(Math.random() * (sql.length - 1 - 0 + 1) + 0);
+                        var answer = JSON.stringify(sql[ans].answer);
+                        console.log('随机选取第' + ans + '条回复：' + sql[ans].answer);
+                        io.emit('chat message', answer);
+                    } else {
+                        console.log('聊天组件抛错：' + e);
+                    };
+                });
+            };
         };
     });
 });
