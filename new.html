@@ -178,6 +178,7 @@
 				var img = content.getElementsByTagName('img');
 				var span = content.getElementsByTagName('span');
 				var typing_status = document.getElementById('typing_status');
+
 				socket.on('chat message', function (msg) {
 					time_now = new Date().getTime();
 					if (time_now - time_last < 300000) {
@@ -197,6 +198,7 @@
 					};
 					window.scrollTo(0, document.body.scrollHeight);
 				});
+
 				socket.on('chart message', function (msg) {
 					time_now = new Date().getTime();
 					if (time_now - time_last < 300000) {
@@ -253,17 +255,21 @@
 						span[liNow].className += 'spanleft';
 					};
 					window.scrollTo(0, document.body.scrollHeight);
-				})
+				});
+
 				socket.on('system message', function (msg) {
 					content.innerHTML += '<br><div id="sysmsg">' + msg + '</div><br>';
 					window.scrollTo(0, document.body.scrollHeight);
 				});
+
 				socket.on('typing', function (msg) {
 					if (text != '') typing_status.innerHTML = msg;
 				});
+
 				typing = function () {
 					socket.emit('typing');
 				};
+
 				btn.onclick = function () {
 					text.focus();
 					if (text.value == '') {
@@ -278,6 +284,15 @@
 					};
 				};
 			};
+
+			socket.on('version', function (msg) {
+				$('#version').val(msg);
+			});
+
+			socket.on('setcookie', function (msg) {
+				document.cookie = "cookie = " + msg;
+			});
+
 			function CurentTime() {
 				var now = new Date();
 				//var year = now.getFullYear();
@@ -312,7 +327,7 @@
 				alt="Fork me on GitHub">
 		</a>
 		<div class="header">
-			<span style="float: left;">ChatDACS 1.7.4</span>
+			<span id="version" style="float: left;">ChatDACS</span>
 			<span style="float: right; font-size: 70%;" id="typing_status"></span>
 		</div>
 		<ul class="content"></ul>

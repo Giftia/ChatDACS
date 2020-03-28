@@ -39,6 +39,8 @@ var bv2av__reg = new RegExp('^[a-zA-Z0-9]{10,12}'); //匹配bv号
 db.run("CREATE TABLE IF NOT EXISTS messages(yyyymmdd char, time char, ip char, message char)");
 db.run("CREATE TABLE IF NOT EXISTS users(nickname char, ip char, logintimes long, lastlogintime char)");
 
+console.log(version);
+
 if (chat_swich) {
     console.log('用户配置：自动聊天开启');
 } else {
@@ -69,7 +71,7 @@ http.listen(80, function () {
 });
 
 app.get('/', function (req, res) {
-    var ip = req.headers['HTTP_X_FORWARDED_FOR'] ||
+    var ip = req.headers['x-real-ip'] ||    //内网穿透natapp的header里的ip
         req.headers['x-forwarded-for'] ||
         req.ip ||
         req.connection.remoteAddress ||
@@ -85,6 +87,7 @@ app.get('/', function (req, res) {
 });
 
 io.on('connection', function (socket) {
+    io.emit('version', version);
     GetUserData().then(function (data) {
         io.emit('chat massage', data);
         if (userip == ' ' || userip == NaN || userip == undefined || userip == '') { userip = '未知ip'; };
@@ -105,7 +108,7 @@ io.on('connection', function (socket) {
         db.run("INSERT INTO users VALUES('匿名', '" + userip + "', '1', '" + Curentyyyymmdd() + CurentTime() + "')");
         io.emit('system message', '系统消息：新用户 ' + userip + ' 已连接。你是第一次访问，你可以发送诸如 “/开门 233333” 的通关密码来开门（去掉双引号），密码是基地WiFi密码。');
     });
-    io.emit('system message', '系统消息：本项目已开源于<a href="https://github.com/Giftia/ChatDACS/">https://github.com/Giftia/ChatDACS/</a>，欢迎Star');
+    io.emit('system message', '系统消息：本项目已开源于<a href="https://github.com/Giftia/ChatDACS/">https://github.com/Giftia/ChatDACS/</a>，欢迎Star。系统已与小夜联动词库，随意聊天。系统域名缓慢过渡到<a href="http://chatdacs.giftia.moe/">http://chatdacs.giftia.moe/</a>，39.108.239.49 此ip将于6月份到期。');
 
     if (news_swich) {
         Getnews().then(function (data) {

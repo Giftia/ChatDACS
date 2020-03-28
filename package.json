@@ -1,6 +1,6 @@
 {
-  "name": "ChatDACS",
-  "version": "0.4.1",
+  "name": "chatdacs",
+  "version": "1.7.4",
   "decription": "Chatable Door Access Control System",
   "dependencies": {
     "express": "^4.16.4",
