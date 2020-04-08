@@ -5,7 +5,7 @@ var news_swich = 0; //是否开启首屏新闻
 var jc_swich = 0; //是否开启酱菜物联服务
 var password = "233333"; //配置开门密码
 var apikey = "2333333333333333"; //换成你自己申请的 jcck_apikey，非必须
-var eval_swich = 0; //是否开启来信指令无条件执行，便于调试，但开启有极大风险
+var eval_swich = 0; //是否开启动态注入和执行，便于调试，但开启有极大风险，最好完全避免启用它，特别是在生产环境部署时
 
 /* 好了！请不要再继续编辑。请保存本文件。使用愉快！ */
 
@@ -70,9 +70,9 @@ if (jc_swich) {
 }
 
 if (eval_swich) {
-  console.log("用户配置：来信指令无条件执行开启，系统将面临极大风险（逃".on);
+  console.log("用户配置：动态注入和执行开启".on);
 } else {
-  console.log("用户配置：来信指令无条件执行关闭".off);
+  console.log("用户配置：动态注入和执行关闭".off);
 }
 
 http.listen(80, function () {
