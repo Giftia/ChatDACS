@@ -92,7 +92,7 @@ app.get("/", function (req, res) {
   }
   ip = ip.replace("::ffff:", "");
   userip = ip;
-  if (userip == " " || userip == NaN || userip == undefined || userip == "") {
+  if (userip == " " || Number.isNaN(userip) || userip == undefined || userip == "") {
     userip = "未知ip";
   }
   res.sendFile(__dirname + "/new.html");
@@ -105,7 +105,7 @@ io.on("connection", function (socket) {
   GetUserData().then(
     function (data) {
       io.emit("chat massage", data);
-      if (userip == " " || userip == NaN || userip == undefined || userip == "") {
+      if (userip == " " || Number.isNaN(userip) || userip == undefined || userip == "") {
         userip = "未知ip";
       }
       console.log(Curentyyyymmdd() + CurentTime() + "用户 " + nickname + "(" + userip + ")" + " 已连接");
@@ -120,7 +120,7 @@ io.on("connection", function (socket) {
     },
     function (err, data) {
       console.log("GetUserData(): rejected, and err:\r\n" + err);
-      if (userip == " " || userip == NaN || userip == undefined || userip == "") {
+      if (userip == " " || Number.isNaN(userip) || userip == undefined || userip == "") {
         userip = "未知ip";
       }
       io.emit("system massage", "GetUserData() err:" + data);
@@ -187,7 +187,7 @@ io.on("connection", function (socket) {
       db.all("SELECT * FROM messages", function (e, sql) {
         if (!e) {
           var data = "";
-          for (i = 0; i < sql.length; i++) {
+          for (var i = 0; i < sql.length; i++) {
             var time = JSON.stringify(sql[i].time);
             var ip = JSON.stringify(sql[i].ip);
             var message = JSON.stringify(sql[i].message);
@@ -218,7 +218,7 @@ io.on("connection", function (socket) {
         console.log(sql);
         var data = [];
         if (!e) {
-          for (i = 0; i < sql.length; i++) {
+          for (var i = 0; i < sql.length; i++) {
             data.push([sql[i].yyyymmdd, sql[i].count]);
           }
           console.log(data);
@@ -337,8 +337,8 @@ function Getnews() {
         var content_news = "今日要闻：";
         var main = JSON.parse(body);
         var news = main.list;
-        for (id = 4; id < 10; id++) {
-          print_id = id - 3;
+        for (var id = 4; id < 10; id++) {
+          var print_id = id - 3;
           content_news = content_news + "<br>" + print_id + "." + news[id].title + '...👉<a href="' + news[id].link + '" target="_blank">查看原文</a>';
         }
         resolve(content_news);
