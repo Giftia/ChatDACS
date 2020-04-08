@@ -1,11 +1,12 @@
 {
   "name": "chatdacs",
-  "version": "1.7.4",
+  "version": "1.7.5",
   "decription": "Chatable Door Access Control System",
   "dependencies": {
-    "express": "^4.16.4",
-    "request": "^2.88.0",
-    "socket.io": "^2.2.0",
-    "sqlite3": "^4.0.6"
+    "express": "^4.17.1",
+    "request": "^2.88.2",
+    "socket.io": "^2.3.0",
+    "sqlite3": "^4.1.1",
+    "colors":"^1.4.0"
   }
 }

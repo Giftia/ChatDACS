@@ -1,343 +1,338 @@
 <!DOCTYPE html>
 <html lang="zh-cn">
+  <head>
+    <link rel="icon" href="data:image/ico;base64,aWNv" />
+    <meta name="theme-color" content="#ed90ba" />
+    <meta http-equiv="X-UA-Compatible" messages="IE=edge,chrome=1" />
+    <meta charset="utf-8" />
+    <meta name="viewport" messages="minimal-ui" />
+    <title>ChatDACS</title>
+    <style>
+      * {
+        margin: 0;
+        list-style: none;
+        box-sizing: border-box;
+        font-family: "思源黑体";
+      }
 
-	<head>
-		<link rel="icon" href="data:image/ico;base64,aWNv">
-		<meta name="theme-color" content="#ed90ba">
-		<meta http-equiv="X-UA-Compatible" messages="IE=edge,chrome=1">
-		<meta charset="utf-8">
-		<meta name="viewport" messages="minimal-ui">
-		<title>ChatDACS</title>
-		<style>
-			* {
-				margin: 0;
-				list-style: none;
-				box-sizing: border-box;
-				font-family: '思源黑体';
-			}
+      body {
+        margin-bottom: 12%;
+        width: 100%;
+        height: 100%;
+        background: #eee;
+      }
 
-			body {
-				margin-bottom: 12%;
-				width: 100%;
-				height: 100%;
-				background: #eee;
-			}
+      .header {
+        background: #333;
+        width: 100%;
+        height: 100px;
+        color: #fff;
+        line-height: 70%;
+        font-size: 300%;
+        padding: 3% 5%;
+        position: fixed;
+        top: 0;
+        border-bottom: 1px solid #888;
+        box-shadow: 0 0 5px #888;
+      }
 
-			.header {
-				background: #333;
-				width: 100%;
-				height: 100px;
-				color: #fff;
-				line-height: 70%;
-				font-size: 300%;
-				padding: 3% 5%;
-				position: fixed;
-				top: 0;
-				border-bottom: 1px solid #888;
-				box-shadow: 0 0 5px #888;
-			}
+      .footer {
+        background: #666;
+        padding: 9px 3px 9px 3px;
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        border-radius: 10px 10px 0 0;
+      }
 
-			.footer {
-				background: #666;
-				padding: 9px 3px 9px 3px;
-				position: fixed;
-				bottom: 0;
-				width: 100%;
-				border-radius: 10px 10px 0 0;
-			}
+      .footer input {
+        border: 0;
+        width: 90%;
+        margin-right: 0.5%;
+        min-height: 60px;
+        outline: none;
+        text-indent: 10px;
+        border-radius: 6px;
+      }
 
-			.footer input {
-				border: 0;
-				width: 90%;
-				margin-right: .5%;
-				min-height: 60px;
-				outline: none;
-				text-indent: 10px;
-				border-radius: 6px;
-			}
+      .footer button {
+        min-height: 60px;
+        width: 8.5%;
+        background: DeepSkyBlue;
+        border: none;
+        font-size: 178%;
+        border-radius: 6px;
+        cursor: pointer;
+      }
 
-			.footer button {
-				min-height: 60px;
-				width: 8.5%;
-				background: DeepSkyBlue;
-				border: none;
-				font-size: 178%;
-				border-radius: 6px;
-				cursor: pointer;
-			}
+      .footer button:hover {
+        color: DeepSkyBlue;
+        background: Black;
+      }
 
-			.footer button:hover {
-				color: DeepSkyBlue;
-				background: Black;
-			}
+      img {
+        width: 10%;
+        height: 10%;
+      }
 
-			img {
-				width: 10%;
-				height: 10%;
-			}
+      .content {
+        font-size: 300%;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        padding: 8% 5px 5px 5px;
+        text-align: center;
+      }
 
-			.content {
-				font-size: 300%;
-				width: 100%;
-				height: 100%;
-				overflow: auto;
-				padding: 8% 5px 5px 5px;
-				text-align: center;
-			}
+      .content li {
+        word-break: break-all;
+        word-wrap: break-word;
+        margin-top: 10px;
+        padding-left: 10px;
+        width: auto;
+        display: block;
+        clear: both;
+        overflow: hidden;
+        padding: 0 10px 0 10px;
+      }
 
-			.content li {
-				word-break: break-all;
-				word-wrap: break-word;
-				margin-top: 10px;
-				padding-left: 10px;
-				width: auto;
-				display: block;
-				clear: both;
-				overflow: hidden;
-				padding: 0 10px 0 10px;
-			}
+      .content li img {
+        float: left;
+      }
 
-			.content li img {
-				float: left;
-			}
+      .content li span {
+        background: #7cfc00;
+        padding: 10px;
+        border-radius: 10px;
+        float: left;
+        margin: 6px 10px 0 10px;
+        max-width: 77%;
+        border: 1px solid #ccc;
+        box-shadow: 0 0 3px #ccc;
+      }
 
-			.content li span {
-				background: #7cfc00;
-				padding: 10px;
-				border-radius: 10px;
-				float: left;
-				margin: 6px 10px 0 10px;
-				max-width: 77%;
-				border: 1px solid #ccc;
-				box-shadow: 0 0 3px #ccc;
-			}
+      .content li img.imgleft {
+        float: left;
+      }
 
-			.content li img.imgleft {
-				float: left;
-			}
+      .content li img.imgright {
+        float: right;
+      }
 
-			.content li img.imgright {
-				float: right;
-			}
+      .content li span.spanleft {
+        float: left;
+        background: #fff;
+        text-align: left;
+      }
 
-			.content li span.spanleft {
-				float: left;
-				background: #fff;
-				text-align: left;
-			}
+      .content li span.spanright {
+        float: right;
+        background: #7cfc00;
+        text-align: left;
+      }
 
-			.content li span.spanright {
-				float: right;
-				background: #7cfc00;
-				text-align: left;
-			}
+      #time {
+        background: #ccc;
+        display: inline-block;
+        font-size: 70%;
+        line-height: 70%;
+        text-align: center;
+        color: White;
+        padding: 10px;
+        border-radius: 6px;
+        word-wrap: break-word;
+      }
 
-			#time {
-				background: #CCC;
-				display: inline-block;
-				font-size: 70%;
-				line-height: 70%;
-				text-align: center;
-				color: White;
-				padding: 10px;
-				border-radius: 6px;
-				word-wrap: break-word;
-			}
+      #sysmsg {
+        background: #ccc;
+        display: inline-block;
+        font-size: 70%;
+        text-align: center;
+        color: White;
+        padding: 10px;
+        border-radius: 6px;
+        max-width: 50%;
+        line-height: 150%;
+        word-wrap: break-word;
+      }
 
-			#sysmsg {
-				background: #CCC;
-				display: inline-block;
-				font-size: 70%;
-				text-align: center;
-				color: White;
-				padding: 10px;
-				border-radius: 6px;
-				max-width: 50%;
-				line-height: 150%;
-				word-wrap: break-word;
-			}
+      a {
+        text-decoration: none;
+      }
+    </style>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.bootcss.com/echarts/4.6.0/echarts.min.js"></script>
+    <script>
+      window.onload = function () {
+        var time_now = 0;
+        var time_last = 0;
+        var socket = io();
+        var arrIcon = ["https://gsp0.baidu.com/5aAHeD3nKhI2p27j8IqW0jdnxx1xbK/tb/editor/images/client/image_emoticon25.png", "https://tb2.bdstatic.com/tb/editor/images/face/i_f33.png?t=20140803"]; //arrIcon[0] = client icon, arrIcon[1] = server icon;
+        var sorc = 1;
+        var liNow = -1;
+        var btn = document.getElementById("btn");
+        var text = document.getElementById("text");
+        var content = document.getElementsByTagName("ul")[0];
+        var img = content.getElementsByTagName("img");
+        var span = content.getElementsByTagName("span");
+        var typing_status = document.getElementById("typing_status");
+        var version = document.getElementById("version");
+        var onlineusers = document.getElementById("onlineusers");
+        var text = document.getElementById("text");
 
-			a {
-				text-decoration: none;
-			}
-		</style>
-		<script src="/socket.io/socket.io.js"></script>
-		<script src="//cdn.staticfile.org/jquery/3.4.1/jquery.min.js"></script>
-		<script src="https://cdn.bootcss.com/echarts/4.6.0/echarts.min.js"></script>
-		<script>
-			window.onload = function () {
-				var time_now = 0;
-				var time_last = 0;
-				var socket = io();
-				var arrIcon = ['https://gsp0.baidu.com/5aAHeD3nKhI2p27j8IqW0jdnxx1xbK/tb/editor/images/client/image_emoticon25.png', 'https://tb2.bdstatic.com/tb/editor/images/face/i_f33.png?t=20140803'];	//arrIcon[0] = client icon, arrIcon[1] = server icon;
-				var sorc = 1;
-				var liNow = -1;
-				var btn = document.getElementById('btn');
-				var text = document.getElementById('text');
-				var content = document.getElementsByTagName('ul')[0];
-				var img = content.getElementsByTagName('img');
-				var span = content.getElementsByTagName('span');
-				var typing_status = document.getElementById('typing_status');
+        socket.on("chat message", function (msg) {
+          time_now = new Date().getTime();
+          if (time_now - time_last < 300000) {
+            content.innerHTML += '<li><img src="' + arrIcon[sorc] + '"><span>' + msg + "</span></li>";
+          } else {
+            content.innerHTML += '<div id="time">' + CurentTime() + '</div><li><img src="' + arrIcon[sorc] + '"><span>' + msg + "</span></li>";
+            time_last = new Date().getTime();
+          }
+          liNow++;
+          if (sorc == 0) {
+            img[liNow].className += "imgright";
+            span[liNow].className += "spanright";
+            sorc = 1;
+          } else {
+            img[liNow].className += "imgleft";
+            span[liNow].className += "spanleft";
+          }
+          window.scrollTo(0, document.body.scrollHeight);
+        });
 
-				socket.on('chat message', function (msg) {
-					time_now = new Date().getTime();
-					if (time_now - time_last < 300000) {
-						content.innerHTML += '<li><img src="' + arrIcon[sorc] + '"><span>' + msg + '</span></li>';
-					} else {
-						content.innerHTML += '<div id="time">' + CurentTime() + '</div><li><img src="' + arrIcon[sorc] + '"><span>' + msg + '</span></li>';
-						time_last = new Date().getTime();
-					};
-					liNow++;
-					if (sorc == 0) {
-						img[liNow].className += 'imgright';
-						span[liNow].className += 'spanright';
-						sorc = 1;
-					} else {
-						img[liNow].className += 'imgleft';
-						span[liNow].className += 'spanleft';
-					};
-					window.scrollTo(0, document.body.scrollHeight);
-				});
+        socket.on("chart message", function (msg) {
+          content.innerHTML += '<li><img src="' + arrIcon[sorc] + '"><span style="width: 77%"><div id="chart" style="width:100%; height: 500px"></div></span></li>';
+          var myChart = echarts.init(document.getElementById("chart"));
+          var option = {
+            title: {
+              top: 30,
+              left: "center",
+              text: "2020年度发言统计",
+            },
+            tooltip: {},
+            visualMap: {
+              show: false,
+              min: 0,
+              max: 200,
+              type: "piecewise",
+              orient: "horizontal",
+              left: "center",
+              top: 65,
+              textStyle: {
+                color: "#000",
+              },
+            },
+            calendar: {
+              top: 120,
+              left: 30,
+              right: 30,
+              cellSize: ["auto", "auto"],
+              range: "2020",
+              itemStyle: {
+                borderWidth: 0.5,
+              },
+              yearLabel: { show: false },
+            },
+            series: {
+              type: "heatmap",
+              coordinateSystem: "calendar",
+              data: msg,
+            },
+          };
+          myChart.setOption(option);
+          liNow++;
+          if (sorc == 0) {
+            img[liNow].className += "imgright";
+            span[liNow].className += "spanright";
+            sorc = 1;
+          } else {
+            img[liNow].className += "imgleft";
+            span[liNow].className += "spanleft";
+          }
+          window.scrollTo(0, document.body.scrollHeight);
+        });
 
-				socket.on('chart message', function (msg) {
-					time_now = new Date().getTime();
-					if (time_now - time_last < 300000) {
-						content.innerHTML += '<li><img src="' + arrIcon[sorc] + '"><span style="width: 77%"><div id="chart" style="width:100%; height: 500px"></div></span></li>';
-					} else {
-						content.innerHTML += '<div id="time">' + CurentTime() + '</div><li><img src="' + arrIcon[sorc] + '"><span style="width: 77%"><div id="chart" style="width:100%; height: 500px"></div></span></li>';
-						time_last = new Date().getTime();
-					};
-					var myChart = echarts.init(document.getElementById('chart'));
-					var option = {
-						title: {
-							top: 30,
-							left: 'center',
-							text: '2020年度发言统计'
-						},
-						tooltip: {},
-						visualMap: {
-							show: false,
-							min: 0,
-							max: 100,
-							type: 'piecewise',
-							orient: 'horizontal',
-							left: 'center',
-							top: 65,
-							textStyle: {
-								color: '#000'
-							}
-						},
-						calendar: {
-							top: 120,
-							left: 30,
-							right: 30,
-							cellSize: ['auto', 'auto'],
-							range: '2020',
-							itemStyle: {
-								borderWidth: 0.5
-							},
-							yearLabel: { show: false }
-						},
-						series: {
-							type: 'heatmap',
-							coordinateSystem: 'calendar',
-							data: msg
-						}
-					}
-					myChart.setOption(option);
-					liNow++;
-					if (sorc == 0) {
-						img[liNow].className += 'imgright';
-						span[liNow].className += 'spanright';
-						sorc = 1;
-					} else {
-						img[liNow].className += 'imgleft';
-						span[liNow].className += 'spanleft';
-					};
-					window.scrollTo(0, document.body.scrollHeight);
-				});
+        socket.on("system message", function (msg) {
+          content.innerHTML += '<br><div id="sysmsg">' + msg + "</div><br>";
+          window.scrollTo(0, document.body.scrollHeight);
+        });
 
-				socket.on('system message', function (msg) {
-					content.innerHTML += '<br><div id="sysmsg">' + msg + '</div><br>';
-					window.scrollTo(0, document.body.scrollHeight);
-				});
+        socket.on("version", function (msg) {
+          document.title = msg;
+          version.innerHTML = msg;
+        });
 
-				socket.on('typing', function (msg) {
-					if (text != '') typing_status.innerHTML = msg;
-				});
+        socket.on("onlineusers", function (msg) {
+          onlineusers.innerHTML = "当前在线用户数：" + msg;
+        });
 
-				typing = function () {
-					socket.emit('typing');
-				};
+        socket.on("setcookie", function (msg) {
+          document.cookie = "cookie = " + msg;
+        });
 
-				btn.onclick = function () {
-					text.focus();
-					if (text.value == '') {
-						alert('不能发送空消息');
-					} else {
-						socket.emit('typing_over');
-						socket.emit('chat message', $('#text').val());
-						$('#text').val('');
-						sorc = 0;
-						window.scrollTo(0, document.body.scrollHeight);
-						return false;
-					};
-				};
-			};
+        socket.on("typing", function (msg) {
+          if (text != "") typing_status.innerHTML = msg;
+        });
 
-			socket.on('version', function (msg) {
-				$('#version').val(msg);
-			});
+        typing = function () {
+          socket.emit("typing");
+        };
 
-			socket.on('setcookie', function (msg) {
-				document.cookie = "cookie = " + msg;
-			});
+        btn.onclick = function () {
+          text.focus();
+          if (text.value == "") {
+            alert("不能发送空消息");
+          } else {
+            socket.emit("typing_over");
+            socket.emit("chat message", text.value);
+            text.value = "";
+            sorc = 0;
+            window.scrollTo(0, document.body.scrollHeight);
+            return false;
+          }
+        };
+      };
 
-			function CurentTime() {
-				var now = new Date();
-				//var year = now.getFullYear();
-				var month = now.getMonth() + 1;
-				var day = now.getDate();
-				var hh = now.getHours();
-				var mm = now.getMinutes();
-				var ss = now.getSeconds();
-				var clock;// = year + '年';
-				//if(month < 10)
-				//	clock += '0';
-				clock = month + '月';
-				if (day < 10)
-					clock += '0';
-				clock += day + '日 ';
-				if (hh < 10)
-					clock += '0';
-				clock += hh + ':';
-				if (mm < 10) clock += '0';
-				clock += mm + ':';
-				if (ss < 10) clock += '0';
-				clock += ss;
-				return (clock);
-			};
-		</script>
-	</head>
+      function CurentTime() {
+        var now = new Date();
+        //var year = now.getFullYear();
+        var month = now.getMonth() + 1;
+        var day = now.getDate();
+        var hh = now.getHours();
+        var mm = now.getMinutes();
+        var ss = now.getSeconds();
+        var clock; // = year + '年';
+        //if(month < 10)
+        //	clock += '0';
+        clock = month + "月";
+        if (day < 10) clock += "0";
+        clock += day + "日 ";
+        if (hh < 10) clock += "0";
+        clock += hh + ":";
+        if (mm < 10) clock += "0";
+        clock += mm + ":";
+        if (ss < 10) clock += "0";
+        clock += ss;
+        return clock;
+      }
+    </script>
+  </head>
 
-	<body>
-		<a href="https://github.com/Giftia/ChatDACS">
-			<img style="position: fixed; top: 0; right: 0; border: 0; z-index: 2333; width: 110px; height: 110px;"
-				src="https://github.blog/wp-content/uploads/2008/12/forkme_right_white_ffffff.png?resize=110%2C110"
-				alt="Fork me on GitHub">
-		</a>
-		<div class="header">
-			<span id="version" style="float: left;">ChatDACS</span>
-			<span style="float: right; font-size: 70%;" id="typing_status"></span>
-		</div>
-		<ul class="content"></ul>
-		<div class="footer">
-			<form>
-				<input id="text" placeholder="BV号转AV号功能请直接发送BV号 BVbalabalaba" autocomplete="off" value=""
-					maxlength="100" style="font-size:30px;" autofocus oninput="typing()" />
-				<button id="btn">发送</button>
-			</form>
-		</div>
-	</body>
-
+  <body>
+    <a href="https://github.com/Giftia/ChatDACS">
+      <img style="position: fixed; top: 0; right: 0; border: 0; z-index: 2333; width: 110px; height: 110px;" src="https://github.blog/wp-content/uploads/2008/12/forkme_right_white_ffffff.png?resize=110%2C110" alt="Fork me on GitHub" />
+    </a>
+    <div class="header">
+      <span id="version" style="float: left;">ChatDACS</span>
+      <span id="onlineusers" style="float: right; font-size: 70%;"></span>
+      <span style="float: right; font-size: 70%;" id="typing_status"></span>
+    </div>
+    <ul class="content"></ul>
+    <div class="footer">
+      <form>
+        <input id="text" placeholder="BV号转AV号功能请直接发送BV号 BVbalabalaba" autocomplete="off" value="" maxlength="100" style="font-size: 30px;" autofocus oninput="typing()" />
+        <button id="btn">发送</button>
+      </form>
+    </div>
+  </body>
 </html>
