@@ -2,11 +2,19 @@
   "name": "chatdacs",
   "version": "1.7.5",
   "decription": "Chatable Door Access Control System",
+  "license": "GPL-3.0",
   "dependencies": {
+    "colors": "^1.4.0",
     "express": "^4.17.1",
+    "npm-check-updates": "^4.1.2",
     "request": "^2.88.2",
     "socket.io": "^2.3.0",
     "sqlite3": "^4.1.1",
-    "colors":"^1.4.0"
+    "compression": "^1.7.4",
+    "pm2": "^4.2.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "//github.com/Giftia/ChatDACS.git"
   }
 }
