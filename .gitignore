@@ -61,4 +61,4 @@ typings/
 .next
 
 # Others
-db.db
+*.db
