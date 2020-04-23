@@ -1,5 +1,6 @@
 /*
 初次使用请看:
+  首先安装Node.js
   命令行进入根目录运行:
     npm install -g cnpm --registry=https://registry.npm.taobao.org
   等待进度完成后运行:
@@ -10,7 +11,7 @@
   隐藏界面请按:  Ctrl + C
   查看监视器请运行:  pm2 monit
   完全关闭请运行:  pm2 stop all
-  每当次版本号迭代,如1.1.x --> 1.2.x,意味着需要更新依赖,请运行:  ncu -u  等待进度完成后运行:  cnpm i
+  每当次版本号迭代,如1.1.x --> 1.2.x,意味着需要更新依赖,请运行:  ncu -u  ,等待进度完成后运行:  cnpm i
 */
 
 //系统变量和开关，根据你的需要改动
