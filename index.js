@@ -1,7 +1,7 @@
 /*
 初次使用请看:
   首先安装Node.js
-  命令行进入根目录运行:
+  接着启动cmd,进入代码根目录运行:
     npm install -g cnpm --registry=https://registry.npm.taobao.org
   等待进度完成后运行:
     cnpm i
@@ -11,24 +11,32 @@
   隐藏界面请按:  Ctrl + C
   查看监视器请运行:  pm2 monit
   完全关闭请运行:  pm2 stop all
-  每当次版本号迭代,如1.1.x --> 1.2.x,意味着需要更新依赖,请运行:  ncu -u  ,等待进度完成后运行:  cnpm i
+  每当次版本号迭代,如 1.1.0 --> 1.2.0,意味着需要更新依赖,请运行:  ncu -u  ,等待进度完成后运行:  cnpm i
+  版本号的改变规律,如 1.2.3-45,形如 A.B.C-D:
+    A 大版本号,当整端重构或出现不向后兼容的改变时增加A,更新代码需要更新依赖
+    B 次版本号,功能更新,当功能增加、修改或删除时增加B,更新代码需要更新依赖
+    C 尾版本号,表示小修改,如修复一些重要bug时增加C,更新代码可以不更新依赖
+    D 迭代号,表示Github commits 即代码提交次数,属于非必要更新,可以不更新代码
 */
 
 //系统变量和开关，根据你的需要改动
-var version = "ChatDACS 1.8.0";
+var version = "ChatDACS 1.9.0-76-O"; //版本号
 var chat_swich = 1; //是否开启自动聊天，需数据库中配置聊天表
-var news_swich = 0; //是否开启首屏新闻
+var news_swich = 1; //是否开启首屏新闻
 var jc_swich = 0; //是否开启酱菜物联服务
 var password = "233333"; //配置开门密码
 var apikey = "2333333333333333"; //换成你自己申请的 jcck_apikey，非必须
 var eval_swich = 0; //是否开启动态注入和执行，便于调试，但开启有极大风险，最好完全避免启用它，特别是在生产环境部署时
+var html = "/new.html"; //前端页面路径
 
 /* 好了！请不要再继续编辑。请保存本文件。使用愉快！ */
 
 //模块依赖
 var compression = require("compression");
+var express = require("express");
 var app = require("express")();
 app.use(compression());
+app.use(express.static("layim"));
 var http = require("http").Server(app);
 var io = require("socket.io")(http);
 var net = require("net");
@@ -113,7 +121,7 @@ app.get("/", function (req, res) {
   if (userip == " " || Number.isNaN(userip) || userip == undefined || userip == "") {
     userip = "未知ip";
   }
-  res.sendFile(__dirname + "/new.html");
+  res.sendFile(__dirname + html);
 });
 
 io.on("connection", function (socket) {
@@ -190,7 +198,7 @@ io.on("connection", function (socket) {
 
     if (door_reg.test(msg)) {
       if (jc_swich) {
-        if (msg == "/开门 " + password) {
+        if (msg === "/开门 " + password) {
           Opendoor();
           io.emit("chat message", "系统消息：密码已确认，开门指令已发送");
           io.emit("chat message", "计算机科创基地提醒您：道路千万条，安全第一条。开门不关门，亲人两行泪。");
@@ -201,11 +209,11 @@ io.on("connection", function (socket) {
       } else {
         io.emit("chat message", "系统消息：酱菜物联服务未启动，故门禁服务一并禁用");
       }
-    } else if (msg == "/log") {
+    } else if (msg === "/log") {
       db.all("SELECT * FROM messages", function (e, sql) {
         if (!e) {
           var data = "";
-          for (var i = 0; i < sql.length; i++) {
+          for (let i = 0; i < sql.length; i++) {
             var time = JSON.stringify(sql[i].time);
             var ip = JSON.stringify(sql[i].ip);
             var message = JSON.stringify(sql[i].message);
@@ -218,7 +226,7 @@ io.on("connection", function (socket) {
           io.emit("chat message", e);
         }
       });
-    } else if (msg == "/cls") {
+    } else if (msg === "/cls") {
       db.all("DELETE FROM messages", function (e, sql) {
         if (!e) {
           io.emit("chat message", "管理指令：聊天信息数据库清空完毕");
@@ -231,12 +239,12 @@ io.on("connection", function (socket) {
     } else if (rename_reg.test(msg)) {
       db.run("UPDATE users SET nickname = '" + msg + "' WHERE ip ='" + userip + "'");
       io.emit("chat message", "昵称重命名完毕");
-    } else if (msg == "/log_view") {
+    } else if (msg === "/log_view") {
       db.all("SELECT yyyymmdd, COUNT(*) As count FROM messages Group by yyyymmdd", function (e, sql) {
         console.log(sql);
         var data = [];
         if (!e) {
-          for (var i = 0; i < sql.length; i++) {
+          for (let i = 0; i < sql.length; i++) {
             data.push([sql[i].yyyymmdd, sql[i].count]);
           }
           console.log(data);
@@ -257,6 +265,8 @@ io.on("connection", function (socket) {
           io.emit("system massage", "Getnews() err:" + data);
         }
       );
+    } else if (msg === "/reload") {
+      io.emit("reload");
     } else {
       if (chat_swich) {
         msg = msg.replace("/", "");
@@ -354,10 +364,10 @@ function Getnews() {
         body = body.substring(2, body.length - 1);
         var content_news = "今日要闻：";
         var main = JSON.parse(body);
-        var news = main.list;
-        for (var id = 4; id < 10; id++) {
-          var print_id = id - 3;
-          content_news = content_news + "<br>" + print_id + "." + news[id].title + '...👉<a href="' + news[id].link + '" target="_blank">查看原文</a>';
+        var news = main.news;
+        for (let id = 0; id < 10; id++) {
+          var print_id = id + 1;
+          content_news = content_news + "<br>" + print_id + "." + news[id].title + ' 👉<a href="' + news[id].link + '" target="_blank">查看原文</a>';
         }
         resolve(content_news);
       } else {
