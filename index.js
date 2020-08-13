@@ -20,7 +20,7 @@
 */
 
 //系统变量和开关，根据你的需要改动
-var version = "ChatDACS 1.9.0-76-O"; //版本号
+var version = "ChatDACS 1.9.0-77-O"; //版本号，-O代表OLD，指老版本UI
 var chat_swich = 1; //是否开启自动聊天，需数据库中配置聊天表
 var news_swich = 1; //是否开启首屏新闻
 var jc_swich = 0; //是否开启酱菜物联服务
@@ -36,7 +36,7 @@ var compression = require("compression");
 var express = require("express");
 var app = require("express")();
 app.use(compression());
-app.use(express.static("layim"));
+app.use(express.static("static"));  //静态文件引入
 var http = require("http").Server(app);
 var io = require("socket.io")(http);
 var net = require("net");
@@ -70,7 +70,7 @@ var door_reg = new RegExp("^/开门 [a-zA-Z0-9]*$"); //匹配开门
 var rename_reg = new RegExp("^/rename [\u4e00-\u9fa5]*$"); //只允许汉字昵称
 var bv2av__reg = new RegExp("^[a-zA-Z0-9]{10,12}"); //匹配bv号
 
-//代码
+//若表不存在则新建表
 db.run("CREATE TABLE IF NOT EXISTS messages(yyyymmdd char, time char, ip char, message char)");
 db.run("CREATE TABLE IF NOT EXISTS users(nickname char, ip char, logintimes long, lastlogintime char)");
 
@@ -118,7 +118,7 @@ app.get("/", function (req, res) {
   }
   ip = ip.replace("::ffff:", "");
   userip = ip;
-  if (userip == " " || Number.isNaN(userip) || userip == undefined || userip == "") {
+  if (userip === " " || Number.isNaN(userip) || userip === undefined || userip === "") {
     userip = "未知ip";
   }
   res.sendFile(__dirname + html);
@@ -131,14 +131,14 @@ io.on("connection", function (socket) {
   GetUserData().then(
     function (data) {
       io.emit("chat massage", data);
-      if (userip == " " || Number.isNaN(userip) || userip == undefined || userip == "") {
+      if (userip === " " || Number.isNaN(userip) || userip === undefined || userip === "") {
         userip = "未知ip";
       }
       console.log(Curentyyyymmdd() + CurentTime() + "用户 " + nickname + "(" + userip + ")" + " 已连接");
       db.run("UPDATE users SET logintimes = logintimes + 1 WHERE ip ='" + userip + "'");
       db.run("UPDATE users SET lastlogintime = '" + Curentyyyymmdd() + CurentTime() + "' WHERE ip ='" + userip + "'");
       logintimes++;
-      io.emit("system message", "系统消息：欢迎回来，" + nickname + "(" + userip + ")" + " 。这是你第" + logintimes + "次访问。上次访问时间：" + lastlogintime);
+      io.emit("system message", "欢迎回来，" + nickname + "(" + userip + ")" + " 。这是你第" + logintimes + "次访问。上次访问时间：" + lastlogintime);
       userdata = "";
       nickname = "";
       logintimes = "";
@@ -146,19 +146,16 @@ io.on("connection", function (socket) {
     },
     function (err, data) {
       console.log("GetUserData(): rejected, and err:\r\n" + err);
-      if (userip == " " || Number.isNaN(userip) || userip == undefined || userip == "") {
+      if (userip === " " || Number.isNaN(userip) || userip === undefined || userip === "") {
         userip = "未知ip";
       }
       io.emit("system massage", "GetUserData() err:" + data);
       console.log(Curentyyyymmdd() + CurentTime() + "新用户 " + userip + " 已连接");
       db.run("INSERT INTO users VALUES('匿名', '" + userip + "', '1', '" + Curentyyyymmdd() + CurentTime() + "')");
-      io.emit("system message", "系统消息：新用户 " + userip + " 已连接。你是第一次访问，你可以发送诸如 “/开门 233333” 的通关密码来开门（去掉双引号），密码是基地WiFi密码。");
+      io.emit("system message", "新用户 " + userip + " 已连接。你是第一次访问，你可以发送诸如 “/开门 233333” 的通关密码来开门（去掉双引号），密码是基地WiFi密码。");
     }
   );
-  io.emit(
-    "system message",
-    '系统消息：本项目已开源于<a href="https://github.com/Giftia/ChatDACS/">https://github.com/Giftia/ChatDACS/</a>，欢迎Star。系统已与小夜联动词库，随意聊天。系统域名缓慢过渡到<a href="http://chatdacs.giftia.moe/">http://chatdacs.giftia.moe/</a>，39.108.239.49 此ip将于6月份到期。'
-  );
+  io.emit("system message", '本项目已开源于<a href="https://github.com/Giftia/ChatDACS/">https://github.com/Giftia/ChatDACS/</a>，欢迎Star。系统已与小夜联动词库，随意聊天。系统域名缓慢过渡到<a href="http://chatdacs.giftia.moe/">http://chatdacs.giftia.moe/</a>，39.108.239.49 此ip将于6月份到期。');
   if (news_swich) {
     Getnews().then(
       function (data) {
@@ -175,7 +172,7 @@ io.on("connection", function (socket) {
     onlineusers--;
     io.emit("onlineusers", onlineusers);
     console.log(Curentyyyymmdd() + CurentTime() + "用户 " + userip + " 已断开连接");
-    io.emit("system message", "系统消息：用户 " + userip + " 已断开连接");
+    io.emit("system message", "用户 " + userip + " 已断开连接");
   });
 
   socket.on("typing", function (msg) {
@@ -200,14 +197,14 @@ io.on("connection", function (socket) {
       if (jc_swich) {
         if (msg === "/开门 " + password) {
           Opendoor();
-          io.emit("chat message", "系统消息：密码已确认，开门指令已发送");
+          io.emit("chat message", "密码已确认，开门指令已发送");
           io.emit("chat message", "计算机科创基地提醒您：道路千万条，安全第一条。开门不关门，亲人两行泪。");
           console.log(Curentyyyymmdd() + CurentTime() + "用户 " + userip + " 开门操作");
         } else {
-          io.emit("chat message", "系统消息：密码错误，请重试");
+          io.emit("chat message", "密码错误，请重试");
         }
       } else {
-        io.emit("chat message", "系统消息：酱菜物联服务未启动，故门禁服务一并禁用");
+        io.emit("chat message", "酱菜物联服务未启动，故门禁服务一并禁用");
       }
     } else if (msg === "/log") {
       db.all("SELECT * FROM messages", function (e, sql) {
@@ -226,7 +223,7 @@ io.on("connection", function (socket) {
           io.emit("chat message", e);
         }
       });
-    } else if (msg === "/cls") {
+    } /*else if (msg === "/cls") {
       db.all("DELETE FROM messages", function (e, sql) {
         if (!e) {
           io.emit("chat message", "管理指令：聊天信息数据库清空完毕");
@@ -236,7 +233,9 @@ io.on("connection", function (socket) {
           io.emit("chat message", e);
         }
       });
-    } else if (rename_reg.test(msg)) {
+    }*/ else if (
+      rename_reg.test(msg)
+    ) {
       db.run("UPDATE users SET nickname = '" + msg + "' WHERE ip ='" + userip + "'");
       io.emit("chat message", "昵称重命名完毕");
     } else if (msg === "/log_view") {
@@ -312,7 +311,7 @@ function Opendoor() {
     client.write("mode=exe&apikey=" + apikey + "&data={ck0040001}");
     setTimeout(function () {
       client.write("mode=exe&apikey=" + apikey + "&data={ck0040000}");
-      io.emit("chat message", "系统消息：自动关门指令已发送，仍需手动带门吸合电磁铁");
+      io.emit("chat message", "自动关门指令已发送，仍需手动带门吸合电磁铁");
       console.log(Curentyyyymmdd() + CurentTime() + "自动关门");
     }, 3000);
   });
@@ -360,7 +359,7 @@ function Getnews() {
   //新闻
   var p = new Promise(function (resolve, reject) {
     request("http://3g.163.com/touch/jsonp/sy/recommend/0-9.html?callback=n", function (err, response, body) {
-      if (!err && response.statusCode == 200) {
+      if (!err && response.statusCode === 200) {
         body = body.substring(2, body.length - 1);
         var content_news = "今日要闻：";
         var main = JSON.parse(body);
@@ -371,7 +370,7 @@ function Getnews() {
         }
         resolve(content_news);
       } else {
-        reject("系统消息：获取新闻错误。\r\nerr: " + err + "\r\nresponse: " + response);
+        resolve("获取新闻错误，这个问题雨女无瓜，是服务器的锅。错误原因：" + JSON.stringify(response.body));
       }
     });
   });
@@ -381,8 +380,8 @@ function Getnews() {
 function GetUserData() {
   //写入用户信息
   var p = new Promise(function (resolve, reject) {
-    db.all("SELECT * FROM users WHERE ip = '" + userip + "'", function (e, sql) {
-      if (!e && sql[0]) {
+    db.all("SELECT * FROM users WHERE ip = '" + userip + "'", function (err, sql) {
+      if (!err && sql[0]) {
         nickname = JSON.stringify(sql[0].nickname);
         var ip = JSON.stringify(sql[0].ip);
         logintimes = JSON.stringify(sql[0].logintimes);
@@ -390,7 +389,7 @@ function GetUserData() {
         userdata = nickname + ip + logintimes + lastlogintime;
         resolve(userdata);
       } else {
-        reject(e);
+        resolve("写入用户信息错误，一般这个错误出现在断连重连的时候，这个问题雨女无瓜，是写代码的锅。错误原因：" + err);
       }
     });
   });
@@ -402,15 +401,15 @@ function Bv2Av(msg) {
   var p = new Promise(function (resolve, reject) {
     request("https://api.bilibili.com/x/web-interface/view?bvid=" + msg, function (err, response, body) {
       body = JSON.parse(body);
-      if (!err && response.statusCode == 200 && body.code == 0) {
+      if (!err && response.statusCode === 200 && body.code === 0) {
         var content = '<a href="https://www.bilibili.com/video/av';
         var av = body.data;
         var av_number = av.aid;
         var av_title = av.title;
-        content = content + av_number + '" target="_blank">感谢您的使用，转换完毕，点击即可跳转至视频：' + av_title + "，av" + av_number + "</a>";
+        content = content + av_number + '" target="_blank">' + av_title + "，av" + av_number + "</a>";
         resolve(content);
       } else {
-        reject("系统消息：bv2av错误。\r\nerr: " + err + "\r\nresponse: " + response);
+        resolve("解析错误，是否输入了不正确的BV号？错误原因：" + JSON.stringify(response.body));
       }
     });
   });

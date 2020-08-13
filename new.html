@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-cn">
   <head>
-    <link rel="icon" href="data:image/ico;base64,aWNv" />
+    <link rel="icon" href="/xiaoye.webp" />
     <meta name="theme-color" content="#ed90ba" />
     <meta http-equiv="X-UA-Compatible" messages="IE=edge,chrome=1" />
     <meta charset="utf-8" />
@@ -161,13 +161,13 @@
       }
     </style>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="//cdn.bootcss.com/echarts/4.6.0/echarts.min.js"></script>
+    <script src="/echarts.min.js"></script>
     <script>
       window.onload = function () {
         var time_now = 0;
         var time_last = 0;
         var socket = io();
-        var arrIcon = ["//gsp0.baidu.com/5aAHeD3nKhI2p27j8IqW0jdnxx1xbK/tb/editor/images/client/image_emoticon25.png", "//i.loli.net/2020/04/16/Hwd6tnIJ2feiTCP.gif"]; //arrIcon[0] = client icon, arrIcon[1] = server icon;
+        var arrIcon = ["/huaji.png", "/xiaoye.webp"]; //arrIcon[0] = client icon, arrIcon[1] = server icon;
         var sorc = 1;
         var liNow = -1;
         var btn = document.getElementById("btn");
@@ -189,7 +189,7 @@
             time_last = new Date().getTime();
           }
           liNow++;
-          if (sorc == 0) {
+          if (sorc === 0) {
             img[liNow].className += "imgright";
             span[liNow].className += "spanright";
             sorc = 1;
@@ -241,7 +241,7 @@
           };
           myChart.setOption(option);
           liNow++;
-          if (sorc == 0) {
+          if (sorc === 0) {
             img[liNow].className += "imgright";
             span[liNow].className += "spanright";
             sorc = 1;
@@ -280,7 +280,7 @@
 
         btn.onclick = function () {
           text.focus();
-          if (text.value == "") {
+          if (text.value === "") {
             alert("不能发送空消息");
           } else {
             socket.emit("typing_over");

@@ -61,10 +61,7 @@ typings/
 .next
 
 # Others
-*.db
 layim/
-db.db
 mobile.html
 index.html
 db.db
-*.db
