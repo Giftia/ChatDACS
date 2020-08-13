@@ -11,6 +11,6 @@
 
 # ChatDACS
 ### 可聊天门禁系统(Chatable Door Access Control System)，一个简单的H5智能门禁系统，使用node.js编写。本项目为全端，与硬件端[ChaosNodeMCU](https://github.com/Giftia/ChaosNodeMCU/)联动为一个完整的门禁项目。远期计划完善为智能家居系统。低耦合，可脱离硬件端作为单独的聊天系统独立运行。
-### [DEMO:http://39.108.239.49](http://39.108.239.49/)
-![39.png](https://i.loli.net/2020/05/14/RgMvPI6NiowTrjC.png)
+### [DEMO:http://chatdacs.giftia.moe/](http://chatdacs.giftia.moe/)
+![chatdacs.giftia.moe.png](https://i.loli.net/2020/08/04/yKI3rxTRXz4lALM.png)
 ### 搭建教程与实装预览：[发表于知乎](https://zhuanlan.zhihu.com/p/67995935)
