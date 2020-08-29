@@ -1,0 +1,159 @@
+* {
+  margin: 0;
+  list-style: none;
+  box-sizing: border-box;
+  font-family: "思源黑体";
+}
+
+body {
+  margin-bottom: 12%;
+  width: 100%;
+  height: 100%;
+  background: #eee;
+}
+
+.header {
+  background: #333;
+  width: 100%;
+  height: 100px;
+  color: #fff;
+  line-height: 70%;
+  font-size: 300%;
+  padding: 3% 5%;
+  position: fixed;
+  top: 0;
+  border-bottom: 1px solid #888;
+  box-shadow: 0 0 5px #888;
+}
+
+.footer {
+  background: #666;
+  padding: 9px 3px 9px 3px;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  border-radius: 10px 10px 0 0;
+}
+
+.footer input {
+  border: 0;
+  width: 90%;
+  margin-right: 0.5%;
+  min-height: 60px;
+  outline: none;
+  text-indent: 10px;
+  border-radius: 6px;
+}
+
+.footer button {
+  min-height: 60px;
+  width: 8.5%;
+  background: DeepSkyBlue;
+  border: none;
+  font-size: 178%;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.footer button:hover {
+  color: DeepSkyBlue;
+  background: Black;
+}
+
+img {
+  width: 10%;
+  height: 10%;
+}
+
+.content {
+  font-size: 300%;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  padding: 8% 5px 5px 5px;
+  text-align: center;
+}
+
+.content li {
+  word-break: break-all;
+  word-wrap: break-word;
+  margin-top: 10px;
+  padding-left: 10px;
+  width: auto;
+  display: block;
+  clear: both;
+  overflow: hidden;
+  padding: 0 10px 0 10px;
+}
+
+.content li img {
+  float: left;
+}
+
+.content li span {
+  background: #7cfc00;
+  padding: 10px;
+  border-radius: 10px;
+  float: left;
+  margin: 6px 10px 0 10px;
+  max-width: 77%;
+  border: 1px solid #ccc;
+  box-shadow: 0 0 3px #ccc;
+}
+
+.content li img.imgleft {
+  float: left;
+}
+
+.content li img.imgright {
+  float: right;
+}
+
+.content li span.spanleft {
+  float: left;
+  background: #fff;
+  text-align: left;
+}
+
+.content li span.spanright {
+  float: right;
+  background: #7cfc00;
+  text-align: left;
+}
+
+#time {
+  background: #ccc;
+  display: inline-block;
+  font-size: 70%;
+  line-height: 70%;
+  text-align: center;
+  color: White;
+  padding: 10px;
+  border-radius: 6px;
+  word-wrap: break-word;
+}
+
+#sysmsg {
+  background: #ccc;
+  display: inline-block;
+  font-size: 70%;
+  text-align: center;
+  color: White;
+  padding: 10px;
+  border-radius: 6px;
+  max-width: 50%;
+  line-height: 150%;
+  word-wrap: break-word;
+}
+
+a {
+  text-decoration: none;
+}
+
+#pic {
+  height: 100%;
+  width: 100%;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+}

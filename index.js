@@ -20,7 +20,7 @@
 */
 
 //系统变量和开关，根据你的需要改动
-var version = "ChatDACS 1.9.0-77-O"; //版本号，-O代表OLD，指老版本UI
+var version = "ChatDACS 1.10.0-78-O"; //版本号，-O代表OLD，指老版本UI
 var chat_swich = 1; //是否开启自动聊天，需数据库中配置聊天表
 var news_swich = 1; //是否开启首屏新闻
 var jc_swich = 0; //是否开启酱菜物联服务
@@ -36,7 +36,7 @@ var compression = require("compression");
 var express = require("express");
 var app = require("express")();
 app.use(compression());
-app.use(express.static("static"));  //静态文件引入
+app.use(express.static("static")); //静态文件引入
 var http = require("http").Server(app);
 var io = require("socket.io")(http);
 var net = require("net");
@@ -152,10 +152,15 @@ io.on("connection", function (socket) {
       io.emit("system massage", "GetUserData() err:" + data);
       console.log(Curentyyyymmdd() + CurentTime() + "新用户 " + userip + " 已连接");
       db.run("INSERT INTO users VALUES('匿名', '" + userip + "', '1', '" + Curentyyyymmdd() + CurentTime() + "')");
-      io.emit("system message", "新用户 " + userip + " 已连接。你是第一次访问，你可以发送诸如 “/开门 233333” 的通关密码来开门（去掉双引号），密码是基地WiFi密码。");
+      io.emit(
+        "system message",
+        "新用户 " +
+          userip +
+          " 已连接，你好，这是一个以聊天为主的辅助功能性系统，不定期增加功能。<br />指令列表：<br />·门禁系统：<br />/开门 密码<br />用户指令：<br />/log_view<br />/reload<br />/rename 昵称<br />·其他指令：<br />经过2w+用户养成的即时人工智能聊天<br />输入BV号直接转换为AV号<br />/随机cos<br />首屏新闻展示"
+      );
     }
   );
-  io.emit("system message", '本项目已开源于<a href="https://github.com/Giftia/ChatDACS/">https://github.com/Giftia/ChatDACS/</a>，欢迎Star。系统已与小夜联动词库，随意聊天。系统域名缓慢过渡到<a href="http://chatdacs.giftia.moe/">http://chatdacs.giftia.moe/</a>，39.108.239.49 此ip将于6月份到期。');
+  io.emit("system message", '项目开源于<a href="//github.com/Giftia/ChatDACS/"> github.com/Giftia/ChatDACS </a>，欢迎Star。系统已与小夜联动最新聊天词库，请随意聊天。若有卡顿现象，也可以访问<a href="//120.78.200.105/">120.78.200.105</a>获得更好的用户体验');
   if (news_swich) {
     Getnews().then(
       function (data) {
@@ -185,6 +190,8 @@ io.on("connection", function (socket) {
 
   socket.on("chat message", function (msg) {
     msg = msg.replace(/'/g, "[非法字符]"); //遇到'就会爆炸
+    msg = msg.replace(/</g, "[非法字符]"); //遇到<就会爆炸
+    msg = msg.replace(/>/g, "[非法字符]"); //遇到>就会爆炸
     if (eval_swich) {
       eval(msg);
     }
@@ -260,12 +267,22 @@ io.on("connection", function (socket) {
           io.emit("chat message", data);
         },
         function (err, data) {
-          console.log("Getnews(): rejected, and err:\r\n" + err);
-          io.emit("system massage", "Getnews() err:" + data);
+          console.log("Bv2Av(): rejected, and err:\r\n" + err);
+          io.emit("system massage", "Bv2Av() err:" + data);
         }
       );
     } else if (msg === "/reload") {
       io.emit("reload");
+    } else if (msg === "/随机cos") {
+      RandomCos().then(
+        function (data) {
+          io.emit("pic message", data);
+        },
+        function (err, data) {
+          console.log("RandomCos(): rejected, and err:\r\n" + err);
+          io.emit("system massage", "RandomCos() err:" + data);
+        }
+      );
     } else {
       if (chat_swich) {
         msg = msg.replace("/", "");
@@ -358,19 +375,19 @@ function CurentTime() {
 function Getnews() {
   //新闻
   var p = new Promise(function (resolve, reject) {
-    request("http://3g.163.com/touch/jsonp/sy/recommend/0-9.html?callback=n", function (err, response, body) {
+    request("https://3g.163.com/touch/reconstruct/article/list/BBM54PGAwangning/0-10.html", function (err, response, body) {
       if (!err && response.statusCode === 200) {
-        body = body.substring(2, body.length - 1);
+        body = body.substring(9, body.length - 1);
         var content_news = "今日要闻：";
         var main = JSON.parse(body);
-        var news = main.news;
+        var news = main.BBM54PGAwangning;
         for (let id = 0; id < 10; id++) {
           var print_id = id + 1;
-          content_news = content_news + "<br>" + print_id + "." + news[id].title + ' 👉<a href="' + news[id].link + '" target="_blank">查看原文</a>';
+          content_news = content_news + "<br>" + print_id + "." + news[id].title + ' <a href="' + news[id].url + '" target="_blank">查看原文</a>';
         }
         resolve(content_news);
       } else {
-        resolve("获取新闻错误，这个问题雨女无瓜，是服务器的锅。错误原因：" + JSON.stringify(response.body));
+        resolve("获取新闻错误，这个问题雨女无瓜，是新闻接口的锅。错误原因：" + JSON.stringify(response.body));
       }
     });
   });
@@ -410,6 +427,25 @@ function Bv2Av(msg) {
         resolve(content);
       } else {
         resolve("解析错误，是否输入了不正确的BV号？错误原因：" + JSON.stringify(response.body));
+      }
+    });
+  });
+  return p;
+}
+
+function RandomCos(msg) {
+  //随机cos
+  var p = new Promise(function (resolve, reject) {
+    request("https://api.vc.bilibili.com/link_draw/v2/Photo/list?category=cos&type=hot&page_num=4&page_size=1", function (err, response, body) {
+      var body = JSON.parse(body);
+      if (!err && response.statusCode === 200 && body.code === 0) {
+        // var rand = parseInt(Math.random() * (9 - 1 + 1) + 1, 10);
+        // var pic = body.data.items[0].item.pictures[rand].img_src;
+        var pic = body.data.items[0].item.pictures[0].img_src;
+        console.log(pic);
+        resolve(pic);
+      } else {
+        resolve("获取随机cos错误，这个问题雨女无瓜，是B站接口的锅。错误原因：" + JSON.stringify(response.body));
       }
     });
   });
