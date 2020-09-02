@@ -20,7 +20,7 @@
 */
 
 //系统变量和开关，根据你的需要改动
-var version = "ChatDACS 1.10.0-78-O"; //版本号，-O代表OLD，指老版本UI
+var version = "ChatDACS 1.10.1-79-O"; //版本号，-O代表OLD，指老版本UI
 var chat_swich = 1; //是否开启自动聊天，需数据库中配置聊天表
 var news_swich = 1; //是否开启首屏新闻
 var jc_swich = 0; //是否开启酱菜物联服务
@@ -28,6 +28,7 @@ var password = "233333"; //配置开门密码
 var apikey = "2333333333333333"; //换成你自己申请的 jcck_apikey，非必须
 var eval_swich = 0; //是否开启动态注入和执行，便于调试，但开启有极大风险，最好完全避免启用它，特别是在生产环境部署时
 var html = "/new.html"; //前端页面路径
+var help = "<br />指令列表：<br />·门禁系统：<br />/开门 密码<br />用户指令：<br />/log_view<br />/reload<br />/rename 昵称<br />·其他指令：<br />经过2w+用户养成的即时人工智能聊天<br />输入BV号直接转换为AV号<br />/随机cos<br />/随机买家秀<br />首屏新闻展示";
 
 /* 好了！请不要再继续编辑。请保存本文件。使用愉快！ */
 
@@ -130,7 +131,7 @@ io.on("connection", function (socket) {
   io.emit("version", version);
   GetUserData().then(
     function (data) {
-      io.emit("chat massage", data);
+      io.emit("chat message", data);
       if (userip === " " || Number.isNaN(userip) || userip === undefined || userip === "") {
         userip = "未知ip";
       }
@@ -149,18 +150,13 @@ io.on("connection", function (socket) {
       if (userip === " " || Number.isNaN(userip) || userip === undefined || userip === "") {
         userip = "未知ip";
       }
-      io.emit("system massage", "GetUserData() err:" + data);
+      io.emit("system message", "GetUserData() err:" + data);
       console.log(Curentyyyymmdd() + CurentTime() + "新用户 " + userip + " 已连接");
       db.run("INSERT INTO users VALUES('匿名', '" + userip + "', '1', '" + Curentyyyymmdd() + CurentTime() + "')");
-      io.emit(
-        "system message",
-        "新用户 " +
-          userip +
-          " 已连接，你好，这是一个以聊天为主的辅助功能性系统，不定期增加功能。<br />指令列表：<br />·门禁系统：<br />/开门 密码<br />用户指令：<br />/log_view<br />/reload<br />/rename 昵称<br />·其他指令：<br />经过2w+用户养成的即时人工智能聊天<br />输入BV号直接转换为AV号<br />/随机cos<br />首屏新闻展示"
-      );
+      io.emit("system message", "新用户 " + userip + " 已连接，你好，这是一个以聊天为主的辅助功能性系统，不定期增加功能。" + help);
     }
   );
-  io.emit("system message", '项目开源于<a href="//github.com/Giftia/ChatDACS/"> github.com/Giftia/ChatDACS </a>，欢迎Star。系统已与小夜联动最新聊天词库，请随意聊天。若有卡顿现象，也可以访问<a href="//120.78.200.105/">120.78.200.105</a>获得更好的用户体验');
+  io.emit("system message", '项目开源于<a href="//github.com/Giftia/ChatDACS/"> github.com/Giftia/ChatDACS </a>，欢迎Star。系统已与小夜联动最新聊天词库，请随意聊天。若有卡顿现象，也可以访问<a href="//120.78.200.105/">120.78.200.105</a>获得更好的用户体验。帮助请发送 /帮助。');
   if (news_swich) {
     Getnews().then(
       function (data) {
@@ -168,7 +164,7 @@ io.on("connection", function (socket) {
       },
       function (err, data) {
         console.log("Getnews(): rejected, and err:\r\n" + err);
-        io.emit("system massage", "Getnews() err:" + data);
+        io.emit("system message", "Getnews() err:" + data);
       }
     );
   }
@@ -268,11 +264,13 @@ io.on("connection", function (socket) {
         },
         function (err, data) {
           console.log("Bv2Av(): rejected, and err:\r\n" + err);
-          io.emit("system massage", "Bv2Av() err:" + data);
+          io.emit("system message", "Bv2Av() err:" + data);
         }
       );
     } else if (msg === "/reload") {
       io.emit("reload");
+    } else if (msg === "/帮助") {
+      io.emit("chat message", help);
     } else if (msg === "/随机cos") {
       RandomCos().then(
         function (data) {
@@ -280,7 +278,17 @@ io.on("connection", function (socket) {
         },
         function (err, data) {
           console.log("RandomCos(): rejected, and err:\r\n" + err);
-          io.emit("system massage", "RandomCos() err:" + data);
+          io.emit("system message", "RandomCos() err:" + data);
+        }
+      );
+    } else if (msg === "/随机买家秀") {
+      RandomTbshow().then(
+        function (data) {
+          io.emit("pic message", data);
+        },
+        function (err, data) {
+          console.log("RandomTbshow(): rejected, and err:\r\n" + err);
+          io.emit("system message", "RandomTbshow() err:" + data);
         }
       );
     } else {
@@ -448,6 +456,15 @@ function RandomCos(msg) {
         resolve("获取随机cos错误，这个问题雨女无瓜，是B站接口的锅。错误原因：" + JSON.stringify(response.body));
       }
     });
+  });
+  return p;
+}
+
+function RandomTbshow() {
+  //随机买家秀
+  var p = new Promise(function (resolve, reject) {
+    var pic = "https://api.66mz8.com/api/rand.tbimg.php";
+    resolve(pic);
   });
   return p;
 }
