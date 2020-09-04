@@ -20,7 +20,7 @@
 */
 
 //系统变量和开关，根据你的需要改动
-var version = "ChatDACS 1.10.1-79-O"; //版本号，-O代表OLD，指老版本UI
+var version = "ChatDACS 1.11.1-91-O"; //版本号，-O代表OLD，指老版本UI
 var chat_swich = 1; //是否开启自动聊天，需数据库中配置聊天表
 var news_swich = 1; //是否开启首屏新闻
 var jc_swich = 0; //是否开启酱菜物联服务
@@ -45,6 +45,7 @@ var request = require("request");
 var sqlite3 = require("sqlite3").verbose();
 var db = new sqlite3.Database("db.db"); //数据库位置，默认与index.js同目录
 var colors = require("colors");
+let fs = require("fs");
 
 //debug颜色配置
 colors.setTheme({
@@ -131,7 +132,7 @@ io.on("connection", function (socket) {
   io.emit("version", version);
   GetUserData().then(
     function (data) {
-      io.emit("chat message", data);
+      console.log(data);
       if (userip === " " || Number.isNaN(userip) || userip === undefined || userip === "") {
         userip = "未知ip";
       }
@@ -217,7 +218,7 @@ io.on("connection", function (socket) {
             var time = JSON.stringify(sql[i].time);
             var ip = JSON.stringify(sql[i].ip);
             var message = JSON.stringify(sql[i].message);
-            data = data + "<br><br>" + time + ip + message;
+            data += "<br><br>" + time + ip + message;
           }
           console.log(sql);
           io.emit("chat message", "共有" + sql.length + "条记录：" + data);
@@ -297,7 +298,7 @@ io.on("connection", function (socket) {
         db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg + "%'", function (e, sql) {
           if (!e && sql.length > 0) {
             console.log("对于对话: " + msg + "，匹配到 " + sql.length + " 条回复");
-            var ans = Math.floor(Math.random() * (sql.length - 1 - 0 + 1) + 0);
+            var ans = Math.floor(Math.random() * sql.length);
             var answer = JSON.stringify(sql[ans].answer);
             console.log("随机选取第" + ans + "条回复：" + sql[ans].answer);
             io.emit("chat message", answer);
@@ -391,7 +392,7 @@ function Getnews() {
         var news = main.BBM54PGAwangning;
         for (let id = 0; id < 10; id++) {
           var print_id = id + 1;
-          content_news = content_news + "<br>" + print_id + "." + news[id].title + ' <a href="' + news[id].url + '" target="_blank">查看原文</a>';
+          content_news += "<br>" + print_id + "." + news[id].title + ' <a href="' + news[id].url + '" target="_blank">查看原文</a>';
         }
         resolve(content_news);
       } else {
@@ -409,6 +410,9 @@ function GetUserData() {
       if (!err && sql[0]) {
         nickname = JSON.stringify(sql[0].nickname);
         var ip = JSON.stringify(sql[0].ip);
+        if (ip === " " || Number.isNaN(ip) || ip === undefined || ip === "") {
+          ip = "未知ip";
+        }
         logintimes = JSON.stringify(sql[0].logintimes);
         lastlogintime = JSON.stringify(sql[0].lastlogintime);
         userdata = nickname + ip + logintimes + lastlogintime;
@@ -431,7 +435,7 @@ function Bv2Av(msg) {
         var av = body.data;
         var av_number = av.aid;
         var av_title = av.title;
-        content = content + av_number + '" target="_blank">' + av_title + "，av" + av_number + "</a>";
+        content += av_number + '" target="_blank">' + av_title + "，av" + av_number + "</a>";
         resolve(content);
       } else {
         resolve("解析错误，是否输入了不正确的BV号？错误原因：" + JSON.stringify(response.body));
@@ -441,17 +445,22 @@ function Bv2Av(msg) {
   return p;
 }
 
-function RandomCos(msg) {
+function RandomCos() {
   //随机cos
   var p = new Promise(function (resolve, reject) {
-    request("https://api.vc.bilibili.com/link_draw/v2/Photo/list?category=cos&type=hot&page_num=4&page_size=1", function (err, response, body) {
-      var body = JSON.parse(body);
+    var rand_page_num = Math.floor(Math.random() * 499);
+    request("https://api.vc.bilibili.com/link_draw/v2/Photo/list?category=cos&type=hot&page_num=" + rand_page_num + "&page_size=1", function (err, response, body) {
+      body = JSON.parse(body);
       if (!err && response.statusCode === 200 && body.code === 0) {
-        // var rand = parseInt(Math.random() * (9 - 1 + 1) + 1, 10);
-        // var pic = body.data.items[0].item.pictures[rand].img_src;
-        var pic = body.data.items[0].item.pictures[0].img_src;
-        console.log(pic);
-        resolve(pic);
+        var obj = body.data.items[0].item.pictures;
+        var count = Object.keys(obj).length;
+        var picUrl = obj[Math.floor(Math.random() * count)].img_src;
+        console.log(picUrl);
+        request(picUrl).pipe(
+          fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (err) => {
+            resolve(`/images/${picUrl.split("/").pop()}`);
+          })
+        ); //绕过防盗链，保存为本地图片
       } else {
         resolve("获取随机cos错误，这个问题雨女无瓜，是B站接口的锅。错误原因：" + JSON.stringify(response.body));
       }
