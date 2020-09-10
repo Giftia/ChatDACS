@@ -20,7 +20,7 @@
 */
 
 //系统变量和开关，根据你的需要改动
-var version = "ChatDACS 1.11.1-91-O"; //版本号，-O代表OLD，指老版本UI
+var version = "ChatDACS 1.12.0-92-O"; //版本号，-O代表OLD，指老版本UI
 var chat_swich = 1; //是否开启自动聊天，需数据库中配置聊天表
 var news_swich = 1; //是否开启首屏新闻
 var jc_swich = 0; //是否开启酱菜物联服务
@@ -28,7 +28,7 @@ var password = "233333"; //配置开门密码
 var apikey = "2333333333333333"; //换成你自己申请的 jcck_apikey，非必须
 var eval_swich = 0; //是否开启动态注入和执行，便于调试，但开启有极大风险，最好完全避免启用它，特别是在生产环境部署时
 var html = "/new.html"; //前端页面路径
-var help = "<br />指令列表：<br />·门禁系统：<br />/开门 密码<br />用户指令：<br />/log_view<br />/reload<br />/rename 昵称<br />·其他指令：<br />经过2w+用户养成的即时人工智能聊天<br />输入BV号直接转换为AV号<br />/随机cos<br />/随机买家秀<br />首屏新闻展示";
+var help = "<br />指令列表：<br />·门禁系统：<br />/开门 密码<br />用户指令：<br />/log_view<br />/reload<br />/rename 昵称<br />·其他指令：<br />经过2w+用户养成的即时人工智能聊天<br />输入BV号直接转换为AV号<br />/随机cos<br />/随机买家秀<br />/随机冷知识<br />首屏新闻展示";
 
 /* 好了！请不要再继续编辑。请保存本文件。使用愉快！ */
 
@@ -292,6 +292,16 @@ io.on("connection", function (socket) {
           io.emit("system message", "RandomTbshow() err:" + data);
         }
       );
+    } else if (msg === "/随机冷知识") {
+      RandomHomeword().then(
+        function (data) {
+          io.emit("chat message", data);
+        },
+        function (err, data) {
+          console.log("RandomHomeword(): rejected, and err:\r\n" + err);
+          io.emit("system message", "RandomHomeword() err:" + data);
+        }
+      );
     } else {
       if (chat_swich) {
         msg = msg.replace("/", "");
@@ -474,6 +484,24 @@ function RandomTbshow() {
   var p = new Promise(function (resolve, reject) {
     var pic = "https://api.66mz8.com/api/rand.tbimg.php";
     resolve(pic);
+  });
+  return p;
+}
+
+function RandomHomeword() {
+  //随机冷知识
+  var p = new Promise(function (resolve, reject) {
+    request("https://passport.csdn.net/v1/api/get/homeword", function (err, response, body) {
+      body = JSON.parse(body);
+      if (!err) {
+        var title = "<h2>" + body.data.title + "</h2>";
+        var content = body.data.content;
+        var count = body.data.count;
+        resolve(title + content + "<br />—— 有" + count + "人陪你一起已读");
+      } else {
+        resolve("获取随机冷知识错误，这个问题雨女无瓜，是CSDN接口的锅。错误原因：" + JSON.stringify(response.body));
+      }
+    });
   });
   return p;
 }
