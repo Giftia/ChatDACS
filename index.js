@@ -6,6 +6,8 @@
   等待进度完成后运行:
     cnpm i
   等待进度完成后运行:
+    node index.js
+  或：
     pm2 start . --no-daemon
   访问127.0.0.1,有公网或穿透那更好,尽情使用吧~
   隐藏界面请按:  Ctrl + C
@@ -20,7 +22,7 @@
 */
 
 //系统变量和开关，根据你的需要改动
-var version = "ChatDACS 1.12.0-92-O"; //版本号，-O代表OLD，指老版本UI
+var version = "ChatDACS 1.13.0-94-O"; //版本号，-O代表OLD，指老版本UI
 var chat_swich = 1; //是否开启自动聊天，需数据库中配置聊天表
 var news_swich = 1; //是否开启首屏新闻
 var jc_swich = 0; //是否开启酱菜物联服务

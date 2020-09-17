@@ -6,12 +6,12 @@
   "dependencies": {
     "colors": "^1.4.0",
     "express": "^4.17.1",
-    "npm-check-updates": "^4.1.2",
+    "npm-check-updates": "^9.0.1",
     "request": "^2.88.2",
     "socket.io": "^2.3.0",
-    "sqlite3": "^4.1.1",
+    "sqlite3": "^5.0.0",
     "compression": "^1.7.4",
-    "pm2": "^4.2.3"
+    "pm2": "^4.4.1"
   },
   "repository": {
     "type": "git",

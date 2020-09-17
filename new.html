@@ -120,6 +120,10 @@
           document.cookie = "cookie = " + msg;
         });
 
+        socket.on("reload", function () {
+          window.location.reload();
+        });
+
         socket.on("typing", function (msg) {
           if (text != "") typing_status.innerHTML = msg;
         });
@@ -129,9 +133,11 @@
         };
 
         btn.onclick = function () {
-          text.focus();
           if (text.value === "") {
-            alert("不能发送空消息");
+            socket.emit("chat message", text.placeholder);
+            sorc = 0;
+            window.scrollTo(0, document.body.scrollHeight);
+            return false;
           } else {
             socket.emit("typing_over");
             socket.emit("chat message", text.value);
@@ -140,6 +146,7 @@
             window.scrollTo(0, document.body.scrollHeight);
             return false;
           }
+          text.focus();
         };
       };
 
@@ -177,9 +184,23 @@
     <ul class="content"></ul>
     <div class="footer">
       <form>
-        <input id="text" placeholder="BV号转AV号功能请直接发送BV号 BVbalabalaba" autocomplete="off" value="" maxlength="110" style="font-size: 30px" autofocus oninput="typing()" />
+        <input id="text" placeholder="/帮助" autocomplete="off" value="" maxlength="110" style="font-size: 30px" autofocus oninput="typing()" />
         <button id="btn">发送</button>
       </form>
     </div>
+  <script src="/superplaceholder.min.js"></script>
+  <script>
+    superplaceholder({
+      el: document.querySelector('input'),
+      sentences: ['/开门 233333', '/log_view', '/reload', '/rename 昵称', 'BV1Es411U7cn', '/随机cos', '/随机买家秀', '/随机冷知识', '主人，请叫我小夜', '/帮助'],
+      options: {
+        letterDelay: 100,
+        sentenceDelay: 2000,
+        loop: true,
+        shuffle: true,
+        startOnFocus: false
+      }
+    });
+  </script>
   </body>
 </html>
