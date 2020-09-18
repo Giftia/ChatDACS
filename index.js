@@ -1,19 +1,27 @@
 /*
+作者：Giftina, https://giftia.moe
+
 初次使用请看:
-  首先安装Node.js
-  接着启动cmd,进入代码根目录运行:
+  首先去 https://nodejs.org/zh-cn/ 安装长期支持版Node.js
+  接着启动cmd或powershell,进入代码根目录运行:
     npm install -g cnpm --registry=https://registry.npm.taobao.org
   等待进度完成后运行:
-    cnpm i
+    cnpm install
   等待进度完成后运行:
     node index.js
-  或：
-    pm2 start . --no-daemon
-  访问127.0.0.1,有公网或穿透那更好,尽情使用吧~
+  或在windows系统下懒人启动:
+    双击目录下的 run.bat
+  或使用pm2守护神启动:
+    pm2 start index.js
+  访问127.0.0.1即可体验,有公网或穿透那更好,尽情使用吧~
+
+  若使用pm2守护神启动:
   隐藏界面请按:  Ctrl + C
   查看监视器请运行:  pm2 monit
   完全关闭请运行:  pm2 stop all
-  每当次版本号迭代,如 1.1.0 --> 1.2.0,意味着需要更新依赖,请运行:  ncu -u  ,等待进度完成后运行:  cnpm i
+
+  每当次版本号迭代,如 1.1.0 --> 1.2.0,意味着需要更新依赖,请运行:  ncu -u  ,等待进度完成后运行:  cnpm install
+  出现任何缺失的依赖包请运行:  cnpm install 缺失的包名
   版本号的改变规律,如 1.2.3-45,形如 A.B.C-D:
     A 大版本号,当整端重构或出现不向后兼容的改变时增加A,更新代码需要更新依赖
     B 次版本号,功能更新,当功能增加、修改或删除时增加B,更新代码需要更新依赖
@@ -21,16 +29,17 @@
     D 迭代号,表示Github commits 即代码提交次数,属于非必要更新,可以不更新代码
 */
 
-//系统变量和开关，根据你的需要改动
-var version = "ChatDACS 1.13.0-94-O"; //版本号，-O代表OLD，指老版本UI
-var chat_swich = 1; //是否开启自动聊天，需数据库中配置聊天表
-var news_swich = 1; //是否开启首屏新闻
-var jc_swich = 0; //是否开启酱菜物联服务
-var password = "233333"; //配置开门密码
-var apikey = "2333333333333333"; //换成你自己申请的 jcck_apikey，非必须
-var eval_swich = 0; //是否开启动态注入和执行，便于调试，但开启有极大风险，最好完全避免启用它，特别是在生产环境部署时
-var html = "/new.html"; //前端页面路径
-var help = "<br />指令列表：<br />·门禁系统：<br />/开门 密码<br />用户指令：<br />/log_view<br />/reload<br />/rename 昵称<br />·其他指令：<br />经过2w+用户养成的即时人工智能聊天<br />输入BV号直接转换为AV号<br />/随机cos<br />/随机买家秀<br />/随机冷知识<br />首屏新闻展示";
+//系统参数和开关，根据你的需要改动
+const version = "ChatDACS 1.13.1-95"; //版本号
+const chat_swich = 1; //是否开启自动聊天，需数据库中配置聊天表
+const news_swich = 1; //是否开启首屏新闻
+const jc_swich = 0; //是否开启酱菜物联服务
+const password = "233333"; //配置开门密码
+const apikey = "2333333333333333"; //换成你自己申请的 jcck_apikey，非必须
+const eval_swich = 0; //是否开启动态注入和执行，便于调试，但开启有极大风险，最好完全避免启用它，特别是在生产环境部署时
+const html = "/new.html"; //前端页面路径
+const help =
+  "<br />指令列表：<br />·门禁系统：<br />/开门 密码<br />用户指令：<br />/log_view<br />/reload<br />/rename 昵称<br />·其他指令：<br />经过2w+用户养成的即时人工智能聊天<br />输入BV号直接转换为AV号<br />/随机cos<br />/随机买家秀<br />/随机冷知识<br />首屏新闻展示";
 
 /* 好了！请不要再继续编辑。请保存本文件。使用愉快！ */
 
@@ -75,8 +84,12 @@ var rename_reg = new RegExp("^/rename [\u4e00-\u9fa5]*$"); //只允许汉字昵�
 var bv2av__reg = new RegExp("^[a-zA-Z0-9]{10,12}"); //匹配bv号
 
 //若表不存在则新建表
-db.run("CREATE TABLE IF NOT EXISTS messages(yyyymmdd char, time char, ip char, message char)");
-db.run("CREATE TABLE IF NOT EXISTS users(nickname char, ip char, logintimes long, lastlogintime char)");
+db.run(
+  "CREATE TABLE IF NOT EXISTS messages(yyyymmdd char, time char, ip char, message char)"
+);
+db.run(
+  "CREATE TABLE IF NOT EXISTS users(nickname char, ip char, logintimes long, lastlogintime char)"
+);
 
 console.log(version.ver);
 
@@ -106,8 +119,12 @@ if (eval_swich) {
 }
 
 http.listen(80, function () {
-  console.log(Curentyyyymmdd() + CurentTime() + "配置完毕，系统启动，正在监听于端口80");
+  console.log(
+    Curentyyyymmdd() + CurentTime() + "配置完毕，系统启动，正在监听于端口80"
+  );
 });
+
+// ——————————————————————————————————————————————————————————————————————————————————————————————————————————
 
 app.get("/", function (req, res) {
   var ip =
@@ -122,7 +139,12 @@ app.get("/", function (req, res) {
   }
   ip = ip.replace("::ffff:", "");
   userip = ip;
-  if (userip === " " || Number.isNaN(userip) || userip === undefined || userip === "") {
+  if (
+    userip === " " ||
+    Number.isNaN(userip) ||
+    userip === undefined ||
+    userip === ""
+  ) {
     userip = "未知ip";
   }
   res.sendFile(__dirname + html);
@@ -135,14 +157,50 @@ io.on("connection", function (socket) {
   GetUserData().then(
     function (data) {
       console.log(data);
-      if (userip === " " || Number.isNaN(userip) || userip === undefined || userip === "") {
+      if (
+        userip === " " ||
+        Number.isNaN(userip) ||
+        userip === undefined ||
+        userip === ""
+      ) {
         userip = "未知ip";
       }
-      console.log(Curentyyyymmdd() + CurentTime() + "用户 " + nickname + "(" + userip + ")" + " 已连接");
-      db.run("UPDATE users SET logintimes = logintimes + 1 WHERE ip ='" + userip + "'");
-      db.run("UPDATE users SET lastlogintime = '" + Curentyyyymmdd() + CurentTime() + "' WHERE ip ='" + userip + "'");
+      console.log(
+        Curentyyyymmdd() +
+          CurentTime() +
+          "用户 " +
+          nickname +
+          "(" +
+          userip +
+          ")" +
+          " 已连接"
+      );
+      db.run(
+        "UPDATE users SET logintimes = logintimes + 1 WHERE ip ='" +
+          userip +
+          "'"
+      );
+      db.run(
+        "UPDATE users SET lastlogintime = '" +
+          Curentyyyymmdd() +
+          CurentTime() +
+          "' WHERE ip ='" +
+          userip +
+          "'"
+      );
       logintimes++;
-      io.emit("system message", "欢迎回来，" + nickname + "(" + userip + ")" + " 。这是你第" + logintimes + "次访问。上次访问时间：" + lastlogintime);
+      io.emit(
+        "system message",
+        "欢迎回来，" +
+          nickname +
+          "(" +
+          userip +
+          ")" +
+          " 。这是你第" +
+          logintimes +
+          "次访问。上次访问时间：" +
+          lastlogintime
+      );
       userdata = "";
       nickname = "";
       logintimes = "";
@@ -150,16 +208,39 @@ io.on("connection", function (socket) {
     },
     function (err, data) {
       console.log("GetUserData(): rejected, and err:\r\n" + err);
-      if (userip === " " || Number.isNaN(userip) || userip === undefined || userip === "") {
+      if (
+        userip === " " ||
+        Number.isNaN(userip) ||
+        userip === undefined ||
+        userip === ""
+      ) {
         userip = "未知ip";
       }
       io.emit("system message", "GetUserData() err:" + data);
-      console.log(Curentyyyymmdd() + CurentTime() + "新用户 " + userip + " 已连接");
-      db.run("INSERT INTO users VALUES('匿名', '" + userip + "', '1', '" + Curentyyyymmdd() + CurentTime() + "')");
-      io.emit("system message", "新用户 " + userip + " 已连接，你好，这是一个以聊天为主的辅助功能性系统，不定期增加功能。" + help);
+      console.log(
+        Curentyyyymmdd() + CurentTime() + "新用户 " + userip + " 已连接"
+      );
+      db.run(
+        "INSERT INTO users VALUES('匿名', '" +
+          userip +
+          "', '1', '" +
+          Curentyyyymmdd() +
+          CurentTime() +
+          "')"
+      );
+      io.emit(
+        "system message",
+        "新用户 " +
+          userip +
+          " 已连接，你好，这是一个以聊天为主的辅助功能性系统，不定期增加功能。" +
+          help
+      );
     }
   );
-  io.emit("system message", '项目开源于<a href="//github.com/Giftia/ChatDACS/"> github.com/Giftia/ChatDACS </a>，欢迎Star。系统已与小夜联动最新聊天词库，请随意聊天。若有卡顿现象，也可以访问<a href="//120.78.200.105/">120.78.200.105</a>获得更好的用户体验。帮助请发送 /帮助。');
+  io.emit(
+    "system message",
+    '项目开源于<a href="//github.com/Giftia/ChatDACS/"> github.com/Giftia/ChatDACS </a>，欢迎Star。系统已与小夜联动最新聊天词库，请随意聊天。若有卡顿现象，也可以访问<a href="//120.78.200.105/">120.78.200.105</a>获得更好的用户体验。帮助请发送 /帮助。'
+  );
   if (news_swich) {
     Getnews().then(
       function (data) {
@@ -175,7 +256,9 @@ io.on("connection", function (socket) {
   socket.on("disconnect", function () {
     onlineusers--;
     io.emit("onlineusers", onlineusers);
-    console.log(Curentyyyymmdd() + CurentTime() + "用户 " + userip + " 已断开连接");
+    console.log(
+      Curentyyyymmdd() + CurentTime() + "用户 " + userip + " 已断开连接"
+    );
     io.emit("system message", "用户 " + userip + " 已断开连接");
   });
 
@@ -194,9 +277,20 @@ io.on("connection", function (socket) {
     if (eval_swich) {
       eval(msg);
     }
-    var receive_debug = Curentyyyymmdd() + CurentTime() + "收到用户 " + userip + " 消息: " + msg;
+    var receive_debug =
+      Curentyyyymmdd() + CurentTime() + "收到用户 " + userip + " 消息: " + msg;
     console.log(receive_debug.warn);
-    db.run("INSERT INTO messages VALUES('" + Curentyyyymmdd() + "', '" + CurentTime() + "', '" + userip + "', '" + msg + "')");
+    db.run(
+      "INSERT INTO messages VALUES('" +
+        Curentyyyymmdd() +
+        "', '" +
+        CurentTime() +
+        "', '" +
+        userip +
+        "', '" +
+        msg +
+        "')"
+    );
     io.emit("chat message", nickname + "(" + userip + ")" + " : " + msg);
 
     if (door_reg.test(msg)) {
@@ -204,8 +298,13 @@ io.on("connection", function (socket) {
         if (msg === "/开门 " + password) {
           Opendoor();
           io.emit("chat message", "密码已确认，开门指令已发送");
-          io.emit("chat message", "计算机科创基地提醒您：道路千万条，安全第一条。开门不关门，亲人两行泪。");
-          console.log(Curentyyyymmdd() + CurentTime() + "用户 " + userip + " 开门操作");
+          io.emit(
+            "chat message",
+            "计算机科创基地提醒您：道路千万条，安全第一条。开门不关门，亲人两行泪。"
+          );
+          console.log(
+            Curentyyyymmdd() + CurentTime() + "用户 " + userip + " 开门操作"
+          );
         } else {
           io.emit("chat message", "密码错误，请重试");
         }
@@ -242,23 +341,28 @@ io.on("connection", function (socket) {
     }*/ else if (
       rename_reg.test(msg)
     ) {
-      db.run("UPDATE users SET nickname = '" + msg + "' WHERE ip ='" + userip + "'");
+      db.run(
+        "UPDATE users SET nickname = '" + msg + "' WHERE ip ='" + userip + "'"
+      );
       io.emit("chat message", "昵称重命名完毕");
     } else if (msg === "/log_view") {
-      db.all("SELECT yyyymmdd, COUNT(*) As count FROM messages Group by yyyymmdd", function (e, sql) {
-        console.log(sql);
-        var data = [];
-        if (!e) {
-          for (let i = 0; i < sql.length; i++) {
-            data.push([sql[i].yyyymmdd, sql[i].count]);
+      db.all(
+        "SELECT yyyymmdd, COUNT(*) As count FROM messages Group by yyyymmdd",
+        function (e, sql) {
+          console.log(sql);
+          var data = [];
+          if (!e) {
+            for (let i = 0; i < sql.length; i++) {
+              data.push([sql[i].yyyymmdd, sql[i].count]);
+            }
+            console.log(data);
+            io.emit("chart message", data);
+          } else {
+            console.log(e);
+            io.emit("chat message", e);
           }
-          console.log(data);
-          io.emit("chart message", data);
-        } else {
-          console.log(e);
-          io.emit("chat message", e);
         }
-      });
+      );
     } else if (bv2av__reg.test(msg)) {
       msg = msg.replace(" ", "");
       Bv2Av(msg).then(
@@ -307,9 +411,14 @@ io.on("connection", function (socket) {
     } else {
       if (chat_swich) {
         msg = msg.replace("/", "");
-        db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg + "%'", function (e, sql) {
+        db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg + "%'", function (
+          e,
+          sql
+        ) {
           if (!e && sql.length > 0) {
-            console.log("对于对话: " + msg + "，匹配到 " + sql.length + " 条回复");
+            console.log(
+              "对于对话: " + msg + "，匹配到 " + sql.length + " 条回复"
+            );
             var ans = Math.floor(Math.random() * sql.length);
             var answer = JSON.stringify(sql[ans].answer);
             console.log("随机选取第" + ans + "条回复：" + sql[ans].answer);
@@ -336,7 +445,10 @@ function Connjc() {
   });
   client.on("error", function (err) {
     io.emit("酱菜物联服务绑定错误，错误为 %s", err.code);
-    console.log(Curentyyyymmdd() + CurentTime() + "酱菜物联服务绑定错误，错误为 %s", err.code);
+    console.log(
+      Curentyyyymmdd() + CurentTime() + "酱菜物联服务绑定错误，错误为 %s",
+      err.code
+    );
     client.destroy();
   });
 }
@@ -396,21 +508,34 @@ function CurentTime() {
 function Getnews() {
   //新闻
   var p = new Promise(function (resolve, reject) {
-    request("https://3g.163.com/touch/reconstruct/article/list/BBM54PGAwangning/0-10.html", function (err, response, body) {
-      if (!err && response.statusCode === 200) {
-        body = body.substring(9, body.length - 1);
-        var content_news = "今日要闻：";
-        var main = JSON.parse(body);
-        var news = main.BBM54PGAwangning;
-        for (let id = 0; id < 10; id++) {
-          var print_id = id + 1;
-          content_news += "<br>" + print_id + "." + news[id].title + ' <a href="' + news[id].url + '" target="_blank">查看原文</a>';
+    request(
+      "https://3g.163.com/touch/reconstruct/article/list/BBM54PGAwangning/0-10.html",
+      function (err, response, body) {
+        if (!err && response.statusCode === 200) {
+          body = body.substring(9, body.length - 1);
+          var content_news = "今日要闻：";
+          var main = JSON.parse(body);
+          var news = main.BBM54PGAwangning;
+          for (let id = 0; id < 10; id++) {
+            var print_id = id + 1;
+            content_news +=
+              "<br>" +
+              print_id +
+              "." +
+              news[id].title +
+              ' <a href="' +
+              news[id].url +
+              '" target="_blank">查看原文</a>';
+          }
+          resolve(content_news);
+        } else {
+          resolve(
+            "获取新闻错误，这个问题雨女无瓜，是新闻接口的锅。错误原因：" +
+              JSON.stringify(response.body)
+          );
         }
-        resolve(content_news);
-      } else {
-        resolve("获取新闻错误，这个问题雨女无瓜，是新闻接口的锅。错误原因：" + JSON.stringify(response.body));
       }
-    });
+    );
   });
   return p;
 }
@@ -418,7 +543,10 @@ function Getnews() {
 function GetUserData() {
   //写入用户信息
   var p = new Promise(function (resolve, reject) {
-    db.all("SELECT * FROM users WHERE ip = '" + userip + "'", function (err, sql) {
+    db.all("SELECT * FROM users WHERE ip = '" + userip + "'", function (
+      err,
+      sql
+    ) {
       if (!err && sql[0]) {
         nickname = JSON.stringify(sql[0].nickname);
         var ip = JSON.stringify(sql[0].ip);
@@ -430,7 +558,10 @@ function GetUserData() {
         userdata = nickname + ip + logintimes + lastlogintime;
         resolve(userdata);
       } else {
-        resolve("写入用户信息错误，一般这个错误出现在断连重连的时候，这个问题雨女无瓜，是写代码的锅。错误原因：" + err);
+        resolve(
+          "写入用户信息错误，一般这个错误出现在断连重连的时候，这个问题雨女无瓜，是写代码的锅。错误原因：" +
+            err
+        );
       }
     });
   });
@@ -440,19 +571,31 @@ function GetUserData() {
 function Bv2Av(msg) {
   //BV转AV
   var p = new Promise(function (resolve, reject) {
-    request("https://api.bilibili.com/x/web-interface/view?bvid=" + msg, function (err, response, body) {
-      body = JSON.parse(body);
-      if (!err && response.statusCode === 200 && body.code === 0) {
-        var content = '<a href="https://www.bilibili.com/video/av';
-        var av = body.data;
-        var av_number = av.aid;
-        var av_title = av.title;
-        content += av_number + '" target="_blank">' + av_title + "，av" + av_number + "</a>";
-        resolve(content);
-      } else {
-        resolve("解析错误，是否输入了不正确的BV号？错误原因：" + JSON.stringify(response.body));
+    request(
+      "https://api.bilibili.com/x/web-interface/view?bvid=" + msg,
+      function (err, response, body) {
+        body = JSON.parse(body);
+        if (!err && response.statusCode === 200 && body.code === 0) {
+          var content = '<a href="https://www.bilibili.com/video/av';
+          var av = body.data;
+          var av_number = av.aid;
+          var av_title = av.title;
+          content +=
+            av_number +
+            '" target="_blank">' +
+            av_title +
+            "，av" +
+            av_number +
+            "</a>";
+          resolve(content);
+        } else {
+          resolve(
+            "解析错误，是否输入了不正确的BV号？错误原因：" +
+              JSON.stringify(response.body)
+          );
+        }
       }
-    });
+    );
   });
   return p;
 }
@@ -461,22 +604,32 @@ function RandomCos() {
   //随机cos
   var p = new Promise(function (resolve, reject) {
     var rand_page_num = Math.floor(Math.random() * 499);
-    request("https://api.vc.bilibili.com/link_draw/v2/Photo/list?category=cos&type=hot&page_num=" + rand_page_num + "&page_size=1", function (err, response, body) {
-      body = JSON.parse(body);
-      if (!err && response.statusCode === 200 && body.code === 0) {
-        var obj = body.data.items[0].item.pictures;
-        var count = Object.keys(obj).length;
-        var picUrl = obj[Math.floor(Math.random() * count)].img_src;
-        console.log(picUrl);
-        request(picUrl).pipe(
-          fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (err) => {
-            resolve(`/images/${picUrl.split("/").pop()}`);
-          })
-        ); //绕过防盗链，保存为本地图片
-      } else {
-        resolve("获取随机cos错误，这个问题雨女无瓜，是B站接口的锅。错误原因：" + JSON.stringify(response.body));
+    request(
+      "https://api.vc.bilibili.com/link_draw/v2/Photo/list?category=cos&type=hot&page_num=" +
+        rand_page_num +
+        "&page_size=1",
+      function (err, response, body) {
+        body = JSON.parse(body);
+        if (!err && response.statusCode === 200 && body.code === 0) {
+          var obj = body.data.items[0].item.pictures;
+          var count = Object.keys(obj).length;
+          var picUrl = obj[Math.floor(Math.random() * count)].img_src;
+          console.log(picUrl);
+          request(picUrl).pipe(
+            fs
+              .createWriteStream(`./static/images/${picUrl.split("/").pop()}`)
+              .on("close", (err) => {
+                resolve(`/images/${picUrl.split("/").pop()}`);
+              })
+          ); //绕过防盗链，保存为本地图片
+        } else {
+          resolve(
+            "获取随机cos错误，这个问题雨女无瓜，是B站接口的锅。错误原因：" +
+              JSON.stringify(response.body)
+          );
+        }
       }
-    });
+    );
   });
   return p;
 }
@@ -493,7 +646,11 @@ function RandomTbshow() {
 function RandomHomeword() {
   //随机冷知识
   var p = new Promise(function (resolve, reject) {
-    request("https://passport.csdn.net/v1/api/get/homeword", function (err, response, body) {
+    request("https://passport.csdn.net/v1/api/get/homeword", function (
+      err,
+      response,
+      body
+    ) {
       body = JSON.parse(body);
       if (!err) {
         var title = "<h2>" + body.data.title + "</h2>";
@@ -501,7 +658,10 @@ function RandomHomeword() {
         var count = body.data.count;
         resolve(title + content + "<br />—— 有" + count + "人陪你一起已读");
       } else {
-        resolve("获取随机冷知识错误，这个问题雨女无瓜，是CSDN接口的锅。错误原因：" + JSON.stringify(response.body));
+        resolve(
+          "获取随机冷知识错误，这个问题雨女无瓜，是CSDN接口的锅。错误原因：" +
+            JSON.stringify(response.body)
+        );
       }
     });
   });
