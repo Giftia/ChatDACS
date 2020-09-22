@@ -30,7 +30,7 @@
 */
 
 //系统参数和开关，根据你的需要改动
-const version = "ChatDACS 1.13.1-95"; //版本号
+const version = "ChatDACS 1.13.3-97"; //版本号
 const chat_swich = 1; //是否开启自动聊天，需数据库中配置聊天表
 const news_swich = 0; //是否开启首屏新闻
 const jc_swich = 0; //是否开启酱菜物联服务
