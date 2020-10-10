@@ -30,7 +30,7 @@
 */
 
 //系统参数和开关，根据你的需要改动
-const version = "ChatDACS 1.13.3-97"; //版本号
+const version = "ChatDACS 1.14.0-98"; //版本号
 const chat_swich = 1; //是否开启自动聊天，需数据库中配置聊天表
 const news_swich = 0; //是否开启首屏新闻
 const jc_swich = 0; //是否开启酱菜物联服务
@@ -40,7 +40,9 @@ const GCYkey = ""; //果创云接口key
 const eval_swich = 0; //是否开启动态注入和执行，便于调试，但开启有极大风险，最好完全避免启用它，特别是在生产环境部署时
 const html = "/new.html"; //前端页面路径
 const help =
-  "<br />指令列表：<br />·门禁系统：<br />/开门 密码<br />用户指令：<br />/log_view<br />/reload<br />/rename 昵称<br />·其他指令：<br />经过2w+用户养成的即时人工智能聊天<br />输入BV号直接转换为AV号<br />/随机cos<br />/随机买家秀<br />/随机冷知识<br />首屏新闻展示";
+  "<br />指令列表：<br />·门禁系统：<br />/开门 密码<br />用户指令：<br />/log_view<br />/reload<br />/rename 昵称<br />·其他指令：<br />经过2w+用户养成的即时人工智能聊天<br />输入BV号直接转换为AV号<br />/随机cos<br />/随机买家秀<br />/随机冷知识<br />首屏新闻展示<br />/随机二次元图";
+const welcome =
+  '项目开源于<a href="//github.com/Giftia/ChatDACS/"> github.com/Giftia/ChatDACS </a>，欢迎Star。系统已与小夜联动最新聊天词库，请随意聊天。若有卡顿现象，也可以访问<a href="//120.78.200.105/">120.78.200.105</a>获得更好的用户体验。需要帮助请发送 /帮助';
 
 /* 好了！请不要再继续编辑。请保存本文件。使用愉快！ */
 
@@ -174,23 +176,27 @@ io.on("connection", (socket) => {
       logintimes = "";
       lastlogintime = "";
     },
-    //若无法获取该用户信息，则应该是第一次访问，接下来新增用户操作：
+    //若无法获取该用户信息，则应该是其第一次访问，接下来是新增用户操作：
     (err, data) => {
       console.log(`GetUserData(): rejected, and err:${err}, data:${data}`);
       console.log(`${Curentyyyymmdd() + CurentTime()}新用户 ${userip} 已连接`);
-      db.run(
-        "INSERT INTO users VALUES('" + RandomNickname() + "', '" + userip + "', '1', '" + Curentyyyymmdd() + CurentTime() + "')"
-      );
-      io.emit(
-        "system message",
-        `新用户 ${userip} 已连接。已为你分配了一个随机昵称，主人你好，我是小夜，这里是一个以聊天为主的辅助功能性系统，对我说 小夜 试试吧。${help}`
+      RandomNickname().then(
+        (data) => {
+          db.run(`INSERT INTO users VALUES('${data}', '${userip}', '1', '${Curentyyyymmdd()}${CurentTime()}')`);
+          io.emit(
+            "system message",
+            `新用户 ${userip} 已连接。已为你分配了一个随机昵称：「${data}」，更改昵称可以通过 /rename 昵称。主人你好，我是小夜，这里是一个以聊天为主的辅助功能性系统，在下面的聊天框中输入 小夜 发送试试吧。${help}`
+          );
+        },
+        (err, data) => {
+          console.log(`随机昵称错误：${err} , ${data}`);
+        }
       );
     }
   );
-  io.emit(
-    "system message",
-    '项目开源于<a href="//github.com/Giftia/ChatDACS/"> github.com/Giftia/ChatDACS </a>，欢迎Star。系统已与小夜联动最新聊天词库，请随意聊天。若有卡顿现象，也可以访问<a href="//120.78.200.105/">120.78.200.105</a>获得更好的用户体验。需要帮助请发送 /帮助'
-  );
+
+  io.emit("system message", welcome);
+
   if (news_swich) {
     Getnews().then(
       (data) => {
@@ -273,7 +279,7 @@ io.on("connection", (socket) => {
       }*/ else if (
       rename_reg.test(msg)
     ) {
-      db.run(`UPDATE users SET nickname = '${msg}' WHERE ip ='${userip}'`);
+      db.run(`UPDATE users SET nickname = '${msg.slice(8)}' WHERE ip ='${userip}'`);
       io.emit("chat message", "昵称重命名完毕");
     } else if (msg === "/log_view") {
       db.all("SELECT yyyymmdd, COUNT(*) As count FROM messages Group by yyyymmdd", (e, sql) => {
@@ -333,6 +339,16 @@ io.on("connection", (socket) => {
         (err, data) => {
           console.log(`RandomHomeword(): rejected, and err:${err}`);
           io.emit("system message", `RandomHomeword() err:${data}`);
+        }
+      );
+    } else if (msg === "/随机二次元图") {
+      RandomECY().then(
+        (data) => {
+          io.emit("pic message", data);
+        },
+        (err, data) => {
+          console.log(`RandomECY(): rejected, and err:${err}`);
+          io.emit("system message", `RandomECY() err:${data}`);
         }
       );
     } else {
@@ -472,7 +488,7 @@ function GetUserData() {
 function UpdateLogintimes() {
   //更新登录次数
   var p = new Promise((resolve, reject) => {
-    db.run("UPDATE users SET logintimes = logintimes + 1 WHERE ip ='" + userip + "'"),
+    db.run(`UPDATE users SET logintimes = logintimes + 1 WHERE ip ='${userip}'`),
       (err, sql) => {
         if (!err && sql) {
           resolve(sql);
@@ -487,7 +503,7 @@ function UpdateLogintimes() {
 function UpdateLastLogintime() {
   //更新最后登陆时间
   var p = new Promise((resolve, reject) => {
-    db.run("UPDATE users SET lastlogintime = '" + Curentyyyymmdd() + CurentTime() + "' WHERE ip ='" + userip + "'"),
+    db.run(`UPDATE users SET lastlogintime = '${Curentyyyymmdd()}${CurentTime()}' WHERE ip ='${userip}'`),
       (err, sql) => {
         if (!err && sql) {
           resolve(sql);
@@ -550,6 +566,15 @@ function RandomTbshow() {
   //随机买家秀
   var p = new Promise((resolve, reject) => {
     var pic = "https://api.66mz8.com/api/rand.tbimg.php";
+    resolve(pic);
+  });
+  return p;
+}
+
+function RandomECY() {
+  //随机二次元图
+  var p = new Promise((resolve, reject) => {
+    var pic = "https://acg.yanwz.cn/api.php";
     resolve(pic);
   });
   return p;
