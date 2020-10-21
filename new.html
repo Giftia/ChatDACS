@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="zh-cn">
   <head>
+    <link rel="preload" href="style.css" as="style" />
+    <link rel="preload" href="/socket.io/socket.io.js" as="script" />
+    <link rel="preload" href="/superplaceholder.min.js" as="script" />
+    <link rel="preload" href="/huaji.webp" as="image" />
+    <link rel="preload" href="/xiaoye.webp" as="image" />
     <link rel="icon" href="/xiaoye.webp" />
     <meta name="theme-color" content="#ed90ba" />
     <meta http-equiv="X-UA-Compatible" messages="IE=edge,chrome=1" />
@@ -15,7 +20,7 @@
         var time_now = 0;
         var time_last = 0;
         var socket = io();
-        var arrIcon = ["/huaji.png", "/xiaoye.webp"]; //arrIcon[0] = client icon, arrIcon[1] = server icon;
+        var arrIcon = ["/huaji.webp", "/xiaoye.webp"]; //arrIcon[0] = client icon, arrIcon[1] = server icon;
         var sorc = 1;
         var liNow = -1;
         var btn = document.getElementById("btn");
@@ -31,21 +36,10 @@
         socket.on("chat message", function (msg) {
           time_now = new Date().getTime();
           if (time_now - time_last < 300000) {
-            content.innerHTML +=
-              '<li><img src="' +
-              arrIcon[sorc] +
-              '"><span>' +
-              msg +
-              "</span></li>";
+            content.innerHTML += '<li><img src="' + arrIcon[sorc] + '"><span>' + msg + "</span></li>";
           } else {
             content.innerHTML +=
-              '<div id="time">' +
-              CurentTime() +
-              '</div><li><img src="' +
-              arrIcon[sorc] +
-              '"><span>' +
-              msg +
-              "</span></li>";
+              '<div id="time">' + CurentTime() + '</div><li><img src="' + arrIcon[sorc] + '"><span>' + msg + "</span></li>";
             time_last = new Date().getTime();
           }
           liNow++;
@@ -139,6 +133,11 @@
 
         socket.on("setcookie", function (msg) {
           document.cookie = "cookie = " + msg;
+        });
+
+        socket.on("getcookie", function (msg) {
+          var cookiedata = document.cookie;
+          socket.emit("cookiecoming", cookiedata);
         });
 
         socket.on("reload", function () {

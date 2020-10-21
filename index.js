@@ -30,9 +30,9 @@
 */
 
 //系统参数和开关，根据你的需要改动
-const version = "ChatDACS 1.14.0-98"; //版本号
+const version = "ChatDACS 1.14.1-100"; //版本号
 const chat_swich = 1; //是否开启自动聊天，需数据库中配置聊天表
-const news_swich = 0; //是否开启首屏新闻
+const news_swich = 1; //是否开启首屏新闻
 const jc_swich = 0; //是否开启酱菜物联服务
 const password = "233333"; //配置开门密码
 const apikey = "2333333333333333"; //换成你自己申请的 jcck_apikey，非必须
@@ -69,6 +69,7 @@ colors.setTheme({
   off: "green",
   warn: "yellow",
   error: "red",
+  log: "blue",
 });
 
 //待改进的变量
@@ -145,11 +146,12 @@ io.on("connection", (socket) => {
   onlineusers++;
   io.emit("onlineusers", onlineusers);
   io.emit("version", version);
+  socket.emit("getcookie");
   //开始获取用户信息并处理
   GetUserData().then(
     (data) => {
       console.log(data);
-      console.log(`${Curentyyyymmdd() + CurentTime()}用户 ${nickname}(${userip}) 已连接`);
+      console.log(`${Curentyyyymmdd() + CurentTime()}用户 ${nickname}(${userip}) 已连接`.log);
 
       UpdateLogintimes().then(
         (data) => {
@@ -170,7 +172,14 @@ io.on("connection", (socket) => {
         }
       );
 
-      io.emit("system message", `欢迎回来，${nickname}(${userip}) 。这是你第${logintimes}次访问。上次访问时间：${lastlogintime}`);
+      socket.username = nickname;
+      socket.emit("setcookie", `[${nickname}, ${userip}]`); //将用户信息保存至客户端cookie
+
+      io.emit(
+        "system message",
+        `欢迎回来，${socket.username}(${userip}) 。这是你第${logintimes}次访问。上次访问时间：${lastlogintime}`
+      );
+
       userdata = "";
       nickname = "";
       logintimes = "";
@@ -179,14 +188,23 @@ io.on("connection", (socket) => {
     //若无法获取该用户信息，则应该是其第一次访问，接下来是新增用户操作：
     (err, data) => {
       console.log(`GetUserData(): rejected, and err:${err}, data:${data}`);
-      console.log(`${Curentyyyymmdd() + CurentTime()}新用户 ${userip} 已连接`);
+      console.log(`${Curentyyyymmdd() + CurentTime()}新用户 ${userip} 已连接`.log);
       RandomNickname().then(
         (data) => {
           db.run(`INSERT INTO users VALUES('${data}', '${userip}', '1', '${Curentyyyymmdd()}${CurentTime()}')`);
+
+          socket.username = data;
+          socket.emit("setcookie", `[${data}, ${userip}]`); //将用户信息保存至客户端cookie
+
           io.emit(
             "system message",
             `新用户 ${userip} 已连接。已为你分配了一个随机昵称：「${data}」，更改昵称可以通过 /rename 昵称。主人你好，我是小夜，这里是一个以聊天为主的辅助功能性系统，在下面的聊天框中输入 小夜 发送试试吧。${help}`
           );
+
+          userdata = "";
+          nickname = "";
+          logintimes = "";
+          lastlogintime = "";
         },
         (err, data) => {
           console.log(`随机昵称错误：${err} , ${data}`);
@@ -212,16 +230,20 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     onlineusers--;
     io.emit("onlineusers", onlineusers);
-    console.log(Curentyyyymmdd() + CurentTime() + "用户 " + userip + " 已断开连接");
-    io.emit("system message", "用户 " + userip + " 已断开连接");
+    console.log(Curentyyyymmdd() + CurentTime() + "用户 " + socket.username + " 已断开连接");
+    io.emit("system message", "用户 " + socket.username + " 已断开连接");
   });
 
   socket.on("typing", (msg) => {
-    io.emit("typing", `${userip} 正在输入...`);
+    io.emit("typing", `${socket.username} 正在输入...`);
   });
 
   socket.on("typing_over", (msg) => {
     io.emit("typing", "");
+  });
+
+  socket.on("cookiecoming", (msg) => {
+    console.log(`有cookie，${msg}`);
   });
 
   socket.on("chat message", (msg) => {
