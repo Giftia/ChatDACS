@@ -30,8 +30,8 @@
 */
 
 //系统参数和开关，根据你的需要改动
-const version = "ChatDACS 1.14.1-100"; //版本号
-const chat_swich = 1; //是否开启自动聊天，需数据库中配置聊天表
+const version = "ChatDACS 1.14.1-101"; //版本号
+const chat_swich = 0; //是否开启自动聊天，需数据库中配置聊天表
 const news_swich = 1; //是否开启首屏新闻
 const jc_swich = 0; //是否开启酱菜物联服务
 const password = "233333"; //配置开门密码
@@ -96,7 +96,7 @@ console.log(version.ver);
 if (chat_swich) {
   console.log("用户配置：自动聊天开启".on);
 } else {
-  console.log("用户配置：自动聊天关闭".debug);
+  console.log("用户配置：自动聊天关闭".off);
 }
 
 if (news_swich) {
@@ -387,6 +387,8 @@ io.on("connection", (socket) => {
             console.log(`聊天组件抛错：${e}`);
           }
         });
+      } else {
+        return 0;
       }
     }
   });
