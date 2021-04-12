@@ -30,7 +30,7 @@
 */
 
 //系统参数和开关，根据你的需要改动
-const version = "ChatDACS 1.14.1-112"; //版本号
+const version = "ChatDACS 1.14.1-113"; //版本号
 const chat_swich = 1; //是否开启自动聊天，需数据库中配置聊天表
 const news_swich = 1; //是否开启首屏新闻
 const jc_swich = 0; //是否开启酱菜物联服务
@@ -596,7 +596,7 @@ function RandomTbshow() {
 }
 
 function RandomECY() {
-  //随机二次元图
+  //随机二次元图，新版Chrome加入了HSTS策略而暂时无法使用。如需使用，请用户访问 chrome://net-internals/#hsts，在最下面的Delete domain security policies中，输入 acg.yanwz.cn，点击Delete删除即可
   var p = new Promise((resolve, reject) => {
     var pic = "https://acg.yanwz.cn/api.php";
     resolve(pic);
@@ -623,7 +623,7 @@ function RandomHomeword() {
 }
 
 function RandomNickname() {
-  //随机昵称
+  //自动随机昵称
   var p = new Promise((resolve, reject) => {
     request(
       `http://hd215.api.yesapi.cn/?s=App.Common_Nickname.RandOne&return_data=1&need_lan=%E4%B8%AD%E6%96%87&app_key=${GCYkey}&sign=28F637125E8C8E26E5F9135F4080852F`,
