@@ -1,5 +1,5 @@
 /*
-作者：Giftina, https://giftia.moe
+Giftina：https://giftia.moe
 
 初次使用请看:
   首先去 https://nodejs.org/zh-cn/ 安装长期支持版Node.js
@@ -30,7 +30,7 @@
 */
 
 //系统参数和开关，根据你的需要改动
-const version = "ChatDACS 1.14.1-113"; //版本号
+const version = "ChatDACS 1.14.1-114"; //版本号
 const chat_swich = 1; //是否开启自动聊天，需数据库中配置聊天表
 const news_swich = 1; //是否开启首屏新闻
 const jc_swich = 0; //是否开启酱菜物联服务
@@ -40,7 +40,7 @@ const GCYkey = ""; //果创云接口key
 const eval_swich = 0; //是否开启动态注入和执行，便于调试，但开启有极大风险，最好完全避免启用它，特别是在生产环境部署时
 const html = "/new.html"; //前端页面路径
 const help =
-  "指令列表：<br />·门禁系统：<br />/开门 密码<br />用户指令：<br />/log_view<br />/reload<br />/rename 昵称<br />·其他指令：<br />经过2w+用户养成的即时人工智能聊天<br />输入BV号直接转换为AV号<br />/随机cos<br />/随机买家秀<br />/随机冷知识<br />首屏新闻展示<br />/随机二次元图";
+  "功能列表：<br />·门禁系统：<br />/开门 密码<br />用户指令：<br />/log_view<br />/reload<br />/rename 昵称<br />·其他指令：<br />经过2w+用户养成的即时人工智能聊天<br />输入BV号直接转换为AV号<br />/随机cos<br />/随机买家秀<br />/随机冷知识<br />首屏新闻展示<br />/随机二次元图";
 const welcome =
   '项目开源于<a href="//github.com/Giftia/ChatDACS/"> github.com/Giftia/ChatDACS </a>，欢迎Star。系统已与小夜联动最新聊天词库，请随意聊天。需要帮助请发送 /帮助';
 
