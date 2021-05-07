@@ -30,13 +30,13 @@ Giftina：https://giftia.moe
 */
 
 //系统参数和开关，根据你的需要改动
-const version = "ChatDACS 1.14.1-114"; //版本号
+const version = "ChatDACS 1.14.2-115"; //版本号
 const chat_swich = 1; //是否开启自动聊天，需数据库中配置聊天表
 const news_swich = 1; //是否开启首屏新闻
 const jc_swich = 0; //是否开启酱菜物联服务
 const password = "233333"; //配置开门密码
 const apikey = "2333333333333333"; //换成你自己申请的 jcck_apikey，非必须
-const GCYkey = ""; //果创云接口key
+const Tiankey = ""; //天行接口key
 const eval_swich = 0; //是否开启动态注入和执行，便于调试，但开启有极大风险，最好完全避免启用它，特别是在生产环境部署时
 const html = "/new.html"; //前端页面路径
 const help =
@@ -385,6 +385,7 @@ io.on("connection", (socket) => {
             io.emit("chat message", answer);
           } else {
             console.log(`聊天组件抛错：${e}`);
+            io.emit("chat message", "小夜好像不是很懂你在说什么，你等着，我去问问小爱，嘿Siri~");
           }
         });
       } else {
@@ -562,7 +563,7 @@ function Bv2Av(msg) {
 function RandomCos() {
   //随机cos
   var p = new Promise((resolve, reject) => {
-    var rand_page_num = Math.floor(Math.random() * 499);
+    var rand_page_num = Math.floor(Math.random() * 9);
     request(
       "https://api.vc.bilibili.com/link_draw/v2/Photo/list?category=cos&type=hot&page_num=" + rand_page_num + "&page_size=1",
       (err, response, body) => {
@@ -625,17 +626,14 @@ function RandomHomeword() {
 function RandomNickname() {
   //自动随机昵称
   var p = new Promise((resolve, reject) => {
-    request(
-      `http://hd215.api.yesapi.cn/?s=App.Common_Nickname.RandOne&return_data=1&need_lan=%E4%B8%AD%E6%96%87&app_key=${GCYkey}&sign=28F637125E8C8E26E5F9135F4080852F`,
-      (err, response, body) => {
-        body = JSON.parse(body);
-        if (!err) {
-          resolve(body.nickname);
-        } else {
-          resolve("获取随机昵称错误，是果创云接口的锅。错误原因：" + JSON.stringify(response.body));
-        }
+    request(`http://api.tianapi.com/txapi/cname/index?key=${Tiankey}`, (err, response, body) => {
+      body = JSON.parse(body);
+      if (!err) {
+        resolve(body.newslist.naming);
+      } else {
+        resolve("获取随机昵称错误，是天行接口的锅。错误原因：" + JSON.stringify(response.body));
       }
-    );
+    });
   });
   return p;
 }
