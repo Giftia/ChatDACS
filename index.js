@@ -30,7 +30,7 @@ Giftina：https://giftia.moe
 */
 
 //系统参数和开关，根据你的需要改动
-const version = "ChatDACS 2.0.0-122"; //版本号
+const version = "ChatDACS 2.0.0-123"; //版本号
 const chat_swich = 1; //自动聊天开关，需数据库中配置聊天表
 const news_swich = 1; //首屏新闻开关
 const jc_swich = 0; //酱菜物联服务开关
@@ -552,7 +552,7 @@ function RandomCos() {
 function RandomTbshow() {
   //随机买家秀
   var p = new Promise((resolve, reject) => {
-    var pic = "https://api.66mz8.com/api/rand.tbimg.php";
+    var pic = "https://api.sumt.cn/api/rand.tbimg.php";
     resolve(pic);
   });
   return p;
