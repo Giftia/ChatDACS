@@ -30,14 +30,14 @@ Giftina：https://giftia.moe
 */
 
 //系统参数和开关，根据你的需要改动
-const version = "ChatDACS 1.14.2-115"; //版本号
-const chat_swich = 1; //是否开启自动聊天，需数据库中配置聊天表
-const news_swich = 1; //是否开启首屏新闻
-const jc_swich = 0; //是否开启酱菜物联服务
+const version = "ChatDACS 2.0.0-122"; //版本号
+const chat_swich = 1; //自动聊天开关，需数据库中配置聊天表
+const news_swich = 1; //首屏新闻开关
+const jc_swich = 0; //酱菜物联服务开关
 const password = "233333"; //配置开门密码
 const apikey = "2333333333333333"; //换成你自己申请的 jcck_apikey，非必须
-const Tiankey = ""; //天行接口key
-const eval_swich = 0; //是否开启动态注入和执行，便于调试，但开启有极大风险，最好完全避免启用它，特别是在生产环境部署时
+const Tiankey = "f21f0dd07e3e07ef6e95c5f93cf6dd1c"; //天行接口key，私有，图个方便先直接放上去了
+const eval_swich = 0; //动态注入和执行开关，便于调试，但开启有极大风险，最好完全避免启用它，特别是在生产环境部署时
 const html = "/new.html"; //前端页面路径
 const help =
   "功能列表：<br />·门禁系统：<br />/开门 密码<br />用户指令：<br />/log_view<br />/reload<br />/rename 昵称<br />·其他指令：<br />经过2w+用户养成的即时人工智能聊天<br />输入BV号直接转换为AV号<br />/随机cos<br />/随机买家秀<br />/随机冷知识<br />首屏新闻展示<br />/随机二次元图";
@@ -72,24 +72,17 @@ colors.setTheme({
   log: "blue",
 });
 
-//待改进的变量
-var userip = "127.0.0.1";
-var userdata = "";
-var nickname = "";
-var logintimes = "";
-var lastlogintime = "";
-
 //固定变量
 var onlineusers = 0;
 
 //正则
 var door_reg = new RegExp("^/开门 [a-zA-Z0-9]*$"); //匹配开门
-var rename_reg = new RegExp("^/rename [\u4e00-\u9fa5]*$"); //只允许汉字昵称
-var bv2av__reg = new RegExp("^[a-zA-Z0-9]{10,12}"); //匹配bv号
+var rename_reg = new RegExp("^/rename [\u4e00-\u9fa5a-z0-9]{1,10}$"); //1-10长度的数英汉昵称
+var bv2av__reg = new RegExp("^[a-zA-Z0-9]{10,12}$"); //匹配bv号
 
 //若表不存在则新建表
-db.run("CREATE TABLE IF NOT EXISTS messages(yyyymmdd char, time char, ip char, message char)");
-db.run("CREATE TABLE IF NOT EXISTS users(nickname char, ip char, logintimes long, lastlogintime char)");
+db.run("CREATE TABLE IF NOT EXISTS messages(yyyymmdd char, time char, CID char, message char)");
+db.run("CREATE TABLE IF NOT EXISTS users(nickname char, CID char, logintimes long, lastlogintime char)");
 
 console.log(version.ver);
 
@@ -122,96 +115,72 @@ http.listen(80, () => {
   console.log(Curentyyyymmdd() + CurentTime() + "配置完毕，系统启动，正在监听于端口80");
 });
 
-//  客户端接入，解析ip，发送前端
+//  客户端接入，先发送前端
 app.get("/", (req, res) => {
-  var ip =
-    req.headers["x-real-ip"] || //内网穿透natapp的header里的ip
-    req.headers["x-forwarded-for"] ||
-    req.ip ||
-    req.connection.remoteAddress ||
-    req.socket.remoteAddress ||
-    req.connection.socket.remoteAddress;
-  if (ip.split(",").length > 0) {
-    ip = ip.split(",")[0];
-  }
-  ip = ip.replace("::ffff:", "");
-  userip = ip;
-  if (userip === " " || Number.isNaN(userip) || userip === undefined || userip === "") {
-    userip = "127.0.0.1";
-  }
   res.sendFile(__dirname + html);
 });
 
+// socket接入，开始用户操作
 io.on("connection", (socket) => {
   onlineusers++;
   io.emit("onlineusers", onlineusers);
   io.emit("version", version);
   socket.emit("getcookie");
   //开始获取用户信息并处理
-  GetUserData().then(
-    (data) => {
-      console.log(data);
-      console.log(`${Curentyyyymmdd() + CurentTime()}用户 ${nickname}(${userip}) 已连接`.log);
+  socket.on("cookiecoming", (msg) => {
+    msg = msg.replace("ChatdacsID=", "");
+    GetUserData(msg)
+      .then(([nickname, CID, logintimes, lastlogintime]) => {
+        console.log(`GetUserData传来${nickname},${logintimes},${lastlogintime}`);
+        console.log(`${Curentyyyymmdd() + CurentTime()}用户 ${nickname}(${msg}) 已连接`.log);
 
-      UpdateLogintimes().then(
-        (data) => {
-          console.log(`update successfully, ${data}`);
-        },
-        (err, data) => {
-          console.log(`err, ${err}, data:, ${data}`);
-        }
-      );
+        UpdateLogintimes(msg).then(
+          (data) => {
+            console.log(`update successfully, ${data}`);
+          },
+          (err, data) => {
+            console.log(`err, ${err}, data:, ${data}`);
+          }
+        );
 
-      UpdateLastLogintime().then(
-        (data) => {
-          logintimes++;
-          console.log(`update successfully, ${data}`);
-        },
-        (err, data) => {
-          console.log(`err, ${err}, data:, ${data}`);
-        }
-      );
+        UpdateLastLogintime(msg).then(
+          (data) => {
+            console.log(`update successfully, ${data}`);
+          },
+          (err, data) => {
+            console.log(`err, ${err}, data:, ${data}`);
+          }
+        );
 
-      socket.username = nickname;
-      socket.emit("setcookie", `[${nickname}, ${userip}]`); //将用户信息保存至客户端cookie
+        socket.username = nickname;
 
-      io.emit(
-        "system message",
-        `欢迎回来，${socket.username}(${userip}) 。这是你第${logintimes}次访问。上次访问时间：${lastlogintime}`
-      );
+        io.emit(
+          "system message",
+          `欢迎回来，${socket.username}(${msg}) 。这是你第${logintimes}次访问。上次访问时间：${lastlogintime}`
+        );
+      })
+      .catch((err, data) => {
+        //若无法获取该用户信息，则应该是其第一次访问，接下来是新增用户操作：
+        console.log(`GetUserData(): rejected, and err:${err}, data:${data}`);
+        console.log(`${Curentyyyymmdd() + CurentTime()}新用户 ${msg} 已连接`.log);
+        RandomNickname().then(
+          (data) => {
+            db.run(`INSERT INTO users VALUES('${data}', '${msg}', '1', '${Curentyyyymmdd()}${CurentTime()}')`);
 
-      userdata = "";
-      nickname = "";
-      logintimes = "";
-      lastlogintime = "";
-    },
-    //若无法获取该用户信息，则应该是其第一次访问，接下来是新增用户操作：
-    (err, data) => {
-      console.log(`GetUserData(): rejected, and err:${err}, data:${data}`);
-      console.log(`${Curentyyyymmdd() + CurentTime()}新用户 ${userip} 已连接`.log);
-      RandomNickname().then(
-        (data) => {
-          db.run(`INSERT INTO users VALUES('${data}', '${userip}', '1', '${Curentyyyymmdd()}${CurentTime()}')`);
+            socket.username = data;
+            socket.emit("setcookie", `[${data}, ${msg}]`); //将用户信息保存至客户端cookie
 
-          socket.username = data;
-          socket.emit("setcookie", `[${data}, ${userip}]`); //将用户信息保存至客户端cookie
-
-          io.emit(
-            "system message",
-            `新用户 ${userip} 已连接。已为你分配了一个随机昵称：「${data}」，更改昵称可以通过 /rename 昵称。主人你好，我是小夜，这里是一个以聊天为主的辅助功能性系统，在下面的聊天框中输入 小夜 发送试试吧。${help}`
-          );
-
-          userdata = "";
-          nickname = "";
-          logintimes = "";
-          lastlogintime = "";
-        },
-        (err, data) => {
-          console.log(`随机昵称错误：${err} , ${data}`);
-        }
-      );
-    }
-  );
+            io.emit(
+              "system message",
+              `新用户 ${msg} 已连接。已为你分配了一个随机昵称：「${data}」，更改昵称可以通过 /rename 昵称。主人你好，我是小夜，这里是一个以聊天为主的辅助功能性系统，在下面的聊天框中输入 小夜 发送试试吧。${help}`
+            );
+          },
+          (err, data) => {
+            console.log(`随机昵称错误：${err} , ${data}`);
+          }
+        );
+      });
+  });
 
   io.emit("system message", welcome);
 
@@ -234,29 +203,28 @@ io.on("connection", (socket) => {
     io.emit("system message", "用户 " + socket.username + " 已断开连接");
   });
 
-  socket.on("typing", (msg) => {
+  socket.on("typing", () => {
     io.emit("typing", `${socket.username} 正在输入...`);
   });
 
-  socket.on("typing_over", (msg) => {
+  socket.on("typing_over", () => {
     io.emit("typing", "");
   });
 
-  socket.on("cookiecoming", (msg) => {
-    console.log(`有cookie，${msg}`);
-  });
-
-  socket.on("chat message", (msg) => {
+  socket.on("chat message", (msgWITHcid) => {
+    CID = msgWITHcid[0];
+    CID = CID.replace("ChatdacsID=", "");
+    msg = msgWITHcid[1];
     msg = msg.replace(/'/g, "[非法字符]"); //防爆
     msg = msg.replace(/</g, "[非法字符]"); //防爆
     msg = msg.replace(/>/g, "[非法字符]"); //防爆
     if (eval_swich) {
       eval(msg);
     }
-    var receive_debug = `${Curentyyyymmdd() + CurentTime()}收到用户 ${userip} 消息: ${msg}`;
+    var receive_debug = `${Curentyyyymmdd() + CurentTime()}收到用户 ${socket.username}(${CID}) 的消息: ${msg}`;
     console.log(receive_debug.warn);
-    db.run(`INSERT INTO messages VALUES('${Curentyyyymmdd()}', '${CurentTime()}', '${userip}', '${msg}')`);
-    io.emit("chat message", `${nickname}(${userip}) : ${msg}`);
+    db.run(`INSERT INTO messages VALUES('${Curentyyyymmdd()}', '${CurentTime()}', '${CID}', '${msg}')`);
+    io.emit("chat message", `${socket.username}(${CID}) : ${msg}`);
 
     if (door_reg.test(msg)) {
       if (jc_swich) {
@@ -264,7 +232,7 @@ io.on("connection", (socket) => {
           Opendoor();
           io.emit("chat message", "密码已确认，开门指令已发送");
           io.emit("chat message", "计算机科创基地提醒您：道路千万条，安全第一条。开门不关门，亲人两行泪。");
-          console.log(`${Curentyyyymmdd() + CurentTime()}用户 ${userip} 开门操作`);
+          console.log(`${Curentyyyymmdd() + CurentTime()}用户 ${CID} 开门操作`);
         } else {
           io.emit("chat message", "密码错误，请重试");
         }
@@ -277,9 +245,9 @@ io.on("connection", (socket) => {
           var data = "";
           for (let i = 0; i < sql.length; i++) {
             var time = JSON.stringify(sql[i].time);
-            var ip = JSON.stringify(sql[i].ip);
+            var CID = JSON.stringify(sql[i].CID);
             var message = JSON.stringify(sql[i].message);
-            data += "<br><br>" + time + ip + message;
+            data += "<br><br>" + time + CID + message;
           }
           console.log(sql);
           io.emit("chat message", `${data}<br />共有${sql.length}条记录`);
@@ -298,11 +266,9 @@ io.on("connection", (socket) => {
             io.emit("chat message", e);
           }
         });
-      }*/ else if (
-      rename_reg.test(msg)
-    ) {
-      db.run(`UPDATE users SET nickname = '${msg.slice(8)}' WHERE ip ='${userip}'`);
-      io.emit("chat message", "昵称重命名完毕");
+      }*/ else if (rename_reg.test(msg)) {
+      db.run(`UPDATE users SET nickname = '${msg.slice(8)}' WHERE CID ='${CID}'`);
+      io.emit("chat message", `昵称重命名完毕，你现在叫 ${msg.slice(8)} 啦`);
     } else if (msg === "/log_view") {
       db.all("SELECT yyyymmdd, COUNT(*) As count FROM messages Group by yyyymmdd", (e, sql) => {
         console.log(sql);
@@ -488,20 +454,16 @@ function Getnews() {
   return p;
 }
 
-function GetUserData() {
+function GetUserData(msg) {
   //获取用户信息
   var p = new Promise((resolve, reject) => {
-    db.all("SELECT * FROM users WHERE ip = '" + userip + "'", (err, sql) => {
+    db.all("SELECT * FROM users WHERE CID = '" + msg + "'", (err, sql) => {
       if (!err && sql[0]) {
-        nickname = JSON.stringify(sql[0].nickname);
-        var ip = JSON.stringify(sql[0].ip);
-        if (ip === " " || Number.isNaN(ip) || ip === undefined || ip === "") {
-          ip = "127.0.0.1";
-        }
-        logintimes = JSON.stringify(sql[0].logintimes);
-        lastlogintime = JSON.stringify(sql[0].lastlogintime);
-        userdata = nickname + ip + logintimes + lastlogintime;
-        resolve(userdata);
+        let nickname = JSON.stringify(sql[0].nickname);
+        let CID = JSON.stringify(sql[0].CID);
+        let logintimes = JSON.stringify(sql[0].logintimes);
+        let lastlogintime = JSON.stringify(sql[0].lastlogintime);
+        resolve([nickname, CID, logintimes, lastlogintime]);
       } else {
         reject("获取用户信息错误，一般是因为用户第一次登录。错误原因：" + err + ", sql:" + sql[0]);
       }
@@ -510,10 +472,10 @@ function GetUserData() {
   return p;
 }
 
-function UpdateLogintimes() {
+function UpdateLogintimes(msg) {
   //更新登录次数
   var p = new Promise((resolve, reject) => {
-    db.run(`UPDATE users SET logintimes = logintimes + 1 WHERE ip ='${userip}'`),
+    db.run(`UPDATE users SET logintimes = logintimes + 1 WHERE CID ='${msg}'`),
       (err, sql) => {
         if (!err && sql) {
           resolve(sql);
@@ -525,10 +487,10 @@ function UpdateLogintimes() {
   return p;
 }
 
-function UpdateLastLogintime() {
+function UpdateLastLogintime(msg) {
   //更新最后登陆时间
   var p = new Promise((resolve, reject) => {
-    db.run(`UPDATE users SET lastlogintime = '${Curentyyyymmdd()}${CurentTime()}' WHERE ip ='${userip}'`),
+    db.run(`UPDATE users SET lastlogintime = '${Curentyyyymmdd()}${CurentTime()}' WHERE CID ='${msg}'`),
       (err, sql) => {
         if (!err && sql) {
           resolve(sql);
@@ -629,7 +591,7 @@ function RandomNickname() {
     request(`http://api.tianapi.com/txapi/cname/index?key=${Tiankey}`, (err, response, body) => {
       body = JSON.parse(body);
       if (!err) {
-        resolve(body.newslist.naming);
+        resolve(body.newslist[0].naming);
       } else {
         resolve("获取随机昵称错误，是天行接口的锅。错误原因：" + JSON.stringify(response.body));
       }

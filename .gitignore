@@ -62,5 +62,4 @@ typings/
 
 # Others
 mobile.html
-index.html
-db.db
+static/layim/

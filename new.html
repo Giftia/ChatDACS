@@ -33,8 +33,14 @@
         var version = document.getElementById("version");
         var onlineusers = document.getElementById("onlineusers");
         var text = document.getElementById("text");
+        var cookiedata = document.cookie;
+        if (cookiedata == null) cookiedata = document.cookie = "ChatdacsID = " + new Date().getTime();
 
         socket.on("chat message", function (msg) {
+          if (msg instanceof Array) {
+            CID = msg[0];
+            msg = msg[1];
+          }
           time_now = new Date().getTime();
           if (time_now - time_last < 300000) {
             content.innerHTML += '<li><img src="' + arrIcon[sorc] + '"><span>' + msg + "</span></li>";
@@ -132,12 +138,7 @@
           onlineusers.innerHTML = "当前在线用户数：" + msg;
         });
 
-        socket.on("setcookie", function (msg) {
-          document.cookie = "cookie = " + msg;
-        });
-
         socket.on("getcookie", function (msg) {
-          var cookiedata = document.cookie;
           socket.emit("cookiecoming", cookiedata);
         });
 
@@ -155,13 +156,13 @@
 
         btn.onclick = function () {
           if (text.value === "") {
-            socket.emit("chat message", text.placeholder);
+            socket.emit("chat message", [cookiedata, text.placeholder]);
             sorc = 0;
             window.scrollTo(0, document.body.scrollHeight);
             return false;
           } else {
             socket.emit("typing_over");
-            socket.emit("chat message", text.value);
+            socket.emit("chat message", [cookiedata, text.value]);
             text.value = "";
             sorc = 0;
             window.scrollTo(0, document.body.scrollHeight);
