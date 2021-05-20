@@ -61,20 +61,6 @@
           socket.on("version", function (msg) {
             document.title = msg;
             layim.config({
-              //上传图片接口
-              uploadImage: {
-                url: "/upload/image", //（返回的数据格式见下文）
-                up_way: "up",
-                type: "", //默认post
-              },
-
-              //上传文件接口
-              uploadFile: {
-                url: "/upload/file", //（返回的数据格式见下文）
-                up_way: "up",
-                type: "", //默认post
-              },
-
               init: {
                 //我的信息
                 mine: {
@@ -153,9 +139,24 @@
               //扩展聊天面板工具栏
               tool: [
                 {
-                  alias: "code",
+                  alias: "xiaoye",
                   title: "召唤小夜",
-                  iconUnicode: "&#xe64e;",
+                  iconUnicode: "&#xe606;",
+                },
+                {
+                  alias: "cos",
+                  title: "随机cos",
+                  iconUnicode: "&#xe661;",
+                },
+                {
+                  alias: "tbshow",
+                  title: "随机买家秀",
+                  iconUnicode: "&#xe662;",
+                },
+                {
+                  alias: "help",
+                  title: "帮助",
+                  iconUnicode: "&#xe607;",
                 },
               ],
 
@@ -241,9 +242,27 @@
             }
           });
 
-          //监听自定义工具栏点击，以添加代码为例
-          layim.on("tool(code)", function (insert, send) {
+          //工具栏-召唤小夜
+          layim.on("tool(xiaoye)", function (insert, send) {
             insert("小夜"); //将内容插入到编辑器
+            send();
+          });
+
+          //工具栏-cos
+          layim.on("tool(cos)", function (insert, send) {
+            insert("/随机cos"); //将内容插入到编辑器
+            send();
+          });
+
+          //工具栏-tbshow
+          layim.on("tool(tbshow)", function (insert, send) {
+            insert("/随机买家秀"); //将内容插入到编辑器
+            send();
+          });
+
+          //工具栏-帮助
+          layim.on("tool(help)", function (insert, send) {
+            insert("/帮助"); //将内容插入到编辑器
             send();
           });
 
@@ -286,7 +305,7 @@
           socket.on("system message", function (msg) {
             layim.getMessage({
               username: "系统消息",
-              avatar: "/xiaoye.webp",
+              avatar: "/huaji.webp",
               id: "0",
               type: "kefu",
               mine: 0,

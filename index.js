@@ -30,7 +30,7 @@ Giftina：https://giftia.moe
 */
 
 //系统参数和开关，根据你的需要改动
-const version = "ChatDACS 2.0.1-125"; //版本号
+const version = "ChatDACS 2.0.1-126"; //版本号
 const chat_swich = 1; //自动聊天开关，需数据库中配置聊天表
 const news_swich = 0; //首屏新闻开关
 const jc_swich = 0; //酱菜物联服务开关
@@ -41,8 +41,7 @@ const eval_swich = 0; //动态注入和执行开关，便于调试，但开启�
 const html = "/mobile.html"; //前端页面路径
 const help =
   "功能列表：<br />·门禁系统：<br />/开门 密码<br />用户指令：<br />/log_view<br />/reload<br />/rename 昵称<br />·其他指令：<br />经过2w+用户养成的即时人工智能聊天<br />输入BV号直接转换为AV号<br />/随机cos<br />/随机买家秀<br />/随机冷知识<br />首屏新闻展示<br />/随机二次元图";
-const welcome =
-  '项目开源于<a href="//github.com/Giftia/ChatDACS/" target=_black> github.com/Giftia/ChatDACS </a>，欢迎Star。系统已与小夜联动最新聊天词库，请随意聊天。需要帮助请发送 /帮助';
+const welcome = "系统已与小夜联动最新聊天词库，请随意聊天。需要帮助请发送 /帮助";
 
 /* 好了！请不要再继续编辑。请保存本文件。使用愉快！ */
 
@@ -187,7 +186,7 @@ io.on("connection", (socket) => {
       });
   });
 
-  io.emit("system message", welcome);
+  //io.emit("system message", welcome);
 
   if (news_swich) {
     Getnews().then(
