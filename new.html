@@ -33,8 +33,7 @@
         var version = document.getElementById("version");
         var onlineusers = document.getElementById("onlineusers");
         var text = document.getElementById("text");
-        var cookiedata = document.cookie;
-        if (cookiedata == null) cookiedata = document.cookie = "ChatdacsID = " + new Date().getTime();
+        var cookiedata = "";
 
         socket.on("chat message", function (msg) {
           if (msg instanceof Array) {
@@ -139,6 +138,8 @@
         });
 
         socket.on("getcookie", function (msg) {
+          cookiedata = document.cookie;
+          if (cookiedata == null || cookiedata == "") cookiedata = document.cookie = "ChatdacsID = " + new Date().getTime();
           socket.emit("cookiecoming", cookiedata);
         });
 

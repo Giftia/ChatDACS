@@ -30,7 +30,7 @@ Giftina：https://giftia.moe
 */
 
 //系统参数和开关，根据你的需要改动
-const version = "ChatDACS 2.0.0-123"; //版本号
+const version = "ChatDACS 2.0.1-124"; //版本号
 const chat_swich = 1; //自动聊天开关，需数据库中配置聊天表
 const news_swich = 1; //首屏新闻开关
 const jc_swich = 0; //酱菜物联服务开关
@@ -129,9 +129,9 @@ io.on("connection", (socket) => {
   //开始获取用户信息并处理
   socket.on("cookiecoming", (msg) => {
     msg = msg.replace("ChatdacsID=", "");
+    msg = msg.replace("ChatdacsID = ", "");
     GetUserData(msg)
       .then(([nickname, CID, logintimes, lastlogintime]) => {
-        console.log(`GetUserData传来${nickname},${logintimes},${lastlogintime}`);
         console.log(`${Curentyyyymmdd() + CurentTime()}用户 ${nickname}(${msg}) 已连接`.log);
 
         UpdateLogintimes(msg).then(
@@ -162,17 +162,22 @@ io.on("connection", (socket) => {
       .catch((err, data) => {
         //若无法获取该用户信息，则应该是其第一次访问，接下来是新增用户操作：
         console.log(`GetUserData(): rejected, and err:${err}, data:${data}`);
+        msg = msg.replace("ChatdacsID=", "");
+        msg = msg.replace("ChatdacsID = ", "");
         console.log(`${Curentyyyymmdd() + CurentTime()}新用户 ${msg} 已连接`.log);
         RandomNickname().then(
           (data) => {
-            db.run(`INSERT INTO users VALUES('${data}', '${msg}', '1', '${Curentyyyymmdd()}${CurentTime()}')`);
+            db.run(`INSERT INTO users VALUES('${data}', '${msg}', '2', '${Curentyyyymmdd()}${CurentTime()}')`);
 
             socket.username = data;
-            socket.emit("setcookie", `[${data}, ${msg}]`); //将用户信息保存至客户端cookie
 
             io.emit(
               "system message",
-              `新用户 ${msg} 已连接。已为你分配了一个随机昵称：「${data}」，更改昵称可以通过 /rename 昵称。主人你好，我是小夜，这里是一个以聊天为主的辅助功能性系统，在下面的聊天框中输入 小夜 发送试试吧。${help}`
+              `新用户 ${msg} 已连接。小夜帮你取了一个随机昵称：「${data}」，想要更改昵称可以发送 /rename 昵称`
+            );
+            io.emit(
+              "chat message",
+              "主人你好，我是小夜，这里是一个以聊天方式进行运行的辅助功能性系统，先试着点击下面的发送按钮试试吧。"
             );
           },
           (err, data) => {
@@ -268,7 +273,7 @@ io.on("connection", (socket) => {
         });
       }*/ else if (rename_reg.test(msg)) {
       db.run(`UPDATE users SET nickname = '${msg.slice(8)}' WHERE CID ='${CID}'`);
-      io.emit("chat message", `昵称重命名完毕，你现在叫 ${msg.slice(8)} 啦`);
+      io.emit("chat message", `昵称重命名完毕，小夜现在会称呼你为 ${msg.slice(8)} 啦`);
     } else if (msg === "/log_view") {
       db.all("SELECT yyyymmdd, COUNT(*) As count FROM messages Group by yyyymmdd", (e, sql) => {
         console.log(sql);
