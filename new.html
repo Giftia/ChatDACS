@@ -18,34 +18,41 @@
     <script src="/echarts.min.js"></script>
     <script>
       window.onload = function () {
-        var time_now = 0;
-        var time_last = 0;
-        var socket = io();
-        var arrIcon = ["/huaji.webp", "/xiaoye.webp"]; //arrIcon[0] = client icon, arrIcon[1] = server icon;
-        var sorc = 1;
-        var liNow = -1;
-        var btn = document.getElementById("btn");
-        var text = document.getElementById("text");
-        var content = document.getElementsByTagName("ul")[0];
-        var img = content.getElementsByTagName("img");
-        var span = content.getElementsByTagName("span");
-        var typing_status = document.getElementById("typing_status");
-        var version = document.getElementById("version");
-        var onlineusers = document.getElementById("onlineusers");
-        var text = document.getElementById("text");
-        var cookiedata = "";
+        var time_now = 0,
+          time_last = 0,
+          socket = io(),
+          arrIcon = ["/huaji.webp", "/xiaoye.webp"], //arrIcon[0] = client icon, arrIcon[1] = server icon
+          sorc = 1,
+          liNow = -1,
+          btn = document.getElementById("btn"),
+          text = document.getElementById("text"),
+          content = document.getElementsByTagName("ul")[0],
+          img = content.getElementsByTagName("img"),
+          span = content.getElementsByTagName("span"),
+          typing_status = document.getElementById("typing_status"),
+          version = document.getElementById("version"),
+          onlineusers = document.getElementById("onlineusers"),
+          text = document.getElementById("text"),
+          cookiedata = "";
 
         socket.on("chat message", function (msg) {
-          if (msg instanceof Array) {
-            CID = msg[0];
-            msg = msg[1];
-          }
+          var CID = msg.cookiedata;
+          CID = CID.replace("ChatdacsID=", "");
+          CID = CID.replace("ChatdacsID = ", "");
+          if (CID == "0") CID = "";
+          var msg = msg.msg;
           time_now = new Date().getTime();
           if (time_now - time_last < 300000) {
             content.innerHTML += '<li><img src="' + arrIcon[sorc] + '"><span>' + msg + "</span></li>";
           } else {
             content.innerHTML +=
-              '<div id="time">' + CurentTime() + '</div><li><img src="' + arrIcon[sorc] + '"><span>' + msg + "</span></li>";
+              '<div id="time">' +
+              CurentTime() +
+              '</div><li><img src="' +
+              arrIcon[sorc] +
+              '"><span>' +
+              msg +
+              "</span></li>";
             time_last = new Date().getTime();
           }
           liNow++;
@@ -139,7 +146,8 @@
 
         socket.on("getcookie", function (msg) {
           cookiedata = document.cookie;
-          if (cookiedata == null || cookiedata == "") cookiedata = document.cookie = "ChatdacsID = " + new Date().getTime();
+          if (cookiedata == null || cookiedata == "")
+            cookiedata = document.cookie = "ChatdacsID = " + new Date().getTime();
           socket.emit("cookiecoming", cookiedata);
         });
 
@@ -157,13 +165,15 @@
 
         btn.onclick = function () {
           if (text.value === "") {
-            socket.emit("chat message", [cookiedata, text.placeholder]);
+            var msg = text.placeholder;
+            socket.emit("chat message", { cookiedata, msg });
             sorc = 0;
             window.scrollTo(0, document.body.scrollHeight);
             return false;
           } else {
             socket.emit("typing_over");
-            socket.emit("chat message", [cookiedata, text.value]);
+            var msg = text.value;
+            socket.emit("chat message", { cookiedata, msg });
             text.value = "";
             sorc = 0;
             window.scrollTo(0, document.body.scrollHeight);

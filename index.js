@@ -30,19 +30,19 @@ Giftina：https://giftia.moe
 */
 
 //系统参数和开关，根据你的需要改动
-const version = "ChatDACS 2.0.1-124"; //版本号
+const version = "ChatDACS 2.0.1-125"; //版本号
 const chat_swich = 1; //自动聊天开关，需数据库中配置聊天表
-const news_swich = 1; //首屏新闻开关
+const news_swich = 0; //首屏新闻开关
 const jc_swich = 0; //酱菜物联服务开关
 const password = "233333"; //配置开门密码
 const apikey = "2333333333333333"; //换成你自己申请的 jcck_apikey，非必须
 const Tiankey = "f21f0dd07e3e07ef6e95c5f93cf6dd1c"; //天行接口key，私有，图个方便先直接放上去了
 const eval_swich = 0; //动态注入和执行开关，便于调试，但开启有极大风险，最好完全避免启用它，特别是在生产环境部署时
-const html = "/new.html"; //前端页面路径
+const html = "/mobile.html"; //前端页面路径
 const help =
   "功能列表：<br />·门禁系统：<br />/开门 密码<br />用户指令：<br />/log_view<br />/reload<br />/rename 昵称<br />·其他指令：<br />经过2w+用户养成的即时人工智能聊天<br />输入BV号直接转换为AV号<br />/随机cos<br />/随机买家秀<br />/随机冷知识<br />首屏新闻展示<br />/随机二次元图";
 const welcome =
-  '项目开源于<a href="//github.com/Giftia/ChatDACS/"> github.com/Giftia/ChatDACS </a>，欢迎Star。系统已与小夜联动最新聊天词库，请随意聊天。需要帮助请发送 /帮助';
+  '项目开源于<a href="//github.com/Giftia/ChatDACS/" target=_black> github.com/Giftia/ChatDACS </a>，欢迎Star。系统已与小夜联动最新聊天词库，请随意聊天。需要帮助请发送 /帮助';
 
 /* 好了！请不要再继续编辑。请保存本文件。使用愉快！ */
 
@@ -175,10 +175,10 @@ io.on("connection", (socket) => {
               "system message",
               `新用户 ${msg} 已连接。小夜帮你取了一个随机昵称：「${data}」，想要更改昵称可以发送 /rename 昵称`
             );
-            io.emit(
-              "chat message",
-              "主人你好，我是小夜，这里是一个以聊天方式进行运行的辅助功能性系统，先试着点击下面的发送按钮试试吧。"
-            );
+            io.emit("chat message", {
+              cookiedata: "ChatdacsID=0",
+              msg: "主人你好，我是小夜，这里是一个以聊天方式进行运行的辅助功能性系统，先试着点击下面的发送按钮试试吧。",
+            });
           },
           (err, data) => {
             console.log(`随机昵称错误：${err} , ${data}`);
@@ -192,7 +192,10 @@ io.on("connection", (socket) => {
   if (news_swich) {
     Getnews().then(
       (data) => {
-        io.emit("chat message", data);
+        io.emit("chat message", {
+          cookiedata: "ChatdacsID=0",
+          msg: data,
+        });
       },
       (err, data) => {
         console.log(`Getnews(): rejected, and err:${err}`);
@@ -216,10 +219,11 @@ io.on("connection", (socket) => {
     io.emit("typing", "");
   });
 
-  socket.on("chat message", (msgWITHcid) => {
-    CID = msgWITHcid[0];
+  socket.on("chat message", (msg) => {
+    var CID = msg.cookiedata;
     CID = CID.replace("ChatdacsID=", "");
-    msg = msgWITHcid[1];
+    CID = CID.replace("ChatdacsID = ", "");
+    var msg = msg.msg;
     msg = msg.replace(/'/g, "[非法字符]"); //防爆
     msg = msg.replace(/</g, "[非法字符]"); //防爆
     msg = msg.replace(/>/g, "[非法字符]"); //防爆
@@ -229,20 +233,29 @@ io.on("connection", (socket) => {
     var receive_debug = `${Curentyyyymmdd() + CurentTime()}收到用户 ${socket.username}(${CID}) 的消息: ${msg}`;
     console.log(receive_debug.warn);
     db.run(`INSERT INTO messages VALUES('${Curentyyyymmdd()}', '${CurentTime()}', '${CID}', '${msg}')`);
-    io.emit("chat message", `${socket.username}(${CID}) : ${msg}`);
+
+    io.emit("chat message", { cookiedata: `ChatdacsID=${CID}`, msg: `${socket.username}: ${msg}` }); //用户广播
+
+    //io.emit("chat message", `${socket.username}(${CID}) : ${msg}`); //陈旧用户广播
 
     if (door_reg.test(msg)) {
       if (jc_swich) {
         if (msg === "/开门 " + password) {
           Opendoor();
-          io.emit("chat message", "密码已确认，开门指令已发送");
-          io.emit("chat message", "计算机科创基地提醒您：道路千万条，安全第一条。开门不关门，亲人两行泪。");
+          io.emit("chat message", {
+            cookiedata: "ChatdacsID=0",
+            msg: "密码已确认，开门指令已发送",
+          });
+          io.emit("chat message", {
+            cookiedata: "ChatdacsID=0",
+            msg: "计算机科创基地提醒您：道路千万条，安全第一条。开门不关门，亲人两行泪。",
+          });
           console.log(`${Curentyyyymmdd() + CurentTime()}用户 ${CID} 开门操作`);
         } else {
-          io.emit("chat message", "密码错误，请重试");
+          io.emit("chat message", { cookiedata: "ChatdacsID=0", msg: "密码错误，请重试" });
         }
       } else {
-        io.emit("chat message", "酱菜物联服务未启动，故门禁服务一并禁用");
+        io.emit("chat message", { cookiedata: "ChatdacsID=0", msg: "酱菜物联服务未启动，故门禁服务一并禁用" });
       }
     } else if (msg === "/log") {
       db.all("SELECT * FROM messages", (e, sql) => {
@@ -255,25 +268,28 @@ io.on("connection", (socket) => {
             data += "<br><br>" + time + CID + message;
           }
           console.log(sql);
-          io.emit("chat message", `${data}<br />共有${sql.length}条记录`);
+          io.emit("chat message", { cookiedata: "ChatdacsID=0", msg: `${data}<br />共有${sql.length}条记录` });
         } else {
           console.log(e);
-          io.emit("chat message", e);
+          io.emit("chat message", { cookiedata: "ChatdacsID=0", msg: e });
         }
       });
     } /*else if (msg === "/cls") {
         db.all("DELETE FROM messages", function (e, sql) {
           if (!e) {
-            io.emit("chat message", "管理指令：聊天信息数据库清空完毕");
+            io.emit("chat message", { cookiedata: "ChatdacsID=0", msg: "管理指令：聊天信息数据库清空完毕"});
             console.log(Curentyyyymmdd() + CurentTime() + "已清空聊天信息数据库");
           } else {
             console.log(e);
-            io.emit("chat message", e);
+            io.emit("chat message", { cookiedata: "ChatdacsID=0", msg: e});
           }
         });
       }*/ else if (rename_reg.test(msg)) {
       db.run(`UPDATE users SET nickname = '${msg.slice(8)}' WHERE CID ='${CID}'`);
-      io.emit("chat message", `昵称重命名完毕，小夜现在会称呼你为 ${msg.slice(8)} 啦`);
+      io.emit("chat message", {
+        cookiedata: "ChatdacsID=0",
+        msg: `昵称重命名完毕，小夜现在会称呼你为 ${msg.slice(8)} 啦`,
+      });
     } else if (msg === "/log_view") {
       db.all("SELECT yyyymmdd, COUNT(*) As count FROM messages Group by yyyymmdd", (e, sql) => {
         console.log(sql);
@@ -286,14 +302,14 @@ io.on("connection", (socket) => {
           io.emit("chart message", data);
         } else {
           console.log(e);
-          io.emit("chat message", e);
+          io.emit("chat message", { cookiedata: "ChatdacsID=0", msg: e });
         }
       });
     } else if (bv2av__reg.test(msg)) {
       msg = msg.replace(" ", "");
       Bv2Av(msg).then(
         (data) => {
-          io.emit("chat message", data);
+          io.emit("chat message", { cookiedata: "ChatdacsID=0", msg: data });
         },
         (err, data) => {
           console.log(`Bv2Av(): rejected, and err:${err}`);
@@ -303,7 +319,7 @@ io.on("connection", (socket) => {
     } else if (msg === "/reload") {
       io.emit("reload");
     } else if (msg === "/帮助") {
-      io.emit("chat message", help);
+      io.emit("chat message", { cookiedata: "ChatdacsID=0", msg: help });
     } else if (msg === "/随机cos") {
       RandomCos().then(
         (data) => {
@@ -327,7 +343,7 @@ io.on("connection", (socket) => {
     } else if (msg === "/随机冷知识") {
       RandomHomeword().then(
         (data) => {
-          io.emit("chat message", data);
+          io.emit("chat message", { cookiedata: "ChatdacsID=0", msg: data });
         },
         (err, data) => {
           console.log(`RandomHomeword(): rejected, and err:${err}`);
@@ -353,10 +369,13 @@ io.on("connection", (socket) => {
             var ans = Math.floor(Math.random() * sql.length);
             var answer = JSON.stringify(sql[ans].answer);
             console.log(`随机选取第${ans}条回复：${sql[ans].answer}`);
-            io.emit("chat message", answer);
+            io.emit("chat message", { cookiedata: "ChatdacsID=0", msg: answer });
           } else {
             console.log(`聊天组件抛错：${e}`);
-            io.emit("chat message", "小夜好像不是很懂你在说什么，你等着，我去问问小爱，嘿Siri~");
+            io.emit("chat message", {
+              cookiedata: "ChatdacsID=0",
+              msg: "小夜好像不是很懂你在说什么，你等着，我去问问小爱，嘿Siri~",
+            });
           }
         });
       } else {
@@ -392,7 +411,7 @@ function Opendoor() {
     client.write(`mode=exe&apikey=${apikey}&data={ck0040001}`);
     setTimeout(() => {
       client.write(`mode=exe&apikey=${apikey}&data={ck0040000}`);
-      io.emit("chat message", "自动关门指令已发送，仍需手动带门吸合电磁铁");
+      io.emit("chat message", { cookiedata: "ChatdacsID=0", msg: "自动关门指令已发送，仍需手动带门吸合电磁铁" });
       console.log(`${Curentyyyymmdd() + CurentTime()}自动关门`);
     }, 3000);
   });
@@ -532,7 +551,9 @@ function RandomCos() {
   var p = new Promise((resolve, reject) => {
     var rand_page_num = Math.floor(Math.random() * 9);
     request(
-      "https://api.vc.bilibili.com/link_draw/v2/Photo/list?category=cos&type=hot&page_num=" + rand_page_num + "&page_size=1",
+      "https://api.vc.bilibili.com/link_draw/v2/Photo/list?category=cos&type=hot&page_num=" +
+        rand_page_num +
+        "&page_size=1",
       (err, response, body) => {
         body = JSON.parse(body);
         if (!err && response.statusCode === 200 && body.code === 0) {

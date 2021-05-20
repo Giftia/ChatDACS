@@ -1,0 +1,304 @@
+<!-- Giftina：https://giftia.moe -->
+<!DOCTYPE html>
+<html lang="zh-cn">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="preload" href="/socket.io/socket.io.js" as="script" />
+    <link rel="preload" href="/superplaceholder.min.js" as="script" />
+    <link rel="preload" href="/huaji.webp" as="image" />
+    <link rel="preload" href="/xiaoye.webp" as="image" />
+    <link rel="icon" href="/xiaoye.webp" />
+    <meta
+      name="viewport"
+      content="width=device-width, height=device-height, user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"
+    />
+    <meta name="format-detection" content="telephone=no" />
+    <title>ChatDACS</title>
+
+    <link rel="stylesheet" href="/layim/css/layui.mobile.css" />
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/echarts.min.js"></script>
+    <script src="/layim/layui.js"></script>
+
+    <style>
+      .addbtn {
+        position: absolute;
+        right: 10px;
+        bottom: 5px;
+        padding: 0 5px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <script>
+      layui
+        .config({
+          version: true,
+        })
+        .use(["mobile", "form"], function () {
+          var mobile = layui.mobile,
+            layim = mobile.layim,
+            $ = mobile.jquery,
+            form = mobile.form,
+            laytpl = mobile.laytpl,
+            layer = mobile.layer,
+            cookiedata = "";
+
+          var socket = io();
+
+          socket.on("getcookie", function (msg) {
+            cookiedata = document.cookie;
+            if (cookiedata == null || cookiedata == "")
+              cookiedata = document.cookie = "ChatdacsID = " + new Date().getTime();
+            socket.emit("cookiecoming", cookiedata);
+          });
+
+          socket.on("reload", function () {
+            window.location.reload();
+          });
+
+          socket.on("version", function (msg) {
+            document.title = msg;
+            layim.config({
+              //上传图片接口
+              uploadImage: {
+                url: "/upload/image", //（返回的数据格式见下文）
+                up_way: "up",
+                type: "", //默认post
+              },
+
+              //上传文件接口
+              uploadFile: {
+                url: "/upload/file", //（返回的数据格式见下文）
+                up_way: "up",
+                type: "", //默认post
+              },
+
+              init: {
+                //我的信息
+                mine: {
+                  username: "您", //我的昵称
+                  id: "233", //我的ID
+                  status: "online",
+                  avatar: "/huaji.webp", //我的头像
+                  sign: "三点几啦",
+                },
+                //我的好友列表
+                friend: [
+                  {
+                    groupname: "系统",
+                    id: 1,
+                    list: [
+                      {
+                        username: "系统消息",
+                        id: "0",
+                        status: "online",
+                        avatar: "/huaji.webp",
+                        sign: "喂!三点几嚟!做撚啊做,饮茶先啦!",
+                      },
+                      {
+                        username: "记事本",
+                        id: "2",
+                        status: "online",
+                        avatar: "/xiaoye.webp",
+                        sign: "可以用来临时备份一些文字资料",
+                      },
+                    ],
+                  },
+                  {
+                    groupname: "老婆们",
+                    id: 2,
+                    list: [
+                      {
+                        username: "湊-阿库娅",
+                        id: "375504219",
+                        status: "online",
+                        avatar: "/images/a7195c09c6ba4722966d745d6f692035d3fe4d95.jpg@128w_128h_1o.webp",
+                        sign: "虚拟女仆、湊(みなと)あくあ！",
+                      },
+                      {
+                        username: "泠鸢yousa",
+                        id: "282994",
+                        status: "online",
+                        avatar: "/images/28f95c383f2805dbed32e93007c91ccfda28775f.jpg@128w_128h_1o.webp",
+                        sign: "虚拟艺人团体VirtuaReal Star成员",
+                      },
+                      {
+                        username: "飞鸟尤卡里",
+                        id: "1828506816",
+                        status: "online",
+                        avatar: "/images/08bf2881bacf45fc936abe88773cfa38b9a38670.jpg@128w_128h_1o.webp",
+                        sign: "完全个人勢！！我是樱花和山茶的VUP❣️谢谢大家❣️",
+                      },
+                      {
+                        username: "白上吹雪",
+                        id: "332704117",
+                        status: "online",
+                        avatar: "/images/7aff7cd75b5c60cb50a224cf1313a69700be8558.jpg@128w_128h_1o.webp",
+                        sign: "虚拟白发狐狸白上吹雪是也(^・ω・^§)ﾉ ",
+                      },
+                      {
+                        username: "常陆茉子",
+                        id: "114514",
+                        status: "online",
+                        avatar: "/images/c70fe35d0f06643a57f626e4872831f159e75953.jpg@128w_128h_1o.webp",
+                        sign: "坐立不安…不知所措…慌慌张张…手忙脚乱…",
+                      },
+                    ],
+                  },
+                ],
+              },
+
+              //扩展聊天面板工具栏
+              tool: [
+                {
+                  alias: "code",
+                  title: "召唤小夜",
+                  iconUnicode: "&#xe64e;",
+                },
+              ],
+
+              //扩展更多列表
+              moreList: [
+                {
+                  alias: "bonus",
+                  title: "彩蛋",
+                  iconUnicode: "&#xe664;", //图标字体的unicode，可不填
+                  iconClass: "", //图标字体的class类名
+                },
+                {
+                  alias: "reload",
+                  title: "重生",
+                  iconUnicode: "&#xe9aa;", //图标字体的unicode，可不填
+                  iconClass: "", //图标字体的class类名
+                },
+                {
+                  alias: "settings",
+                  title: "设置",
+                  iconUnicode: "&#xe620;", //图标字体的unicode，可不填
+                  iconClass: "", //图标字体的class类名
+                },
+                {
+                  alias: "about",
+                  title: "关于",
+                  iconUnicode: "&#xe60b;", //图标字体的unicode，可不填
+                  iconClass: "", //图标字体的class类名
+                },
+              ],
+
+              isVoice: 1, //是否播放声音
+              voice: "/!.mp3", //声音提醒文件位置
+              notice: 1, //是否开启桌面消息提醒，即在浏览器之外的提醒
+              maxLength: 3000, //可允许的消息最大字符长度
+              tabIndex: 0, //用户设定初始打开的Tab项下标
+              isNewFriend: 0, //是否开启“新的朋友”
+              isgroup: 0, //是否开启“群聊”
+              chatTitleColor: "#edbc28", //顶部Bar颜色
+              title: msg, //标题
+              copyright: 1, //侵权立刻改为0
+            });
+          });
+
+          //监听点击更多列表
+          layim.on("moreList", function (obj) {
+            switch (obj.alias) {
+              case "bonus":
+                layer.msg("好像有人给你发了一条消息，回消息界面看看吧");
+                layim.getMessage({
+                  username: "湊-阿库娅",
+                  avatar: "/images/a7195c09c6ba4722966d745d6f692035d3fe4d95.jpg@128w_128h_1o.webp",
+                  id: "375504219",
+                  type: "friend",
+                  cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
+                  content: "老公！",
+                });
+                break;
+              case "reload":
+                layim.panel({
+                  title: "重生确认", //标题
+                  tpl:
+                    '<div style="padding: 10px; line-height:250%;"><h1>点击确定重生，你将会被强制删档，丢失所有聊天记录，以新人身份重新进入，确定吗？</h1><button style="width: 100%; -webkit-tap-highlight-color: rgba(0,0,0,0); font-family: inherit; font-style: inherit; font-weight: inherit; vertical-align: middle; -webkit-user-select: none; display: inline-block; outline: 0; -webkit-appearance: none; -webkit-transition: all .3s; box-sizing: border-box; border-color: #FF5722!important; color: #FF5722!important; height: 38px; line-height: 38px; border: 1px solid transparent; padding: 0 18px; white-space: nowrap; text-align: center; font-size: 14px; border-radius: 2px; cursor: pointer; background: 0 0; margin: 10px 10px 10px 0;" onclick="window.localStorage.clear();window.location.reload();document.cookie = ' +
+                    "'ChatdacsID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'" +
+                    '">确定重生</button>',
+                });
+                break;
+              case "settings":
+                layim.panel({
+                  title: "设置", //标题
+                  tpl: '<div style="padding: 10px;">设置界面，{{d.data.test}}</div>', //模版
+                  data: {
+                    //数据
+                    test: "还没写好",
+                  },
+                });
+                break;
+              case "about":
+                layer.msg(
+                  '项目开源于<a href="//github.com/Giftia/ChatDACS/" target=_black> github.com/Giftia/ChatDACS </a>，欢迎Star。系统已与小夜联动最新聊天词库，请随意聊天。'
+                );
+                break;
+            }
+          });
+
+          //监听自定义工具栏点击，以添加代码为例
+          layim.on("tool(code)", function (insert, send) {
+            insert("小夜"); //将内容插入到编辑器
+            send();
+          });
+
+          //监听发送消息
+          layim.on("sendMessage", function (data) {
+            socket.emit("chat message", { cookiedata: cookiedata, msg: data.mine.content });
+          });
+
+          //接收消息
+          socket.on("chat message", function (msg) {
+            var CID = msg.cookiedata;
+            msg = msg.msg;
+            if (CID != cookiedata) {
+              layim.getMessage({
+                username: "小夜",
+                avatar: "/xiaoye.webp",
+                id: "1",
+                type: "friend",
+                mine: 0,
+                cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
+                content: msg,
+              });
+            }
+          });
+
+          //接收图片消息
+          socket.on("pic message", function (msg) {
+            layim.getMessage({
+              username: "小夜",
+              avatar: "/xiaoye.webp",
+              id: "1",
+              type: "friend",
+              mine: 0,
+              cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
+              content: `img[${msg}]`,
+            });
+          });
+
+          //接收系统消息
+          socket.on("system message", function (msg) {
+            layim.getMessage({
+              username: "系统消息",
+              avatar: "/xiaoye.webp",
+              id: "0",
+              type: "kefu",
+              mine: 0,
+              cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
+              content: msg,
+            });
+          });
+
+          //模拟"更多"有新动态
+          layim.showNew("More", true);
+          layim.showNew("about", true);
+        });
+    </script>
+  </body>
+</html>

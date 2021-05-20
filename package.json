@@ -1,6 +1,6 @@
 {
   "name": "chatdacs",
-  "version": "1.7.5",
+  "version": "2.0.1",
   "decription": "Chatable Door Access Control System",
   "license": "GPL-3.0",
   "dependencies": {

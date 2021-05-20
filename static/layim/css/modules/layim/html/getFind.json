@@ -1,0 +1,59 @@
+{
+    "friendJson": {
+        "legend": "好友推荐",
+        "type": "friend",
+        "data": [{
+                "memberName": "好友1",
+                "memberIdx": "9937384",
+                "signature": "这是我的签名哈哈哈",
+                "avatar": "http://tp1.sinaimg.cn/1241679004/180/5743814375/0"
+            },
+            {
+                "memberName": "好友2",
+                "memberIdx": "9937384",
+                "avatar": "//tva1.sinaimg.cn/crop.0.0.720.720.180/005JKVuPjw8ers4osyzhaj30k00k075e.jpg",
+                "signature": "这是我的签名哈哈哈"
+            },
+            {
+                "memberName": "好友3",
+                "memberIdx": "99373ss84",
+                "avatar": "http://tva1.sinaimg.cn/crop.0.0.180.180.180/86b15b6cjw1e8qgp5bmzyj2050050aa8.jpg",
+                "signature": "这是我的签名哈哈哈"
+            },
+            {
+                "memberName": "好友4",
+                "memberIdx": "9937384",
+                "avatar": "http://tp2.sinaimg.cn/2518326245/180/5636099025/0",
+                "signature": ""
+            }
+        ]
+    },
+    "groupJson": {
+        "legend": "群组推荐",
+        "type": "group",
+        "data": [{
+                "groupName": "群组1",
+                "groupIdx": "99ss37384",
+                "des": "群组介绍说到底是个"
+            },
+            {
+                "groupName": "群组2",
+                "groupIdx": "993722384",
+                "des": "群组介绍思否上"
+            },
+            {
+                "groupName": "群组3",
+                "groupIdx": "9937453ss84",
+                "des": "群组介绍222"
+            },
+            {
+                "groupName": "群组4",
+                "groupIdx": "9937384",
+                "des": ""
+            }
+        ]
+    },
+ 
+    "code": 0,
+    "msg":"正常"
+}
