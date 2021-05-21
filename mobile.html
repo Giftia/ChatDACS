@@ -379,6 +379,26 @@
 
           //监听聊天窗口的切换，仅在小夜聊天轮播placeholder
           layim.on("chatChange", function (data) {
+            var typing_status = document.getElementsByClassName("layim-chat-status")[1],
+              text = document.getElementsByTagName("input")[0],
+              btn = document.getElementsByTagName("button")[0];
+
+            text.setAttribute("oninput", "typing()");
+
+            socket.on("typing", function (msg) {
+              if (text != "") typing_status.innerHTML = msg;
+            });
+
+            typing = function () {
+              socket.emit("typing");
+            };
+
+            btn.setAttribute("onclick", "typing_over()");
+
+            typing_over = function () {
+              socket.emit("typing_over");
+            };
+
             if (data.data.id == "1") {
               superplaceholder({
                 el: document.querySelector("input"),
