@@ -23,14 +23,14 @@ Giftina：https://giftia.moe
   每当次版本号迭代,如 1.1.0 --> 1.2.0,意味着需要更新依赖,请运行:  ncu -u  ,等待进度完成后运行:  cnpm install
   出现任何缺失的依赖包请运行:  cnpm install 缺失的包名
   版本号的改变规律,如 1.2.3-45,形如 A.B.C-D:
-    A 大版本号,当整端重构或出现不向后兼容的改变时增加A,更新代码需要更新依赖
+    A 大版本号,当整端重构或出现不向后兼容的改变时增加A,更新代码需要更新依赖,且需要重载数据库
     B 次版本号,功能更新,当功能增加、修改或删除时增加B,更新代码需要更新依赖
     C 尾版本号,表示小修改,如修复一些重要bug时增加C,更新代码可以不更新依赖
     D 迭代号,表示Github commits 即代码提交次数,属于非必要更新,可以不更新代码
 */
 
 //系统参数和开关，根据你的需要改动
-const version = "ChatDACS 2.0.1-126"; //版本号
+const version = "ChatDACS 2.1.0-127"; //版本号
 const chat_swich = 1; //自动聊天开关，需数据库中配置聊天表
 const news_swich = 0; //首屏新闻开关
 const jc_swich = 0; //酱菜物联服务开关
@@ -48,6 +48,8 @@ const welcome = "系统已与小夜联动最新聊天词库，请随意聊天。
 //模块依赖
 var compression = require("compression");
 var express = require("express");
+var multer = require("multer");
+var upload = multer({ dest: "static/uploads/" }); //用户上传目录
 var app = require("express")();
 app.use(compression());
 app.use(express.static("static")); //静态文件引入
@@ -382,6 +384,18 @@ io.on("connection", (socket) => {
       }
     }
   });
+});
+
+//图片上传接口
+app.post("/upload/image", upload.single("file"), function (req, res, next) {
+  console.log(`图片已经保存，图片信息：${req.file}`);
+  io.emit("pic message", `/uploads/${req.file.filename}`);
+});
+
+//文件上传接口
+app.post("/upload/file", upload.single("file"), function (req, res, next) {
+  console.log(`文件已经保存，文件信息：${req.file}`);
+  io.emit("file message", { file: `/uploads/${req.file.filename}`, filename: req.file.originalname });
 });
 
 function Connjc() {

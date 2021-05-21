@@ -31,6 +31,7 @@
   </head>
 
   <body>
+    <script src="/superplaceholder.min.js"></script>
     <script>
       layui
         .config({
@@ -61,6 +62,16 @@
           socket.on("version", function (msg) {
             document.title = msg;
             layim.config({
+              uploadImage: {
+                //上传图片接口
+                url: "/upload/image", //（返回的数据格式见下文）
+                type: "post", //默认post
+              },
+              uploadFile: {
+                //上传文件接口
+                url: "/upload/file", //（返回的数据格式见下文）
+                type: "post", //默认post
+              },
               init: {
                 //我的信息
                 mine: {
@@ -154,6 +165,21 @@
                   iconUnicode: "&#xe662;",
                 },
                 {
+                  alias: "ecy",
+                  title: "随机二次元图",
+                  iconUnicode: "&#xe66a;",
+                },
+                {
+                  alias: "knowledge",
+                  title: "随机冷知识",
+                  iconUnicode: "&#xe649;",
+                },
+                {
+                  alias: "rename",
+                  title: "更改昵称",
+                  iconUnicode: "&#xe62a;",
+                },
+                {
                   alias: "help",
                   title: "帮助",
                   iconUnicode: "&#xe607;",
@@ -171,7 +197,7 @@
                 {
                   alias: "reload",
                   title: "重生",
-                  iconUnicode: "&#xe9aa;", //图标字体的unicode，可不填
+                  iconUnicode: "&#xe666;", //图标字体的unicode，可不填
                   iconClass: "", //图标字体的class类名
                 },
                 {
@@ -189,7 +215,7 @@
               ],
 
               isVoice: 1, //是否播放声音
-              voice: "/!.mp3", //声音提醒文件位置
+              voice: "/dingding.mp3", //声音提醒文件位置
               notice: 1, //是否开启桌面消息提醒，即在浏览器之外的提醒
               maxLength: 3000, //可允许的消息最大字符长度
               tabIndex: 0, //用户设定初始打开的Tab项下标
@@ -199,47 +225,6 @@
               title: msg, //标题
               copyright: 1, //侵权立刻改为0
             });
-          });
-
-          //监听点击更多列表
-          layim.on("moreList", function (obj) {
-            switch (obj.alias) {
-              case "bonus":
-                layer.msg("好像有人给你发了一条消息，回消息界面看看吧");
-                layim.getMessage({
-                  username: "湊-阿库娅",
-                  avatar: "/images/a7195c09c6ba4722966d745d6f692035d3fe4d95.jpg@128w_128h_1o.webp",
-                  id: "375504219",
-                  type: "friend",
-                  cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
-                  content: "老公！",
-                });
-                break;
-              case "reload":
-                layim.panel({
-                  title: "重生确认", //标题
-                  tpl:
-                    '<div style="padding: 10px; line-height:250%;"><h1>点击确定重生，你将会被强制删档，丢失所有聊天记录，以新人身份重新进入，确定吗？</h1><button style="width: 100%; -webkit-tap-highlight-color: rgba(0,0,0,0); font-family: inherit; font-style: inherit; font-weight: inherit; vertical-align: middle; -webkit-user-select: none; display: inline-block; outline: 0; -webkit-appearance: none; -webkit-transition: all .3s; box-sizing: border-box; border-color: #FF5722!important; color: #FF5722!important; height: 38px; line-height: 38px; border: 1px solid transparent; padding: 0 18px; white-space: nowrap; text-align: center; font-size: 14px; border-radius: 2px; cursor: pointer; background: 0 0; margin: 10px 10px 10px 0;" onclick="window.localStorage.clear();window.location.reload();document.cookie = ' +
-                    "'ChatdacsID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'" +
-                    '">确定重生</button>',
-                });
-                break;
-              case "settings":
-                layim.panel({
-                  title: "设置", //标题
-                  tpl: '<div style="padding: 10px;">设置界面，{{d.data.test}}</div>', //模版
-                  data: {
-                    //数据
-                    test: "还没写好",
-                  },
-                });
-                break;
-              case "about":
-                layer.msg(
-                  '项目开源于<a href="//github.com/Giftia/ChatDACS/" target=_black> github.com/Giftia/ChatDACS </a>，欢迎Star。系统已与小夜联动最新聊天词库，请随意聊天。'
-                );
-                break;
-            }
           });
 
           //工具栏-召唤小夜
@@ -254,9 +239,27 @@
             send();
           });
 
+          //工具栏-ecy
+          layim.on("tool(ecy)", function (insert, send) {
+            insert("/随机二次元图"); //将内容插入到编辑器
+            send();
+          });
+
           //工具栏-tbshow
           layim.on("tool(tbshow)", function (insert, send) {
             insert("/随机买家秀"); //将内容插入到编辑器
+            send();
+          });
+
+          //工具栏-knowledge
+          layim.on("tool(knowledge)", function (insert, send) {
+            insert("/随机冷知识"); //将内容插入到编辑器
+            send();
+          });
+
+          //工具栏-rename
+          layim.on("tool(rename)", function (insert, send) {
+            insert("/rename 昵称"); //将内容插入到编辑器
             send();
           });
 
@@ -264,6 +267,53 @@
           layim.on("tool(help)", function (insert, send) {
             insert("/帮助"); //将内容插入到编辑器
             send();
+          });
+
+          //更多菜单
+          layim.on("moreList", function (obj) {
+            switch (obj.alias) {
+              case "bonus":
+                layer.msg("好像有人给你发了一条消息，回消息界面看看吧");
+                layim.getMessage({
+                  username: "湊-阿库娅",
+                  avatar: "/images/a7195c09c6ba4722966d745d6f692035d3fe4d95.jpg@128w_128h_1o.webp",
+                  id: "375504219",
+                  type: "friend",
+                  cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
+                  content: "老公！",
+                });
+                break;
+              case "reload":
+                layer.open({
+                  content: "点击确定重生，你将会被强制删档，丢失所有聊天记录，以新人身份重新进入，确定吗？",
+                  btn: ["取消", "确定重生"],
+                  skin: "footer",
+                  no: function (index) {
+                    layer.open({ content: "执行删档操作，用户已被删除" });
+                    window.localStorage.clear();
+                    window.location.reload();
+                    document.cookie = "ChatdacsID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                  },
+                });
+                break;
+              case "settings":
+                layim.panel({
+                  title: "设置", //标题
+                  tpl: '<div style="padding: 10px;">设置界面，{{d.data.test}}</div>', //模版
+                  data: {
+                    //数据
+                    test: "还没写好",
+                  },
+                });
+                break;
+              case "about":
+                layer.open({
+                  title: ["关于这个项目", "background-color: #FF4351; color:#fff;"],
+                  content:
+                    'ChatDACS，可聊天门禁系统(Chatable Door Access Control System)，一个简单的H5智能门禁系统，使用node.js编写。本项目为全端，与硬件端ChaosNodeMCU联动为一个完整的门禁项目。远期计划完善为智能家居系统。低耦合，可脱离硬件端作为单独的聊天系统独立运行。项目开源于<a href="//github.com/Giftia/ChatDACS/" target=_black> github.com/Giftia/ChatDACS </a>，欢迎Star。系统已与小夜联动最新聊天词库，请随意聊天。如需联系请访问我的网站：<a href="//giftia.moe" target=_black> giftia.moe </a>',
+                });
+                break;
+            }
           });
 
           //监听发送消息
@@ -301,6 +351,19 @@
             });
           });
 
+          //接收文件消息
+          socket.on("file message", function (msg) {
+            layim.getMessage({
+              username: "小夜",
+              avatar: "/xiaoye.webp",
+              id: "1",
+              type: "friend",
+              mine: 0,
+              cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
+              content: `file(${msg.file})[${msg.filename}]`,
+            });
+          });
+
           //接收系统消息
           socket.on("system message", function (msg) {
             layim.getMessage({
@@ -312,6 +375,35 @@
               cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
               content: msg,
             });
+          });
+
+          //监听聊天窗口的切换，仅在小夜聊天轮播placeholder
+          layim.on("chatChange", function (data) {
+            if (data.data.id == "1") {
+              superplaceholder({
+                el: document.querySelector("input"),
+                sentences: [
+                  "/开门 233333",
+                  "/log_view",
+                  "/reload",
+                  "/rename 昵称",
+                  "BV1PA411L7op",
+                  "/随机cos",
+                  "/随机买家秀",
+                  "/随机冷知识",
+                  "小夜",
+                  "/帮助",
+                  "/随机二次元图",
+                ],
+                options: {
+                  letterDelay: 100,
+                  sentenceDelay: 3000,
+                  loop: true,
+                  shuffle: true,
+                  startOnFocus: false,
+                },
+              });
+            }
           });
 
           //模拟"更多"有新动态
