@@ -16,8 +16,8 @@
     <title>ChatDACS</title>
 
     <link rel="stylesheet" href="/layim/css/layui.mobile.css" />
+    <link rel="stylesheet" href="/layim/css/layui.css" />
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/echarts.min.js"></script>
     <script src="/layim/layui.js"></script>
 
     <style>
@@ -44,23 +44,24 @@
             form = mobile.form,
             laytpl = mobile.laytpl,
             layer = mobile.layer,
-            cookiedata = "";
+            myCID = "";
 
           var socket = io();
 
           socket.on("getcookie", function (msg) {
-            cookiedata = document.cookie;
-            if (cookiedata == null || cookiedata == "")
-              cookiedata = document.cookie = "ChatdacsID = " + new Date().getTime();
-            socket.emit("cookiecoming", cookiedata);
+            if (document.cookie == null || document.cookie == "") {
+              document.cookie = "ChatdacsID=" + new Date().getTime();
+              window.location.reload();
+            }
+            myCID = document.cookie.replace("ChatdacsID=", "");
           });
 
-          socket.on("reload", function () {
-            window.location.reload();
-          });
-
-          socket.on("version", function (msg) {
+          socket.on("version", function (msg) {//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             document.title = msg;
+            socket.on("onlineusers", function (msg) {
+              var online_status = document.getElementsByClassName("layim-chat-status")[0];
+              online_status.innerHTML = `当前在线:${msg}`;
+            });
             layim.config({
               uploadImage: {
                 //上传图片接口
@@ -297,13 +298,15 @@
                 });
                 break;
               case "settings":
-                layim.panel({
-                  title: "设置", //标题
-                  tpl: '<div style="padding: 10px;">设置界面，{{d.data.test}}</div>', //模版
-                  data: {
-                    //数据
-                    test: "还没写好",
-                  },
+                socket.emit("getsettings", myCID);
+                socket.on("settings", function (data) {
+                  layim.panel({
+                    title: "设置",
+                    tpl: '<div style="padding: 10px"><form class="layui-form"action=""><div class="layui-form-item"><label class="layui-form-label">昵称</label><div class="layui-input-block"><input type="text"name="title"required lay-verify="required"placeholder="请输入昵称"autocomplete="off"class="layui-input"value="{{d.data.name}}"/><div class="layui-form-mid layui-word-aux">1-10长度的数英汉昵称</div></div></div><div class="layui-form-item"><label class="layui-form-label">首屏新闻开关</label><div class="layui-input-block"><input type="checkbox"name="switch"lay-skin="switch"/></div></div><div class="layui-form-item layui-form-text"><label class="layui-form-label">个性签名</label><div class="layui-input-block"><textarea name="desc"placeholder="请输入内容"class="layui-textarea"></textarea></div></div><div class="layui-form-item"><div class="layui-input-block"><button class="layui-btn"lay-submit lay-filter="formDemo">提交</button></div></div></form></div>',
+                    data: {
+                      name: data.name,
+                    },
+                  });
                 });
                 break;
               case "about":
@@ -318,23 +321,37 @@
 
           //监听发送消息
           layim.on("sendMessage", function (data) {
-            socket.emit("chat message", { cookiedata: cookiedata, msg: data.mine.content });
+            socket.emit("chat message", { CID: myCID, msg: data.mine.content });
           });
 
           //接收消息
           socket.on("chat message", function (msg) {
-            var CID = msg.cookiedata;
-            msg = msg.msg;
-            if (CID != cookiedata) {
-              layim.getMessage({
-                username: "小夜",
-                avatar: "/xiaoye.webp",
-                id: "1",
-                type: "friend",
-                mine: 0,
-                cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
-                content: msg,
-              });
+            switch (msg.CID) {
+              case "0":
+                layim.getMessage({
+                  username: "小夜",
+                  avatar: "/xiaoye.webp",
+                  id: "1",
+                  type: "friend",
+                  mine: 0,
+                  cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
+                  content: msg.msg,
+                });
+                break;
+              case myCID:
+                break;
+              default:
+                username = msg.name;
+                layim.getMessage({
+                  username: username,
+                  avatar: "/xiaoye.webp",
+                  id: "1",
+                  type: "friend",
+                  mine: 0,
+                  cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
+                  content: msg.msg,
+                });
+                break;
             }
           });
 
@@ -379,14 +396,18 @@
 
           //监听聊天窗口的切换，仅在小夜聊天轮播placeholder
           layim.on("chatChange", function (data) {
-            var typing_status = document.getElementsByClassName("layim-chat-status")[1],
-              text = document.getElementsByTagName("input")[0],
-              btn = document.getElementsByTagName("button")[0];
+            var text = document.getElementsByTagName("input")[0],
+              btn = document.getElementsByTagName("button")[0],
+              typing_status = document.getElementsByClassName("layim-chat-status")[1];
 
             text.setAttribute("oninput", "typing()");
 
             socket.on("typing", function (msg) {
               if (text != "") typing_status.innerHTML = msg;
+            });
+
+            socket.on("reload", function () {
+              window.location.reload();
             });
 
             typing = function () {
