@@ -56,7 +56,7 @@
             myCID = document.cookie.replace("ChatdacsID=", "");
           });
 
-          socket.on("version", function (msg) {//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+          socket.on("version", function (msg) {
             document.title = msg;
             socket.on("onlineusers", function (msg) {
               var online_status = document.getElementsByClassName("layim-chat-status")[0];

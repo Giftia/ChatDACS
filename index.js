@@ -30,7 +30,7 @@ Giftina：https://giftia.moe
 */
 
 //系统参数和开关，根据你的需要改动
-const version = "ChatDACS 2.1.2-129-监修中"; //版本号
+const version = "ChatDACS 2.1.3-130"; //版本号
 const chat_swich = 1; //自动聊天开关，需数据库中配置聊天表，自带的数据库已经配置好小夜嘴臭语录，开箱即用
 const news_swich = 0; //首屏新闻开关
 const jc_swich = 0; //酱菜物联服务开关
@@ -120,7 +120,7 @@ http.listen(80, () => {
 io.on("connection", (socket) => {
   socket.emit("getcookie");
   var CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
-  io.emit("version", version); //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  socket.emit("version", version);
   io.emit("onlineusers", ++onlineusers);
 
   //开始获取用户信息并处理
@@ -160,7 +160,7 @@ io.on("connection", (socket) => {
           db.run(`INSERT INTO users VALUES('${data}', '${CID}', '2', '${Curentyyyymmdd()}${CurentTime()}')`);
           socket.username = data;
           io.emit("system message", `新用户 ${CID} 已连接。小夜帮你取了一个随机昵称：「${socket.username}」，想要更改昵称可以发送 /rename 昵称`);
-          io.emit("chat message", {
+          socket.emit("chat message", {
             CID: "0",
             msg: "主人你好，我是小夜，这里是一个以聊天方式进行运行的辅助功能性系统，先试着点击聊天框下方的可拖动便捷菜单试试吧。",
           });
@@ -174,14 +174,14 @@ io.on("connection", (socket) => {
   if (news_swich) {
     Getnews().then(
       (data) => {
-        io.emit("chat message", {
+        socket.emit("chat message", {
           CID: "0",
           msg: data,
         });
       },
       (err, data) => {
         console.log(`Getnews(): rejected, and err:${err}`);
-        io.emit("system message", `Getnews() err:${data}`);
+        socket.emit("system message", `Getnews() err:${data}`);
       }
     );
   }
@@ -203,7 +203,7 @@ io.on("connection", (socket) => {
 
   socket.on("getsettings", (msg) => {
     var CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
-    io.emit("settings", { CID: CID, name: socket.username });
+    socket.emit("settings", { CID: CID, name: socket.username });
   });
 
   socket.on("setsettings", (msg) => {
@@ -211,7 +211,7 @@ io.on("connection", (socket) => {
     var CID = `/rename ${msg.CID}`;
     if (rename_reg.test(msg)) {
       db.run(`UPDATE users SET nickname = '${msg.slice(8)}' WHERE CID ='${CID}'`);
-      io.emit("chat message", {
+      socket.emit("chat message", {
         CID: "0",
         msg: `昵称重命名完毕，小夜现在会称呼你为 ${msg.slice(8)} 啦`,
       });
