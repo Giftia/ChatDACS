@@ -368,6 +368,32 @@
             });
           });
 
+          //接收视频消息
+          socket.on("video message", function (msg) {
+            layim.getMessage({
+              username: "小夜",
+              avatar: "/xiaoye.webp",
+              id: "1",
+              type: "friend",
+              mine: 0,
+              cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
+              content: `video[${msg.file}](${msg.filename})`,
+            });
+          });
+
+          //接收音频消息
+          socket.on("audio message", function (msg) {
+            layim.getMessage({
+              username: "小夜",
+              avatar: "/xiaoye.webp",
+              id: "1",
+              type: "friend",
+              mine: 0,
+              cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
+              content: `audio[${msg.file}](${msg.filename})`,
+            });
+          });
+
           //接收文件消息
           socket.on("file message", function (msg) {
             layim.getMessage({

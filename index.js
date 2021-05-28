@@ -30,7 +30,7 @@ Giftina：https://giftia.moe
 */
 
 //系统参数和开关，根据你的需要改动
-const version = "ChatDACS 2.1.3-130"; //版本号
+const version = "ChatDACS 2.2.0-131"; //版本号
 const chat_swich = 1; //自动聊天开关，需数据库中配置聊天表，自带的数据库已经配置好小夜嘴臭语录，开箱即用
 const news_swich = 0; //首屏新闻开关
 const jc_swich = 0; //酱菜物联服务开关
@@ -45,22 +45,23 @@ const help =
 /* 好了！请不要再继续编辑。请保存本文件。使用愉快！ */
 
 //模块依赖
-var compression = require("compression");
-var express = require("express");
-var multer = require("multer");
-var upload = multer({ dest: "static/uploads/" }); //用户上传目录
-var cookie = require("cookie");
-var app = require("express")();
+let compression = require("compression");
+let express = require("express");
+let multer = require("multer");
+let upload = multer({ dest: "static/uploads/" }); //用户上传目录
+let cookie = require("cookie");
+let app = require("express")();
 app.use(compression());
 app.use(express.static("static")); //静态文件引入
-var http = require("http").Server(app);
-var io = require("socket.io")(http);
-var net = require("net");
-var request = require("request");
-var sqlite3 = require("sqlite3").verbose();
-var db = new sqlite3.Database("db.db"); //数据库位置，默认与index.js同目录
-var colors = require("colors");
+let http = require("http").Server(app);
+let io = require("socket.io")(http);
+let net = require("net");
+let request = require("request");
+let sqlite3 = require("sqlite3").verbose();
+let db = new sqlite3.Database("db.db"); //数据库位置，默认与index.js同目录
+let colors = require("colors");
 let fs = require("fs");
+let path = require("path");
 
 //debug颜色配置
 colors.setTheme({
@@ -77,9 +78,9 @@ colors.setTheme({
 var onlineusers = 0;
 
 //正则
-var door_reg = new RegExp("^/开门 [a-zA-Z0-9]*$"); //匹配开门
-var rename_reg = new RegExp("^/rename [\u4e00-\u9fa5a-z0-9]{1,10}$"); //1-10长度的数英汉昵称
-var bv2av__reg = new RegExp("^[a-zA-Z0-9]{10,12}$"); //匹配bv号
+let door_reg = new RegExp("^/开门 [a-zA-Z0-9]*$"); //匹配开门
+let rename_reg = new RegExp("^/rename [\u4e00-\u9fa5a-z0-9]{1,10}$"); //1-10长度的数英汉昵称
+let bv2av__reg = new RegExp("^[a-zA-Z0-9]{10,12}$"); //匹配bv号
 
 //若表不存在则新建表
 db.run("CREATE TABLE IF NOT EXISTS messages(yyyymmdd char, time char, CID char, message char)");
@@ -388,10 +389,22 @@ app.post("/upload/image", upload.single("file"), function (req, res, next) {
   io.emit("pic message", `/uploads/${req.file.filename}`);
 });
 
-//文件上传接口
+//文件/视频上传接口
 app.post("/upload/file", upload.single("file"), function (req, res, next) {
-  console.log(`文件已经保存，文件信息：${req.file}`);
-  io.emit("file message", { file: `/uploads/${req.file.filename}`, filename: req.file.originalname });
+  console.log(req.file);
+  let oldname = req.file.path;
+  let newname = req.file.path + path.parse(req.file.originalname).ext;
+  fs.renameSync(oldname, newname);
+  let isVideo = new RegExp("^video*");
+  let isAudio = new RegExp("^audio*");
+  let file = { file: `/uploads/${req.file.filename}${path.parse(req.file.originalname).ext}`, filename: req.file.originalname };
+  if (isVideo.test(req.file.mimetype)) {
+    io.emit("video message", file);
+  } else if (isAudio.test(req.file.mimetype)) {
+    io.emit("audio message", file);
+  } else {
+    io.emit("file message", file);
+  }
 });
 
 //酱菜物联服务
