@@ -1,5 +1,6 @@
 /*
 Giftina：https://giftia.moe
+一个无需服务器，可私有化部署、可独立运行于外网隔离的内网的聊天工具
 
 初次使用请看:
   首先去 https://nodejs.org/zh-cn/ 安装长期支持版Node.js
@@ -30,7 +31,7 @@ Giftina：https://giftia.moe
 */
 
 //系统参数和开关，根据你的需要改动
-const version = "ChatDACS 2.2.0-131"; //版本号
+const version = "ChatDACS 2.2.1-132"; //版本号
 const chat_swich = 1; //自动聊天开关，需数据库中配置聊天表，自带的数据库已经配置好小夜嘴臭语录，开箱即用
 const news_swich = 0; //首屏新闻开关
 const jc_swich = 0; //酱菜物联服务开关
@@ -38,7 +39,7 @@ const password = "233333"; //配置开门密码
 const apikey = "2333333333333333"; //换成你自己申请的 jcck_apikey，非必须
 const Tiankey = "f21f0dd07e3e07ef6e95c5f93cf6dd1c"; //天行接口key，私有，图个方便先直接放上去了
 const eval_swich = 0; //动态注入和执行开关，便于调试，但开启有极大风险，最好完全避免启用它，特别是在生产环境部署时
-const html = "/mobile.html"; //前端页面路径
+const html = "/static/index.html"; //前端页面路径
 const help =
   "功能列表：<br />·门禁系统：<br />/开门 密码<br />用户指令：<br />/log_view<br />/reload<br />/rename 昵称<br />·其他指令：<br />经过2w+用户养成的即时人工智能聊天<br />输入BV号直接转换为AV号<br />/随机cos<br />/随机买家秀<br />/随机冷知识<br />首屏新闻展示<br />/随机二次元图";
 
@@ -121,6 +122,10 @@ http.listen(80, () => {
 io.on("connection", (socket) => {
   socket.emit("getcookie");
   var CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
+  if (CID === undefined) {
+    socket.emit("getcookie");
+    return 0;
+  }
   socket.emit("version", version);
   io.emit("onlineusers", ++onlineusers);
 
@@ -202,21 +207,9 @@ io.on("connection", (socket) => {
     io.emit("typing", "");
   });
 
-  socket.on("getsettings", (msg) => {
+  socket.on("getsettings", () => {
     var CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
     socket.emit("settings", { CID: CID, name: socket.username });
-  });
-
-  socket.on("setsettings", (msg) => {
-    var CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
-    var CID = `/rename ${msg.CID}`;
-    if (rename_reg.test(msg)) {
-      db.run(`UPDATE users SET nickname = '${msg.slice(8)}' WHERE CID ='${CID}'`);
-      socket.emit("chat message", {
-        CID: "0",
-        msg: `昵称重命名完毕，小夜现在会称呼你为 ${msg.slice(8)} 啦`,
-      });
-    }
   });
 
   socket.on("chat message", (msg) => {
@@ -381,6 +374,12 @@ io.on("connection", (socket) => {
       }
     }
   });
+});
+
+//更改个人资料
+app.get("/profile", (req, res) => {
+  db.run(`UPDATE users SET nickname = '${req.query.name}' WHERE CID ='${req.query.CID}'`);
+  res.sendFile(__dirname + html);
 });
 
 //图片上传接口

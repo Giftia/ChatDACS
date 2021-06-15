@@ -35,7 +35,7 @@
     <script>
       layui
         .config({
-          version: true,
+          version: false,
         })
         .use(["mobile", "form"], function () {
           var mobile = layui.mobile,
@@ -49,8 +49,8 @@
           var socket = io();
 
           socket.on("getcookie", function (msg) {
-            if (document.cookie == null || document.cookie == "") {
-              document.cookie = "ChatdacsID=" + new Date().getTime();
+            if (document.cookie === null || document.cookie === "" || document.cookie === undefined) {
+              document.cookie = "ChatdacsID=" + new Date().getTime() + ";expires=Fri, 1 Apr 2050 17:00:00 GMT";
               window.location.reload();
             }
             myCID = document.cookie.replace("ChatdacsID=", "");
@@ -67,11 +67,13 @@
                 //上传图片接口
                 url: "/upload/image", //（返回的数据格式见下文）
                 type: "post", //默认post
+                data: {},
               },
               uploadFile: {
                 //上传文件接口
                 url: "/upload/file", //（返回的数据格式见下文）
                 type: "post", //默认post
+                data: {},
               },
               init: {
                 //我的信息
@@ -146,6 +148,20 @@
                     ],
                   },
                 ],
+                group: [
+                  {
+                    groupname: "小夜",
+                    id: "101",
+                    avatar: "/xiaoye.webp",
+                    sign: "主要聊天界面转移到了这里",
+                  },
+                  {
+                    groupname: "开车群",
+                    id: "102",
+                    avatar: "/huaji.webp",
+                    sign: "喂!三点几嚟!做撚啊做,饮茶先啦!",
+                  },
+                ],
               },
 
               //扩展聊天面板工具栏
@@ -174,11 +190,6 @@
                   alias: "knowledge",
                   title: "随机冷知识",
                   iconUnicode: "&#xe649;",
-                },
-                {
-                  alias: "rename",
-                  title: "更改昵称",
-                  iconUnicode: "&#xe62a;",
                 },
                 {
                   alias: "help",
@@ -221,7 +232,7 @@
               maxLength: 3000, //可允许的消息最大字符长度
               tabIndex: 0, //用户设定初始打开的Tab项下标
               isNewFriend: 0, //是否开启“新的朋友”
-              isgroup: 0, //是否开启“群聊”
+              isgroup: 1, //是否开启“群聊”
               chatTitleColor: "#edbc28", //顶部Bar颜色
               title: msg, //标题
               copyright: 1, //侵权立刻改为0
@@ -255,12 +266,6 @@
           //工具栏-knowledge
           layim.on("tool(knowledge)", function (insert, send) {
             insert("/随机冷知识"); //将内容插入到编辑器
-            send();
-          });
-
-          //工具栏-rename
-          layim.on("tool(rename)", function (insert, send) {
-            insert("/rename 昵称"); //将内容插入到编辑器
             send();
           });
 
@@ -298,13 +303,45 @@
                 });
                 break;
               case "settings":
-                socket.emit("getsettings", myCID);
+                socket.emit("getsettings");
                 socket.on("settings", function (data) {
                   layim.panel({
                     title: "设置",
-                    tpl: '<div style="padding: 10px"><form class="layui-form"action=""><div class="layui-form-item"><label class="layui-form-label">昵称</label><div class="layui-input-block"><input type="text"name="title"required lay-verify="required"placeholder="请输入昵称"autocomplete="off"class="layui-input"value="{{d.data.name}}"/><div class="layui-form-mid layui-word-aux">1-10长度的数英汉昵称</div></div></div><div class="layui-form-item"><label class="layui-form-label">首屏新闻开关</label><div class="layui-input-block"><input type="checkbox"name="switch"lay-skin="switch"/></div></div><div class="layui-form-item layui-form-text"><label class="layui-form-label">个性签名</label><div class="layui-input-block"><textarea name="desc"placeholder="请输入内容"class="layui-textarea"></textarea></div></div><div class="layui-form-item"><div class="layui-input-block"><button class="layui-btn"lay-submit lay-filter="formDemo">提交</button></div></div></form></div>',
+                    tpl: `
+                    <div style="padding: 10px">
+  <form class="layui-form" action="/profile">
+    <div class="layui-form-item">
+      <label class="layui-form-label">CID</label>
+      <div class="layui-input-block">
+        <input type="text" name="CID" required placeholder={{d.data.CID}} class="layui-input" value={{d.data.CID}} />
+        <div class="layui-form-mid layui-word-aux">用户唯一标识，不要乱改啊</div>
+      </div>
+    </div>
+    <div class="layui-form-item">
+      <label class="layui-form-label">昵称</label>
+      <div class="layui-input-block">
+        <input type="text" name="name" required placeholder="请输入昵称" class="layui-input" value={{d.data.name}} />
+        <div class="layui-form-mid layui-word-aux">1-10长度的数英汉昵称</div>
+      </div>
+    </div>
+    <div class="layui-form-item layui-form-text">
+      <label class="layui-form-label">个性签名</label>
+      <div class="layui-input-block">
+        <textarea name="desc" placeholder="人生就像一场旅行，不必在意目的地，在乎的是沿途的风景和看风景的心情" class="layui-textarea"></textarea>
+      </div>
+    </div>
+    <div class="layui-form-item">
+      <div class="layui-input-block">
+        <button class="layui-btn" lay-submit lay-filter="profile">提交</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+                    `,
                     data: {
                       name: data.name,
+                      CID: data.CID,
                     },
                   });
                 });
@@ -331,8 +368,8 @@
                 layim.getMessage({
                   username: "小夜",
                   avatar: "/xiaoye.webp",
-                  id: "1",
-                  type: "friend",
+                  id: "101",
+                  type: "group",
                   mine: 0,
                   cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
                   content: msg.msg,
@@ -345,8 +382,8 @@
                 layim.getMessage({
                   username: username,
                   avatar: "/xiaoye.webp",
-                  id: "1",
-                  type: "friend",
+                  id: "101",
+                  type: "group",
                   mine: 0,
                   cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
                   content: msg.msg,
@@ -360,8 +397,8 @@
             layim.getMessage({
               username: "小夜",
               avatar: "/xiaoye.webp",
-              id: "1",
-              type: "friend",
+              id: "101",
+              type: "group",
               mine: 0,
               cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
               content: `img[${msg}]`,
@@ -373,8 +410,8 @@
             layim.getMessage({
               username: "小夜",
               avatar: "/xiaoye.webp",
-              id: "1",
-              type: "friend",
+              id: "101",
+              type: "group",
               mine: 0,
               cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
               content: `video[${msg.file}](${msg.filename})`,
@@ -386,8 +423,8 @@
             layim.getMessage({
               username: "小夜",
               avatar: "/xiaoye.webp",
-              id: "1",
-              type: "friend",
+              id: "101",
+              type: "group",
               mine: 0,
               cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
               content: `audio[${msg.file}](${msg.filename})`,
@@ -399,8 +436,8 @@
             layim.getMessage({
               username: "小夜",
               avatar: "/xiaoye.webp",
-              id: "1",
-              type: "friend",
+              id: "101",
+              type: "group",
               mine: 0,
               cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
               content: `file(${msg.file})[${msg.filename}]`,
@@ -417,6 +454,19 @@
               mine: 0,
               cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
               content: msg,
+            });
+          });
+
+          //查看聊天信息
+          layim.on("detail", function (data) {
+            console.log(data); //获取当前会话对象
+            layim.panel({
+              title: data.name + " 群信息", //标题
+              tpl: '<div style="padding: 10px;">' + data.cid + "{{d.data.test}}</div>", //模版
+              data: {
+                //数据
+                test: "?",
+              },
             });
           });
 
@@ -453,7 +503,6 @@
                   "/开门 233333",
                   "/log_view",
                   "/reload",
-                  "/rename 昵称",
                   "BV1PA411L7op",
                   "/随机cos",
                   "/随机买家秀",
