@@ -10,8 +10,8 @@ Giftina：https://giftia.moe
     cnpm install
   等待进度完成后运行:
     node index.js
-  或在windows系统下懒人启动:
-    双击目录下的 run.bat
+  也可在Node.js安装完毕后双击目录下的 init.bat 一键部署
+  部署完毕后会自动启动，之后可双击 run.bat 启动
   或使用pm2守护神启动:
     pm2 start index.js
   访问127.0.0.1即可体验,有公网或穿透那更好,尽情使用吧~
