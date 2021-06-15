@@ -457,7 +457,7 @@
             });
           });
 
-          //查看聊天信息
+          //查看群聊信息
           layim.on("detail", function (data) {
             console.log(data); //获取当前会话对象
             layim.panel({
@@ -496,7 +496,7 @@
               socket.emit("typing_over");
             };
 
-            if (data.data.id == "1") {
+            if (data.data.id == "101") {
               superplaceholder({
                 el: document.querySelector("input"),
                 sentences: [
