@@ -1,5 +1,5 @@
 ![Uptime Robot ratio (30 days)](https://img.shields.io/uptimerobot/ratio/m783632550-7da46d24226cb151b978c810?style=flat-square)
-![Website](https://img.shields.io/website?label=demo&style=flat-square&up_message=online&url=http://120.78.200.105/)
+![Website](https://img.shields.io/website?label=demo&style=flat-square&up_message=online&url=http://chatdacs.giftia.moe/)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/Giftia/ChatDACS?style=flat-square)
 ![GitHub](https://img.shields.io/github/license/Giftia/ChatDACS?style=flat-square)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/Giftia/ChatDACS?style=flat-square)
