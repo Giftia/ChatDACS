@@ -31,7 +31,7 @@ Giftina：https://giftia.moe
 */
 
 //系统参数和开关，根据你的需要改动
-const version = "ChatDACS 2.2.2-136"; //版本号
+const version = "ChatDACS 2.2.3-137"; //版本号
 const chat_swich = 1; //自动聊天开关，需数据库中配置聊天表，自带的数据库已经配置好小夜嘴臭语录，开箱即用
 const news_swich = 0; //首屏新闻开关
 const jc_swich = 0; //酱菜物联服务开关

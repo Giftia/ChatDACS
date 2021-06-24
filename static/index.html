@@ -201,28 +201,34 @@
               //扩展更多列表
               moreList: [
                 {
+                  alias: "backtofuture",
+                  title: "回到未来",
+                  iconUnicode: "&#xe65c;", //图标字体的unicode，可不填
+                  iconClass: "", //图标字体的class类名
+                },
+                {
                   alias: "bonus",
                   title: "彩蛋",
-                  iconUnicode: "&#xe664;", //图标字体的unicode，可不填
-                  iconClass: "", //图标字体的class类名
+                  iconUnicode: "&#xe664;",
+                  iconClass: "",
                 },
                 {
                   alias: "reload",
                   title: "重生",
-                  iconUnicode: "&#xe666;", //图标字体的unicode，可不填
-                  iconClass: "", //图标字体的class类名
+                  iconUnicode: "&#xe666;",
+                  iconClass: "",
                 },
                 {
                   alias: "settings",
                   title: "设置",
-                  iconUnicode: "&#xe620;", //图标字体的unicode，可不填
-                  iconClass: "", //图标字体的class类名
+                  iconUnicode: "&#xe620;",
+                  iconClass: "",
                 },
                 {
                   alias: "about",
                   title: "关于",
-                  iconUnicode: "&#xe60b;", //图标字体的unicode，可不填
-                  iconClass: "", //图标字体的class类名
+                  iconUnicode: "&#xe60b;",
+                  iconClass: "",
                 },
               ],
 
@@ -239,6 +245,11 @@
             });
           });
 
+          layim.on("ready", function (options) {
+            layim.showNew("More", true);
+            layim.showNew("about", true);
+          });
+
           //工具栏-召唤小夜
           layim.on("tool(xiaoye)", function (insert, send) {
             insert("小夜"); //将内容插入到编辑器
@@ -247,37 +258,40 @@
 
           //工具栏-cos
           layim.on("tool(cos)", function (insert, send) {
-            insert("/随机cos"); //将内容插入到编辑器
+            insert("/随机cos");
             send();
           });
 
           //工具栏-ecy
           layim.on("tool(ecy)", function (insert, send) {
-            insert("/随机二次元图"); //将内容插入到编辑器
+            insert("/随机二次元图");
             send();
           });
 
           //工具栏-tbshow
           layim.on("tool(tbshow)", function (insert, send) {
-            insert("/随机买家秀"); //将内容插入到编辑器
+            insert("/随机买家秀");
             send();
           });
 
           //工具栏-knowledge
           layim.on("tool(knowledge)", function (insert, send) {
-            insert("/随机冷知识"); //将内容插入到编辑器
+            insert("/随机冷知识");
             send();
           });
 
           //工具栏-帮助
           layim.on("tool(help)", function (insert, send) {
-            insert("/帮助"); //将内容插入到编辑器
+            insert("/帮助");
             send();
           });
 
           //更多菜单
           layim.on("moreList", function (obj) {
             switch (obj.alias) {
+              case "backtofuture":
+                window.location.href = "/old.html";
+                break;
               case "bonus":
                 layer.msg("好像有人给你发了一条消息，回消息界面看看吧");
                 layim.getMessage({
@@ -285,7 +299,6 @@
                   avatar: "/images/a7195c09c6ba4722966d745d6f692035d3fe4d95.jpg@128w_128h_1o.webp",
                   id: "375504219",
                   type: "friend",
-                  cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
                   content: "老公！",
                 });
                 break;
@@ -371,7 +384,6 @@
                   id: "101",
                   type: "group",
                   mine: 0,
-                  cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
                   content: msg.msg,
                 });
                 break;
@@ -385,7 +397,6 @@
                   id: "101",
                   type: "group",
                   mine: 0,
-                  cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
                   content: msg.msg,
                 });
                 break;
@@ -400,7 +411,6 @@
               id: "101",
               type: "group",
               mine: 0,
-              cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
               content: `img[${msg}]`,
             });
           });
@@ -413,7 +423,6 @@
               id: "101",
               type: "group",
               mine: 0,
-              cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
               content: `video[${msg.file}](${msg.filename})`,
             });
           });
@@ -426,7 +435,6 @@
               id: "101",
               type: "group",
               mine: 0,
-              cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
               content: `audio[${msg.file}](${msg.filename})`,
             });
           });
@@ -439,7 +447,6 @@
               id: "101",
               type: "group",
               mine: 0,
-              cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
               content: `file(${msg.file})[${msg.filename}]`,
             });
           });
@@ -452,7 +459,6 @@
               id: "0",
               type: "kefu",
               mine: 0,
-              cid: (Math.random() * 100000) | 0, //模拟消息id，会赋值在li的data-cid上，以便完成一些消息的操作（如撤回），可不填
               content: msg,
             });
           });
@@ -521,10 +527,6 @@
               });
             }
           });
-
-          //模拟"更多"有新动态
-          layim.showNew("More", true);
-          layim.showNew("about", true);
         });
     </script>
   </body>
