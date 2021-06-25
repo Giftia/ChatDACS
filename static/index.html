@@ -196,6 +196,11 @@
                   title: "帮助",
                   iconUnicode: "&#xe607;",
                 },
+                {
+                  alias: "code",
+                  title: "格式化文本",
+                  iconUnicode: "&#xe64e;",
+                },
               ],
 
               //扩展更多列表
@@ -284,6 +289,11 @@
           layim.on("tool(help)", function (insert, send) {
             insert("/帮助");
             send();
+          });
+
+          //工具栏-格式化文本
+          layim.on("tool(code)", function (insert, send) {
+            insert("[pre class=layui-code] 在这里输入的文字会被格式化 [/pre]");
           });
 
           //更多菜单

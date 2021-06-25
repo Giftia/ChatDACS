@@ -1,6 +1,6 @@
 /*
 Giftina：https://giftia.moe
-一个无需服务器，可私有化部署、可独立运行于外网隔离的内网的聊天工具
+一个无需服务器，可私有化部署、可独立运行于内网的聊天工具
 
 初次使用请看:
   首先去 https://nodejs.org/zh-cn/ 安装长期支持版Node.js
@@ -31,13 +31,13 @@ Giftina：https://giftia.moe
 */
 
 //系统参数和开关，根据你的需要改动
-const version = "ChatDACS 2.2.3-137"; //版本号
+const version = "ChatDACS 2.2.4-138"; //版本号
 const chat_swich = 1; //自动聊天开关，需数据库中配置聊天表，自带的数据库已经配置好小夜嘴臭语录，开箱即用
 const news_swich = 0; //首屏新闻开关
 const jc_swich = 0; //酱菜物联服务开关
 const password = "233333"; //配置开门密码
 const apikey = "2333333333333333"; //换成你自己申请的 jcck_apikey，非必须
-const Tiankey = "f21f0dd07e3e07ef6e95c5f93cf6dd1c"; //天行接口key，私有，图个方便先直接放上去了
+const Tiankey = "f21f0dd07e3e07ef6e95c5f93cf6dd1c"; //天行接口key，私有，图个方便先直接放上去了，免费限额为100调用/天
 const eval_swich = 0; //动态注入和执行开关，便于调试，但开启有极大风险，最好完全避免启用它，特别是在生产环境部署时
 const html = "/static/index.html"; //前端页面路径
 const help =
@@ -63,6 +63,8 @@ let db = new sqlite3.Database("db.db"); //数据库位置，默认与index.js同
 let colors = require("colors");
 let fs = require("fs");
 let path = require("path");
+const { resolve } = require("path");
+const { response } = require("express");
 
 //debug颜色配置
 colors.setTheme({
@@ -360,13 +362,18 @@ io.on("connection", (socket) => {
             console.log(`随机选取第${ans}条回复：${sql[ans].answer}`);
             io.emit("chat message", { CID: "0", msg: answer });
           } else {
-            console.log(`聊天组件抛错：${e}`);
-            /*
-            io.emit("chat message", {
-              CID: "0",
-              msg: "小夜好像不是很懂你在说什么，你等着，我去问问小爱，嘿Siri~",
-            });
-            */
+            console.log("聊天数据库中无匹配，使用舔狗回复");
+            PrprDoge().then(
+              (data) => {
+                io.emit("chat message", {
+                  CID: "0",
+                  msg: data,
+                });
+              },
+              (err, data) => {
+                console.log(`随机昵称错误：${err} , ${data}`);
+              }
+            );
           }
         });
       } else {
@@ -637,6 +644,21 @@ function RandomNickname() {
         resolve(body.newslist[0].naming);
       } else {
         resolve("获取随机昵称错误，是天行接口的锅。错误原因：" + JSON.stringify(response.body));
+      }
+    });
+  });
+  return p;
+}
+
+//舔狗回复
+function PrprDoge() {
+  var p = new Promise((resolve, reject) => {
+    request(`http://api.tianapi.com/txapi/tiangou/index?key=${Tiankey}`, (err, response, body) => {
+      body = JSON.parse(body);
+      if (!err) {
+        resolve(body.newslist[0].content);
+      } else {
+        resolve("舔狗错误，是天行接口的锅。错误原因：" + JSON.stringify(response.body));
       }
     });
   });
