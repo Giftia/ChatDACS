@@ -1,7 +1,7 @@
 <h1 align="center">
   <img src="https://repository-images.githubusercontent.com/171253757/5f987680-d2ab-11eb-927b-655b4967c9a3" width="600px"/><br/>
-  沙雕Ai聊天系统 ChatDACS
-  <h2>(Chatbot : shaDiao Ai Chat System)</h2>
+  沙雕Ai聊天系统 ChatDACS<br/>
+(Chatbot : shaDiao Ai Chat System)
 </h1>
 <p align="center">
 一个无需服务器，可私有化部署、可独立运行于内网的H5聊天工具。<br/>
