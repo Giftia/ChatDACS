@@ -1,6 +1,7 @@
 <h1 align="center">
   <img src="https://repository-images.githubusercontent.com/171253757/5f987680-d2ab-11eb-927b-655b4967c9a3" width="600px"/><br/>
-  沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)
+  沙雕Ai聊天系统 ChatDACS
+  <h2>(Chatbot : shaDiao Ai Chat System)</h2>
 </h1>
 <p align="center">
 一个无需服务器，可私有化部署、可独立运行于内网的H5聊天工具。<br/>
@@ -24,12 +25,12 @@
 
 ##
 
-## 实现功能与特性 Features
+## ✨ 实现功能与特性 Features
 
 - [x] 完善的聊天界面与各种奇奇怪怪的功能 `Nice UI and funny functions`
 - [x] 无限制的在线聊天 `Unlimit chatroom`
 - [x] 与沙雕 Ai 小夜对线 `Chat with Ai Xiaoye`
-- [x] 好用的在线涩图功能 `Nice picture`
+- [x] 实用的在线涩图功能 `Nice picture`
 - [x] 图片、视频与文件分享 `Share your images,videos and files`
 - [ ] 自定义表情包 `Set your stickers`
 - [ ] 私聊 `Private chat`

@@ -1,6 +1,6 @@
 /*
 Giftina：https://giftia.moe
-一个无需服务器，可私有化部署、可独立运行于内网的聊天工具
+一个无需服务器，可私有化部署、可独立运行于内网的H5聊天工具
 
 初次使用请看:
   首先去 https://nodejs.org/zh-cn/ 安装长期支持版Node.js
@@ -31,7 +31,7 @@ Giftina：https://giftia.moe
 */
 
 //系统参数和开关，根据你的需要改动
-const version = "ChatDACS 2.2.4-138"; //版本号
+const version = "ChatDACS 2.2.5-139"; //版本号
 const chat_swich = 1; //自动聊天开关，需数据库中配置聊天表，自带的数据库已经配置好小夜嘴臭语录，开箱即用
 const news_swich = 0; //首屏新闻开关
 const jc_swich = 0; //酱菜物联服务开关
@@ -170,7 +170,7 @@ io.on("connection", (socket) => {
           io.emit("system message", `新用户 ${CID} 已连接。小夜帮你取了一个随机昵称：「${socket.username}」，想要更改昵称可以发送 /rename 昵称`);
           socket.emit("chat message", {
             CID: "0",
-            msg: "主人你好，我是小夜，这里是一个以聊天方式进行运行的辅助功能性系统，先试着点击聊天框下方的可拖动便捷菜单试试吧。",
+            msg: "主人你好，我是小夜，这里是一个无需服务器，可私有化部署、可独立运行于内网的H5聊天工具，先试试聊天框下方的便捷功能栏试试吧，功能栏往右拖动还有更多功能。",
           });
         },
         (err, data) => {
