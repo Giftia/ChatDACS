@@ -15,6 +15,7 @@ Giftina：https://giftia.moe
   或使用pm2守护神启动:
     pm2 start index.js
   访问127.0.0.1即可体验,有公网或穿透那更好,尽情使用吧~
+  另外请查看67行，请去各个所述接口网站申请自己的接口密钥
 
   若使用pm2守护神启动:
   隐藏界面请按:  Ctrl + C
@@ -31,13 +32,12 @@ Giftina：https://giftia.moe
 */
 
 //系统参数和开关，根据你的需要改动
-const version = "ChatDACS 2.2.5-139"; //版本号
+const version = "ChatDACS 2.3.0-143"; //版本号，会显示在浏览器tab与标题栏
 const chat_swich = 1; //自动聊天开关，需数据库中配置聊天表，自带的数据库已经配置好小夜嘴臭语录，开箱即用
 const news_swich = 0; //首屏新闻开关
 const jc_swich = 0; //酱菜物联服务开关
 const password = "233333"; //配置开门密码
-const apikey = "2333333333333333"; //换成你自己申请的 jcck_apikey，非必须
-const Tiankey = "f21f0dd07e3e07ef6e95c5f93cf6dd1c"; //天行接口key，私有，图个方便先直接放上去了，免费限额为100调用/天
+var jcckapikey, Tiankey, sumtkey; //用于67行配置api接口密钥
 const eval_swich = 0; //动态注入和执行开关，便于调试，但开启有极大风险，最好完全避免启用它，特别是在生产环境部署时
 const html = "/static/index.html"; //前端页面路径
 const help =
@@ -63,8 +63,18 @@ let db = new sqlite3.Database("db.db"); //数据库位置，默认与index.js同
 let colors = require("colors");
 let fs = require("fs");
 let path = require("path");
-const { resolve } = require("path");
-const { response } = require("express");
+
+//载入api接口密钥配置，若您是初次使用，请访问申请地址，申请自己的接口密钥后修改 keys.ini 文件
+ReadApiKey().then(
+  (data) => {
+    jcckapikey = data.jcckapikey; //酱菜创客接口key，若不配置则门禁功能失效，平台已跑路，仅剩幻肢
+    Tiankey = data.Tiankey; //天行接口key，若不配置则随机昵称与舔狗失效，申请地址 https://www.tianapi.com/
+    sumtkey = data.sumtkey; //卡特实验室接口key，若不配置则随机买家秀失效，申请地址 https://api.sumt.cn/
+  },
+  (err, data) => {
+    console.log(`err, ${err}, data:, ${data}`);
+  }
+);
 
 //debug颜色配置
 colors.setTheme({
@@ -117,7 +127,7 @@ if (eval_swich) {
 }
 
 http.listen(80, () => {
-  console.log(Curentyyyymmdd() + CurentTime() + "配置完毕，系统启动，正在监听于端口80");
+  console.log(Curentyyyymmdd() + CurentTime() + "配置完毕，系统启动，访问 127.0.0.1 即可体验沙雕Ai聊天系统");
 });
 
 // socket接入，开始用户操作
@@ -390,13 +400,13 @@ app.get("/profile", (req, res) => {
 });
 
 //图片上传接口
-app.post("/upload/image", upload.single("file"), function (req, res, next) {
-  console.log(`图片已经保存，图片信息：${req.file}`);
+app.post("/upload/image", upload.single("file"), function (req, _res, _next) {
+  console.log(req.file);
   io.emit("pic message", `/uploads/${req.file.filename}`);
 });
 
 //文件/视频上传接口
-app.post("/upload/file", upload.single("file"), function (req, res, next) {
+app.post("/upload/file", upload.single("file"), function (req, _res, _next) {
   console.log(req.file);
   let oldname = req.file.path;
   let newname = req.file.path + path.parse(req.file.originalname).ext;
@@ -418,10 +428,10 @@ function Connjc() {
   var client = new net.Socket();
   client.setEncoding("utf8");
   client.connect(8266, "112.74.59.29", () => {
-    client.write(`mode=bind&apikey=${apikey}&data={ck001000bind}`);
+    client.write(`mode=bind&apikey=${jcckapikey}&data={ck001000bind}`);
     console.log(`${CurentTime()}酱菜物联服务绑定成功`);
   });
-  client.on("data", (data) => {
+  client.on("data", (_data) => {
     //console.log(data);
   });
   client.on("error", (err) => {
@@ -436,9 +446,9 @@ function Opendoor() {
   var client = new net.Socket();
   client.setEncoding("utf8");
   client.connect(8266, "112.74.59.29", () => {
-    client.write(`mode=exe&apikey=${apikey}&data={ck0040001}`);
+    client.write(`mode=exe&apikey=${jcckapikey}&data={ck0040001}`);
     setTimeout(() => {
-      client.write(`mode=exe&apikey=${apikey}&data={ck0040000}`);
+      client.write(`mode=exe&apikey=${jcckapikey}&data={ck0040000}`);
       io.emit("chat message", { CID: "0", msg: "自动关门指令已发送，仍需手动带门吸合电磁铁" });
       console.log(`${Curentyyyymmdd() + CurentTime()}自动关门`);
     }, 3000);
@@ -485,7 +495,7 @@ function CurentTime() {
 
 //新闻
 function Getnews() {
-  var p = new Promise((resolve, reject) => {
+  var p = new Promise((resolve, _reject) => {
     request("https://3g.163.com/touch/reconstruct/article/list/BBM54PGAwangning/0-10.html", (err, response, body) => {
       if (!err && response.statusCode === 200) {
         body = body.substring(9, body.length - 1);
@@ -524,7 +534,7 @@ function GetUserData(msg) {
 
 //更新登录次数
 function UpdateLogintimes(msg) {
-  var p = new Promise((resolve, reject) => {
+  var p = new Promise((resolve, _reject) => {
     db.run(`UPDATE users SET logintimes = logintimes + 1 WHERE CID ='${msg}'`),
       (err, sql) => {
         if (!err && sql) {
@@ -554,7 +564,7 @@ function UpdateLastLogintime(msg) {
 
 //BV转AV
 function Bv2Av(msg) {
-  var p = new Promise((resolve, reject) => {
+  var p = new Promise((resolve, _reject) => {
     request("https://api.bilibili.com/x/web-interface/view?bvid=" + msg, (err, response, body) => {
       body = JSON.parse(body);
       if (!err && response.statusCode === 200 && body.code === 0) {
@@ -574,8 +584,8 @@ function Bv2Av(msg) {
 
 //随机cos
 function RandomCos() {
-  var p = new Promise((resolve, reject) => {
-    var rand_page_num = Math.floor(Math.random() * 10);
+  var p = new Promise((resolve, _reject) => {
+    var rand_page_num = Math.floor(Math.random() * 144); //有点淦，阿B改了一下接口，不返回总数了，只能有空每次遍历之后手动改总数了
     request(
       "https://api.vc.bilibili.com/link_draw/v2/Photo/list?category=cos&type=hot&page_num=" + rand_page_num + "&page_size=1",
       (err, response, body) => {
@@ -586,7 +596,7 @@ function RandomCos() {
           var picUrl = obj[Math.floor(Math.random() * count)].img_src;
           console.log(picUrl);
           request(picUrl).pipe(
-            fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (err) => {
+            fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
               resolve(`/images/${picUrl.split("/").pop()}`);
             })
           ); //绕过防盗链，保存为本地图片
@@ -601,16 +611,22 @@ function RandomCos() {
 
 //随机买家秀
 function RandomTbshow() {
-  var p = new Promise((resolve, reject) => {
-    var pic = "https://api.sumt.cn/api/rand.tbimg.php";
-    resolve(pic);
+  var p = new Promise((resolve, _reject) => {
+    request(`https://api.sumt.cn/api/rand.tbimg.php?token=${sumtkey}&format=json`, (err, response, body) => {
+      body = JSON.parse(body);
+      if (!err) {
+        resolve(body.pic_url);
+      } else {
+        resolve("随机买家秀错误，是卡特实验室接口的锅。错误原因：" + JSON.stringify(response.body));
+      }
+    });
   });
   return p;
 }
 
 //随机二次元图，新版Chrome加入了HSTS策略而暂时无法使用。如需使用，请用户访问 chrome://net-internals/#hsts，在最下面的Delete domain security policies中，输入 acg.yanwz.cn，点击Delete删除即可
 function RandomECY() {
-  var p = new Promise((resolve, reject) => {
+  var p = new Promise((resolve, _reject) => {
     var pic = "https://acg.yanwz.cn/api.php";
     resolve(pic);
   });
@@ -619,7 +635,7 @@ function RandomECY() {
 
 //随机冷知识
 function RandomHomeword() {
-  var p = new Promise((resolve, reject) => {
+  var p = new Promise((resolve, _reject) => {
     request("https://passport.csdn.net/v1/api/get/homeword", (err, response, body) => {
       body = JSON.parse(body);
       if (!err) {
@@ -637,7 +653,7 @@ function RandomHomeword() {
 
 //自动随机昵称
 function RandomNickname() {
-  var p = new Promise((resolve, reject) => {
+  var p = new Promise((resolve, _reject) => {
     request(`http://api.tianapi.com/txapi/cname/index?key=${Tiankey}`, (err, response, body) => {
       body = JSON.parse(body);
       if (!err) {
@@ -652,13 +668,27 @@ function RandomNickname() {
 
 //舔狗回复
 function PrprDoge() {
-  var p = new Promise((resolve, reject) => {
+  var p = new Promise((resolve, _reject) => {
     request(`http://api.tianapi.com/txapi/tiangou/index?key=${Tiankey}`, (err, response, body) => {
       body = JSON.parse(body);
       if (!err) {
         resolve(body.newslist[0].content);
       } else {
         resolve("舔狗错误，是天行接口的锅。错误原因：" + JSON.stringify(response.body));
+      }
+    });
+  });
+  return p;
+}
+
+//读取api接口密钥配置文件 keys.ini
+function ReadApiKey() {
+  var p = new Promise((resolve, reject) => {
+    fs.readFile(`${__dirname}/keys.ini`, "utf-8", function (err, data) {
+      if (!err) {
+        resolve(JSON.parse(data));
+      } else {
+        reject("读取api接口密钥配置文件错误。错误原因：" + err);
       }
     });
   });

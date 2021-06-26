@@ -235,6 +235,12 @@
                   iconUnicode: "&#xe60b;",
                   iconClass: "",
                 },
+                {
+                  alias: "updatelog",
+                  title: "更新日志",
+                  iconUnicode: "&#xe60e;",
+                  iconClass: "",
+                },
               ],
 
               isVoice: 1, //是否播放声音
@@ -252,7 +258,7 @@
 
           layim.on("ready", function (options) {
             layim.showNew("More", true);
-            layim.showNew("about", true);
+            layim.showNew("updatelog", true);
           });
 
           //工具栏-召唤小夜
@@ -373,7 +379,14 @@
                 layer.open({
                   title: ["关于这个项目", "background-color: #FF4351; color:#fff;"],
                   content:
-                    '<h1 align="center"><img src="https://repository-images.githubusercontent.com/171253757/5f987680-d2ab-11eb-927b-655b4967c9a3"width="300px"/><br/>沙雕Ai聊天系统ChatDACS<br/>(Chatbot:shaDiao Ai Chat System)</h1><p align="center"><br/>一个无需服务器，可私有化部署、可独立运行于内网的H5聊天工具。<br/>技术栈：语言——Node.js，web框架——Express，前端组件库——layui。<br/>与硬件端<a href="https://github.com/Giftia/ChaosNodeMCU/"target="_blank">ChaosNodeMCU</a>联动为一个完整的物联网项目。<br/>开箱即用，非常好用，我的朋友。<br/><br/>简易搭建教程Tutorials：<a href="https://zhuanlan.zhihu.com/p/67995935"target="_blank">zhuanlan.zhihu.com/p/67995935</a><br/>项目开源于<a href="//github.com/Giftia/ChatDACS/"target=_black>github.com/Giftia/ChatDACS</a>，欢迎Star。<br/>系统已与小夜联动最新聊天词库，请随意聊天。<br/><br/>如需联系请访问我的网站：<a href="//giftia.moe"target=_black>giftia.moe</a></p>',
+                    '<h1 align="center"><img src="https://repository-images.githubusercontent.com/171253757/5f987680-d2ab-11eb-927b-655b4967c9a3"width="300px"/><br/>沙雕Ai聊天系统ChatDACS<br/>(Chatbot:shaDiao Ai Chat System)</h1><p align="center"><br/>一个无需服务器，可私有化部署、可独立运行于内网的H5聊天工具。<br/>技术栈：语言——Node.js，web框架——Express，前端组件库——layui。<br/>与硬件端<a href="https://github.com/Giftia/ChaosNodeMCU/"target="_blank">ChaosNodeMCU</a>联动为一个完整的物联网项目。<br/>开箱即用，非常好用，我的朋友。<br/><br/>简易搭建教程：<a href="https://zhuanlan.zhihu.com/p/67995935"target="_blank">zhuanlan.zhihu.com/p/67995935</a><br/>项目开源于：<a href="//github.com/Giftia/ChatDACS/"target=_black>github.com/Giftia/ChatDACS</a>，欢迎Star。<br/>系统已与小夜联动最新聊天词库，请随意聊天。<br/><br/>如需联系请访问：<a href="//giftia.moe"target=_black>giftia.moe</a></p>',
+                });
+                break;
+              case "updatelog":
+                layer.open({
+                  title: ["更新日志", "background-color: #FF96AD; color:#fff;"],
+                  content:
+                    "<h3>v2.3.0-143，优化了性能：</h3><ul><li>优化部署流程，方便新用户使用；</li><li>将apikey配置独立出来放到keys.ini，方便配置，且更加安全；</li><li>未使用变量前加了下划线以优化性能；</li><li>修复了随机cos重复率高的问题；</li><li>增加了更新日志；</li><li>一些小文案修改；</li></ul>",
                 });
                 break;
             }
