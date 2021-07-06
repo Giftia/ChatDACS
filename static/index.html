@@ -320,7 +320,7 @@
                 break;
               case "reload":
                 layer.open({
-                  content: "点击确定重生，你将会被强制删档，丢失所有聊天记录，以新人身份重新进入，确定吗？",
+                  content: "点击确定重生，你将会被强制删档，抹除所有聊天记录，以新人身份重新进入，确定吗？",
                   btn: ["取消", "确定重生"],
                   skin: "footer",
                   no: function (index) {
@@ -383,13 +383,19 @@
                 });
                 break;
               case "updatelog":
-                layer.open({
-                  title: ["更新日志", "background-color: #FF96AD; color:#fff;"],
-                  content:
-                    "<h3>v2.3.0-143，优化了性能：</h3><ul><li>优化部署流程，方便新用户使用；</li><li>将apikey配置独立出来放到keys.ini，方便配置，且更加安全；</li><li>未使用变量前加了下划线以优化性能；</li><li>修复了随机cos重复率高的问题；</li><li>增加了更新日志；</li><li>一些小文案修改；</li></ul>",
+                socket.emit("getupdatelog");
+                socket.on("updatelog", function (data) {
+                  layer.open({
+                    title: ["更新日志", "background-color: #FF96AD; color:#fff;"],
+                    content: data,
+                  });
                 });
                 break;
             }
+          });
+
+          layim.on("back", function () {
+            return 0;
           });
 
           //监听发送消息
@@ -495,6 +501,22 @@
               data: {
                 //数据
                 test: "?",
+              },
+            });
+          });
+
+          //监听查看更多记录
+          layim.on("chatlog", function (data, ul) {
+            console.log(data); //得到当前会话对象的基本信息
+            console.log(ul); //得到当前聊天列表所在的ul容器，比如可以借助他来实现往上插入更多记录
+
+            //弹出一个更多聊天记录面板
+            layim.panel({
+              title: "与 " + data.username + " 的聊天记录", //标题
+              tpl: "聊天记录：{{d.data.test}}", //模版
+              data: {
+                //数据
+                test: "Hello",
               },
             });
           });

@@ -15,7 +15,7 @@ Giftina：https://giftia.moe
   或使用pm2守护神启动:
     pm2 start index.js
   访问127.0.0.1即可体验,有公网或穿透那更好,尽情使用吧~
-  另外请查看67行，请去各个所述接口网站申请自己的接口密钥
+  另外请查看70行，请去各个所述接口网站申请自己的接口密钥
 
   若使用pm2守护神启动:
   隐藏界面请按:  Ctrl + C
@@ -32,28 +32,31 @@ Giftina：https://giftia.moe
 */
 
 //系统参数和开关，根据你的需要改动
-const version = "ChatDACS 2.3.0-143"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS 2.3.1-144"; //版本号，会显示在浏览器tab与标题栏
 const chat_swich = 1; //自动聊天开关，需数据库中配置聊天表，自带的数据库已经配置好小夜嘴臭语录，开箱即用
 const news_swich = 0; //首屏新闻开关
 const jc_swich = 0; //酱菜物联服务开关
 const password = "233333"; //配置开门密码
-var jcckapikey, Tiankey, sumtkey; //用于67行配置api接口密钥
+let jcckapikey, Tiankey, sumtkey; //用于67行配置api接口密钥
 const eval_swich = 0; //动态注入和执行开关，便于调试，但开启有极大风险，最好完全避免启用它，特别是在生产环境部署时
-const html = "/static/index.html"; //前端页面路径
+const html = "/static/index.html"; //前端页面路径，old.html为旧版前端
 const help =
-  "功能列表：<br />·门禁系统：<br />/开门 密码<br />用户指令：<br />/log_view<br />/reload<br />/rename 昵称<br />·其他指令：<br />经过2w+用户养成的即时人工智能聊天<br />输入BV号直接转换为AV号<br />/随机cos<br />/随机买家秀<br />/随机冷知识<br />首屏新闻展示<br />/随机二次元图";
+  "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
+const updatelog =
+  "<h2>v2.3.1-144，优化了稳定性：</h2><ul><li>重写了错误捕获，更好地避免了系统爆炸，并增加了全局错误捕获；</li><li>彻底修复了B站接口异常导致的随机cos爆炸的问题，阿B你在干什么啊；</li><li>更新日志移动到内部；</li><li>一些文案细节修改；</li></ul>";
+let cos_total_count = 50; //初始化随机cos上限，50个应该比较保守，使用随机cos功能后会自动更新为最新值
 
-/* 好了！请不要再继续编辑。请保存本文件。使用愉快！ */
+/* 好了！以上就是系统的基本配置，如果没有必要，请不要再往下继续编辑了。请保存本文件。祝使用愉快！ */
 
 //模块依赖
 let compression = require("compression");
 let express = require("express");
-let multer = require("multer");
-let upload = multer({ dest: "static/uploads/" }); //用户上传目录
-let cookie = require("cookie");
 let app = require("express")();
 app.use(compression());
 app.use(express.static("static")); //静态文件引入
+let multer = require("multer");
+let upload = multer({ dest: "static/uploads/" }); //用户上传目录
+let cookie = require("cookie");
 let http = require("http").Server(app);
 let io = require("socket.io")(http);
 let net = require("net");
@@ -64,17 +67,16 @@ let colors = require("colors");
 let fs = require("fs");
 let path = require("path");
 
-//载入api接口密钥配置，若您是初次使用，请访问申请地址，申请自己的接口密钥后修改 keys.ini 文件
-ReadApiKey().then(
-  (data) => {
-    jcckapikey = data.jcckapikey; //酱菜创客接口key，若不配置则门禁功能失效，平台已跑路，仅剩幻肢
-    Tiankey = data.Tiankey; //天行接口key，若不配置则随机昵称与舔狗失效，申请地址 https://www.tianapi.com/
-    sumtkey = data.sumtkey; //卡特实验室接口key，若不配置则随机买家秀失效，申请地址 https://api.sumt.cn/
-  },
-  (err, data) => {
-    console.log(`err, ${err}, data:, ${data}`);
-  }
-);
+//载入api接口密钥配置，若您是初次使用，请访问申请地址，申请自己的接口密钥后修改目录下的 keys.ini 文件
+ReadApiKey()
+  .then((resolve) => {
+    jcckapikey = resolve.jcckapikey; //酱菜创客接口key，若不配置则门禁功能失效，平台已跑路，仅剩幻肢
+    Tiankey = resolve.Tiankey; //天行接口key，若不配置则随机昵称与舔狗失效，申请地址 https://www.tianapi.com/
+    sumtkey = resolve.sumtkey; //卡特实验室接口key，若不配置则随机买家秀失效，申请地址 https://api.sumt.cn/
+  })
+  .catch((reject) => {
+    console.log(`载入api接口密钥文件错误，错误信息：${reject}`);
+  });
 
 //debug颜色配置
 colors.setTheme({
@@ -88,7 +90,7 @@ colors.setTheme({
 });
 
 //固定变量
-var onlineusers = 0;
+let onlineusers = 0;
 
 //正则
 let door_reg = new RegExp("^/开门 [a-zA-Z0-9]*$"); //匹配开门
@@ -133,7 +135,7 @@ http.listen(80, () => {
 // socket接入，开始用户操作
 io.on("connection", (socket) => {
   socket.emit("getcookie");
-  var CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
+  let CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
   if (CID === undefined) {
     socket.emit("getcookie");
     return 0;
@@ -146,62 +148,58 @@ io.on("connection", (socket) => {
     .then(([nickname, logintimes, lastlogintime]) => {
       console.log(`${Curentyyyymmdd() + CurentTime()}用户 ${nickname}(${CID}) 已连接`.log);
 
-      UpdateLogintimes(CID).then(
-        (data) => {
-          console.log(`update successfully, ${data}`);
-        },
-        (err, data) => {
-          console.log(`err, ${err}, data:, ${data}`);
-        }
-      );
+      UpdateLogintimes(CID)
+        .then((resolve) => {
+          console.log(`update successfully, ${resolve}`);
+        })
+        .catch((reject) => {
+          console.log(`err, ${reject}`);
+        });
 
-      UpdateLastLogintime(CID).then(
-        (data) => {
-          console.log(`update successfully, ${data}`);
-        },
-        (err, data) => {
-          console.log(`err, ${err}, data:, ${data}`);
-        }
-      );
+      UpdateLastLogintime(CID)
+        .then((resolve) => {
+          console.log(`update successfully, ${resolve}`);
+        })
+        .catch((reject) => {
+          console.log(`err, ${reject}`);
+        });
 
       socket.username = nickname;
 
       io.emit("system message", `欢迎回来，${socket.username}(${CID}) 。这是你第${logintimes}次访问。上次访问时间：${lastlogintime}`);
     })
-    .catch((err, data) => {
+    .catch((reject) => {
       //若无法获取该用户信息，则应该是其第一次访问，接下来是新增用户操作：
-      var CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
-      console.log(`GetUserData(): rejected, and err:${err}, data:${data}`);
+      let CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
+      console.log(`GetUserData(): rejected, and err:${reject}`);
       console.log(`${Curentyyyymmdd() + CurentTime()}新用户 ${CID} 已连接`.log);
-      RandomNickname().then(
-        (data) => {
-          db.run(`INSERT INTO users VALUES('${data}', '${CID}', '2', '${Curentyyyymmdd()}${CurentTime()}')`);
-          socket.username = data;
-          io.emit("system message", `新用户 ${CID} 已连接。小夜帮你取了一个随机昵称：「${socket.username}」，想要更改昵称可以发送 /rename 昵称`);
+      RandomNickname()
+        .then((resolve) => {
+          db.run(`INSERT INTO users VALUES('${resolve}', '${CID}', '2', '${Curentyyyymmdd()}${CurentTime()}')`);
+          socket.username = resolve;
+          io.emit("system message", `新用户 ${CID} 已连接。小夜帮你取了一个随机昵称：「${socket.username}」，请前往 更多-设置 来更改昵称`);
           socket.emit("chat message", {
             CID: "0",
-            msg: "主人你好，我是小夜，这里是一个无需服务器，可私有化部署、可独立运行于内网的H5聊天工具，先试试聊天框下方的便捷功能栏试试吧，功能栏往右拖动还有更多功能。",
+            msg: help,
           });
-        },
-        (err, data) => {
-          console.log(`随机昵称错误：${err} , ${data}`);
-        }
-      );
+        })
+        .catch((reject) => {
+          console.log(`随机昵称错误：${reject}`);
+        });
     });
 
   if (news_swich) {
-    Getnews().then(
-      (data) => {
+    Getnews()
+      .then((resolve) => {
         socket.emit("chat message", {
           CID: "0",
-          msg: data,
+          msg: resolve,
         });
-      },
-      (err, data) => {
-        console.log(`Getnews(): rejected, and err:${err}`);
-        socket.emit("system message", `Getnews() err:${data}`);
-      }
-    );
+      })
+      .catch((reject) => {
+        console.log(`Getnews(): rejected, and err:${reject}`);
+        socket.emit("system message", `Getnews() err:${reject}`);
+      });
   }
 
   socket.on("disconnect", () => {
@@ -220,12 +218,16 @@ io.on("connection", (socket) => {
   });
 
   socket.on("getsettings", () => {
-    var CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
+    let CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
     socket.emit("settings", { CID: CID, name: socket.username });
   });
 
+  socket.on("getupdatelog", () => {
+    socket.emit("updatelog", updatelog);
+  });
+
   socket.on("chat message", (msg) => {
-    var CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
+    let CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
     var msg = msg.msg;
     msg = msg.replace(/'/g, "[非法字符]"); //防爆
     msg = msg.replace(/</g, "[非法字符]"); //防爆
@@ -258,7 +260,7 @@ io.on("connection", (socket) => {
       } else {
         io.emit("chat message", { CID: "0", msg: "酱菜物联服务未启动，故门禁服务一并禁用" });
       }
-    } else if (msg === "/log") {
+    } /*else if (msg === "/log") {
       db.all("SELECT * FROM messages", (e, sql) => {
         if (!e) {
           var data = "";
@@ -275,7 +277,7 @@ io.on("connection", (socket) => {
           io.emit("chat message", { CID: "0", msg: e });
         }
       });
-    } /*else if (msg === "/cls") {
+    } else if (msg === "/cls") {
         db.all("DELETE FROM messages", function (e, sql) {
           if (!e) {
             io.emit("chat message", { CID: "0", msg: "管理指令：聊天信息数据库清空完毕"});
@@ -308,59 +310,54 @@ io.on("connection", (socket) => {
       });
     } else if (bv2av__reg.test(msg)) {
       msg = msg.replace(" ", "");
-      Bv2Av(msg).then(
-        (data) => {
-          io.emit("chat message", { CID: "0", msg: data });
-        },
-        (err, data) => {
-          console.log(`Bv2Av(): rejected, and err:${err}`);
-          io.emit("system message", `Bv2Av() err:${data}`);
-        }
-      );
+      Bv2Av(msg)
+        .then((resolve) => {
+          io.emit("chat message", { CID: "0", msg: resolve });
+        })
+        .catch((reject) => {
+          console.log(`Bv2Av(): rejected, and err:${reject}`);
+          io.emit("system message", `Bv2Av() err:${reject}`);
+        });
     } else if (msg === "/reload") {
       io.emit("reload");
     } else if (msg === "/帮助") {
       io.emit("chat message", { CID: "0", msg: help });
     } else if (msg === "/随机cos") {
-      RandomCos().then(
-        (data) => {
-          io.emit("pic message", data);
-        },
-        (err, data) => {
-          console.log(`RandomCos(): rejected, and err:${err}`);
-          io.emit("system message", `RandomCos() err:${data}`);
-        }
-      );
+      RandomCos()
+        .then((resolve) => {
+          io.emit("pic message", resolve);
+        })
+        .catch((reject) => {
+          console.log(`RandomCos(): rejected, and err:${reject}`);
+          io.emit("system message", `RandomCos() err:${reject}`);
+        });
     } else if (msg === "/随机买家秀") {
-      RandomTbshow().then(
-        (data) => {
-          io.emit("pic message", data);
-        },
-        (err, data) => {
-          console.log(`RandomTbshow(): rejected, and err:${err}`);
-          io.emit("system message", `RandomTbshow() err:${data}`);
-        }
-      );
+      RandomTbshow()
+        .then((resolve) => {
+          io.emit("pic message", resolve);
+        })
+        .catch((reject) => {
+          console.log(`RandomTbshow(): rejected, and err:${reject}`);
+          io.emit("system message", `RandomTbshow() err:${reject}`);
+        });
     } else if (msg === "/随机冷知识") {
-      RandomHomeword().then(
-        (data) => {
-          io.emit("chat message", { CID: "0", msg: data });
-        },
-        (err, data) => {
-          console.log(`RandomHomeword(): rejected, and err:${err}`);
-          io.emit("system message", `RandomHomeword() err:${data}`);
-        }
-      );
+      RandomHomeword()
+        .then((resolve) => {
+          io.emit("chat message", { CID: "0", msg: resolve });
+        })
+        .catch((reject) => {
+          console.log(`RandomHomeword(): rejected, and err:${reject}`);
+          io.emit("system message", `RandomHomeword() err:${reject}`);
+        });
     } else if (msg === "/随机二次元图") {
-      RandomECY().then(
-        (data) => {
-          io.emit("pic message", data);
-        },
-        (err, data) => {
-          console.log(`RandomECY(): rejected, and err:${err}`);
-          io.emit("system message", `RandomECY() err:${data}`);
-        }
-      );
+      RandomECY()
+        .then((resolve) => {
+          io.emit("pic message", resolve);
+        })
+        .catch((reject) => {
+          console.log(`RandomECY(): rejected, and err:${reject}`);
+          io.emit("system message", `RandomECY() err:${reject}`);
+        });
     } else {
       if (chat_swich) {
         msg = msg.replace("/", "");
@@ -373,17 +370,16 @@ io.on("connection", (socket) => {
             io.emit("chat message", { CID: "0", msg: answer });
           } else {
             console.log("聊天数据库中无匹配，使用舔狗回复");
-            PrprDoge().then(
-              (data) => {
+            PrprDoge()
+              .then((resolve) => {
                 io.emit("chat message", {
                   CID: "0",
-                  msg: data,
+                  msg: resolve,
                 });
-              },
-              (err, data) => {
-                console.log(`随机昵称错误：${err} , ${data}`);
-              }
-            );
+              })
+              .catch((reject) => {
+                console.log(`随机昵称错误：${reject}`);
+              });
           }
         });
       } else {
@@ -495,7 +491,7 @@ function CurentTime() {
 
 //新闻
 function Getnews() {
-  var p = new Promise((resolve, _reject) => {
+  var p = new Promise((resolve, reject) => {
     request("https://3g.163.com/touch/reconstruct/article/list/BBM54PGAwangning/0-10.html", (err, response, body) => {
       if (!err && response.statusCode === 200) {
         body = body.substring(9, body.length - 1);
@@ -508,7 +504,7 @@ function Getnews() {
         }
         resolve(content_news);
       } else {
-        resolve("获取新闻错误，这个问题雨女无瓜，是新闻接口的锅。错误原因：" + JSON.stringify(response.body));
+        reject("获取新闻错误，这个问题雨女无瓜，是新闻接口的锅。错误原因：" + JSON.stringify(response.body));
       }
     });
   });
@@ -534,13 +530,13 @@ function GetUserData(msg) {
 
 //更新登录次数
 function UpdateLogintimes(msg) {
-  var p = new Promise((resolve, _reject) => {
+  var p = new Promise((resolve, reject) => {
     db.run(`UPDATE users SET logintimes = logintimes + 1 WHERE CID ='${msg}'`),
       (err, sql) => {
         if (!err && sql) {
           resolve(sql);
         } else {
-          resolve(err);
+          reject(err);
         }
       };
   });
@@ -564,7 +560,7 @@ function UpdateLastLogintime(msg) {
 
 //BV转AV
 function Bv2Av(msg) {
-  var p = new Promise((resolve, _reject) => {
+  var p = new Promise((resolve, reject) => {
     request("https://api.bilibili.com/x/web-interface/view?bvid=" + msg, (err, response, body) => {
       body = JSON.parse(body);
       if (!err && response.statusCode === 200 && body.code === 0) {
@@ -575,7 +571,7 @@ function Bv2Av(msg) {
         content += av_number + '" target="_blank">' + av_title + "，av" + av_number + "</a>";
         resolve(content);
       } else {
-        resolve("解析错误，是否输入了不正确的BV号？错误原因：" + JSON.stringify(response.body));
+        reject("解析错误，是否输入了不正确的BV号？错误原因：" + JSON.stringify(response.body));
       }
     });
   });
@@ -584,24 +580,30 @@ function Bv2Av(msg) {
 
 //随机cos
 function RandomCos() {
-  var p = new Promise((resolve, _reject) => {
-    var rand_page_num = Math.floor(Math.random() * 144); //有点淦，阿B改了一下接口，不返回总数了，只能有空每次遍历之后手动改总数了
+  var p = new Promise((resolve, reject) => {
+    var rand_page_num = Math.floor(Math.random() * cos_total_count);
     request(
       "https://api.vc.bilibili.com/link_draw/v2/Photo/list?category=cos&type=hot&page_num=" + rand_page_num + "&page_size=1",
       (err, response, body) => {
         body = JSON.parse(body);
-        if (!err && response.statusCode === 200 && body.code === 0) {
-          var obj = body.data.items[0].item.pictures;
+        if (!err && response.statusCode === 200 && body.code === 0 && body.data.total_count != 0) {
+          cos_total_count = body.data.total_count;
+          try {
+            var obj = body.data.items[0].item.pictures; //经常出现某个item里没有图片的毛病，阿B你在干什么啊
+          } catch (err) {
+            reject("获取随机cos错误，是B站的锅。这个item里又双草没有图片，阿B你在干什么啊。错误原因：" + JSON.stringify(response.body));
+            return 0;
+          }
           var count = Object.keys(obj).length;
           var picUrl = obj[Math.floor(Math.random() * count)].img_src;
-          console.log(picUrl);
+          console.log(`cos总数：${cos_total_count}页，当前选择：${rand_page_num}页，发送图片：${picUrl}`);
           request(picUrl).pipe(
             fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
               resolve(`/images/${picUrl.split("/").pop()}`);
             })
           ); //绕过防盗链，保存为本地图片
         } else {
-          resolve("获取随机cos错误，这个问题雨女无瓜，是B站接口的锅。错误原因：" + JSON.stringify(response.body));
+          reject("获取随机cos错误，是B站的锅。错误原因：" + JSON.stringify(response.body));
         }
       }
     );
@@ -611,13 +613,14 @@ function RandomCos() {
 
 //随机买家秀
 function RandomTbshow() {
-  var p = new Promise((resolve, _reject) => {
+  var p = new Promise((resolve, reject) => {
     request(`https://api.sumt.cn/api/rand.tbimg.php?token=${sumtkey}&format=json`, (err, response, body) => {
       body = JSON.parse(body);
-      if (!err) {
+      console.log(body);
+      if (!err && body.code === 200) {
         resolve(body.pic_url);
       } else {
-        resolve("随机买家秀错误，是卡特实验室接口的锅。错误原因：" + JSON.stringify(response.body));
+        reject("随机买家秀错误，是卡特实验室接口的锅。错误原因：" + JSON.stringify(response.body));
       }
     });
   });
@@ -635,7 +638,7 @@ function RandomECY() {
 
 //随机冷知识
 function RandomHomeword() {
-  var p = new Promise((resolve, _reject) => {
+  var p = new Promise((resolve, reject) => {
     request("https://passport.csdn.net/v1/api/get/homeword", (err, response, body) => {
       body = JSON.parse(body);
       if (!err) {
@@ -644,7 +647,7 @@ function RandomHomeword() {
         var count = body.data.count;
         resolve(title + content + "<br />—— 有" + count + "人陪你一起已读");
       } else {
-        resolve("获取随机冷知识错误，这个问题雨女无瓜，是CSDN接口的锅。错误原因：" + JSON.stringify(response.body));
+        reject("获取随机冷知识错误，这个问题雨女无瓜，是CSDN接口的锅。错误原因：" + JSON.stringify(response.body));
       }
     });
   });
@@ -653,13 +656,13 @@ function RandomHomeword() {
 
 //自动随机昵称
 function RandomNickname() {
-  var p = new Promise((resolve, _reject) => {
+  var p = new Promise((resolve, reject) => {
     request(`http://api.tianapi.com/txapi/cname/index?key=${Tiankey}`, (err, response, body) => {
       body = JSON.parse(body);
       if (!err) {
         resolve(body.newslist[0].naming);
       } else {
-        resolve("获取随机昵称错误，是天行接口的锅。错误原因：" + JSON.stringify(response.body));
+        reject("获取随机昵称错误，是天行接口的锅。错误原因：" + JSON.stringify(response.body));
       }
     });
   });
@@ -668,13 +671,13 @@ function RandomNickname() {
 
 //舔狗回复
 function PrprDoge() {
-  var p = new Promise((resolve, _reject) => {
+  var p = new Promise((resolve, reject) => {
     request(`http://api.tianapi.com/txapi/tiangou/index?key=${Tiankey}`, (err, response, body) => {
       body = JSON.parse(body);
       if (!err) {
         resolve(body.newslist[0].content);
       } else {
-        resolve("舔狗错误，是天行接口的锅。错误原因：" + JSON.stringify(response.body));
+        reject("舔狗错误，是天行接口的锅。错误原因：" + JSON.stringify(response.body));
       }
     });
   });
@@ -694,3 +697,13 @@ function ReadApiKey() {
   });
   return p;
 }
+
+process.on("uncaughtException", (err) => {
+  io.emit("system message", `未捕获的异常：${err}`);
+  console.log("未捕获的异常，错误：" + err);
+});
+
+process.on("unhandledRejection", (err, p) => {
+  io.emit("system message", `未捕获的异常，位于抛秘史：${p}，${err}`);
+  console.log("未捕获的异常，位于抛秘史：" + p + "，" + err);
+});
