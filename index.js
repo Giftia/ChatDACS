@@ -29,10 +29,12 @@ Giftina：https://giftia.moe
     B 次版本号,功能更新,当功能增加、修改或删除时增加B,更新代码需要更新依赖
     C 尾版本号,表示小修改,如修复一些重要bug时增加C,更新代码可以不更新依赖
     D 迭代号,表示Github commits 即代码提交次数,属于非必要更新,可以不更新代码
+
+    致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、还有我的朋友们，以及倾心分享知识的各位
 */
 
 //系统参数和开关，根据你的需要改动
-const version = "ChatDACS 2.3.1-144"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS 2.3.2-146"; //版本号，会显示在浏览器tab与标题栏
 const chat_swich = 1; //自动聊天开关，需数据库中配置聊天表，自带的数据库已经配置好小夜嘴臭语录，开箱即用
 const news_swich = 0; //首屏新闻开关
 const jc_swich = 0; //酱菜物联服务开关
@@ -43,7 +45,7 @@ const html = "/static/index.html"; //前端页面路径，old.html为旧版前�
 const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const updatelog =
-  "<h2>v2.3.1-144，优化了稳定性：</h2><ul><li>重写了错误捕获，更好地避免了系统爆炸，并增加了全局错误捕获；</li><li>彻底修复了B站接口异常导致的随机cos爆炸的问题，阿B你在干什么啊；</li><li>更新日志移动到内部；</li><li>一些文案细节修改；</li></ul>";
+  "<h2>v2.3.2-146，小修小改：</h2><ul><li>· 修复换行符导致的显示异常；</li><li>· 修复链接显示；</li><li>· 将格式化文本功能换为发送链接功能；</li></ul>";
 let cos_total_count = 50; //初始化随机cos上限，50个应该比较保守，使用随机cos功能后会自动更新为最新值
 
 /* 好了！以上就是系统的基本配置，如果没有必要，请不要再往下继续编辑了。请保存本文件。祝使用愉快！ */
@@ -378,7 +380,7 @@ io.on("connection", (socket) => {
                 });
               })
               .catch((reject) => {
-                console.log(`随机昵称错误：${reject}`);
+                console.log(`随机舔狗错误：${reject}`);
               });
           }
         });
@@ -500,7 +502,7 @@ function Getnews() {
         var news = main.BBM54PGAwangning;
         for (let id = 0; id < 10; id++) {
           var print_id = id + 1;
-          content_news += "<br>" + print_id + "." + news[id].title + ' <a href="' + news[id].url + '" target="_blank">查看原文</a>';
+          content_news += "        " + print_id + "." + news[id].title + "a(" + news[id].url + '")[查看原文]';
         }
         resolve(content_news);
       } else {
@@ -564,11 +566,11 @@ function Bv2Av(msg) {
     request("https://api.bilibili.com/x/web-interface/view?bvid=" + msg, (err, response, body) => {
       body = JSON.parse(body);
       if (!err && response.statusCode === 200 && body.code === 0) {
-        var content = '<a href="https://www.bilibili.com/video/av';
+        var content = "a(https://www.bilibili.com/video/av";
         var av = body.data;
         var av_number = av.aid;
         var av_title = av.title;
-        content += av_number + '" target="_blank">' + av_title + "，av" + av_number + "</a>";
+        content += av_number + ")[" + av_title + "，av" + av_number + "]";
         resolve(content);
       } else {
         reject("解析错误，是否输入了不正确的BV号？错误原因：" + JSON.stringify(response.body));

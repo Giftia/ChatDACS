@@ -197,8 +197,8 @@
                   iconUnicode: "&#xe607;",
                 },
                 {
-                  alias: "code",
-                  title: "格式化文本",
+                  alias: "link",
+                  title: "发送链接",
                   iconUnicode: "&#xe64e;",
                 },
               ],
@@ -207,7 +207,7 @@
               moreList: [
                 {
                   alias: "backtofuture",
-                  title: "回到未来",
+                  title: "回到未来(点击标题返回)",
                   iconUnicode: "&#xe65c;", //图标字体的unicode，可不填
                   iconClass: "", //图标字体的class类名
                 },
@@ -297,9 +297,9 @@
             send();
           });
 
-          //工具栏-格式化文本
-          layim.on("tool(code)", function (insert, send) {
-            insert("[pre class=layui-code] 在这里输入的文字会被格式化 [/pre]");
+          //工具栏-发送链接
+          layim.on("tool(link)", function (insert, send) {
+            insert("a(www.bilibili.com)[哔哩哔哩]");
           });
 
           //更多菜单
