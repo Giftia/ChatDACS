@@ -23,7 +23,7 @@
   <img src="https://img.shields.io/github/languages/code-size/Giftia/ChatDACS?style=for-the-badge" alt="Code size" />
   </p>
 
-##
+---
 
 ## ✨ 功能与特性 Features
 
@@ -36,6 +36,8 @@
 - [ ] 私聊 `Private chat`
 - [ ] 付费内容 `Premium content`
 
+---
+
 ## ⚡️ 快速启动 Quick start
 
 首先去 https://nodejs.org/zh-cn/ 下载安装长期支持版 Node.js，
@@ -44,11 +46,15 @@
 
 解压到任意文件夹，双击代码根目录下的 init.bat 一键部署，
 
-部署完毕后 沙雕 Ai 聊天系统 会自动启动，之后可双击 run.bat 启动。
+部署完毕后 沙雕 Ai 聊天系统 会自动启动。以后可双击 run.bat 启动。
 
-若您的操作系统不是 Windows，或者是一键部署过程出现错误，请按如下操作手动部署：
+---
 
-打开各系统的 shell ，如 Bash、CMD、PowerShell 等，用 cd 命令进入代码根目录运行：
+## 🛠 手动部署 Manual deployment
+
+若您的操作系统并不是 Windows OS，或者是在快速启动过程出现了错误，请按如下操作手动部署：
+
+打开系统的 shell ，如 Bash、CMD、PowerShell 等，用 cd 命令进入代码根目录运行：
 
 ```bash
 npm install -g cnpm --registry=https://registry.npm.taobao.org
@@ -66,4 +72,8 @@ cnpm install
 node index.js
 ```
 
-好了，它应该已经启动了 🎉。更详细的部署说明可查看 index.js 文件。
+好了，它应该已经启动了 🎉。更详细的部署和配置说明请查看 index.js 文件。
+
+---
+
+如有任何疑问、建议或者需要联系我，请加 QQ 群 646493880：点击链接加入群聊【Giftia 终端服务部】：https://jq.qq.com/?_wv=1027&k=B51zJPm7

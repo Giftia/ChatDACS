@@ -15,7 +15,10 @@ Giftina：https://giftia.moe
   或使用pm2守护神启动:
     pm2 start index.js
   访问127.0.0.1即可体验,有公网或穿透那更好,尽情使用吧~
-  另外请查看72行，请去各个所述接口网站申请自己的接口密钥
+
+  另外，若想使用更完善的功能，请访问以下申请地址，申请自己的接口密钥后，修改目录下的 keys.ini 文件：
+  -- 天行接口，用于 随机昵称 与 舔狗 功能，申请地址 https://www.tianapi.com/
+  -- 卡特实验室接口，用于 随机买家秀 功能，申请地址 https://api.sumt.cn/
 
   若使用pm2守护神启动:
   隐藏界面请按:  Ctrl + C
@@ -30,22 +33,22 @@ Giftina：https://giftia.moe
     C 尾版本号,表示小修改,如修复一些重要bug时增加C,更新代码可以不更新依赖
     D 迭代号,表示Github commits 即代码提交次数,属于非必要更新,可以不更新代码
 
-    致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、还有我的朋友们，以及倾心分享知识的各位
+    致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、还有我的朋友们，以及倾心分享知识的各位
 */
 
 //系统参数和开关，根据你的需要改动
-const version = "ChatDACS 2.3.3-147"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS 2.4.0-148"; //版本号，会显示在浏览器tab与标题栏
 const chat_swich = 1; //自动聊天开关，需数据库中配置聊天表，自带的数据库已经配置好小夜嘴臭语录，开箱即用
 const news_swich = 1; //首屏新闻开关
 const jc_swich = 0; //酱菜物联服务开关
 const password = "233333"; //配置开门密码
-let jcckapikey, Tiankey, sumtkey; //用于72行配置api接口密钥
 const eval_swich = 0; //动态注入和执行开关，便于调试，但开启有极大风险，最好完全避免启用它，特别是在生产环境部署时
 const html = "/static/index.html"; //前端页面路径，old.html为旧版前端
+const topN = 5; //限制分词权重数量，设置得越低，更侧重大意，回复更贴近重点，但容易重复相同的回复；设置得越高，回复会更随意、更沙雕，但更容易答非所问
+let cos_total_count = 50; //初始化随机cos上限，50个应该比较保守，使用随机cos功能后会自动更新为最新值
 const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
-const updatelog = `<h1>v2.3.3-147，比较完善的版本，推荐使用：</h1><br /><ul style="text-align:left"><li>· 优化部署流程，新增一键部署，方便新用户使用；</li><li>· 将apikey配置独立出来放到keys.ini，方便配置，且更加安全；</li><li>· 新旧前端可在用户侧由用户按需切换；</li><li>· 增加了客户端侧显示的更新日志；</li><li>· 增加设置界面，可供用户更改个人资料；</li><li>· 解除了元素选择限制，可任意复制文字，保存图片、视频、音频；</li><li>· 优化连接速度，美化了各处文案，写了好康的readme；</li><li>· 修复换行符导致的显示异常；</li><li>· 重写了错误捕获，更好地避免了系统爆炸，并增加了全局错误捕获，不再出现由于各种大小爆炸导致的系统关闭的情况；</li><li>· 修了新用户登录广播导致其他用户被强制刷新的问题；</li><li>· 修复了色图的各种问题；</li><li>· 增加广受好评的视频/音频功能，新增链接显示，增加无匹配舔狗回复；</li><li>· 以及各种小细节优化；</li><li>· 2.3.3神秘力量的加成；</li></ul>`;
-let cos_total_count = 50; //初始化随机cos上限，50个应该比较保守，使用随机cos功能后会自动更新为最新值
+const updatelog = `<h1>v2.4.0-148，大更新，分词让小夜更智能：</h1><br /><ul style="text-align:left"><li>· 使用nodejiba进行分词，现在小夜变得更聪（zhi）明（zhang）了；</li><li>· 一些小优化和bug修复；</li></ul>`;
 
 /* 好了！以上就是系统的基本配置，如果没有必要，请不要再往下继续编辑了。请保存本文件。祝使用愉快！ */
 
@@ -67,13 +70,26 @@ let db = new sqlite3.Database("db.db"); //数据库位置，默认与index.js同
 let colors = require("colors");
 let fs = require("fs");
 let path = require("path");
+let jieba = require("nodejieba");
 
-//载入api接口密钥配置，若您是初次使用，请访问申请地址，申请自己的接口密钥后修改目录下的 keys.ini 文件
+//错误捕获
+process.on("uncaughtException", (err) => {
+  io.emit("system message", `未捕获的异常：${err}`);
+  console.log("未捕获的异常，错误：" + err);
+});
+
+//promise错误捕获
+process.on("unhandledRejection", (err, p) => {
+  io.emit("system message", `未捕获的异常，位于promise：${p}，${err}`);
+  console.log("未捕获的异常，位于promise：" + p + "，" + err);
+});
+
+//载入api接口密钥配置
 ReadApiKey()
   .then((resolve) => {
     jcckapikey = resolve.jcckapikey; //酱菜创客接口key，若不配置则门禁功能失效，平台已跑路，仅剩幻肢
-    Tiankey = resolve.Tiankey; //天行接口key，若不配置则随机昵称与舔狗失效，申请地址 https://www.tianapi.com/
-    sumtkey = resolve.sumtkey; //卡特实验室接口key，若不配置则随机买家秀失效，申请地址 https://api.sumt.cn/
+    Tiankey = resolve.Tiankey; //天行接口key
+    sumtkey = resolve.sumtkey; //卡特实验室接口key
   })
   .catch((reject) => {
     console.log(`载入api接口密钥文件错误，错误信息：${reject}`);
@@ -92,6 +108,7 @@ colors.setTheme({
 
 //固定变量
 let onlineusers = 0;
+let jcckapikey, Tiankey, sumtkey;
 
 //正则
 let door_reg = new RegExp("^/开门 [a-zA-Z0-9]*$"); //匹配开门
@@ -130,10 +147,10 @@ if (eval_swich) {
 }
 
 http.listen(80, () => {
-  console.log(Curentyyyymmdd() + CurentTime() + "配置完毕，系统启动，访问 127.0.0.1 即可体验沙雕Ai聊天系统");
+  console.log(Curentyyyymmdd() + CurentTime() + "系统启动，访问 127.0.0.1 即可使用");
 });
 
-// socket接入，开始用户操作
+//socket接入，开始用户操作
 io.on("connection", (socket) => {
   socket.emit("getcookie");
   let CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
@@ -192,10 +209,7 @@ io.on("connection", (socket) => {
   if (news_swich) {
     Getnews()
       .then((resolve) => {
-        socket.emit("chat message", {
-          CID: "0",
-          msg: resolve,
-        });
+        io.emit("system message", resolve); //过于影响新UI的聊天界面，改为在系统消息显示
       })
       .catch((reject) => {
         console.log(`Getnews(): rejected, and err:${reject}`);
@@ -361,18 +375,20 @@ io.on("connection", (socket) => {
         });
     } else {
       if (chat_swich) {
-        msg = msg.replace("/", "");
-        db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg + "%'", (e, sql) => {
-          if (!e && sql.length > 0) {
-            console.log("对于对话: " + msg + "，匹配到 " + sql.length + " 条回复");
-            var ans = Math.floor(Math.random() * sql.length);
-            var answer = JSON.stringify(sql[ans].answer);
-            console.log(`随机选取第${ans}条回复：${sql[ans].answer}`);
-            io.emit("chat message", { CID: "0", msg: answer });
-          } else {
-            console.log("聊天数据库中无匹配，使用舔狗回复");
+        //交给聊天函数处理
+        ChatProcess(msg)
+          .then((resolve) => {
+            io.emit("chat message", {
+              CID: "0",
+              msg: resolve,
+            });
+          })
+          .catch((reject) => {
+            //如果没有匹配到回复，那就让舔狗来回复
+            console.log(reject, "，交给舔狗回复");
             PrprDoge()
               .then((resolve) => {
+                console.log("舔狗回复：", resolve);
                 io.emit("chat message", {
                   CID: "0",
                   msg: resolve,
@@ -381,8 +397,7 @@ io.on("connection", (socket) => {
               .catch((reject) => {
                 console.log(`随机舔狗错误：${reject}`);
               });
-          }
-        });
+          });
       } else {
         return 0;
       }
@@ -492,7 +507,7 @@ function CurentTime() {
 
 //新闻
 function Getnews() {
-  var p = new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     request("https://3g.163.com/touch/reconstruct/article/list/BBM54PGAwangning/0-10.html", (err, response, body) => {
       if (!err && response.statusCode === 200) {
         body = body.substring(9, body.length - 1);
@@ -501,7 +516,7 @@ function Getnews() {
         var news = main.BBM54PGAwangning;
         for (let id = 0; id < 10; id++) {
           var print_id = id + 1;
-          content_news += "        " + print_id + "." + news[id].title + "a(" + news[id].url + '")[查看原文]';
+          content_news += "\r\n" + print_id + "." + news[id].title + "a(" + news[id].url + ")[查看原文]";
         }
         resolve(content_news);
       } else {
@@ -509,12 +524,11 @@ function Getnews() {
       }
     });
   });
-  return p;
 }
 
 //获取用户信息
 function GetUserData(msg) {
-  var p = new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     db.all("SELECT * FROM users WHERE CID = '" + msg + "'", (err, sql) => {
       if (!err && sql[0]) {
         let nickname = JSON.stringify(sql[0].nickname);
@@ -526,12 +540,11 @@ function GetUserData(msg) {
       }
     });
   });
-  return p;
 }
 
 //更新登录次数
 function UpdateLogintimes(msg) {
-  var p = new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     db.run(`UPDATE users SET logintimes = logintimes + 1 WHERE CID ='${msg}'`),
       (err, sql) => {
         if (!err && sql) {
@@ -541,12 +554,11 @@ function UpdateLogintimes(msg) {
         }
       };
   });
-  return p;
 }
 
 //更新最后登陆时间
 function UpdateLastLogintime(msg) {
-  var p = new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     db.run(`UPDATE users SET lastlogintime = '${Curentyyyymmdd()}${CurentTime()}' WHERE CID ='${msg}'`),
       (err, sql) => {
         if (!err && sql) {
@@ -556,12 +568,11 @@ function UpdateLastLogintime(msg) {
         }
       };
   });
-  return p;
 }
 
 //BV转AV
 function Bv2Av(msg) {
-  var p = new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     request("https://api.bilibili.com/x/web-interface/view?bvid=" + msg, (err, response, body) => {
       body = JSON.parse(body);
       if (!err && response.statusCode === 200 && body.code === 0) {
@@ -576,12 +587,11 @@ function Bv2Av(msg) {
       }
     });
   });
-  return p;
 }
 
 //随机cos
 function RandomCos() {
-  var p = new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     var rand_page_num = Math.floor(Math.random() * cos_total_count);
     request(
       "https://api.vc.bilibili.com/link_draw/v2/Photo/list?category=cos&type=hot&page_num=" + rand_page_num + "&page_size=1",
@@ -609,12 +619,11 @@ function RandomCos() {
       }
     );
   });
-  return p;
 }
 
 //随机买家秀
 function RandomTbshow() {
-  var p = new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     request(`https://api.sumt.cn/api/rand.tbimg.php?token=${sumtkey}&format=json`, (err, response, body) => {
       body = JSON.parse(body);
       console.log(body);
@@ -625,39 +634,36 @@ function RandomTbshow() {
       }
     });
   });
-  return p;
 }
 
 //随机二次元图，新版Chrome加入了HSTS策略而暂时无法使用。如需使用，请用户访问 chrome://net-internals/#hsts，在最下面的Delete domain security policies中，输入 acg.yanwz.cn，点击Delete删除即可
 function RandomECY() {
-  var p = new Promise((resolve, _reject) => {
+  return new Promise((resolve, _reject) => {
     var pic = "https://acg.yanwz.cn/api.php";
     resolve(pic);
   });
-  return p;
 }
 
 //随机冷知识
 function RandomHomeword() {
-  var p = new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     request("https://passport.csdn.net/v1/api/get/homeword", (err, response, body) => {
       body = JSON.parse(body);
       if (!err) {
         var title = "<h2>" + body.data.title + "</h2>";
         var content = body.data.content;
         var count = body.data.count;
-        resolve(title + content + "<br />—— 有" + count + "人陪你一起已读");
+        resolve(title + content + "\r\n—— 有" + count + "人陪你一起已读");
       } else {
         reject("获取随机冷知识错误，这个问题雨女无瓜，是CSDN接口的锅。错误原因：" + JSON.stringify(response.body));
       }
     });
   });
-  return p;
 }
 
 //自动随机昵称
 function RandomNickname() {
-  var p = new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     request(`http://api.tianapi.com/txapi/cname/index?key=${Tiankey}`, (err, response, body) => {
       body = JSON.parse(body);
       if (!err) {
@@ -667,12 +673,11 @@ function RandomNickname() {
       }
     });
   });
-  return p;
 }
 
 //舔狗回复
 function PrprDoge() {
-  var p = new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     request(`http://api.tianapi.com/txapi/tiangou/index?key=${Tiankey}`, (err, response, body) => {
       body = JSON.parse(body);
       if (!err) {
@@ -682,12 +687,11 @@ function PrprDoge() {
       }
     });
   });
-  return p;
 }
 
 //读取api接口密钥配置文件 keys.ini
 function ReadApiKey() {
-  var p = new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     fs.readFile(`${__dirname}/keys.ini`, "utf-8", function (err, data) {
       if (!err) {
         resolve(JSON.parse(data));
@@ -696,15 +700,29 @@ function ReadApiKey() {
       }
     });
   });
-  return p;
 }
 
-process.on("uncaughtException", (err) => {
-  io.emit("system message", `未捕获的异常：${err}`);
-  console.log("未捕获的异常，错误：" + err);
-});
-
-process.on("unhandledRejection", (err, p) => {
-  io.emit("system message", `未捕获的异常，位于抛秘史：${p}，${err}`);
-  console.log("未捕获的异常，位于抛秘史：" + p + "，" + err);
-});
+//聊天处理
+function ChatProcess(msg) {
+  return new Promise((resolve, reject) => {
+    msg = msg.replace("/", "");
+    msg = jieba.extract(msg, topN); //按权重分词
+    console.log("分词出关键词：", msg);
+    if (msg.length == 0) {
+      reject(`不能分词，可能是语句无含义`.warn);
+    }
+    let rand_word_num = Math.floor(Math.random() * topN);
+    console.log("随机选择关键词", msg[rand_word_num].word, "来回复".log);
+    db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg[rand_word_num].word + "%'", (e, sql) => {
+      if (!e && sql.length > 0) {
+        console.log("对于对话: " + msg[rand_word_num].word + "，匹配到 " + sql.length + " 条回复");
+        var ans = Math.floor(Math.random() * sql.length);
+        var answer = JSON.stringify(sql[ans].answer);
+        console.log(`随机选取第${ans}条回复：${answer}`.log);
+        resolve(answer);
+      } else {
+        reject(`聊天数据库中没有匹配到 ${msg[rand_word_num].word} 的回复`.warn);
+      }
+    });
+  });
+}
