@@ -9,7 +9,7 @@
     "express": "^4.17.1",
     "multer": "^1.4.2",
     "npm-check-updates": "^9.0.1",
-    "pm2": "^4.4.1",
+    "pm2": "^5.1.0",
     "request": "^2.88.2",
     "socket.io": "^2.4.0",
     "sqlite3": "^5.0.0"
