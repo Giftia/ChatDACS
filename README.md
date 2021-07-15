@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="https://repository-images.githubusercontent.com/171253757/5f987680-d2ab-11eb-927b-655b4967c9a3" width="600px"/><br/>
+  <img src="https://repository-images.githubusercontent.com/171253757/5f987680-d2ab-11eb-927b-655b4967c9a3" width="650px"/><br/>
   沙雕Ai聊天系统 ChatDACS<br/>
 (Chatbot : shaDiao Ai Chat System)
 </h1>
@@ -11,6 +11,7 @@
 <br/>
 示例 DEMO：<a href="http://chatdacs.giftia.moe/" target="_blank">chatdacs.giftia.moe</a><br/>
 简易搭建教程 Tutorials：<a href="https://zhuanlan.zhihu.com/p/67995935" target="_blank">zhuanlan.zhihu.com/p/67995935</a><br/>
+词库来源于小夜计划：<a href="https://github.com/Giftia/Project_Xiaoye" target="_blank">github.com/Giftia/Project_Xiaoye</a>
 </p>
   <p align="center">
   <img src="https://img.shields.io/uptimerobot/ratio/m783632550-7da46d24226cb151b978c810?style=for-the-badge" alt="Uptime(30 days)" />&nbsp;

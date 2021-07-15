@@ -16,14 +16,17 @@ Giftina：https://giftia.moe
     pm2 start index.js
   访问127.0.0.1即可体验,有公网或穿透那更好,尽情使用吧~
 
+  若使用pm2守护神启动:
+  隐藏界面请按:  Ctrl + C
+  查看监视器请运行:  pm2 monit
+  完全关闭请运行:  pm2 kill
+
   另外，若想使用更完善的功能，请访问以下申请地址，申请自己的接口密钥后，修改目录下的 keys.ini 文件：
   -- 天行接口，用于 随机昵称 与 舔狗 功能，申请地址 https://www.tianapi.com/
   -- 卡特实验室接口，用于 随机买家秀 功能，申请地址 https://api.sumt.cn/
 
-  若使用pm2守护神启动:
-  隐藏界面请按:  Ctrl + C
-  查看监视器请运行:  pm2 monit
-  完全关闭请运行:  pm2 stop all
+  目录下的 userdicy.txt 是自定义分词表，用于提高聊天智能
+  修改时请注意，一个关键词占一行，每一行按顺序分为三部分：词语、词频（省略则交给分词器自动计算）、词性（可省略），以空格隔开
 
   每当次版本号迭代,如 1.1.0 --> 1.2.0,意味着需要更新依赖,请运行:  ncu -u  ,等待进度完成后运行:  cnpm install
   出现任何缺失的依赖包请运行:  cnpm install 缺失的包名
@@ -31,13 +34,13 @@ Giftina：https://giftia.moe
     A 大版本号,当整端重构或出现不向后兼容的改变时增加A,更新代码需要更新依赖,且需要重载数据库
     B 次版本号,功能更新,当功能增加、修改或删除时增加B,更新代码需要更新依赖
     C 尾版本号,表示小修改,如修复一些重要bug时增加C,更新代码可以不更新依赖
-    D 迭代号,表示Github commits 即代码提交次数,属于非必要更新,可以不更新代码
+    D 迭代号,表示最小修改版本,用于体现该版本稳定性
 
     致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、还有我的朋友们，以及倾心分享知识的各位
 */
 
 //系统参数和开关，根据你的需要改动
-const version = "ChatDACS 2.4.0-148"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS 2.4.1-Dev"; //版本号，会显示在浏览器tab与标题栏
 const chat_swich = 1; //自动聊天开关，需数据库中配置聊天表，自带的数据库已经配置好小夜嘴臭语录，开箱即用
 const news_swich = 1; //首屏新闻开关
 const jc_swich = 0; //酱菜物联服务开关
@@ -48,11 +51,11 @@ const topN = 5; //限制分词权重数量，设置得越低，更侧重大意�
 let cos_total_count = 50; //初始化随机cos上限，50个应该比较保守，使用随机cos功能后会自动更新为最新值
 const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
-const updatelog = `<h1>v2.4.0-148，大更新，分词让小夜更智能：</h1><br /><ul style="text-align:left"><li>· 使用nodejiba进行分词，现在小夜变得更聪（zhi）明（zhang）了；</li><li>· 一些小优化和bug修复；</li></ul>`;
+const updatelog = `<h1>v2.4.1-Dev，优化分词效果：</h1><br /><ul style="text-align:left"><li>· 使用自定义词库，识别小夜个性化关键词；</li><li>· 重置并压缩了数据库，提升了读写性能；</li><li>· 修复了分词结果下标越界的错误，避免了过多的舔狗；</li><li>· 更新所有依赖至最新；</li><li>· 一些小优化和bug修复；</li></ul>`;
 
 /* 好了！以上就是系统的基本配置，如果没有必要，请不要再往下继续编辑了。请保存本文件。祝使用愉快！ */
 
-//模块依赖
+//模块依赖和底层配置
 let compression = require("compression");
 let express = require("express");
 let app = require("express")();
@@ -71,17 +74,24 @@ let colors = require("colors");
 let fs = require("fs");
 let path = require("path");
 let jieba = require("nodejieba");
+jieba.load({
+  dict: jieba.DEFAULT_DICT,
+  hmmDict: jieba.DEFAULT_HMM_DICT,
+  userDict: "userdict.txt",
+  idfDict: jieba.DEFAULT_IDF_DICT,
+  stopWordDict: jieba.DEFAULT_STOP_WORD_DICT,
+});
 
 //错误捕获
 process.on("uncaughtException", (err) => {
   io.emit("system message", `未捕获的异常：${err}`);
-  console.log("未捕获的异常，错误：" + err);
+  console.log(`未捕获的异常，错误：${err}`.error);
 });
 
 //promise错误捕获
-process.on("unhandledRejection", (err, p) => {
-  io.emit("system message", `未捕获的异常，位于promise：${p}，${err}`);
-  console.log("未捕获的异常，位于promise：" + p + "，" + err);
+process.on("unhandledRejection", (err) => {
+  io.emit("system message", `未捕获的promise异常：${err}`);
+  console.log(`未捕获的promise异常：${err}`.error);
 });
 
 //载入api接口密钥配置
@@ -385,7 +395,7 @@ io.on("connection", (socket) => {
           })
           .catch((reject) => {
             //如果没有匹配到回复，那就让舔狗来回复
-            console.log(reject, "，交给舔狗回复");
+            console.log(`${reject}，交给舔狗回复`.warn);
             PrprDoge()
               .then((resolve) => {
                 console.log("舔狗回复：", resolve);
@@ -710,18 +720,25 @@ function ChatProcess(msg) {
     console.log("分词出关键词：", msg);
     if (msg.length == 0) {
       reject(`不能分词，可能是语句无含义`.warn);
+    } else if (msg.length == 1) {
+      //如果就分词出一个关键词，那么可以加入一些噪声词以提高对话智能性，避免太单调
+      console.log("只有一个关键词，添加噪声词".log);
+      msg.push({ word: "小夜" }, { word: "你好" });
+      console.log("分词出最终关键词：", msg);
     }
-    let rand_word_num = Math.floor(Math.random() * topN);
-    console.log("随机选择关键词", msg[rand_word_num].word, "来回复".log);
+    let rand_word_num = Math.floor(Math.random() * msg.length);
+    console.log("rand_word_num", rand_word_num);
+    console.log(`随机选择关键词 ${msg[rand_word_num].word} 来回复`.log);
     db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg[rand_word_num].word + "%'", (e, sql) => {
       if (!e && sql.length > 0) {
-        console.log("对于对话: " + msg[rand_word_num].word + "，匹配到 " + sql.length + " 条回复");
-        var ans = Math.floor(Math.random() * sql.length);
-        var answer = JSON.stringify(sql[ans].answer);
+        console.log(`对于关键词:  ${msg[rand_word_num].word} ，匹配到 ${sql.length} 条回复`.log);
+        let ans = Math.floor(Math.random() * sql.length);
+        let answer = JSON.stringify(sql[ans].answer);
+        answer = answer.replace(/"/g, "");
         console.log(`随机选取第${ans}条回复：${answer}`.log);
         resolve(answer);
       } else {
-        reject(`聊天数据库中没有匹配到 ${msg[rand_word_num].word} 的回复`.warn);
+        reject(`聊天数据库中没有匹配到 ${msg[rand_word_num].word} 的回复`);
       }
     });
   });
