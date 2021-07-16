@@ -241,6 +241,12 @@
                   iconUnicode: "&#xe60e;",
                   iconClass: "",
                 },
+                {
+                  alias: "thanks",
+                  title: "致谢",
+                  iconUnicode: "&#xe6c6;",
+                  iconClass: "",
+                },
               ],
 
               isVoice: 1, //是否播放声音
@@ -390,6 +396,17 @@
                     content: data,
                   });
                 });
+                break;
+              case "thanks":
+                socket.emit("thanks");
+                socket.on("thanks", function (data) {
+                  layer.open({
+                    title: ["致谢：", "background-color: #50CB93; color:#fff;"],
+                    content: data,
+                  });
+                });
+                break;
+              default:
                 break;
             }
           });

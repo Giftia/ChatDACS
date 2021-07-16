@@ -36,22 +36,25 @@ Giftina：https://giftia.moe
     C 尾版本号,表示小修改,如修复一些重要bug时增加C,更新代码可以不更新依赖
     D 迭代号,表示最小修改版本,用于体现该版本稳定性
 
-    致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、还有我的朋友们，以及倾心分享知识的各位
+    致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/MiraiGo、群419581116、群959746024、https://colorhunt.co/、还有我的朋友们，以及倾心分享知识的各位
 */
 
 //系统参数和开关，根据你的需要改动
-const version = "ChatDACS 2.4.1-Dev"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS 2.5.0-Test"; //版本号，会显示在浏览器tab与标题栏
 const chat_swich = 1; //自动聊天开关，需数据库中配置聊天表，自带的数据库已经配置好小夜嘴臭语录，开箱即用
-const news_swich = 1; //首屏新闻开关
+const news_swich = 0; //首屏新闻开关
 const jc_swich = 0; //酱菜物联服务开关
 const password = "233333"; //配置开门密码
 const eval_swich = 0; //动态注入和执行开关，便于调试，但开启有极大风险，最好完全避免启用它，特别是在生产环境部署时
 const html = "/static/index.html"; //前端页面路径，old.html为旧版前端
 const topN = 5; //限制分词权重数量，设置得越低，更侧重大意，回复更贴近重点，但容易重复相同的回复；设置得越高，回复会更随意、更沙雕，但更容易答非所问
+const reply_probability = 5; //qqBot小夜回复几率，单位是%
 let cos_total_count = 50; //初始化随机cos上限，50个应该比较保守，使用随机cos功能后会自动更新为最新值
 const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
-const updatelog = `<h1>v2.4.1-Dev，优化分词效果：</h1><br /><ul style="text-align:left"><li>· 使用自定义词库，识别小夜个性化关键词；</li><li>· 重置并压缩了数据库，提升了读写性能；</li><li>· 修复了分词结果下标越界的错误，避免了过多的舔狗；</li><li>· 更新所有依赖至最新；</li><li>· 一些小优化和bug修复；</li></ul>`;
+const thanks =
+  "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/MiraiGo、群419581116、群959746024、https://colorhunt.co/、还有我的朋友们，以及倾心分享知识的各位";
+const updatelog = `<h1>v2.5.0-Test，小夜复活：</h1><br /><ul style="text-align:left"><li>· 小夜的分支测试版；</li></ul>`;
 
 /* 好了！以上就是系统的基本配置，如果没有必要，请不要再往下继续编辑了。请保存本文件。祝使用愉快！ */
 
@@ -61,6 +64,8 @@ let express = require("express");
 let app = require("express")();
 app.use(compression());
 app.use(express.static("static")); //静态文件引入
+app.use(express.json()); //解析post
+app.use(express.urlencoded({ extended: false })); //解析post
 let multer = require("multer");
 let upload = multer({ dest: "static/uploads/" }); //用户上传目录
 let cookie = require("cookie");
@@ -74,6 +79,7 @@ let colors = require("colors");
 let fs = require("fs");
 let path = require("path");
 let jieba = require("nodejieba");
+const { resolve } = require("path");
 jieba.load({
   dict: jieba.DEFAULT_DICT,
   hmmDict: jieba.DEFAULT_HMM_DICT,
@@ -249,6 +255,10 @@ io.on("connection", (socket) => {
 
   socket.on("getupdatelog", () => {
     socket.emit("updatelog", updatelog);
+  });
+
+  socket.on("thanks", () => {
+    socket.emit("thanks", thanks);
   });
 
   socket.on("chat message", (msg) => {
@@ -442,6 +452,58 @@ app.post("/upload/file", upload.single("file"), function (req, _res, _next) {
     io.emit("audio message", file);
   } else {
     io.emit("file message", file);
+  }
+});
+
+//对接go-cqhttp
+app.post("/bot", (req, res) => {
+  if (req.body.message) {
+    let notify;
+    switch (req.body.message_type) {
+      case "private":
+        notify = `qqBot小夜收到 ${req.body.user_id} (${req.body.sender.nickname}) 发来的消息：${req.body.message}`;
+        break;
+      case "group":
+        notify = `qqBot小夜收到群 ${req.body.group_id} 的 ${req.body.user_id} (${req.body.sender.nickname}) 发来的消息：${req.body.message}`;
+        break;
+      default:
+        console.log(`qqBot小夜没处理的消息：${req.body}`);
+        io.emit("system message", `qqBot小夜没处理的消息：${req.body}`);
+        res.send();
+        break;
+    }
+    console.log(notify);
+    io.emit("system message", notify);
+    let reply_flag = Math.floor(Math.random() * 100); //丢一个骰子，按reply_probability几率回复
+    if (reply_flag < reply_probability) {
+      //然后让小夜来自动回复
+      ChatProcess(req.body.message)
+        .then((resolve) => {
+          console.log("qqBot小夜回复：", resolve);
+          io.emit("system message", `qqBot小夜回复：${resolve}`);
+          res.send({ reply: resolve });
+        })
+        .catch((reject) => {
+          //如果没有匹配到回复，丢一个骰子，按reply_probability几率让舔狗来回复
+          let prpr_doge_reply_flag = Math.floor(Math.random() * 100);
+          if (prpr_doge_reply_flag < reply_probability) {
+            console.log(`${reject}，交给舔狗回复`.warn);
+            PrprDoge()
+              .then((resolve) => {
+                console.log("qqBot小夜舔狗回复：", resolve);
+                io.emit("system message", `qqBot小夜舔狗回复：${resolve}`);
+                res.send({ reply: resolve });
+              })
+              .catch((reject) => {
+                console.log(`随机舔狗错误：${reject}`);
+              });
+          }
+        });
+    } else {
+      res.send();
+    }
+  } else {
+    res.send();
   }
 });
 
@@ -712,34 +774,55 @@ function ReadApiKey() {
   });
 }
 
-//聊天处理
-function ChatProcess(msg) {
-  return new Promise((resolve, reject) => {
-    msg = msg.replace("/", "");
-    msg = jieba.extract(msg, topN); //按权重分词
-    console.log("分词出关键词：", msg);
-    if (msg.length == 0) {
-      reject(`不能分词，可能是语句无含义`.warn);
-    } else if (msg.length == 1) {
-      //如果就分词出一个关键词，那么可以加入一些噪声词以提高对话智能性，避免太单调
-      console.log("只有一个关键词，添加噪声词".log);
-      msg.push({ word: "小夜" }, { word: "你好" });
-      console.log("分词出最终关键词：", msg);
-    }
-    let rand_word_num = Math.floor(Math.random() * msg.length);
-    console.log("rand_word_num", rand_word_num);
-    console.log(`随机选择关键词 ${msg[rand_word_num].word} 来回复`.log);
-    db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg[rand_word_num].word + "%'", (e, sql) => {
-      if (!e && sql.length > 0) {
-        console.log(`对于关键词:  ${msg[rand_word_num].word} ，匹配到 ${sql.length} 条回复`.log);
-        let ans = Math.floor(Math.random() * sql.length);
-        let answer = JSON.stringify(sql[ans].answer);
+//聊天处理，先整句搜索，没有的话再分词搜索
+async function ChatProcess(msg) {
+  const result_1 = await new Promise((resolve, _reject) => {
+    console.log("开始整句搜索".log);
+    db.all("SELECT * FROM chat WHERE ask = '" + msg + "'", (e, sql_1) => {
+      if (!e && sql_1.length > 0) {
+        console.log(`对于整句:  ${msg} ，匹配到 ${sql_1.length} 条回复`.log);
+        let ans = Math.floor(Math.random() * sql_1.length);
+        let answer = JSON.stringify(sql_1[ans].answer);
         answer = answer.replace(/"/g, "");
         console.log(`随机选取第${ans}条回复：${answer}`.log);
         resolve(answer);
       } else {
-        reject(`聊天数据库中没有匹配到 ${msg[rand_word_num].word} 的回复`);
+        console.log(`聊天数据库中没有匹配到整句 ${msg} 的回复，开始分词搜索`.log);
+        resolve();
       }
     });
+  });
+  return await new Promise((resolve_1, reject_1) => {
+    if (result_1) {
+      resolve_1(result_1);
+    } else {
+      //分词搜索
+      console.log("开始分词搜索".log);
+      msg = msg.replace("/", "");
+      msg = jieba.extract(msg, topN); //按权重分词
+      console.log("分词出关键词：", msg);
+      if (msg.length == 0) {
+        reject_1(`不能分词，可能是语句无含义`.warn);
+      } else if (msg.length == 1) {
+        //如果就分词出一个关键词，那么可以加入一些噪声词以提高对话智能性，避免太单调
+        console.log("只有一个关键词，添加噪声词".log);
+        msg.push({ word: "小夜" }, { word: "你好" });
+        console.log("分词出最终关键词：", msg);
+      }
+      let rand_word_num = Math.floor(Math.random() * msg.length);
+      console.log(`随机选择第${rand_word_num}个关键词 ${msg[rand_word_num].word} 来回复`.log);
+      db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg[rand_word_num].word + "%'", (e_1, sql_2) => {
+        if (!e_1 && sql_2.length > 0) {
+          console.log(`对于关键词:  ${msg[rand_word_num].word} ，匹配到 ${sql_2.length} 条回复`.log);
+          let ans_1 = Math.floor(Math.random() * sql_2.length);
+          let answer_1 = JSON.stringify(sql_2[ans_1].answer);
+          answer_1 = answer_1.replace(/"/g, "");
+          console.log(`随机选取第${ans_1}条回复：${answer_1}`.log);
+          resolve_1(answer_1);
+        } else {
+          reject_1(`聊天数据库中没有匹配到 ${msg[rand_word_num].word} 的回复`);
+        }
+      });
+    }
   });
 }
