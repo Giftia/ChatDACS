@@ -36,25 +36,31 @@ Giftina：https://giftia.moe
     C 尾版本号,表示小修改,如修复一些重要bug时增加C,更新代码可以不更新依赖
     D 迭代号,表示最小修改版本,用于体现该版本稳定性
 
-    致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/MiraiGo、群419581116、群959746024、https://colorhunt.co/、还有我的朋友们，以及倾心分享知识的各位
+    致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、群419581116、群959746024、https://colorhunt.co/、还有我的朋友们，以及倾心分享知识的各位
 */
 
 //系统参数和开关，根据你的需要改动
-const version = "ChatDACS 2.5.0-Test"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS 2.5.1-Alpha"; //版本号，会显示在浏览器tab与标题栏
 const chat_swich = 1; //自动聊天开关，需数据库中配置聊天表，自带的数据库已经配置好小夜嘴臭语录，开箱即用
 const news_swich = 0; //首屏新闻开关
 const jc_swich = 0; //酱菜物联服务开关
 const password = "233333"; //配置开门密码
 const eval_swich = 0; //动态注入和执行开关，便于调试，但开启有极大风险，最好完全避免启用它，特别是在生产环境部署时
 const html = "/static/index.html"; //前端页面路径，old.html为旧版前端
+
+//聊天参数
 const topN = 5; //限制分词权重数量，设置得越低，更侧重大意，回复更贴近重点，但容易重复相同的回复；设置得越高，回复会更随意、更沙雕，但更容易答非所问
-const reply_probability = 5; //qqBot小夜回复几率，单位是%
+let reply_probability = 3; //qqBot小夜回复几率，单位是%，可通过 /admin_change_reply_probability 指令更改
+let fudu_probability = 1; //qqBot小夜复读几率，单位是%，可通过 /admin_change_fudu_probability 指令更改
+let copy_msg_probability = 1; //qqBot小夜抽风几率，转发随机消息，单位是‰
+
+//其他参数
 let cos_total_count = 50; //初始化随机cos上限，50个应该比较保守，使用随机cos功能后会自动更新为最新值
 const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const thanks =
-  "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/MiraiGo、群419581116、群959746024、https://colorhunt.co/、还有我的朋友们，以及倾心分享知识的各位";
-const updatelog = `<h1>v2.5.0-Test，小夜复活：</h1><br /><ul style="text-align:left"><li>· 小夜的分支测试版；</li></ul>`;
+  "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、群419581116、群959746024、https://colorhunt.co/、还有我的朋友们，以及倾心分享知识的各位";
+const updatelog = `<h1>2.5.1-Alpha，优化与改进：</h1><br/><ul style="text-align:left"><li>·qqBot小夜去除随机舔狗，改为随机回复一些无意义语气词；</li><li>·qqBot小夜将会自动转发传来的消息至web端；</li><li>·qqBot小夜将会概率性复读；</li><li>·qqBot小夜将会概率性抽风；</li><li>·qqBot小夜在被@时提升回复概率；</li><li>·重写了聊天处理函数；</li><li>·修复了web端用户保存图片时没有后缀名的问题；</li><li>·增加了自定义分词黑名单；</li><li>·在web端添加致谢名单；</li></ul>`;
 
 /* 好了！以上就是系统的基本配置，如果没有必要，请不要再往下继续编辑了。请保存本文件。祝使用愉快！ */
 
@@ -85,7 +91,7 @@ jieba.load({
   hmmDict: jieba.DEFAULT_HMM_DICT,
   userDict: "userdict.txt",
   idfDict: jieba.DEFAULT_IDF_DICT,
-  stopWordDict: jieba.DEFAULT_STOP_WORD_DICT,
+  stopWordDict: "stopWordDict.txt",
 });
 
 //错误捕获
@@ -127,9 +133,16 @@ let onlineusers = 0;
 let jcckapikey, Tiankey, sumtkey;
 
 //正则
-let door_reg = new RegExp("^/开门 [a-zA-Z0-9]*$"); //匹配开门
-let rename_reg = new RegExp("^/rename [\u4e00-\u9fa5a-z0-9]{1,10}$"); //1-10长度的数英汉昵称
-let bv2av__reg = new RegExp("^[a-zA-Z0-9]{10,12}$"); //匹配bv号
+const door_reg = new RegExp("^/开门 [a-zA-Z0-9]*$"); //匹配开门
+const rename_reg = new RegExp("^/rename [\u4e00-\u9fa5a-z0-9]{1,10}$"); //1-10长度的数英汉昵称
+const bv2av_reg = new RegExp("^[a-zA-Z0-9]{10,12}$"); //匹配bv号
+const isImage_reg = new RegExp("\\[CQ:image,file="); //匹配qqBot图片
+const xiaoye_ated = new RegExp("\\[CQ:at,qq=1648468212\\]"); //匹配小夜被@
+const change_reply_probability_reg = new RegExp("^/admin_change_reply_probability [0-9]*"); //匹配修改qqBot小夜回复率
+const change_fudu_probability_reg = new RegExp("^/admin_change_fudu_probability [0-9]*"); //匹配修改qqBot小夜复读率
+const img_url_reg = new RegExp("https(.*term=3)"); //匹配图片地址
+const isVideo_reg = new RegExp("^\\[CQ:video,file="); //匹配qqBot图片
+const video_url_reg = new RegExp("http(.*term=unknow)"); //匹配视频地址
 
 //若表不存在则新建表
 db.run("CREATE TABLE IF NOT EXISTS messages(yyyymmdd char, time char, CID char, message char)");
@@ -248,19 +261,23 @@ io.on("connection", (socket) => {
     io.emit("typing", "");
   });
 
+  //用户设置
   socket.on("getsettings", () => {
     let CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
     socket.emit("settings", { CID: CID, name: socket.username });
   });
 
+  //更新日志
   socket.on("getupdatelog", () => {
     socket.emit("updatelog", updatelog);
   });
 
+  //致谢列表
   socket.on("thanks", () => {
     socket.emit("thanks", thanks);
   });
 
+  //处理接收聊天消息
   socket.on("chat message", (msg) => {
     let CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
     var msg = msg.msg;
@@ -303,7 +320,7 @@ io.on("connection", (socket) => {
             var time = JSON.stringify(sql[i].time);
             var CID = JSON.stringify(sql[i].CID);
             var message = JSON.stringify(sql[i].message);
-            data += "<br><br>" + time + CID + message;
+            data += "/r/n" + time + CID + message;
           }
           console.log(sql);
           io.emit("chat message", { CID: "0", msg: `${data}<br />共有${sql.length}条记录` });
@@ -312,17 +329,7 @@ io.on("connection", (socket) => {
           io.emit("chat message", { CID: "0", msg: e });
         }
       });
-    } else if (msg === "/cls") {
-        db.all("DELETE FROM messages", function (e, sql) {
-          if (!e) {
-            io.emit("chat message", { CID: "0", msg: "管理指令：聊天信息数据库清空完毕"});
-            console.log(Curentyyyymmdd() + CurentTime() + "已清空聊天信息数据库");
-          } else {
-            console.log(e);
-            io.emit("chat message", { CID: "0", msg: e});
-          }
-        });
-      }*/ else if (rename_reg.test(msg)) {
+    }*/ else if (rename_reg.test(msg)) {
       db.run(`UPDATE users SET nickname = '${msg.slice(8)}' WHERE CID ='${CID}'`);
       io.emit("chat message", {
         CID: "0",
@@ -343,7 +350,7 @@ io.on("connection", (socket) => {
           io.emit("chat message", { CID: "0", msg: e });
         }
       });
-    } else if (bv2av__reg.test(msg)) {
+    } else if (bv2av_reg.test(msg)) {
       msg = msg.replace(" ", "");
       Bv2Av(msg)
         .then((resolve) => {
@@ -393,6 +400,16 @@ io.on("connection", (socket) => {
           console.log(`RandomECY(): rejected, and err:${reject}`);
           io.emit("system message", `RandomECY() err:${reject}`);
         });
+      //更改qqBot小夜回复率
+    } else if (change_reply_probability_reg.test(msg)) {
+      msg = msg.replace("/admin_change_reply_probability ", "");
+      reply_probability = msg;
+      socket.emit("system message", `qqBot小夜回复率已修改为${msg}%`);
+      //更改qqBot小夜复读率
+    } else if (change_fudu_probability_reg.test(msg)) {
+      msg = msg.replace("/admin_change_fudu_probability ", "");
+      fudu_probability = msg;
+      socket.emit("system message", `qqBot小夜复读率已修改为${msg}%`);
     } else {
       if (chat_swich) {
         //交给聊天函数处理
@@ -434,7 +451,10 @@ app.get("/profile", (req, res) => {
 //图片上传接口
 app.post("/upload/image", upload.single("file"), function (req, _res, _next) {
   console.log(req.file);
-  io.emit("pic message", `/uploads/${req.file.filename}`);
+  let oldname = req.file.path;
+  let newname = req.file.path + path.parse(req.file.originalname).ext;
+  fs.renameSync(oldname, newname);
+  io.emit("pic message", `/uploads/${req.file.filename}${path.parse(req.file.originalname).ext}`);
 });
 
 //文件/视频上传接口
@@ -467,37 +487,122 @@ app.post("/bot", (req, res) => {
         notify = `qqBot小夜收到群 ${req.body.group_id} 的 ${req.body.user_id} (${req.body.sender.nickname}) 发来的消息：${req.body.message}`;
         break;
       default:
-        console.log(`qqBot小夜没处理的消息：${req.body}`);
-        io.emit("system message", `qqBot小夜没处理的消息：${req.body}`);
         res.send();
         break;
     }
     console.log(notify);
     io.emit("system message", notify);
-    let reply_flag = Math.floor(Math.random() * 100); //丢一个骰子，按reply_probability几率回复
+
+    //转发图片到web端
+    if (isImage_reg.test(req.body.message)) {
+      console.log("qqBot小夜转发图片到web端".log);
+      let url = img_url_reg.exec(req.body.message);
+      SaveQQimg(url)
+        .then((resolve) => {
+          io.emit("qqpic message", resolve);
+        })
+        .catch((reject) => {
+          console.log(reject);
+        });
+      res.send();
+      return 0;
+    }
+
+    //转发视频到web端
+    if (isVideo_reg.test(req.body.message)) {
+      console.log("qqBot小夜转发视频到web端".log);
+      let url = video_url_reg.exec(req.body.message)[0];
+      console.log(url);
+      io.emit("qqvideo message", { file: url, filename: "qq视频" });
+      res.send();
+      return 0;
+    }
+
+    //随机抽风，丢一个骰子，按 copy_msg_probability 几率转发消息
+    let copy_msg_flag = Math.floor(Math.random() * 1000);
+    if (copy_msg_flag < copy_msg_probability) {
+      //随机选一个群转发
+      RandomGroupList()
+        .then((resolve) => {
+          request(
+            "http://127.0.0.1:5700/send_group_msg?group_id=" + resolve + "&message=" + encodeURI(req.body.message),
+            function (error, _response, _body) {
+              if (!error) {
+                console.log(`qqBot小夜转发消息 ${req.body.message} 到 群 ${resolve}`.log);
+                io.emit("system message", `@qqBot小夜转发消息 ${req.body.message} 到 群 ${resolve}`);
+              } else {
+                console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
+              }
+            }
+          );
+        })
+        .catch((reject) => {
+          console.log(reject);
+          res.send();
+        });
+      return 0;
+    }
+
+    //丢一个骰子，按fudu_probability几率复读
+    let fudu_flag = Math.floor(Math.random() * 100);
+    if (fudu_flag < fudu_probability) {
+      console.log(`qqBot小夜复读 ${req.body.message}`.log);
+      io.emit("system message", `@qqBot小夜复读 ${req.body.message}`);
+      res.send({ reply: req.body.message });
+      return 0;
+    }
+
+    //丢一个骰子，按reply_probability几率回复
+    let reply_flag = Math.floor(Math.random() * 100);
+    //如果被@了，那么回复几率上升20%
+    if (xiaoye_ated.test(req.body.message)) {
+      reply_flag -= 20;
+    }
     if (reply_flag < reply_probability) {
-      //然后让小夜来自动回复
+      //骰子命中，那就让小夜来自动回复
       ChatProcess(req.body.message)
         .then((resolve) => {
           console.log("qqBot小夜回复：", resolve);
-          io.emit("system message", `qqBot小夜回复：${resolve}`);
+          io.emit("system message", `@qqBot小夜回复：${resolve}`);
           res.send({ reply: resolve });
         })
         .catch((reject) => {
-          //如果没有匹配到回复，丢一个骰子，按reply_probability几率让舔狗来回复
-          let prpr_doge_reply_flag = Math.floor(Math.random() * 100);
-          if (prpr_doge_reply_flag < reply_probability) {
-            console.log(`${reject}，交给舔狗回复`.warn);
-            PrprDoge()
-              .then((resolve) => {
-                console.log("qqBot小夜舔狗回复：", resolve);
-                io.emit("system message", `qqBot小夜舔狗回复：${resolve}`);
-                res.send({ reply: resolve });
-              })
-              .catch((reject) => {
-                console.log(`随机舔狗错误：${reject}`);
-              });
-          }
+          //无匹配则随机回复无意义语气词
+          let blablabla = [
+            "确实",
+            "不错",
+            "嗯",
+            "对",
+            "有道理",
+            "这么厉害啊",
+            "啊这",
+            "就这",
+            "好耶",
+            "好起来了",
+            "牛逼",
+            "再来点",
+            "草",
+            "艹",
+            "小夜学习了",
+            "长知识了",
+            "开眼界了",
+            "好家伙",
+            "可以",
+            "还行",
+            "6",
+            "没懂",
+            "不是吧 阿sir",
+            "原来如此",
+            "真不错",
+            "不错，硬了",
+            "不会吧不会吧",
+            "笑死",
+            "还有这种事",
+          ];
+          let random_blablabla = blablabla[Math.floor(Math.random() * blablabla.length)];
+          res.send({ reply: random_blablabla });
+          io.emit("system message", `@qqBot小夜觉得${random_blablabla}`);
+          console.log(`${reject}，qqBot小夜觉得${random_blablabla}`.log);
         });
     } else {
       res.send();
@@ -774,7 +879,7 @@ function ReadApiKey() {
   });
 }
 
-//聊天处理，先整句搜索，没有的话再分词搜索
+//聊天处理，先整句搜索，再模糊搜索，没有的话再分词模糊搜索
 async function ChatProcess(msg) {
   const result_1 = await new Promise((resolve, _reject) => {
     console.log("开始整句搜索".log);
@@ -787,26 +892,46 @@ async function ChatProcess(msg) {
         console.log(`随机选取第${ans}条回复：${answer}`.log);
         resolve(answer);
       } else {
-        console.log(`聊天数据库中没有匹配到整句 ${msg} 的回复，开始分词搜索`.log);
+        console.log(`聊天数据库中没有匹配到整句 ${msg} 的回复，开始模糊搜索`.log);
         resolve();
       }
     });
   });
-  return await new Promise((resolve_1, reject_1) => {
+  const result_2 = await new Promise((resolve_1, _reject_1) => {
+    console.log("开始模糊搜索".log);
+    db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg + "%'", (e, sql_2) => {
+      if (!e && sql_2.length > 0) {
+        console.log(`模糊搜索:  ${msg} ，匹配到 ${sql_2.length} 条回复`.log);
+        let ans = Math.floor(Math.random() * sql_2.length);
+        let answer = JSON.stringify(sql_2[ans].answer);
+        answer = answer.replace(/"/g, "");
+        console.log(`随机选取第${ans}条回复：${answer}`.log);
+        resolve_1(answer);
+      } else {
+        console.log(`聊天数据库中没有匹配到 ${msg} 的模糊回复，开始分词搜索`.log);
+        resolve_1();
+      }
+    });
+  });
+  return await new Promise((resolve_2, reject_2) => {
     if (result_1) {
-      resolve_1(result_1);
+      //优先回复整句匹配
+      resolve_2(result_1);
+    } else if (result_2) {
+      //其次是模糊匹配
+      resolve_2(result_2);
     } else {
-      //分词搜索
+      //分词模糊搜索
       console.log("开始分词搜索".log);
       msg = msg.replace("/", "");
       msg = jieba.extract(msg, topN); //按权重分词
       console.log("分词出关键词：", msg);
       if (msg.length == 0) {
-        reject_1(`不能分词，可能是语句无含义`.warn);
+        reject_2(`不能分词，可能是语句无含义`.warn);
       } else if (msg.length == 1) {
         //如果就分词出一个关键词，那么可以加入一些噪声词以提高对话智能性，避免太单调
         console.log("只有一个关键词，添加噪声词".log);
-        msg.push({ word: "小夜" }, { word: "你好" });
+        msg.push({ word: "" });
         console.log("分词出最终关键词：", msg);
       }
       let rand_word_num = Math.floor(Math.random() * msg.length);
@@ -818,11 +943,42 @@ async function ChatProcess(msg) {
           let answer_1 = JSON.stringify(sql_2[ans_1].answer);
           answer_1 = answer_1.replace(/"/g, "");
           console.log(`随机选取第${ans_1}条回复：${answer_1}`.log);
-          resolve_1(answer_1);
+          resolve_2(answer_1);
         } else {
-          reject_1(`聊天数据库中没有匹配到 ${msg[rand_word_num].word} 的回复`);
+          reject_2(`聊天数据库中没有匹配到 ${msg[rand_word_num].word} 的回复`);
         }
       });
     }
+  });
+}
+
+//保存qq侧传来的图
+function SaveQQimg(imgUrl) {
+  return new Promise((resolve, reject) => {
+    request(imgUrl[0]).pipe(
+      fs.createWriteStream(`./static/xiaoye/images/${imgUrl[0].split("/")[imgUrl[0].split("/").length - 2]}.jpg`).on("close", (err) => {
+        if (!err) {
+          resolve(`/xiaoye/images/${imgUrl[0].split("/")[imgUrl[0].split("/").length - 2]}.jpg`);
+        } else {
+          reject("保存qq侧传来的图错误。错误原因：" + err);
+        }
+      })
+    );
+  });
+}
+
+//随机选取一个群
+function RandomGroupList() {
+  return new Promise((resolve, reject) => {
+    request("http://127.0.0.1:5700/get_group_list", (err, response, body) => {
+      body = JSON.parse(body);
+      if (!err && body.data.length != 0) {
+        var rand_group_num = Math.floor(Math.random() * body.data.length);
+        console.log("随机选取一个群：", body.data[rand_group_num].group_id);
+        resolve(body.data[rand_group_num].group_id);
+      } else {
+        reject("随机选取一个群错误。错误原因：" + JSON.stringify(response.body));
+      }
+    });
   });
 }

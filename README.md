@@ -33,6 +33,7 @@
 - [x] 与经过 2w+用户调教养成的人工智能机器人小夜实时聊天 `Chat with Ai Xiaoye`
 - [x] 令人激动的、实用的在线涩图功能 `Nice pictures`
 - [x] 图片、视频与文件分享 `Share your images,videos and files`
+- [x] 与 qqBot 小夜对接 `Connect With Bot Xiaoye`
 - [ ] 自定义表情包 `Use your own stickers`
 - [ ] 私聊 `Private chat`
 - [ ] 付费内容 `Premium content`

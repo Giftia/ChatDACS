@@ -207,7 +207,7 @@
               moreList: [
                 {
                   alias: "backtofuture",
-                  title: "回到未来(点击标题返回)",
+                  title: "回到未来（点击标题返回）",
                   iconUnicode: "&#xe65c;", //图标字体的unicode，可不填
                   iconClass: "", //图标字体的class类名
                 },
@@ -219,7 +219,7 @@
                 },
                 {
                   alias: "reload",
-                  title: "重生",
+                  title: "重生（长按）",
                   iconUnicode: "&#xe666;",
                   iconClass: "",
                 },
@@ -231,7 +231,7 @@
                 },
                 {
                   alias: "about",
-                  title: "关于",
+                  title: "关于（长按）",
                   iconUnicode: "&#xe60b;",
                   iconClass: "",
                 },
@@ -506,6 +506,30 @@
               type: "kefu",
               mine: 0,
               content: msg,
+            });
+          });
+
+          //接收qq图片消息
+          socket.on("qqpic message", function (msg) {
+            layim.getMessage({
+              username: "系统消息",
+              avatar: "/huaji.webp",
+              id: "0",
+              type: "kefu",
+              mine: 0,
+              content: `img[${msg}]`,
+            });
+          });
+
+          //接收qq视频消息
+          socket.on("qqvideo message", function (msg) {
+            layim.getMessage({
+              username: "系统消息",
+              avatar: "/huaji.webp",
+              id: "0",
+              type: "kefu",
+              mine: 0,
+              content: `video[${msg.file}](${msg.filename})`,
             });
           });
 
