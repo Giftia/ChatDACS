@@ -1,15 +1,15 @@
 {
   "name": "chatdacs",
-  "version": "2.0.1",
-  "decription": "Chatable Door Access Control System",
+  "version": "Dev",
+  "decription": "Chatbot : shaDiao Ai Chat System",
   "license": "GPL-3.0",
   "dependencies": {
     "baidu-aip-sdk": "^4.15.4",
+    "diff": ">=3.5.0",
     "canvas": "^2.8.0",
     "colors": "^1.4.0",
     "compression": "^1.7.4",
     "express": "^4.17.1",
-    "images": "^3.2.3",
     "multer": "^1.4.2",
     "nodejieba": "^2.5.2",
     "npm-check-updates": "^11.8.3",

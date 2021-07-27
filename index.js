@@ -15,6 +15,11 @@ ChatDACS：一个无需服务器，可私有化部署、可独立运行于内网
     pm2 start index.js
   访问127.0.0.1即可体验,有公网或穿透那更好,尽情使用吧~
 
+  若出现
+    c:\users\travis\build\yanyiwu\nodejieba\deps\cppjieba\dicttrie.hpp:203 FATAL exp: [ifs.is_open()] false. open C:\snapshot\web\node_modules\nodejieba/dict/jieba.dict.utf8 failed.
+  这样的问题，请执行
+    npm install nodejieba --registry=https://registry.npm.taobao.org --nodejieba_binary_host_mirror=https://npm.taobao.org/mirrors/nodejieba
+
   若使用pm2守护神启动:
   隐藏界面请按:  Ctrl + C
   查看监视器请运行:  pm2 monit
@@ -35,14 +40,14 @@ ChatDACS：一个无需服务器，可私有化部署、可独立运行于内网
     C 尾版本号,表示小修改,如修复一些重要bug时增加C,更新代码可以不更新依赖
     D 迭代号,表示最小修改版本,用于体现该版本稳定性
 
-    致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、群419581116、群959746024、https://colorhunt.co/、还有我的朋友们，以及倾心分享知识的各位
+    致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、还有我的朋友们，以及倾心分享知识的各位
 */
 
 //系统配置和开关，根据你的需要改动
-const version = "ChatDACS 2.6.2-Dev"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS 3.0.0-Beta"; //版本号，会显示在浏览器tab与标题栏
 const chat_swich = 1; //web端自动聊天开关，需数据库中配置聊天表，自带的数据库已经配置好小夜嘴臭语录，开箱即用
 const news_swich = 0; //web端首屏新闻开关
-const conn_go_cqhttp = 1; //qqBot小夜开关，接入go-cqhttp，反向 HTTP POST 于 127.0.0.1:80/bot
+const conn_go_cqhttp = 0; //qqBot小夜开关，需要自行配置以接入go-cqhttp，反向 HTTP POST 于 127.0.0.1:80/bot
 const Now_On_Live = 0; //接入哔哩哔哩直播聊天开关
 const html = "/static/index.html"; //前端页面路径，old.html为旧版前端
 
@@ -50,12 +55,12 @@ const html = "/static/index.html"; //前端页面路径，old.html为旧版前�
 const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const thanks =
-  "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、群419581116、群959746024、https://colorhunt.co/、还有我的朋友们，以及倾心分享知识的各位";
-const updatelog = `<h1>2.6.2-Dev<br/>虚拟主播 星野夜蝶 准备出道：</h1><br/><ul style="text-align:left"><li>·qqBot小夜筹划以昵称 星野夜蝶 作为B站虚拟主播出道；</li></ul>`;
+  "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、还有我的朋友们，以及倾心分享知识的各位";
+const updatelog = `<h1>3.0.0-Beta<br/>接入qq端、直播间端</h1><br/><ul style="text-align:left"><li>· 将相应的启动配置文件移至config文件夹内，规范分类；</li><li>· 重新整理了聊天数据库</li><li>· 更新依赖，避免出现依赖错误；</li><li>· 移植了小夜V3版，暂时作为V3分支使用；</li><li>· 对接B站直播间，可以让小夜作为虚拟主播语音回复弹幕，即虚拟主播星野夜蝶；</li><li>· 增加教学功能，可以教夜爹嘴臭了；</li><li>· qqBot端会按设定几率随机复读、回复、抽风，还会欢迎新成员；</li><li>· qqBot端增加语音TTS功能，小夜又可以在群里欢快地吠了，现存旧小夜和幼女小夜两种TTS；</li><li>· qqBot端增加语音回复功能，嘴臭，非常臭；</li><li>· qqBot端增加色图、福利姬、二次元图功能，增强实用型；</li><li>· qqBot端增加迫害功能，即迫害表情包；</li><li>· qqBot端增加了一些有趣的小功能，今日不带套、prpr、avg小游戏等等；</li><li>· qqBot端会转发消息到web端作为后台监视器；</li><li>· 将各代码块分门别类放置，优化代码可读性；</li><li>· 移除了废除的门禁服务区块代码，移除了动态注入测试功能，替换了二次元图区块接口；</li><li>· 将所有console.log日志和web端日志染色，增强可读性，以便迅速定位运行错误；</li><li>· 在readme增加了赞助者名单；</li><li>· 各处细节小修复和优化；</li></ul>`;
 
 //qqBot配置
 const topN = 5; //限制分词权重数量，设置得越低，更侧重大意，回复更贴近重点，但容易重复相同的回复；设置得越高，回复会更随意、更沙雕，但更容易答非所问
-let reply_probability = 1; //qqBot小夜回复几率，单位是%，可通过 /admin_change_reply_probability 指令更改
+let reply_probability = 3; //qqBot小夜回复几率，单位是%，可通过 /admin_change_reply_probability 指令更改
 let fudu_probability = 1; //qqBot小夜复读几率，单位是%，可通过 /admin_change_fudu_probability 指令更改
 let chaos_probability = 1; //qqBot小夜抽风几率，随机抽风舔狗，单位是‰
 const req_setu_list = [
@@ -77,8 +82,9 @@ const req_setu_list = [
   "涩图",
 ]; //色图指令列表
 const req_fuliji_list = ["福利姬", "买家秀"]; //福利姬指令列表
+const req_ECY_list = ["来点二次元", "二次元"]; //二次元图指令列表
 const req_no_trap_list = ["今日不带套", "今日不戴套", "今天不带套", "今天不戴套"]; //今日不带套指令列表
-let black_list_words; //教学系统敏感词
+let black_list_words; //教学系统敏感词池
 const qqimg_to_web = 0; //qq侧接收到的图片保存与转发开关，虽然经常可以收到一些好康的图，但是非常占硬盘空间
 
 //杂项配置
@@ -192,27 +198,27 @@ db.run("CREATE TABLE IF NOT EXISTS users(nickname char, CID char, logintimes lon
 console.log(version.ver);
 
 if (chat_swich) {
-  console.log("用户配置：web端自动聊天开启".on);
+  console.log("系统配置：web端自动聊天开启".on);
 } else {
-  console.log("用户配置：web端自动聊天关闭".off);
+  console.log("系统配置：web端自动聊天关闭".off);
 }
 
 if (news_swich) {
-  console.log("用户配置：web端首屏新闻开启".on);
+  console.log("系统配置：web端首屏新闻开启".on);
 } else {
-  console.log("用户配置：web端首屏新闻关闭".off);
+  console.log("系统配置：web端首屏新闻关闭".off);
 }
 
 if (conn_go_cqhttp) {
-  console.log("用户配置：qqBot小夜开启".on);
+  console.log(`系统配置：qqBot小夜开启，请确认 plugins/go-cqhttp 文件夹内的 config.yml 是否配置正确并启动go-cqhttp`.on);
 } else {
-  console.log("用户配置：qqBot小夜关闭".off);
+  console.log("系统配置：qqBot小夜关闭".off);
 }
 
 if (Now_On_Live) {
-  console.log("用户配置：小夜直播对线开启".on);
+  console.log(`系统配置：小夜直播对线开启，请确认哔哩哔哩直播间id是否为 ${blive_room_id}`.on);
 } else {
-  console.log("用户配置：小夜直播对线关闭".off);
+  console.log("系统配置：小夜直播对线关闭".off);
 }
 
 http.listen(80, () => {
@@ -623,6 +629,23 @@ if (conn_go_cqhttp) {
         }
       }
 
+      //来点二次元
+      for (let i in req_ECY_list) {
+        if (req.body.message === req_ECY_list[i]) {
+          RandomECY()
+            .then((resolve) => {
+              res.send({
+                reply: `[CQ:image,file=${resolve},url=${resolve}]`,
+              });
+            })
+            .catch((reject) => {
+              console.log(`RandomCos(): rejected, and err:${reject}`.error);
+              res.send({ reply: `你要的二次元色图发送失败啦：${reject}` });
+            });
+          return 0;
+        }
+      }
+
       //舔我
       if (req.body.message === "/舔我") {
         PrprDoge()
@@ -825,7 +848,7 @@ if (conn_go_cqhttp) {
           鸭鸭: ["30", "30", "0", "2"],
         }; //迫害文字位置，left、top、rotate、多少字换行
         let tex_config = tex_config_list.唐可可; //默认迫害文字位置是唐可可的
-        let msg = req.body.message + " ";
+        let msg = req.body.message + " "; //结尾加一个空格防爆
 
         msg = msg.substr(3).split(" ");
         let pohai_who = msg[1].trim(), //迫害谁
@@ -886,7 +909,7 @@ if (conn_go_cqhttp) {
 
       //要新增指令与功能请在这条分割线的上方添加，在下面添加有可能会导致冲突以及不可预料的异常
 
-      //转发图片到web端
+      //转发图片到web端，按需启用
       if (qqimg_to_web) {
         if (isImage_reg.test(req.body.message)) {
           let url = img_url_reg.exec(req.body.message);
@@ -955,12 +978,14 @@ if (conn_go_cqhttp) {
       //丢一个骰子，按reply_probability几率回复
       let reply_flag = Math.floor(Math.random() * 100);
       //如果被@了，那么回复几率上升50%
+      let at_replaced_msg = req.body.message; //要把[CQ:at,qq=1648468212] 去除掉，否则聊天核心会乱成一锅粥
       if (xiaoye_ated.test(req.body.message)) {
         reply_flag -= 50;
+        at_replaced_msg = req.body.message.replace("[CQ:at,qq=1648468212] ", ""); //去除@小夜
       }
       if (reply_flag < reply_probability) {
         //骰子命中，那就让小夜来自动回复
-        ChatProcess(req.body.message)
+        ChatProcess(at_replaced_msg)
           .then((resolve) => {
             console.log(`qqBot小夜回复 ${resolve}`.log);
             io.emit("system message", `@qqBot小夜回复：${resolve}`);
@@ -1027,6 +1052,11 @@ if (conn_go_cqhttp) {
               "妈的，少说两句，我卡了",
               "那当然",
               "[CQ:image,file=9d563b36a2f0aacc19c5e5efcfc37bd9.image,url=https://gchat.qpic.cn/gchatpic_new/1005056803/2063243247-2237303927-9D563B36A2F0AACC19C5E5EFCFC37BD9/0?term=3]",
+              "你说你🐎呢？",
+              "不会真有人还不知道吧",
+              "真别逗我笑啊",
+              "那可真是有趣呢",
+              "这也能卷？",
             ];
             let random_blablabla = blablabla[Math.floor(Math.random() * blablabla.length)];
             res.send({ reply: random_blablabla });
@@ -1473,11 +1503,23 @@ function RandomTbshow() {
   });
 }
 
-//随机二次元图，新版Chrome加入了HSTS策略而暂时无法使用。如需使用，请用户访问 chrome://net-internals/#hsts，在最下面的Delete domain security policies中，输入 acg.yanwz.cn，点击Delete删除即可
+//随机二次元图，旧接口 https://acg.yanwz.cn/api.php 已弃用
 function RandomECY() {
-  return new Promise((resolve, _reject) => {
-    var pic = "https://acg.yanwz.cn/api.php";
-    resolve(pic);
+  return new Promise((resolve, reject) => {
+    request(`https://api.sumt.cn/api/rand.acg.php?token=${sumtkey}&type=%E4%BA%8C%E6%AC%A1%E5%85%83&format=json`, (err, response, body) => {
+      body = JSON.parse(body);
+      if (!err && body.code === 200) {
+        let picUrl = body.pic_url;
+        request(picUrl).pipe(
+          fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
+            console.log(`保存了好康的二次元图：${picUrl}，然后再给用户`.log);
+          })
+        ); //来之不易啊，保存为本地图片
+        resolve(body.pic_url); //但是不给本地地址，还是给的源地址，这样节省带宽
+      } else {
+        reject("随机二次元图错误，是卡特实验室接口的锅。错误原因：" + JSON.stringify(response.body));
+      }
+    });
   });
 }
 
@@ -1539,7 +1581,7 @@ function ReadConfig() {
   });
 }
 
-//聊天处理，先整句搜索，再模糊搜索，没有的话再分词模糊搜索
+//聊天处理，超智能(智障)的聊天算法：先整句搜索，再模糊搜索，没有的话再分词模糊搜索
 async function ChatProcess(msg) {
   const result_1 = await new Promise((resolve, _reject) => {
     console.log("开始整句搜索".log);
@@ -1561,7 +1603,7 @@ async function ChatProcess(msg) {
     console.log("开始模糊搜索".log);
     db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg + "%'", (e, sql_2) => {
       if (!e && sql_2.length > 0) {
-        console.log(`模糊搜索:  ${msg} ，匹配到 ${sql_2.length} 条回复`.log);
+        console.log(`模糊搜索: ${msg} ，匹配到 ${sql_2.length} 条回复`.log);
         let ans = Math.floor(Math.random() * sql_2.length);
         let answer = JSON.stringify(sql_2[ans].answer);
         answer = answer.replace(/"/g, "");
@@ -1594,17 +1636,18 @@ async function ChatProcess(msg) {
         console.log("只有一个关键词，添加噪声词".log);
         //若下面的噪声词为空，那么会从词库里随机取回复
         msg.push({ word: "" });
-        console.log(`分词出最终关键词：${msg}`.log);
+        console.log(`分词出最终关键词：`.log);
+        console.log(msg);
       }
       let rand_word_num = Math.floor(Math.random() * msg.length);
-      console.log(`随机选择第${rand_word_num}个关键词 ${msg[rand_word_num].word} 来回复`.log);
+      console.log(`随机选择第 ${rand_word_num + 1} 个关键词 ${msg[rand_word_num].word} 来回复`.log);
       db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg[rand_word_num].word + "%'", (e_1, sql_2) => {
         if (!e_1 && sql_2.length > 0) {
           console.log(`对于关键词:  ${msg[rand_word_num].word} ，匹配到 ${sql_2.length} 条回复`.log);
           let ans_1 = Math.floor(Math.random() * sql_2.length);
           let answer_1 = JSON.stringify(sql_2[ans_1].answer);
           answer_1 = answer_1.replace(/"/g, "");
-          console.log(`随机选取第${ans_1 + 1}条回复：${answer_1}`.log);
+          console.log(`随机选取第 ${ans_1 + 1} 条回复：${answer_1}`.log);
           resolve_2(answer_1);
         } else {
           reject_2(`聊天数据库中没有匹配到 ${msg[rand_word_num].word} 的回复`);
@@ -1710,4 +1753,4 @@ function GetLaststDanmu() {
   });
 }
 
-//ガラスの花と壊す世界
+//NO GAME NO LIFE
