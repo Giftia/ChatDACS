@@ -1364,17 +1364,20 @@ if (conn_go_cqhttp) {
                             req.body.user_id
                           }' , loop_bomb_start_time = '${process.hrtime()}' WHERE group_id ='${req.body.group_id}'`
                         );
-                        request(
-                          `http://127.0.0.1:5700/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(question)}`,
-                          function (error, _response, _body) {
-                            if (!error) {
-                              console.log(`群 ${req.body.group_id} 开始了击鼓传雷`.log);
-                              io.emit("system message", `@群 ${req.body.group_id} 开始了击鼓传雷`);
-                            } else {
-                              console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
+                        //延时3秒后丢出问题
+                        setTimeout(function () {
+                          request(
+                            `http://127.0.0.1:5700/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(question)}`,
+                            function (error, _response, _body) {
+                              if (!error) {
+                                console.log(`群 ${req.body.group_id} 开始了击鼓传雷`.log);
+                                io.emit("system message", `@群 ${req.body.group_id} 开始了击鼓传雷`);
+                              } else {
+                                console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
+                              }
                             }
-                          }
-                        );
+                          );
+                        }, 3000);
 
                         //已经开始游戏了，判断答案对不对
                       } else {
@@ -1386,7 +1389,7 @@ if (conn_go_cqhttp) {
                         db.all(`SELECT * FROM qq_group WHERE group_id = '${req.body.group_id}'`, (err, sql) => {
                           if (!err && sql[0]) {
                             //判断答案 loop_bomb_answer、是否本人回答
-                            if (sql[0].loop_bomb_answer == your_answer && sql[0].loop_bomb_onwer == req.body.group_id) {
+                            if (sql[0].loop_bomb_answer == your_answer && sql[0].loop_bomb_onwer == req.body.user_id) {
                               //答对了
                               res.send({
                                 reply: `[CQ:at,qq=${req.body.user_id}] 回答正确！答案确实是${sql[0].loop_bomb_answer}！`,
@@ -1404,7 +1407,7 @@ if (conn_go_cqhttp) {
                                   let question_arg1 = Math.floor(Math.random() * 98) + 1; //1到99的数字
                                   let question_arg2 = Math.floor(Math.random() * 98) + 1; //1到99的数字
                                   let question = `那么进入下一轮了噢，[CQ:at,qq=${rand_user}]请听题：1000 减 7=？请告诉小夜： 击鼓传雷 你的答案`;
-                                  let answer = 3; //把答案、目标人、开始时间存入数据库
+                                  let answer = 993; //把答案、目标人、开始时间存入数据库
                                   db.run(
                                     `UPDATE qq_group SET loop_bomb_answer = '${answer}', loop_bomb_onwer = '${rand_user}' , loop_bomb_start_time = '${process.hrtime()}' WHERE group_id ='${
                                       req.body.group_id
@@ -1414,8 +1417,8 @@ if (conn_go_cqhttp) {
                                     `http://127.0.0.1:5700/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(question)}`,
                                     function (error, _response, _body) {
                                       if (!error) {
-                                        console.log(`群 ${req.body.group_id} 开始了击鼓传雷`.log);
-                                        io.emit("system message", `@群 ${req.body.group_id} 开始了击鼓传雷`);
+                                        console.log(`群 ${req.body.group_id} 开始了下一轮击鼓传雷`.log);
+                                        io.emit("system message", `@群 ${req.body.group_id} 开始了下一轮击鼓传雷`);
                                       } else {
                                         console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
                                       }
