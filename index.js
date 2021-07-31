@@ -1433,7 +1433,7 @@ if (conn_go_cqhttp) {
                               //不是本人回答，来捣乱的
                             } else if (sql[0].loop_bomb_onwer !== req.body.user_id) {
                               res.send({
-                                reply: `[CQ:at,qq=${req.body.user_id}] 你是来捣乱的嘛，这个雷不是给你的呀，你回答对了也没用呀`,
+                                reply: `[CQ:at,qq=${req.body.user_id}] 你是来捣乱的嘛，这个雷是[CQ:at,qq=${sql[0].loop_bomb_onwer}的，不要抢答呀] `,
                               });
 
                               //答错了
