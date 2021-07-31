@@ -1357,8 +1357,8 @@ if (conn_go_cqhttp) {
                         //给发起人出题，等待ta回答
                         let question_arg1 = Math.floor(Math.random() * 98) + 1; //1到99的数字
                         let question_arg2 = Math.floor(Math.random() * 98) + 1; //1到99的数字
-                        let question = `那么[CQ:at,qq=${req.body.user_id}]请听题：1000 减 7=？请告诉小夜： 击鼓传雷 你的答案`;
-                        let answer = 993; //把答案、目标人、开始时间存入数据库
+                        let question = `那么[CQ:at,qq=${req.body.user_id}]请听题：${question_arg1} 加 ${question_arg2} = ？请告诉小夜： 击鼓传雷 你的答案`;
+                        let answer = question_arg1 + question_arg2; //把答案、目标人、开始时间存入数据库
                         db.run(
                           `UPDATE qq_group SET loop_bomb_answer = '${answer}', loop_bomb_onwer = '${
                             req.body.user_id
@@ -1406,8 +1406,8 @@ if (conn_go_cqhttp) {
                                   //选完之后开始下一轮游戏，给随机幸运群友出题，等待ta回答
                                   let question_arg1 = Math.floor(Math.random() * 98) + 1; //1到99的数字
                                   let question_arg2 = Math.floor(Math.random() * 98) + 1; //1到99的数字
-                                  let question = `那么进入下一轮了噢，[CQ:at,qq=${rand_user}]请听题：1000 减 7=？请告诉小夜： 击鼓传雷 你的答案`;
-                                  let answer = 993; //把答案、目标人、开始时间存入数据库
+                                  let question = `那么进入下一轮了噢，[CQ:at,qq=${rand_user}]请听题：${question_arg1} 加 ${question_arg2} = ？请告诉小夜： 击鼓传雷 你的答案`;
+                                  let answer = question_arg1 + question_arg2; //把答案、目标人、开始时间存入数据库
                                   db.run(
                                     `UPDATE qq_group SET loop_bomb_answer = '${answer}', loop_bomb_onwer = '${rand_user}' , loop_bomb_start_time = '${process.hrtime()}' WHERE group_id ='${
                                       req.body.group_id
@@ -1431,7 +1431,7 @@ if (conn_go_cqhttp) {
                               });
 
                               //不是本人回答，来捣乱的
-                            } else if (sql[0].loop_bomb_onwer !== req.body.group_id) {
+                            } else if (sql[0].loop_bomb_onwer !== req.body.user_id) {
                               res.send({
                                 reply: `[CQ:at,qq=${req.body.user_id}] 你是来捣乱的嘛，这个雷不是给你的呀，你回答对了也没用呀`,
                               });
