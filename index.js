@@ -2433,10 +2433,10 @@ function ECYWenDa() {
         let rand_word_num = Math.floor(Math.random() * msg.length);
         let answer = msg[rand_word_num].word;
         console.log(`原句为：${body.text}，随机切去第 ${rand_word_num + 1} 个关键词 ${answer} 作为答案`.log);
-        let ans_start = answer.indexOf(answer.word); //取答案开始
-        let ans_end = answer.word.indexOf(answer.length); //取答案结束
-        let tex_top = answer.word.substr(0, ans_start); //取除了答案外的字符串头
-        let tex_bottom = answer.word.substr(ans_end + 1); //取除了答案外的字符串尾
+        let ans_start = answer.indexOf(answer); //取答案开始
+        let ans_end = answer.indexOf(answer.length); //取答案结束
+        let tex_top = answer.substr(0, ans_start); //取除了答案外的字符串头
+        let tex_bottom = answer.substr(ans_end + 1); //取除了答案外的字符串尾
         resolve({ quest: `${tex_top}________${tex_bottom}`, result: answer });
       } else {
         reject("问答错误，是接口的锅。错误原因：" + JSON.stringify(response.body));
