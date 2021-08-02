@@ -150,6 +150,7 @@ process.on("unhandledRejection", (err) => {
 let onlineusers = 0;
 let Tiankey, sumtkey, baidu_app_id, baidu_api_key, baidu_secret_key;
 let last_danmu_timeline;
+var boom_timer; //60s计时器
 
 //声明TTS调用接口
 let SpeechClient;
@@ -1332,7 +1333,7 @@ if (conn_go_cqhttp) {
                 }
 
                 //击鼓传雷
-                if (loop_bomb_reg.test(req.body.message) && req.body.group_id == "120243247") {
+                if (loop_bomb_reg.test(req.body.message)) {
                   //先检查群有没有开始游戏
                   db.all(`SELECT * FROM qq_group WHERE group_id = '${req.body.group_id}'`, (err, sql) => {
                     if (!err && sql[0]) {
@@ -1340,8 +1341,7 @@ if (conn_go_cqhttp) {
                       if (sql[0].loop_bomb_enabled === 0) {
                         //游戏开始
                         db.run(`UPDATE qq_group SET loop_bomb_enabled = '1' WHERE group_id ='${req.body.group_id}'`);
-                        let text =
-                          "击鼓传雷游戏开始啦，下面宣布一下游戏规则：小夜会传给你一个手雷，你必须在60秒内正确回答一个问题，不然就会在你手上爆炸噢。在回答正确之后，小夜会随机抽取一名幸运群友，把手雷传给ta，ta的回答时间将会是你回答之后所剩的时间，依次类推，直到手雷在某个不幸群友手上爆炸才结束，做好准备了吗";
+                        let text = "击鼓传雷游戏开始啦，这是一个只有死亡才能结束的游戏，做好准备了吗";
                         request(
                           `http://127.0.0.1:5700/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(text)}`,
                           function (error, _response, _body) {
@@ -1355,29 +1355,74 @@ if (conn_go_cqhttp) {
                         );
 
                         //给发起人出题，等待ta回答
-                        let question_arg1 = Math.floor(Math.random() * 98) + 1; //1到99的数字
-                        let question_arg2 = Math.floor(Math.random() * 98) + 1; //1到99的数字
-                        let question = `那么[CQ:at,qq=${req.body.user_id}]请听题：${question_arg1} 加 ${question_arg2} = ？请告诉小夜： 击鼓传雷 你的答案`;
-                        let answer = question_arg1 + question_arg2; //把答案、目标人、开始时间存入数据库
-                        db.run(
-                          `UPDATE qq_group SET loop_bomb_answer = '${answer}', loop_bomb_onwer = '${
-                            req.body.user_id
-                          }' , loop_bomb_start_time = '${process.hrtime()}' WHERE group_id ='${req.body.group_id}'`
-                        );
-                        //延时3秒后丢出问题
-                        setTimeout(function () {
-                          request(
-                            `http://127.0.0.1:5700/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(question)}`,
-                            function (error, _response, _body) {
-                              if (!error) {
-                                console.log(`群 ${req.body.group_id} 开始了击鼓传雷`.log);
-                                io.emit("system message", `@群 ${req.body.group_id} 开始了击鼓传雷`);
-                              } else {
-                                console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
-                              }
-                            }
+                        WenDa.then((resolve) => {
+                          let question = `那么[CQ:at,qq=${req.body.user_id}]请听题：${resolve.quest} 请告诉小夜：击鼓传雷 你的答案，时间剩余59秒`;
+                          let answer = resolve.result; //把答案、目标人、开始时间存入数据库
+                          db.run(
+                            `UPDATE qq_group SET loop_bomb_answer = '${answer}', loop_bomb_onwer = '${req.body.user_id}' , loop_bomb_start_time = '${
+                              process.hrtime()[0]
+                            }' WHERE group_id ='${req.body.group_id}'`
                           );
-                        }, 3000);
+
+                          //丢出问题
+                          setTimeout(function () {
+                            request(
+                              `http://127.0.0.1:5700/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(question)}`,
+                              function (error, _response, _body) {
+                                if (!error) {
+                                  console.log(`群 ${req.body.group_id} 开始了击鼓传雷`.log);
+                                  io.emit("system message", `@群 ${req.body.group_id} 开始了击鼓传雷`);
+                                } else {
+                                  console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
+                                }
+                              }
+                            );
+                          }, 500);
+                        }).catch((reject) => {
+                          res.send({ reply: `日忒娘，怎么又出错了：${reject}` });
+                          console.log(`日忒娘，怎么又出错了：${reject}`.error);
+                        });
+
+                        //开始倒计时，倒计时结束宣布游戏结束
+                        boom_timer = setTimeout(function () {
+                          console.log(`群 ${req.body.group_id} 的击鼓传雷到达时间，炸了`.log);
+                          let boom_time = Math.floor(Math.random() * 60 * 3) + 60; //造成伤害时间
+                          //获取这个雷现在是谁手上，炸ta
+                          db.all(`SELECT * FROM qq_group WHERE group_id = '${req.body.group_id}'`, (err, sql) => {
+                            if (!err && sql[0]) {
+                              request(
+                                `http://127.0.0.1:5700/set_group_ban?group_id=${req.body.group_id}&user_id=${sql[0].loop_bomb_onwer}&duration=${boom_time}`,
+                                function (error, _response, _body) {
+                                  if (!error) {
+                                    console.log(`${sql[0].loop_bomb_onwer} 在群 ${req.body.group_id} 回答超时，被炸伤${boom_time}秒`.log);
+                                    let end = `时间到了，pia，雷在[CQ:at,qq=${sql[0].loop_bomb_onwer}]手上炸了，你被炸成重伤了，休养生息${boom_time}秒！游戏结束！下次加油噢`;
+                                    request(
+                                      `http://127.0.0.1:5700/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(end)}`,
+                                      function (error, _response, _body) {
+                                        if (!error) {
+                                          io.emit(
+                                            "system message",
+                                            `@${sql[0].loop_bomb_onwer} 在群 ${req.body.group_id} 回答超时，被炸伤${boom_time}秒`
+                                          );
+                                        } else {
+                                          console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
+                                        }
+                                      }
+                                    );
+                                    //游戏结束，清空数据
+                                    db.run(
+                                      `UPDATE qq_group SET loop_bomb_enabled = '0', loop_bomb_answer = '', loop_bomb_onwer = '' , loop_bomb_start_time = '' WHERE group_id ='${req.body.group_id}'`
+                                    );
+                                    return 0;
+                                  } else {
+                                    console.log("请求127.0.0.1:5700/set_group_whole_ban错误：", error);
+                                  }
+                                }
+                              );
+                              io.emit("system message", `@群 ${req.body.group_id} 的击鼓传雷到达时间，炸了`);
+                            }
+                          });
+                        }, 1000 * 60);
 
                         //已经开始游戏了，判断答案对不对
                       } else {
@@ -1396,44 +1441,52 @@ if (conn_go_cqhttp) {
                               });
 
                               //答题成功，然后要把雷传给随机幸运群友，进入下一题
-                              request(`http://127.0.0.1:5700/get_group_member_list?group_id=${req.body.group_id}`, (err, response, body) => {
-                                body = JSON.parse(body);
-                                if (!err && body.data.length != 0) {
-                                  var rand_user_id = Math.floor(Math.random() * body.data.length);
-                                  console.log(`随机选取一个群友：${body.data[rand_user_id].user_id}`.log);
-                                  let rand_user = body.data[rand_user_id].user_id;
+                              setTimeout(function () {
+                                request(`http://127.0.0.1:5700/get_group_member_list?group_id=${req.body.group_id}`, (err, response, body) => {
+                                  body = JSON.parse(body);
+                                  if (!err && body.data.length != 0) {
+                                    var rand_user_id = Math.floor(Math.random() * body.data.length);
+                                    console.log(`随机选取一个群友：${body.data[rand_user_id].user_id}`.log);
+                                    let rand_user = body.data[rand_user_id].user_id;
 
-                                  //选完之后开始下一轮游戏，给随机幸运群友出题，等待ta回答
-                                  let question_arg1 = Math.floor(Math.random() * 98) + 1; //1到99的数字
-                                  let question_arg2 = Math.floor(Math.random() * 98) + 1; //1到99的数字
-                                  let question = `那么进入下一轮了噢，[CQ:at,qq=${rand_user}]请听题：${question_arg1} 加 ${question_arg2} = ？请告诉小夜： 击鼓传雷 你的答案`;
-                                  let answer = question_arg1 + question_arg2; //把答案、目标人、开始时间存入数据库
-                                  db.run(
-                                    `UPDATE qq_group SET loop_bomb_answer = '${answer}', loop_bomb_onwer = '${rand_user}' , loop_bomb_start_time = '${process.hrtime()}' WHERE group_id ='${
-                                      req.body.group_id
-                                    }'`
-                                  );
-                                  request(
-                                    `http://127.0.0.1:5700/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(question)}`,
-                                    function (error, _response, _body) {
-                                      if (!error) {
-                                        console.log(`群 ${req.body.group_id} 开始了下一轮击鼓传雷`.log);
-                                        io.emit("system message", `@群 ${req.body.group_id} 开始了下一轮击鼓传雷`);
-                                      } else {
-                                        console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
+                                    //选完之后开始下一轮游戏，先查询剩余时间，然后给随机幸运群友出题，等待ta回答
+                                    db.all(`SELECT * FROM qq_group WHERE group_id = '${req.body.group_id}'`, (err, sql) => {
+                                      if (!err && sql[0]) {
+                                        WenDa.then((resolve) => {
+                                          let diff = 60 - process.hrtime([sql[0].loop_bomb_start_time, 0])[0]; //剩余时间
+                                          let question = `抽到了幸运群友[CQ:at,qq=${rand_user}]！请听题：${resolve.quest} 请告诉小夜： 击鼓传雷 你的答案，时间还剩余${diff}秒`;
+                                          let answer = resolve.result; //把答案、目标人存入数据库
+                                          db.run(
+                                            `UPDATE qq_group SET loop_bomb_answer = '${answer}', loop_bomb_onwer = '${rand_user}' WHERE group_id ='${req.body.group_id}'`
+                                          );
+                                          request(
+                                            `http://127.0.0.1:5700/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(question)}`,
+                                            function (error, _response, _body) {
+                                              if (!error) {
+                                                console.log(`群 ${req.body.group_id} 开始了下一轮击鼓传雷`.log);
+                                                io.emit("system message", `@群 ${req.body.group_id} 开始了下一轮击鼓传雷`);
+                                              } else {
+                                                console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
+                                              }
+                                            }
+                                          );
+                                        }).catch((reject) => {
+                                          res.send({ reply: `日忒娘，怎么又出错了：${reject}` });
+                                          console.log(`日忒娘，怎么又出错了：${reject}`.error);
+                                        });
                                       }
-                                    }
-                                  );
-                                } else {
-                                  console.log("随机选取一个群友错误。错误原因：" + JSON.stringify(response.body));
-                                }
-                                return 0;
-                              });
+                                    });
+                                  } else {
+                                    console.log("随机选取一个群友错误。错误原因：" + JSON.stringify(response.body));
+                                  }
+                                  return 0;
+                                });
+                              }, 500);
 
                               //不是本人回答，来捣乱的
-                            } else if (sql[0].loop_bomb_onwer !== req.body.user_id) {
+                            } else if (sql[0].loop_bomb_onwer != req.body.user_id) {
                               res.send({
-                                reply: `[CQ:at,qq=${req.body.user_id}] 你是来捣乱的嘛，这个雷是[CQ:at,qq=${sql[0].loop_bomb_onwer}的，不要抢答呀] `,
+                                reply: `[CQ:at,qq=${req.body.user_id}] 你是来捣乱的嘛，这个雷是[CQ:at,qq=${sql[0].loop_bomb_onwer}]的，不要抢答呀`,
                               });
 
                               //答错了
@@ -1443,16 +1496,17 @@ if (conn_go_cqhttp) {
                                 `http://127.0.0.1:5700/set_group_ban?group_id=${req.body.group_id}&user_id=${req.body.user_id}&duration=${boom_time}`,
                                 function (error, _response, _body) {
                                   if (!error) {
-                                    console.log(`${rand_user} 在群 ${req.body.group_id} 回答错误，被炸伤${boom_time}秒`.log);
+                                    console.log(`${req.body.user_id} 在群 ${req.body.group_id} 回答错误，被炸伤${boom_time}秒`.log);
+                                    clearTimeout(boom_timer);
                                     res.send({
-                                      reply: `[CQ:at,qq=${rand_user}] 回答错误，好可惜，答案是${sql[0].loop_bomb_answer}，你被炸成重伤了，休养生息${boom_time}秒！下次加油噢`,
+                                      reply: `[CQ:at,qq=${req.body.user_id}] 回答错误，好可惜，答案是${sql[0].loop_bomb_answer}，你被炸成重伤了，休养生息${boom_time}秒！游戏结束！下次加油噢`,
                                     });
-                                    return 0;
                                   } else {
                                     console.log("请求127.0.0.1:5700/set_group_whole_ban错误：", error);
                                   }
                                 }
                               );
+
                               //游戏结束，删掉游戏记录
                               db.run(
                                 `UPDATE qq_group SET loop_bomb_enabled = '0', loop_bomb_answer = '', loop_bomb_onwer = '' , loop_bomb_start_time = '' WHERE group_id ='${req.body.group_id}'`
@@ -2349,6 +2403,20 @@ function DelayAlert(service_stoped_list) {
       );
     }, 1000 * delay_time);
   }
+}
+
+//问答题库
+function WenDa() {
+  return new Promise((resolve, reject) => {
+    request(`http://api.tianapi.com/txapi/wenda/index?key=${Tiankey}`, (err, response, body) => {
+      body = JSON.parse(body);
+      if (!err) {
+        resolve({ quest: body.newslist[0].quest, result: body.newslist[0].result });
+      } else {
+        reject("问答错误，是天行接口的锅。错误原因：" + JSON.stringify(response.body));
+      }
+    });
+  });
 }
 
 //ロクでなし魔術講師と禁忌教典
