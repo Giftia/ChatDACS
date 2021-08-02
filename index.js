@@ -47,7 +47,7 @@ ChatDACS：一个无需服务器，可私有化部署、可独立运行于内网
 const version = "ChatDACS 3.0.2-Dev"; //版本号，会显示在浏览器tab与标题栏
 const chat_swich = 1; //web端自动聊天开关，需数据库中配置聊天表，自带的数据库已经配置好小夜嘴臭语录，开箱即用
 const news_swich = 0; //web端首屏新闻开关
-const conn_go_cqhttp = 0; //qqBot小夜开关，需要自行配置以接入go-cqhttp，反向 HTTP POST 于 127.0.0.1:80/bot
+const conn_go_cqhttp = 1; //qqBot小夜开关，需要自行配置以接入go-cqhttp，反向 HTTP POST 于 127.0.0.1:80/bot
 const Now_On_Live = 0; //接入哔哩哔哩直播聊天开关
 const html = "/static/index.html"; //前端页面路径，old.html为旧版前端
 
@@ -2432,14 +2432,10 @@ function ECYWenDa() {
         msg = jieba.extract(body.text, topN); //按权重分词
         let rand_word_num = Math.floor(Math.random() * msg.length);
         console.log(`随机切去第 ${rand_word_num + 1} 个关键词 ${msg[rand_word_num].word} 作为答案`.log);
-        let ans_start = pohai_tex.indexOf("[CQ:at,qq="); //取答案开始
-        let ans_end = pohai_tex.indexOf("]"); //取答案结束
-        let tex_top = pohai_tex.substr(0, ans_start); //取除了答案外的字符串头
-        let tex_bottom = pohai_tex.substr(ans_end + 1); //取除了答案外的字符串尾
-        //获取qq
-        let qq_id = pohai_tex.replace("[CQ:at,qq=", "");
-        qq_id = qq_id.replace("]", "");
-        qq_id = qq_id.trim();
+        let ans_start = msg[rand_word_num].word.indexOf("[CQ:at,qq="); //取答案开始
+        let ans_end = msg[rand_word_num].word.indexOf("]"); //取答案结束
+        let tex_top = msg[rand_word_num].word.substr(0, ans_start); //取除了答案外的字符串头
+        let tex_bottom = msg[rand_word_num].word.substr(ans_end + 1); //取除了答案外的字符串尾
         resolve({ quest: `${tex_top}________${tex_bottom}`, result: msg[rand_word_num].word });
       } else {
         reject("问答错误，是接口的锅。错误原因：" + JSON.stringify(response.body));
