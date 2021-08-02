@@ -1397,7 +1397,7 @@ if (conn_go_cqhttp) {
                                 function (error, _response, _body) {
                                   if (!error) {
                                     console.log(`${sql[0].loop_bomb_onwer} 在群 ${req.body.group_id} 回答超时，被炸伤${boom_time}秒`.log);
-                                    let end = `时间到了，pia，雷在[CQ:at,qq=${sql[0].loop_bomb_onwer}]手上炸了，你被炸成重伤了，休养生息${boom_time}秒！游戏结束！下次加油噢`;
+                                    let end = `时间到了，pia，雷在[CQ:at,qq=${sql[0].loop_bomb_onwer}]手上炸了，你被炸成重伤了，休养生息${boom_time}秒！游戏结束！下次加油噢，那么答案公布：${sql[0].loop_bomb_answer}`;
                                     request(
                                       `http://127.0.0.1:5700/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(end)}`,
                                       function (error, _response, _body) {
