@@ -40,14 +40,14 @@ ChatDACS：一个无需服务器，可私有化部署、可独立运行于内网
     C 尾版本号,表示小修改,如修复一些重要bug时增加C,更新代码可以不更新依赖
     D 迭代号,表示最小修改版本,用于体现该版本稳定性
 
-    致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、还有我的朋友们，以及倾心分享知识的各位
+    致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、还有我的朋友们，以及倾心分享知识的各位
 */
 
 //系统配置和开关，根据你的需要改动
 const version = "ChatDACS 3.0.2-Dev"; //版本号，会显示在浏览器tab与标题栏
 const chat_swich = 1; //web端自动聊天开关，需数据库中配置聊天表，自带的数据库已经配置好小夜嘴臭语录，开箱即用
 const news_swich = 0; //web端首屏新闻开关
-const conn_go_cqhttp = 1; //qqBot小夜开关，需要自行配置以接入go-cqhttp，反向 HTTP POST 于 127.0.0.1:80/bot
+const conn_go_cqhttp = 0; //qqBot小夜开关，需要自行配置以接入go-cqhttp，反向 HTTP POST 于 127.0.0.1:80/bot
 const Now_On_Live = 0; //接入哔哩哔哩直播聊天开关
 const html = "/static/index.html"; //前端页面路径，old.html为旧版前端
 
@@ -55,7 +55,7 @@ const html = "/static/index.html"; //前端页面路径，old.html为旧版前�
 const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const thanks =
-  "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、还有我的朋友们，以及倾心分享知识的各位";
+  "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、还有我的朋友们，以及倾心分享知识的各位";
 const updatelog = `<h1>3.0.2-Dev<br/>测试击鼓传雷</h1><br/><ul style="text-align:left"><li>· 正在测试击鼓传雷啦，这个版本不要用噢；</li></ul>`;
 
 //qqBot配置
@@ -1355,33 +1355,35 @@ if (conn_go_cqhttp) {
                         );
 
                         //给发起人出题，等待ta回答
-                        WenDa.then((resolve) => {
-                          let question = `那么[CQ:at,qq=${req.body.user_id}]请听题：${resolve.quest} 请告诉小夜：击鼓传雷 你的答案，时间剩余59秒`;
-                          let answer = resolve.result; //把答案、目标人、开始时间存入数据库
-                          db.run(
-                            `UPDATE qq_group SET loop_bomb_answer = '${answer}', loop_bomb_onwer = '${req.body.user_id}' , loop_bomb_start_time = '${
-                              process.hrtime()[0]
-                            }' WHERE group_id ='${req.body.group_id}'`
-                          );
-
-                          //丢出问题
-                          setTimeout(function () {
-                            request(
-                              `http://127.0.0.1:5700/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(question)}`,
-                              function (error, _response, _body) {
-                                if (!error) {
-                                  console.log(`群 ${req.body.group_id} 开始了击鼓传雷`.log);
-                                  io.emit("system message", `@群 ${req.body.group_id} 开始了击鼓传雷`);
-                                } else {
-                                  console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
-                                }
-                              }
+                        ECYWenDa()
+                          .then((resolve) => {
+                            let question = `那么[CQ:at,qq=${req.body.user_id}]请听题：${resolve.quest} 请告诉小夜：击鼓传雷 你的答案，时间剩余59秒`;
+                            let answer = resolve.result; //把答案、目标人、开始时间存入数据库
+                            db.run(
+                              `UPDATE qq_group SET loop_bomb_answer = '${answer}', loop_bomb_onwer = '${
+                                req.body.user_id
+                              }' , loop_bomb_start_time = '${process.hrtime()[0]}' WHERE group_id ='${req.body.group_id}'`
                             );
-                          }, 500);
-                        }).catch((reject) => {
-                          res.send({ reply: `日忒娘，怎么又出错了：${reject}` });
-                          console.log(`日忒娘，怎么又出错了：${reject}`.error);
-                        });
+
+                            //丢出问题
+                            setTimeout(function () {
+                              request(
+                                `http://127.0.0.1:5700/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(question)}`,
+                                function (error, _response, _body) {
+                                  if (!error) {
+                                    console.log(`群 ${req.body.group_id} 开始了击鼓传雷`.log);
+                                    io.emit("system message", `@群 ${req.body.group_id} 开始了击鼓传雷`);
+                                  } else {
+                                    console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
+                                  }
+                                }
+                              );
+                            }, 500);
+                          })
+                          .catch((reject) => {
+                            res.send({ reply: `日忒娘，怎么又出错了：${reject}` });
+                            console.log(`日忒娘，怎么又出错了：${reject}`.error);
+                          });
 
                         //开始倒计时，倒计时结束宣布游戏结束
                         boom_timer = setTimeout(function () {
@@ -1452,28 +1454,30 @@ if (conn_go_cqhttp) {
                                     //选完之后开始下一轮游戏，先查询剩余时间，然后给随机幸运群友出题，等待ta回答
                                     db.all(`SELECT * FROM qq_group WHERE group_id = '${req.body.group_id}'`, (err, sql) => {
                                       if (!err && sql[0]) {
-                                        WenDa.then((resolve) => {
-                                          let diff = 60 - process.hrtime([sql[0].loop_bomb_start_time, 0])[0]; //剩余时间
-                                          let question = `抽到了幸运群友[CQ:at,qq=${rand_user}]！请听题：${resolve.quest} 请告诉小夜： 击鼓传雷 你的答案，时间还剩余${diff}秒`;
-                                          let answer = resolve.result; //把答案、目标人存入数据库
-                                          db.run(
-                                            `UPDATE qq_group SET loop_bomb_answer = '${answer}', loop_bomb_onwer = '${rand_user}' WHERE group_id ='${req.body.group_id}'`
-                                          );
-                                          request(
-                                            `http://127.0.0.1:5700/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(question)}`,
-                                            function (error, _response, _body) {
-                                              if (!error) {
-                                                console.log(`群 ${req.body.group_id} 开始了下一轮击鼓传雷`.log);
-                                                io.emit("system message", `@群 ${req.body.group_id} 开始了下一轮击鼓传雷`);
-                                              } else {
-                                                console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
+                                        ECYWenDa()
+                                          .then((resolve) => {
+                                            let diff = 60 - process.hrtime([sql[0].loop_bomb_start_time, 0])[0]; //剩余时间
+                                            let question = `抽到了幸运群友[CQ:at,qq=${rand_user}]！请听题：${resolve.quest} 请告诉小夜： 击鼓传雷 你的答案，时间还剩余${diff}秒`;
+                                            let answer = resolve.result; //把答案、目标人存入数据库
+                                            db.run(
+                                              `UPDATE qq_group SET loop_bomb_answer = '${answer}', loop_bomb_onwer = '${rand_user}' WHERE group_id ='${req.body.group_id}'`
+                                            );
+                                            request(
+                                              `http://127.0.0.1:5700/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(question)}`,
+                                              function (error, _response, _body) {
+                                                if (!error) {
+                                                  console.log(`群 ${req.body.group_id} 开始了下一轮击鼓传雷`.log);
+                                                  io.emit("system message", `@群 ${req.body.group_id} 开始了下一轮击鼓传雷`);
+                                                } else {
+                                                  console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
+                                                }
                                               }
-                                            }
-                                          );
-                                        }).catch((reject) => {
-                                          res.send({ reply: `日忒娘，怎么又出错了：${reject}` });
-                                          console.log(`日忒娘，怎么又出错了：${reject}`.error);
-                                        });
+                                            );
+                                          })
+                                          .catch((reject) => {
+                                            res.send({ reply: `日忒娘，怎么又出错了：${reject}` });
+                                            console.log(`日忒娘，怎么又出错了：${reject}`.error);
+                                          });
                                       }
                                     });
                                   } else {
@@ -2414,6 +2418,31 @@ function WenDa() {
         resolve({ quest: body.newslist[0].quest, result: body.newslist[0].result });
       } else {
         reject("问答错误，是天行接口的锅。错误原因：" + JSON.stringify(response.body));
+      }
+    });
+  });
+}
+
+//台词问答题库
+function ECYWenDa() {
+  return new Promise((resolve, reject) => {
+    request(`https://api.oddfar.com/yl/q.php?c=2001&encode=json`, (err, response, body) => {
+      body = JSON.parse(body);
+      if (!err) {
+        msg = jieba.extract(body.text, topN); //按权重分词
+        let rand_word_num = Math.floor(Math.random() * msg.length);
+        console.log(`随机切去第 ${rand_word_num + 1} 个关键词 ${msg[rand_word_num].word} 作为答案`.log);
+        let ans_start = pohai_tex.indexOf("[CQ:at,qq="); //取答案开始
+        let ans_end = pohai_tex.indexOf("]"); //取答案结束
+        let tex_top = pohai_tex.substr(0, ans_start); //取除了答案外的字符串头
+        let tex_bottom = pohai_tex.substr(ans_end + 1); //取除了答案外的字符串尾
+        //获取qq
+        let qq_id = pohai_tex.replace("[CQ:at,qq=", "");
+        qq_id = qq_id.replace("]", "");
+        qq_id = qq_id.trim();
+        resolve({ quest: `${tex_top}________${tex_bottom}`, result: msg[rand_word_num].word });
+      } else {
+        reject("问答错误，是接口的锅。错误原因：" + JSON.stringify(response.body));
       }
     });
   });
