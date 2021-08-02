@@ -2433,7 +2433,7 @@ function ECYWenDa() {
         let rand_word_num = Math.floor(Math.random() * msg.length);
         let answer = msg[rand_word_num].word;
         console.log(`原句为：${body.text}，随机切去第 ${rand_word_num + 1} 个关键词 ${answer} 作为答案`.log);
-        let quest = ans.replace(answer, "________");
+        let quest = body.text.replace(answer, "________");
         resolve({ quest: quest, result: answer });
       } else {
         reject("问答错误，是接口的锅。错误原因：" + JSON.stringify(response.body));
