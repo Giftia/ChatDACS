@@ -59,6 +59,7 @@ const thanks =
 const updatelog = `<h1>3.0.2-Dev<br/>测试击鼓传雷</h1><br/><ul style="text-align:left"><li>· 正在测试击鼓传雷啦，这个版本不要用噢；</li></ul>`;
 
 //qqBot配置
+const self_qq = 1648468212; //qqBot使用的qq帐号
 const topN = 5; //限制分词权重数量，设置得越低，更侧重大意，回复更贴近重点，但容易重复相同的回复；设置得越高，回复会更随意、更沙雕，但更容易答非所问
 let reply_probability = 1; //qqBot小夜回复几率，单位是%，可通过 /admin_change_reply_probability 指令更改
 let fudu_probability = 1; //qqBot小夜复读几率，单位是%，可通过 /admin_change_fudu_probability 指令更改
@@ -186,7 +187,7 @@ colors.setTheme({
 const rename_reg = new RegExp("^/rename [\u4e00-\u9fa5a-z0-9]{1,10}$"); //允许1-10长度的数英汉昵称
 const bv2av_reg = new RegExp("^[a-zA-Z0-9]{10,12}$"); //匹配bv号
 const isImage_reg = new RegExp("\\[CQ:image,file="); //匹配qqBot图片
-const xiaoye_ated = new RegExp("\\[CQ:at,qq=1648468212\\]"); //匹配小夜被@
+const xiaoye_ated = new RegExp(`\\[CQ:at,qq=${self_qq}\\]`); //匹配小夜被@
 const change_reply_probability_reg = new RegExp("^/admin_change_reply_probability [0-9]*"); //匹配修改qqBot小夜回复率
 const change_fudu_probability_reg = new RegExp("^/admin_change_fudu_probability [0-9]*"); //匹配修改qqBot小夜复读率
 const img_url_reg = new RegExp("https(.*term=3)"); //匹配图片地址
@@ -1602,10 +1603,10 @@ if (conn_go_cqhttp) {
                 //丢一个骰子，按reply_probability几率回复
                 let reply_flag = Math.floor(Math.random() * 100);
                 //如果被@了，那么回复几率上升80%
-                let at_replaced_msg = req.body.message; //要把[CQ:at,qq=1648468212] 去除掉，否则聊天核心会乱成一锅粥
+                let at_replaced_msg = req.body.message; //要把[CQ:at,qq=${self_qq}] 去除掉，否则聊天核心会乱成一锅粥
                 if (xiaoye_ated.test(req.body.message)) {
                   reply_flag -= 80;
-                  at_replaced_msg = req.body.message.replace("[CQ:at,qq=1648468212] ", ""); //去除@小夜
+                  at_replaced_msg = req.body.message.replace(`[CQ:at,qq=${self_qq}]`, "").trim(); //去除@小夜
                 }
                 //骰子命中，那就让小夜来自动回复
                 if (reply_flag < reply_probability) {
@@ -2425,7 +2426,7 @@ function DelayAlert(service_stoped_list) {
   }
 }
 
-//问答题库
+//百科问答题库
 function WenDa() {
   return new Promise((resolve, reject) => {
     request(`http://api.tianapi.com/txapi/wenda/index?key=${Tiankey}`, (err, response, body) => {
@@ -2439,7 +2440,7 @@ function WenDa() {
   });
 }
 
-//台词问答题库
+//浓度极高的ACGN圈台词问答题库
 function ECYWenDa() {
   return new Promise((resolve, _reject) => {
     request(`https://api.oddfar.com/yl/q.php?c=2001&encode=json`, (err, _response, body) => {
@@ -2463,4 +2464,4 @@ function ECYWenDa() {
   });
 }
 
-//ロクでなし魔術講師と禁忌教典
+//中二病でも恋がしたい！
