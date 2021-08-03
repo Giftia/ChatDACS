@@ -1339,7 +1339,7 @@ if (conn_go_cqhttp) {
                   db.all(`SELECT * FROM qq_group WHERE group_id = '${req.body.group_id}'`, (err, sql) => {
                     if (!err && sql[0]) {
                       //判断游戏开关 loop_bomb_enabled，没有开始的话就开始游戏，如果游戏已经结束了的话重新开始
-                      if (sql[0].loop_bomb_enabled === 0 && 60 - process.hrtime([sql[0].loop_bomb_start_time, 0])[0] < 0) {
+                      if (sql[0].loop_bomb_enabled === 0 || 60 - process.hrtime([sql[0].loop_bomb_start_time, 0])[0] < 0) {
                         //游戏开始
                         db.run(`UPDATE qq_group SET loop_bomb_enabled = '1' WHERE group_id ='${req.body.group_id}'`);
                         let text = "击鼓传雷游戏开始啦，这是一个只有死亡才能结束的游戏，做好准备了吗";
