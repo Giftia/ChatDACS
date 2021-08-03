@@ -205,6 +205,7 @@ const hope_flower_reg = new RegExp("^希望的花(.*)"); //匹配希望的花
 const loop_bomb_reg = new RegExp("^击鼓传雷(.*)"); //匹配击鼓传雷
 const is_qq_reg = new RegExp("^[1-9][0-9]{4,9}$"); //校验是否是合法的qq号
 const has_qq_reg = new RegExp("\\[CQ:at,qq=(.*)\\]"); //匹配是否有@
+const admin_reg = new RegExp("\\/admin (.*)"); //匹配管理员指令
 
 console.log(version.ver);
 
@@ -1337,8 +1338,8 @@ if (conn_go_cqhttp) {
                   //先检查群有没有开始游戏
                   db.all(`SELECT * FROM qq_group WHERE group_id = '${req.body.group_id}'`, (err, sql) => {
                     if (!err && sql[0]) {
-                      //判断游戏开关 loop_bomb_enabled，没有开始的话就开始游戏
-                      if (sql[0].loop_bomb_enabled === 0) {
+                      //判断游戏开关 loop_bomb_enabled，没有开始的话就开始游戏，如果游戏已经结束了的话重新开始
+                      if (sql[0].loop_bomb_enabled === 0 && 60 - process.hrtime([sql[0].loop_bomb_start_time, 0])[0] < 0) {
                         //游戏开始
                         db.run(`UPDATE qq_group SET loop_bomb_enabled = '1' WHERE group_id ='${req.body.group_id}'`);
                         let text = "击鼓传雷游戏开始啦，这是一个只有死亡才能结束的游戏，做好准备了吗";
@@ -1503,7 +1504,7 @@ if (conn_go_cqhttp) {
                                     console.log(`${req.body.user_id} 在群 ${req.body.group_id} 回答错误，被炸伤${boom_time}秒`.log);
                                     clearTimeout(boom_timer);
                                     res.send({
-                                      reply: `[CQ:at,qq=${req.body.user_id}] 回答错误，好可惜，答案是${sql[0].loop_bomb_answer}，你被炸成重伤了，休养生息${boom_time}秒！游戏结束！下次加油噢`,
+                                      reply: `[CQ:at,qq=${req.body.user_id}] 回答错误，好可惜，你被炸成重伤了，休养生息${boom_time}秒！游戏结束！下次加油噢，那么答案公布：${sql[0].loop_bomb_answer}`,
                                     });
                                   } else {
                                     console.log("请求127.0.0.1:5700/set_group_whole_ban错误：", error);
@@ -1534,8 +1535,23 @@ if (conn_go_cqhttp) {
                           reply: `管理员启动了提醒任务，开始提醒停止服务的群启用小夜……${resolve}`,
                         });
                       });
+                      return 0;
                     }
-                    return 0;
+                  }
+                }
+
+                //管理员功能：执行sql
+                if (admin_reg.test(req.body.message)) {
+                  for (let i in qq_admin_list) {
+                    if (req.body.user_id == qq_admin_list[i]) {
+                      let admin_code = body.text.replace("/admin sql ", "");
+                      console.log(`管理员sql指令`.log);
+                      db.run(admin_code);
+                      res.send({
+                        reply: `管理员sql指令执行完毕`,
+                      });
+                      return 0;
+                    }
                   }
                 }
 
@@ -2425,18 +2441,23 @@ function WenDa() {
 
 //台词问答题库
 function ECYWenDa() {
-  return new Promise((resolve, reject) => {
-    request(`https://api.oddfar.com/yl/q.php?c=2001&encode=json`, (err, response, body) => {
+  return new Promise((resolve, _reject) => {
+    request(`https://api.oddfar.com/yl/q.php?c=2001&encode=json`, (err, _response, body) => {
       body = JSON.parse(body);
       if (!err) {
         msg = jieba.extract(body.text, topN); //按权重分词
+        if (msg.length == 0) {
+          //如果分词不了，那就直接夜爹牛逼
+          resolve({ quest: `啊噢，出不出题了，你直接回答 夜爹牛逼 吧`, result: `夜爹牛逼` });
+          return 0;
+        }
         let rand_word_num = Math.floor(Math.random() * msg.length);
         let answer = msg[rand_word_num].word;
         console.log(`原句为：${body.text}，随机切去第 ${rand_word_num + 1} 个关键词 ${answer} 作为答案`.log);
         let quest = body.text.replace(answer, "________");
         resolve({ quest: quest, result: answer });
       } else {
-        reject("问答错误，是接口的锅。错误原因：" + JSON.stringify(response.body));
+        resolve({ quest: `啊噢，出不出题了，你直接回答 夜爹牛逼 吧`, result: `夜爹牛逼` });
       }
     });
   });
