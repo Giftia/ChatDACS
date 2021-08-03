@@ -1544,7 +1544,7 @@ if (conn_go_cqhttp) {
                 if (admin_reg.test(req.body.message)) {
                   for (let i in qq_admin_list) {
                     if (req.body.user_id == qq_admin_list[i]) {
-                      let admin_code = body.text.replace("/admin sql ", "");
+                      let admin_code = req.body.message.replace("/admin sql ", "");
                       console.log(`管理员sql指令`.log);
                       db.run(admin_code);
                       res.send({
