@@ -1,6 +1,6 @@
 <h1 align="center">
   <img src="https://repository-images.githubusercontent.com/171253757/5f987680-d2ab-11eb-927b-655b4967c9a3" width="650px"/><br/>
-  沙雕Ai聊天系统 ChatDACS<br/>
+  星野夜蝶Offiial<br/>沙雕Ai聊天系统 ChatDACS
 (Chatbot : shaDiao Ai Chat System)
 </h1>
 <p align="center">
