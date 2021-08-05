@@ -44,7 +44,7 @@ ChatDACS：一个无需服务器，可私有化部署、可独立运行于内网
 */
 
 //系统配置和开关，根据你的需要改动
-const version = "ChatDACS 3.0.2-Dev"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS 3.0.3-Dev"; //版本号，会显示在浏览器tab与标题栏
 const chat_swich = 1; //web端自动聊天开关，需数据库中配置聊天表，自带的数据库已经配置好小夜嘴臭语录，开箱即用
 const news_swich = 0; //web端首屏新闻开关
 const conn_go_cqhttp = 1; //qqBot小夜开关，需要自行配置以接入go-cqhttp，反向 HTTP POST 于 127.0.0.1:80/bot
@@ -56,7 +56,7 @@ const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const thanks =
   "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、还有我的朋友们，以及倾心分享知识的各位";
-const updatelog = `<h1>3.0.2-Dev<br/>测试击鼓传雷</h1><br/><ul style="text-align:left"><li>· 正在测试击鼓传雷啦，这个版本不要用噢；</li></ul>`;
+const updatelog = `<h1>3.0.3-Dev<br/>qqBot新增我有一个朋友</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，这个版本还是建议不要用噢；</li></ul>`;
 
 //qqBot配置
 const self_qq = 1648468212; //qqBot使用的qq帐号
@@ -147,6 +147,33 @@ process.on("unhandledRejection", (err) => {
   console.log(`未捕获的promise异常：${err}`.error);
 });
 
+//正则
+const rename_reg = new RegExp("^/rename [\u4e00-\u9fa5a-z0-9]{1,10}$"); //允许1-10长度的数英汉昵称
+const bv2av_reg = new RegExp("^[a-zA-Z0-9]{10,12}$"); //匹配bv号
+const isImage_reg = new RegExp("\\[CQ:image,file="); //匹配qqBot图片
+const xiaoye_ated = new RegExp(`\\[CQ:at,qq=${self_qq}\\]`); //匹配小夜被@
+const change_reply_probability_reg = new RegExp("^/admin_change_reply_probability [0-9]*"); //匹配修改qqBot小夜回复率
+const change_fudu_probability_reg = new RegExp("^/admin_change_fudu_probability [0-9]*"); //匹配修改qqBot小夜复读率
+const img_url_reg = new RegExp("https(.*term=3)"); //匹配图片地址
+const isVideo_reg = new RegExp("^\\[CQ:video,file="); //匹配qqBot图片
+const video_url_reg = new RegExp("http(.*term=unknow)"); //匹配视频地址
+const yap_reg = new RegExp("^\\/吠 (.*)"); //匹配请求语音
+const come_yap_reg = new RegExp("^\\/嘴臭 (.*)"); //匹配对话语音
+const teach_reg = new RegExp("^问：(.*)答：(.*)"); //匹配教学指令
+const prpr_reg = new RegExp("^\\/prpr (.*)"); //匹配prpr
+const pohai_reg = new RegExp("^\\/迫害 (.*)"); //匹配迫害p图
+const teach_balabala_reg = new RegExp("^\\/说不出话 (.*)"); //匹配balabala教学
+const hand_grenade_reg = new RegExp("^一个手雷(.*)"); //匹配一个手雷
+const mine_reg = new RegExp("埋地雷"); //匹配埋地雷
+const fuck_mine_reg = new RegExp("踩地雷"); //匹配踩地雷
+const hope_flower_reg = new RegExp("^希望的花(.*)"); //匹配希望的花
+const loop_bomb_reg = new RegExp("^击鼓传雷(.*)"); //匹配击鼓传雷
+const is_qq_reg = new RegExp("^[1-9][0-9]{4,9}$"); //校验是否是合法的qq号
+const has_qq_reg = new RegExp("\\[CQ:at,qq=(.*)\\]"); //匹配是否有@
+const admin_reg = new RegExp("\\/admin (.*)"); //匹配管理员指令
+const setu_reg = new RegExp("req_setu_list"); //匹配色图来指令
+const i_have_a_friend_reg = new RegExp("我有个朋友说.*"); //匹配我有个朋友指令
+
 //固定变量
 let onlineusers = 0;
 let Tiankey, sumtkey, baidu_app_id, baidu_api_key, baidu_secret_key;
@@ -182,31 +209,6 @@ colors.setTheme({
   error: "red",
   log: "blue",
 });
-
-//正则
-const rename_reg = new RegExp("^/rename [\u4e00-\u9fa5a-z0-9]{1,10}$"); //允许1-10长度的数英汉昵称
-const bv2av_reg = new RegExp("^[a-zA-Z0-9]{10,12}$"); //匹配bv号
-const isImage_reg = new RegExp("\\[CQ:image,file="); //匹配qqBot图片
-const xiaoye_ated = new RegExp(`\\[CQ:at,qq=${self_qq}\\]`); //匹配小夜被@
-const change_reply_probability_reg = new RegExp("^/admin_change_reply_probability [0-9]*"); //匹配修改qqBot小夜回复率
-const change_fudu_probability_reg = new RegExp("^/admin_change_fudu_probability [0-9]*"); //匹配修改qqBot小夜复读率
-const img_url_reg = new RegExp("https(.*term=3)"); //匹配图片地址
-const isVideo_reg = new RegExp("^\\[CQ:video,file="); //匹配qqBot图片
-const video_url_reg = new RegExp("http(.*term=unknow)"); //匹配视频地址
-const yap_reg = new RegExp("^\\/吠 (.*)"); //匹配请求语音
-const come_yap_reg = new RegExp("^\\/嘴臭 (.*)"); //匹配对话语音
-const teach_reg = new RegExp("^问：(.*)答：(.*)"); //匹配教学指令
-const prpr_reg = new RegExp("^\\/prpr (.*)"); //匹配prpr
-const pohai_reg = new RegExp("^\\/迫害 (.*)"); //匹配迫害p图
-const teach_balabala_reg = new RegExp("^\\/说不出话 (.*)"); //匹配balabala教学
-const hand_grenade_reg = new RegExp("^一个手雷(.*)"); //匹配一个手雷
-const mine_reg = new RegExp("埋地雷"); //匹配埋地雷
-const fuck_mine_reg = new RegExp("踩地雷"); //匹配踩地雷
-const hope_flower_reg = new RegExp("^希望的花(.*)"); //匹配希望的花
-const loop_bomb_reg = new RegExp("^击鼓传雷(.*)"); //匹配击鼓传雷
-const is_qq_reg = new RegExp("^[1-9][0-9]{4,9}$"); //校验是否是合法的qq号
-const has_qq_reg = new RegExp("\\[CQ:at,qq=(.*)\\]"); //匹配是否有@
-const admin_reg = new RegExp("\\/admin (.*)"); //匹配管理员指令
 
 console.log(version.ver);
 
@@ -541,7 +543,7 @@ if (conn_go_cqhttp) {
           break;
         default:
           res.send();
-          break;
+          return 0;
       }
       console.log(notify);
       io.emit("system message", `@${notify}`);
@@ -558,7 +560,6 @@ if (conn_go_cqhttp) {
               console.log(reject.error);
             });
           res.send();
-          return 0;
         }
       }
 
@@ -651,7 +652,7 @@ if (conn_go_cqhttp) {
                       }
                     }
                   });
-                  return 0; //如果return 0的话会出现埋了就炸的效果，如果注释掉会出现和指令同时响应的情况
+                  //return 0; //如果return 0的话不会进入后续操作，只会炸，如果注释掉会出现和指令同时响应的情况
                 }
 
                 //服务停用开关
@@ -746,24 +747,23 @@ if (conn_go_cqhttp) {
                   db.run(`INSERT INTO balabala VALUES('${msg}')`);
                   console.log(`balabala教学：学习成功`.log);
                   res.send({ reply: `哇！小夜学会啦！小夜可能在说不出话的时候说 ${msg} 噢` });
+                  return 0;
                 }
 
                 //色图
-                for (let i in req_setu_list) {
-                  if (req.body.message === req_setu_list[i]) {
-                    RandomCos()
-                      .then((resolve) => {
-                        let setu_file = `http://127.0.0.1/${resolve.replace(/\//g, "\\")}`;
-                        res.send({
-                          reply: `[CQ:image,file=${setu_file},url=${setu_file}]`,
-                        });
-                      })
-                      .catch((reject) => {
-                        console.log(`RandomCos(): rejected, and err:${reject}`.error);
-                        res.send({ reply: `你要的色图发送失败啦：${reject}` });
+                if (setu_reg.test(req.body.message)) {
+                  RandomCos()
+                    .then((resolve) => {
+                      let setu_file = `http://127.0.0.1/${resolve.replace(/\//g, "\\")}`;
+                      res.send({
+                        reply: `[CQ:image,file=${setu_file},url=${setu_file}]`,
                       });
-                    return 0;
-                  }
+                    })
+                    .catch((reject) => {
+                      console.log(`RandomCos(): rejected, and err:${reject}`.error);
+                      res.send({ reply: `你要的色图发送失败啦：${reject}` });
+                    });
+                  return 0;
                 }
 
                 //福利姬
@@ -809,6 +809,19 @@ if (conn_go_cqhttp) {
                     })
                     .catch((reject) => {
                       console.log(`随机舔狗错误：${reject}`.error);
+                    });
+                  return 0;
+                }
+
+                //彩虹屁
+                if (req.body.message === "/彩虹屁") {
+                  RainbowPi()
+                    .then((resolve) => {
+                      console.log(`放了一个彩虹屁：${resolve}`.log);
+                      res.send({ reply: resolve });
+                    })
+                    .catch((reject) => {
+                      console.log(`彩虹屁错误：${reject}`.error);
                     });
                   return 0;
                 }
@@ -1526,6 +1539,49 @@ if (conn_go_cqhttp) {
                   });
                 }
 
+                //我有个朋友
+                if (i_have_a_friend_reg.test(req.body.message)) {
+                  //指定目标的话
+                  if (has_qq_reg.test(req.body.message)) {
+                    var msg_in = req.body.message.split("说")[1];
+                    var msg = msg_in.split("[CQ:at,qq=")[0].trim();
+                    var who = msg_in.split("[CQ:at,qq=")[1];
+                    var who = who.replace("]", "").trim();
+                    if (is_qq_reg.test(who)) {
+                      var sources = `https://api.sumt.cn/api/qq.logo.php?qq=${who}`; //载入头像
+                    }
+                    //没指定目标
+                  } else {
+                    var msg = req.body.message.split("说")[1];
+                    var sources = `https://api.sumt.cn/api/qq.logo.php?qq=${req.body.user_id}`; //没有指定谁，那这个朋友就是ta自己
+                  }
+
+                  loadImage(sources).then((image) => {
+                    let canvas = createCanvas(350, 80);
+                    let ctx = canvas.getContext("2d");
+                    ctx.fillStyle = "WHITE";
+                    ctx.fillRect(0, 0, 350, 80);
+                    ctx.drawImage(image, 10, 10, 60, 60);
+                    ctx.font = "20px SimHei";
+                    ctx.textAlign = "left";
+                    ctx.fillStyle = "#000000";
+                    ctx.fillText("沙雕网友群", 90.5, 35.5);
+                    ctx.font = "16px SimHei";
+                    ctx.fillStyle = "#716F81";
+                    ctx.fillText(`沙雕网友：${msg}`, 90.5, 55.5);
+                    ctx.font = "13px SimHei";
+                    ctx.fillText(CurentTime(), 280.5, 35.5);
+                    let file_local = `${__dirname}\\static\\xiaoye\\images\\${sha1(canvas.toBuffer())}.jpg`;
+                    fs.writeFileSync(file_local, canvas.toBuffer());
+                    let file_online = `http://127.0.0.1/xiaoye/images/${sha1(canvas.toBuffer())}.jpg`;
+                    console.log(`我有个朋友合成成功，图片发送：${file_local}`.log);
+                    res.send({
+                      reply: `[CQ:image,file=${file_online},url=${file_online}]`,
+                    });
+                  });
+                  return 0;
+                }
+
                 //管理员功能：提醒停止服务的群启用小夜
                 if (req.body.message === "/admin alert_open") {
                   for (let i in qq_admin_list) {
@@ -1643,8 +1699,8 @@ if (conn_go_cqhttp) {
             }
           });
         }
-        //私聊回复，现在已经关闭
       } else if (req.body.message_type === "private" && 1 === 0) {
+        //私聊回复，现在已经关闭
         ChatProcess(req.body.message)
           .then((resolve) => {
             console.log(`qqBot小夜回复 ${resolve}`.log);
@@ -1678,6 +1734,75 @@ if (conn_go_cqhttp) {
         function (error, _response, _body) {
           if (!error) {
             console.log(`${req.body.user_id} 加入了群 ${req.body.group_id}，小夜欢迎了ta`.log);
+          } else {
+            console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
+          }
+        }
+      );
+      //搓一搓
+    } else if (req.body.sub_type === "poke") {
+      let action = [
+        "攥",
+        "跨",
+        "蹲",
+        "抱",
+        "挂",
+        "炸",
+        "蹦",
+        "跳",
+        "飘",
+        "坐",
+        "扫",
+        "提",
+        "搬",
+        "推",
+        "挑",
+        "抬",
+        "捕",
+        "捉",
+        "抓",
+        "涌",
+        "抽",
+        "摘",
+        "取",
+        "挂",
+        "拴",
+        "寻",
+        "望",
+        "踏",
+        "淦",
+        "扭",
+        "捏",
+        "草",
+        "日",
+      ];
+      let turn_to = [
+        "沉鱼落雁",
+        "眉目如画",
+        "风度翩翩",
+        "文质彬彬",
+        "聪明伶俐",
+        "眉清目秀",
+        "面黄肌瘦",
+        "冰清玉洁",
+        "垂头丧气",
+        "滔滔不绝",
+        "美如冠玉",
+        "鹤发童颜",
+        "豁达大度",
+        "眉飞色舞",
+        "闭月羞花",
+        "出淤泥而不染",
+        "倾国倾城",
+      ];
+      let rand_action = action[Math.floor(Math.random() * action.length)];
+      let turn_to_action = turn_to[Math.floor(Math.random() * turn_to.length)];
+      let final = `你${rand_action}了一下[CQ:at,qq=${req.body.target_id}]，ta变得${turn_to_action}了`;
+      request(
+        "http://127.0.0.1:5700/send_group_msg?group_id=" + req.body.group_id + "&message=" + encodeURI(final),
+        function (error, _response, _body) {
+          if (!error) {
+            console.log(`${req.body.user_id} ${rand_action} 了一下 ${req.body.target_id}，ta变得${turn_to_action}了`.log);
           } else {
             console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
           }
@@ -2459,6 +2584,20 @@ function ECYWenDa() {
         resolve({ quest: quest, result: answer });
       } else {
         resolve({ quest: `啊噢，出不出题了，你直接回答 夜爹牛逼 吧`, result: `夜爹牛逼` });
+      }
+    });
+  });
+}
+
+//彩虹屁回复
+function RainbowPi() {
+  return new Promise((resolve, reject) => {
+    request(`http://api.tianapi.com/txapi/caihongpi/index?key=${Tiankey}`, (err, response, body) => {
+      body = JSON.parse(body);
+      if (!err) {
+        resolve(body.newslist[0].content);
+      } else {
+        reject("彩虹屁错误，是天行接口的锅。错误原因：" + JSON.stringify(response.body));
       }
     });
   });
