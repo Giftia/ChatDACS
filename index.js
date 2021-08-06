@@ -1541,7 +1541,6 @@ if (conn_go_cqhttp) {
                     let ctx = canvas.getContext("2d");
                     ctx.fillStyle = "WHITE";
                     ctx.fillRect(0, 0, 350, 80);
-                    ctx.drawImage(image, 10, 10, 60, 60);
                     ctx.font = "20px SimHei";
                     ctx.textAlign = "left";
                     ctx.fillStyle = "#000000";
@@ -1551,7 +1550,15 @@ if (conn_go_cqhttp) {
                     ctx.fillText(`沙雕网友：${msg}`, 90.5, 55.5);
                     ctx.font = "13px SimHei";
                     ctx.fillText(CurentTime(), 280.5, 35.5);
-                    let file_local = `${__dirname}\\static\\xiaoye\\images\\${sha1(canvas.toBuffer())}.jpg`;
+                    
+		    ctx.beginPath();
+		    ctx.arc(40,40,28,0,2*Math.PI);
+		    ctx.fill();
+	            ctx.clip();
+	   	    ctx.drawImage(image, 10, 10, 60, 60);
+	            ctx.closePath();
+
+	            let file_local = path.join( `${__dirname}`,`static`,`xiaoye`,`images`,`${sha1(canvas.toBuffer())}.jpg`);
                     fs.writeFileSync(file_local, canvas.toBuffer());
                     let file_online = `http://127.0.0.1/xiaoye/images/${sha1(canvas.toBuffer())}.jpg`;
                     console.log(`我有个朋友合成成功，图片发送：${file_local}`.log);
