@@ -28,7 +28,7 @@ jobs:
       run: pkg .
       
     - name: Process data dir
-      run: |
+      run: | 
           mkdir temp
           copy config temp -r
           copy static temp -r
