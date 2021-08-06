@@ -1,13 +1,13 @@
 <h1 align="center">
   <img src="https://repository-images.githubusercontent.com/171253757/27be1b16-8dbb-41ba-90b5-4b28157f3def" width="200" height="200" alt="ChatDACS"/><br/>
-  星野夜蝶Offiial<br/>沙雕Ai聊天系统 ChatDACS
-(Chatbot : shaDiao Ai Chat System)
+  星野夜蝶Offiial<br/>
 </h1>
+<h2 align="center">沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)</h2>
 <p align="center">
 一个无需服务器，可私有化部署、可独立运行于内网的H5聊天工具。<br/>
 技术栈：语言——Node.js，web框架——Express，前端组件库——layui。<br/>
-与硬件端<a href="https://github.com/Giftia/ChaosNodeMCU/" target="_blank">ChaosNodeMCU</a>联动为一个完整的物联网项目。<br/>
 开箱即用，非常好用，我的朋友。<br/>
+画师：塘李<br/>
 <br/>
 示例 DEMO：<a href="http://chatdacs.giftia.moe/" target="_blank">chatdacs.giftia.moe</a><br/>
 简易搭建教程 Tutorials：<a href="https://zhuanlan.zhihu.com/p/67995935" target="_blank">zhuanlan.zhihu.com/p/67995935</a><br/>
@@ -111,6 +111,8 @@ node index.js
 | 爱发电用户_KGMa  | 10 |
 | 余薪  | 10 | 不知道做不做得出ai思考性行为... |
 | 爱发电用户_qr83  | 10 | xxxx)hhjjiskejeududnn3kssioskwnssj |
+
+对本项目提供帮助的致谢名单（排名不分先后）：https://niconi.co.ni/  、 https://www.layui.com/  、 https://lceda.cn/  、 https://www.dnspod.cn/  、 Daisy_Liu  、 http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html  、 https://ihateregex.io/  、 https://www.maoken.com/  、 https://www.ngrok.cc/  、 https://uptimerobot.com/  、 https://shields.io/  、 https://ctf.bugku.com/  、 https://blog.squix.org/  、 https://hostker.com/  、 https://www.tianapi.com/  、 https://api.sumt.cn/  、 https://github.com/Mrs4s/go-cqhttp  、 https://colorhunt.co/  、 https://github.com/  、 https://gitee.com/  、 https://github.com/windrises/dialogue.moe  、 https://api.oddfar.com/ 、 https://github.com/ssp97 、 还有我的朋友们，以及倾心分享知识的各位
 
 ---
 
