@@ -24,14 +24,25 @@ jobs:
     - name: Install Modules
       run: npm install
 
-    - name: Install PKG Tool
-      run: npm install pkg -g
-
     - name: Package
       run: pkg .
       
+    - name: Process data dir
+      run: | 
+          mkdir temp
+          copy config temp -r
+          copy static temp -r
+          copy plugins temp -r
+          copy db.db temp
+
+    - name: Upload data dir
+      uses: actions/upload-artifact@v2
+      with:
+        name: ChatDACS
+        path: temp
+
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v2
       with:
-        name: ZeroBot-Plugin-windows
+        name: ChatDACS
         path: ./chatdacs.exe
