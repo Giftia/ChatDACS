@@ -1,0 +1,34 @@
+name: Compile ChatDACS for Windows
+on:
+  push:
+    branches: 
+      - master
+
+env:
+  GITHUB_TOKEN: ${{ github.token }}
+
+jobs:
+  my-job:
+    name: Build 🚀
+    runs-on: windows-latest
+    steps:
+
+    - name: Set up node
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Check out code 
+      uses: actions/checkout@v2
+      
+    - name: Install Modules
+      run: npm install
+
+    - name: Package
+      run: pkg .
+      
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: ZeroBot-Plugin-windows
+        path: ./chatdacs.exe
