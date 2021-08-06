@@ -1,26 +1,51 @@
 {
   "name": "chatdacs",
-  "version": "Dev",
+  "version": "0.0.1",
   "decription": "Chatbot : shaDiao Ai Chat System",
   "license": "GPL-3.0",
+  "scripts": {
+    "dev": "node index.js",
+    "build": "webpack",
+    "run": "node onServer.js",
+    "pkg_win": "pkg ."
+  },
   "dependencies": {
     "baidu-aip-sdk": "^4.15.4",
-    "diff": ">=3.5.0",
     "canvas": "^2.8.0",
     "colors": "^1.4.0",
     "compression": "^1.7.4",
+    "cookies": "^0.4.1",
+    "diff": ">=3.5.0",
     "express": "^4.17.1",
     "multer": "^1.4.2",
     "nodejieba": "^2.5.2",
     "npm-check-updates": "^11.8.3",
     "play-sound": "^1.1.3",
-    "pm2": "^5.1.0",
     "request": "^2.88.2",
     "socket.io": "^4.1.3",
     "sqlite3": "^5.0.2"
   },
+  "devDependencies": {
+    "@babel/core": "^7.7.7",
+    "@babel/preset-env": "^7.7.7",
+    "babel-loader": "^8.0.6",
+    "webpack": "^4.41.5",
+    "webpack-cli": "^3.3.10"
+  },
   "repository": {
     "type": "git",
     "url": "//github.com/Giftia/ChatDACS.git"
+  },
+  "bin": "index.js",
+  "pkg": {
+    "assets": [
+      "node_modules/canvas/build/Release/*",
+      "node_modules/sqlite3/lib/binding/napi-v3-win32-x64/node_sqlite3.node",
+      "node_modules/nodejieba/build/Release/nodejieba.node"
+    ],
+    "targets": [
+      "node14-win-x64"
+    ],
+    "outputPath": "."
   }
 }
