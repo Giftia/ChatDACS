@@ -1,0 +1,51 @@
+name: Compile ChatDACS for Windows
+on:
+  push:
+    branches: 
+      - master
+
+env:
+  GITHUB_TOKEN: ${{ github.token }}
+
+jobs:
+  my-job:
+    name: Build 🚀
+    runs-on: windows-latest
+    steps:
+
+    - name: Set up node
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Check out code 
+      uses: actions/checkout@v2
+      
+    - name: Install Modules
+      run: npm install
+      
+    - name: Install PKG Tool
+      run: npm install pkg -g
+
+    - name: Package
+      run: pkg .
+      
+    - name: Process data dir
+      run: | 
+          mkdir temp
+          copy config temp -r
+          copy static temp -r
+          copy plugins temp -r
+          copy db.db temp
+
+    - name: Upload data dir
+      uses: actions/upload-artifact@v2
+      with:
+        name: ChatDACS
+        path: temp
+
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: ChatDACS
+        path: ./chatdacs.exe

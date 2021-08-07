@@ -75,6 +75,8 @@ const max_mine_count = 3; //最大共存地雷数
 const blive_room_id = "49148"; //哔哩哔哩直播间id
 let cos_total_count = 50; //初始化随机cos上限，50个应该比较保守，使用随机cos功能后会自动更新为最新值
 
+
+
 /*
  *
  *好了！以上就是系统的基本配置，如果没有必要，请不要再往下继续编辑了。请保存本文件。祝使用愉快！
@@ -102,15 +104,18 @@ const fs = require("fs");
 const path = require("path");
 const jieba = require("nodejieba"); //中文分词器
 jieba.load({
-  dict: jieba.DEFAULT_DICT,
-  hmmDict: jieba.DEFAULT_HMM_DICT,
-  userDict: `${__dirname}/config/userDict.txt`, //加载自定义分词库
-  idfDict: jieba.DEFAULT_IDF_DICT,
-  stopWordDict: `${__dirname}/config/stopWordDict.txt`, //加载分词库黑名单
+  dict: path.join(`${process.cwd()}`,"config","jieba.dict.utf8"),
+  hmmDict: path.join(`${process.cwd()}`,"config","hmm_model.utf8"),
+  userDict: path.join(`${process.cwd()}`,"config","userDict.txt"), //加载自定义分词库
+  idfDict: path.join(`${process.cwd()}`,"config","idf.utf8"),
+  stopWordDict: path.join(`${process.cwd()}`,"config","stopWordDict.txt"), //加载分词库黑名单
 });
+
+console.log(process.cwd())
+
 const AipSpeech = require("baidu-aip-sdk").speech; //百度语音sdk
 const crypto = require("crypto"); //编码库，用于sha1生成文件名
-const voiceplayer = require("play-sound")((opts = { player: `${__dirname}/plugins/cmdmp3win.exe` })); //mp3静默播放工具，用于直播时播放语音
+const voiceplayer = require("play-sound")((opts = { player: `${process.cwd()}/plugins/cmdmp3win.exe` })); //mp3静默播放工具，用于直播时播放语音
 const { createCanvas, loadImage } = require("canvas"); //用于绘制文字图像，迫害p图
 const { resolve } = require("path");
 const os = require("os"); //用于获取系统工作状态
@@ -1053,7 +1058,7 @@ if (conn_go_cqhttp) {
                               pohai_tex = new_pohai_tex;
                             }
                             //开始p图
-                            let sources = `${__dirname}\\static\\xiaoye\\ps\\${pohai_pic}`; //载入迫害图
+                            let sources = `${process.cwd()}\\static\\xiaoye\\ps\\${pohai_pic}`; //载入迫害图
                             loadImage(sources).then((image) => {
                               let canvas = createCanvas(parseInt(image.width), parseInt(image.height)); //根据迫害图尺寸创建画布
                               let ctx = canvas.getContext("2d");
@@ -1065,7 +1070,7 @@ if (conn_go_cqhttp) {
                               let tex_width = Math.floor(ctx.measureText(pohai_tex).width);
                               console.log(`文字宽度：${tex_width}`.log);
                               ctx.fillText(pohai_tex, tex_config[0], tex_config[1]);
-                              let file_local = path.join(`${__dirname}`, `static`, `xiaoye`, `images`, `${sha1(canvas.toBuffer())}.jpg`);
+                              let file_local = path.join(`${process.cwd()}`, `static`, `xiaoye`, `images`, `${sha1(canvas.toBuffer())}.jpg`);
                               fs.writeFileSync(file_local, canvas.toBuffer());
                               let file_online = `http://127.0.0.1/xiaoye/images/${sha1(canvas.toBuffer())}.jpg`;
                               console.log(`迫害成功，图片发送：${file_online}`.log);
@@ -1095,7 +1100,7 @@ if (conn_go_cqhttp) {
                       pohai_tex = new_pohai_tex;
                     }
                     //开始p图
-                    let sources = `${__dirname}\\static\\xiaoye\\ps\\${pohai_pic}`; //载入迫害图
+                    let sources = `${process.cwd()}\\static\\xiaoye\\ps\\${pohai_pic}`; //载入迫害图
                     loadImage(sources).then((image) => {
                       let canvas = createCanvas(parseInt(image.width), parseInt(image.height)); //根据迫害图尺寸创建画布
                       let ctx = canvas.getContext("2d");
@@ -1108,7 +1113,7 @@ if (conn_go_cqhttp) {
                       console.log(`文字宽度：${tex_width}`.log);
                       ctx.fillText(pohai_tex, tex_config[0], tex_config[1]);
 
-                      let file_local = path.join(`${__dirname}`, `static`, `xiaoye`, `images`, `${sha1(canvas.toBuffer())}.jpg`);
+                      let file_local = path.join(`${process.cwd()}`, `static`, `xiaoye`, `images`, `${sha1(canvas.toBuffer())}.jpg`);
                       fs.writeFileSync(file_local, canvas.toBuffer());
                       let file_online = `http://127.0.0.1/xiaoye/images/${sha1(canvas.toBuffer())}.jpg`;
                       console.log(`迫害成功，图片发送：${file_online}`.log);
@@ -1528,7 +1533,7 @@ if (conn_go_cqhttp) {
                     ctx.drawImage(image, 10, 10, 60, 60);
                     ctx.closePath();
 
-                    let file_local = path.join(`${__dirname}`, `static`, `xiaoye`, `images`, `${sha1(canvas.toBuffer())}.jpg`);
+                    let file_local = path.join(`${process.cwd()}`, `static`, `xiaoye`, `images`, `${sha1(canvas.toBuffer())}.jpg`);
                     fs.writeFileSync(file_local, canvas.toBuffer());
                     let file_online = `http://127.0.0.1/xiaoye/images/${sha1(canvas.toBuffer())}.jpg`;
                     console.log(`我有个朋友合成成功，图片发送：${file_online}`.log);
@@ -1832,7 +1837,7 @@ function LoopDanmu() {
             //然后让小夜读出来
             BetterTTS(reply)
               .then((resolve) => {
-                let tts_file = `${__dirname}\\static${resolve.file.replace("/", "\\")}`; //这里似乎有问题，ntfs短文件名无法转换
+                let tts_file = `${process.cwd()}\\static${resolve.file.replace("/", "\\")}`; //这里似乎有问题，ntfs短文件名无法转换
                 voiceplayer.play(tts_file, function (err) {
                   if (err) throw err;
                 });
@@ -1860,7 +1865,7 @@ function LoopDanmu() {
             fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, `你教的姿势不对噢qwq`);
             BetterTTS("你教的姿势不对噢qwq")
               .then((resolve) => {
-                let tts_file = `${__dirname}\\static${resolve.file.replace("/", "\\")}`;
+                let tts_file = `${process.cwd()}\\static${resolve.file.replace("/", "\\")}`;
                 voiceplayer.play(tts_file, function (err) {
                   if (err) throw err;
                 });
@@ -1877,7 +1882,7 @@ function LoopDanmu() {
             fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, `你教的姿势不对噢qwq`);
             BetterTTS("你教的姿势不对噢qwq")
               .then((resolve) => {
-                let tts_file = `${__dirname}\\static${resolve.file.replace("/", "\\")}`;
+                let tts_file = `${process.cwd()}\\static${resolve.file.replace("/", "\\")}`;
                 voiceplayer.play(tts_file, function (err) {
                   if (err) throw err;
                 });
@@ -1892,7 +1897,7 @@ function LoopDanmu() {
             fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, `关键词不能换行啦qwq`);
             BetterTTS("关键词不能换行啦qwq")
               .then((resolve) => {
-                let tts_file = `${__dirname}\\static${resolve.file.replace("/", "\\")}`;
+                let tts_file = `${process.cwd()}\\static${resolve.file.replace("/", "\\")}`;
                 voiceplayer.play(tts_file, function (err) {
                   if (err) throw err;
                 });
@@ -1912,7 +1917,7 @@ function LoopDanmu() {
               fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, `你教的内容里有主人不允许小夜学习的词：${black_list_words[i]} qwq`);
               BetterTTS(`你教的内容里有主人不允许小夜学习的词：${black_list_words[i]} qwq`)
                 .then((resolve) => {
-                  let tts_file = `${__dirname}\\static${resolve.file.replace("/", "\\")}`;
+                  let tts_file = `${process.cwd()}\\static${resolve.file.replace("/", "\\")}`;
                   voiceplayer.play(tts_file, function (err) {
                     if (err) throw err;
                   });
@@ -1929,7 +1934,7 @@ function LoopDanmu() {
             fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, `关键词太短了啦qwq，至少要4个字节啦`);
             BetterTTS("关键词太短了啦qwq，至少要4个字节啦")
               .then((resolve) => {
-                let tts_file = `${__dirname}\\static${resolve.file.replace("/", "\\")}`;
+                let tts_file = `${process.cwd()}\\static${resolve.file.replace("/", "\\")}`;
                 voiceplayer.play(tts_file, function (err) {
                   if (err) throw err;
                 });
@@ -1944,7 +1949,7 @@ function LoopDanmu() {
             fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, `你教的内容太长了，小夜要坏掉了qwq，不要呀`);
             BetterTTS("你教的内容太长了，小夜要坏掉了qwq，不要呀")
               .then((resolve) => {
-                let tts_file = `${__dirname}\\static${resolve.file.replace("/", "\\")}`;
+                let tts_file = `${process.cwd()}\\static${resolve.file.replace("/", "\\")}`;
                 voiceplayer.play(tts_file, function (err) {
                   if (err) throw err;
                 });
@@ -1961,7 +1966,7 @@ function LoopDanmu() {
           fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, `哇！小夜学会啦！对我说：${ask} 试试吧，小夜有可能会回复 ${ans} 噢`);
           BetterTTS(`哇！小夜学会啦！对我说：${ask} 试试吧，小夜有可能会回复 ${ans} 噢`)
             .then((resolve) => {
-              let tts_file = `${__dirname}\\static${resolve.file.replace("/", "\\")}`;
+              let tts_file = `${process.cwd()}\\static${resolve.file.replace("/", "\\")}`;
               voiceplayer.play(tts_file, function (err) {
                 if (err) throw err;
               });
@@ -1978,7 +1983,7 @@ function LoopDanmu() {
               fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, `${reply}`);
               BetterTTS(reply)
                 .then((resolve) => {
-                  let tts_file = `${__dirname}\\static${resolve.file.replace("/", "\\")}`;
+                  let tts_file = `${process.cwd()}\\static${resolve.file.replace("/", "\\")}`;
                   voiceplayer.play(tts_file, function (err) {
                     if (err) throw err;
                   });
@@ -1996,7 +2001,7 @@ function LoopDanmu() {
                   fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, random_balabala);
                   BetterTTS(random_balabala)
                     .then((resolve) => {
-                      let tts_file = `${__dirname}\\static${resolve.file.replace("/", "\\")}`;
+                      let tts_file = `${process.cwd()}\\static${resolve.file.replace("/", "\\")}`;
                       voiceplayer.play(tts_file, function (err) {
                         if (err) throw err;
                       });
@@ -2027,7 +2032,7 @@ function LoopDanmu() {
 //更改个人资料接口
 app.get("/profile", (req, res) => {
   db.run(`UPDATE users SET nickname = '${req.query.name}' WHERE CID ='${req.query.CID}'`);
-  res.sendFile(__dirname + html);
+  res.sendFile(process.cwd() + html);
 });
 
 //图片上传接口
@@ -2302,7 +2307,7 @@ function PrprDoge() {
 //读取配置文件 config.json
 function ReadConfig() {
   return new Promise((resolve, reject) => {
-    fs.readFile(`${__dirname}/config/config.json`, "utf-8", function (err, data) {
+    fs.readFile(path.join(`${process.cwd()}`,"config","config.json"), "utf-8", function (err, data) {
       if (!err) {
         resolve(JSON.parse(data));
       } else {
