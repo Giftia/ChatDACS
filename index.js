@@ -1126,8 +1126,8 @@ if (conn_go_cqhttp) {
                   let holly_hand_grenade = Math.floor(Math.random() * 1000); //丢一个骰子，判断手雷是否变成神圣手雷
                   let success_flag = Math.floor(Math.random() * 100); //丢一个骰子，判断手雷是否成功丢出
                   let boom_time = Math.floor(Math.random() * 60 * 2); //造成伤害时间
-                  if (holly_hand_grenade < 1) {
-                    //1‰几率变成神圣手雷
+                  if (holly_hand_grenade < 10) {
+                    //运营方暗调了出率，10‰几率变成神圣手雷
                     request(`http://127.0.0.1:5700/set_group_whole_ban?group_id=${req.body.group_id}&enable=1`, function (error, _response, _body) {
                       if (!error) {
                         console.log(`触发了神圣手雷，群 ${req.body.group_id} 被全体禁言`.error);
@@ -1252,7 +1252,7 @@ if (conn_go_cqhttp) {
                 //希望的花
                 if (hope_flower_reg.test(req.body.message)) {
                   let who;
-                  let boom_time = Math.floor(Math.random() * 60 * 9) + 60; //造成60-300伤害时间
+                  let boom_time = Math.floor(Math.random() * 30); //造成0-30伤害时间
                   if (req.body.message === "希望的花") {
                     console.log(`群 ${req.body.group_id} 的群员 ${req.body.user_id} 朝自己丢出一朵希望的花`.log);
                     res.send({ reply: `团长，你在做什么啊！团长！希望的花，不要乱丢啊啊啊啊` });
@@ -1280,7 +1280,7 @@ if (conn_go_cqhttp) {
                       if (!error) {
                         console.log(`群 ${req.body.group_id} 的 群员 ${req.body.user_id} 救活了 ${who}`.log);
                         res.send({
-                          reply: `团长，团长你在做什么啊团长，团长！为什么要救他啊，哼，呃，啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊！！！团长救活了[CQ:at,qq=${who}]，但自己被炸成重伤，休养生息${boom_time}秒！不要停下来啊！`,
+                          reply: `团长，团长你在做什么啊团长，团长！为什么要救他啊，哼，呃，啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊！！！团长救下了[CQ:at,qq=${who}]，但自己被炸飞了，休养生息${boom_time}秒！不要停下来啊！`,
                         });
                       } else {
                         console.log("请求127.0.0.1:5700/set_group_whole_ban错误：", error);
@@ -2490,6 +2490,12 @@ function GetLaststDanmu() {
     request(`https://api.live.bilibili.com/xlive/web-room/v1/dM/gethistory?roomid=${blive_room_id}`, (err, response, body) => {
       if (!err) {
         body = JSON.parse(body); //居然返回的是字符串而不是json
+        try {
+          body.data.room[0].text;
+        } catch (err) {
+          console.log(`直播间刚开，还没有弹幕`.error);
+          reject("直播间刚开，还没有弹幕", err, response);
+        }
         resolve({ text: body.data.room[body.data.room.length - 1].text, timeline: body.data.room[body.data.room.length - 1].timeline });
       } else {
         reject(err, response);
