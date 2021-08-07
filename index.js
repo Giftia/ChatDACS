@@ -58,7 +58,6 @@ const thanks =
 const updatelog = `<h1>3.0.5-Dev<br/>集成自动化构建</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议不要用噢；</li></ul>`;
 
 //qqBot配置
-const self_qq = 1648468212; //qqBot使用的qq帐号
 const topN = 5; //限制分词权重数量，设置得越低，更侧重大意，回复更贴近重点，但容易重复相同的回复；设置得越高，回复会更随意、更沙雕，但更容易答非所问
 let reply_probability = 1; //qqBot小夜回复几率，单位是%，可通过 /admin_change_reply_probability 指令更改
 let fudu_probability = 1; //qqBot小夜复读几率，单位是%，可通过 /admin_change_fudu_probability 指令更改
@@ -66,13 +65,10 @@ let chaos_probability = 0; //qqBot小夜抽风几率，随机抽风舔狗，单�
 const req_fuliji_list = ["福利姬", "买家秀"]; //福利姬指令列表
 const req_ECY_list = ["来点二次元", "二次元"]; //二次元图指令列表
 const req_no_trap_list = ["今日不带套", "今日不戴套", "今天不带套", "今天不戴套"]; //今日不带套指令列表
-let black_list_words; //教学系统敏感词池
-let qq_admin_list; //qqBot小夜的管理员列表
 const qqimg_to_web = 0; //qq侧接收到的图片保存与转发开关，虽然经常可以收到一些好康的图，但是非常占硬盘空间
 const max_mine_count = 3; //最大共存地雷数
 
 //杂项配置
-const blive_room_id = "49148"; //哔哩哔哩直播间id
 let cos_total_count = 50; //初始化随机cos上限，50个应该比较保守，使用随机cos功能后会自动更新为最新值
 
 /*
@@ -109,7 +105,18 @@ jieba.load({
   stopWordDict: path.join(`${process.cwd()}`, "config", "stopWordDict.txt"), //加载分词库黑名单
 });
 
-console.log(process.cwd());
+//日志染色颜色配置
+colors.setTheme({
+  alert: "inverse",
+  random: "random",
+  on: "magenta",
+  off: "green",
+  warn: "yellow",
+  error: "red",
+  log: "blue",
+});
+
+console.log(`当前工作目录：${process.cwd()}`.log);
 
 const AipSpeech = require("baidu-aip-sdk").speech; //百度语音sdk
 const crypto = require("crypto"); //编码库，用于sha1生成文件名
@@ -130,11 +137,17 @@ process.on("unhandledRejection", (err) => {
   console.log(`未捕获的promise异常：${err}`.error);
 });
 
+//固定变量
+let onlineusers = 0;
+let Tiankey, sumtkey, baidu_app_id, baidu_api_key, baidu_secret_key;
+var boom_timer; //60s计时器
+let last_danmu_timeline, bot_qq, black_list_words, qq_admin_list, blive_room_id;
+
 //正则
 const rename_reg = new RegExp("^/rename [\u4e00-\u9fa5a-z0-9]{1,10}$"); //允许1-10长度的数英汉昵称
 const bv2av_reg = new RegExp("^[a-zA-Z0-9]{10,12}$"); //匹配bv号
 const isImage_reg = new RegExp("\\[CQ:image,file="); //匹配qqBot图片
-const xiaoye_ated = new RegExp(`\\[CQ:at,qq=${self_qq}\\]`); //匹配小夜被@
+const xiaoye_ated = new RegExp(`\\[CQ:at,qq=${bot_qq}\\]`); //匹配小夜被@
 const change_reply_probability_reg = new RegExp("^/admin_change_reply_probability [0-9]*"); //匹配修改qqBot小夜回复率
 const change_fudu_probability_reg = new RegExp("^/admin_change_fudu_probability [0-9]*"); //匹配修改qqBot小夜复读率
 const img_url_reg = new RegExp("https(.*term=3)"); //匹配图片地址
@@ -157,12 +170,6 @@ const admin_reg = new RegExp("\\/admin (.*)"); //匹配管理员指令
 const setu_reg = new RegExp(".*图.*来.*|.*来.*图.*"); //匹配色图来指令
 const i_have_a_friend_reg = new RegExp("我有一个朋友说.*|我有个朋友说.*"); //匹配我有个朋友指令
 
-//固定变量
-let onlineusers = 0;
-let Tiankey, sumtkey, baidu_app_id, baidu_api_key, baidu_secret_key;
-let last_danmu_timeline;
-var boom_timer; //60s计时器
-
 //声明TTS调用接口
 let SpeechClient;
 
@@ -174,54 +181,45 @@ ReadConfig()
     baidu_app_id = resolve.baidu_app_id; //百度应用id
     baidu_api_key = resolve.baidu_api_key; //百度接口key
     baidu_secret_key = resolve.baidu_secret_key; //百度接口密钥
-    SpeechClient = new AipSpeech(baidu_app_id, baidu_api_key, baidu_secret_key); //建立TTS调用接口
-    black_list_words = resolve.black_list_words; //教学系统的黑名单
+    blive_room_id = resolve.blive_room_id; //哔哩哔哩直播间id
+    bot_qq = resolve.bot_qq; //qqBot使用的qq帐号
     qq_admin_list = resolve.qq_admin_list; //qqBot小夜的管理员列表
+    black_list_words = resolve.black_list_words; //教学系统的黑名单
+    SpeechClient = new AipSpeech(baidu_app_id, baidu_api_key, baidu_secret_key); //建立TTS调用接口
+
+    console.log(version.alert);
+
+    if (chat_swich) {
+      console.log("系统配置：web端自动聊天开启".on);
+    } else {
+      console.log("系统配置：web端自动聊天关闭".off);
+    }
+
+    if (news_swich) {
+      console.log("系统配置：web端首屏新闻开启".on);
+    } else {
+      console.log("系统配置：web端首屏新闻关闭".off);
+    }
+
+    if (conn_go_cqhttp) {
+      console.log(`系统配置：qqBot小夜开启，使用QQ帐号 ${bot_qq}，请确认 plugins/go-cqhttp 文件夹内的 config.yml 是否配置正确并启动go-cqhttp`.on);
+    } else {
+      console.log("系统配置：qqBot小夜关闭".off);
+    }
+
+    if (Now_On_Live) {
+      console.log(`系统配置：小夜直播对线开启，请确认哔哩哔哩直播间id是否为 ${blive_room_id}`.on);
+    } else {
+      console.log("系统配置：小夜直播对线关闭".off);
+    }
+
+    http.listen(80, () => {
+      console.log(`${Curentyyyymmdd()}${CurentTime()} 系统启动完毕，访问 127.0.0.1 即可进入web端`.alert);
+    });
   })
   .catch((reject) => {
     console.log(`载入api接口密钥文件错误，错误信息：${reject}`.error);
   });
-
-//debug颜色配置
-colors.setTheme({
-  ver: "inverse",
-  random: "random",
-  on: "magenta",
-  off: "green",
-  warn: "yellow",
-  error: "red",
-  log: "blue",
-});
-
-console.log(version.ver);
-
-if (chat_swich) {
-  console.log("系统配置：web端自动聊天开启".on);
-} else {
-  console.log("系统配置：web端自动聊天关闭".off);
-}
-
-if (news_swich) {
-  console.log("系统配置：web端首屏新闻开启".on);
-} else {
-  console.log("系统配置：web端首屏新闻关闭".off);
-}
-
-if (conn_go_cqhttp) {
-  console.log(`系统配置：qqBot小夜开启，请确认 plugins/go-cqhttp 文件夹内的 config.yml 是否配置正确并启动go-cqhttp`.on);
-} else {
-  console.log("系统配置：qqBot小夜关闭".off);
-}
-
-if (Now_On_Live) {
-  console.log(`系统配置：小夜直播对线开启，请确认哔哩哔哩直播间id是否为 ${blive_room_id}`.on);
-} else {
-  console.log("系统配置：小夜直播对线关闭".off);
-}
-
-http.listen(80, () => {
-  console.log(`${Curentyyyymmdd()}${CurentTime()} 系统启动，访问 127.0.0.1 即可使用`.log);
-});
 
 /*
  *
@@ -282,6 +280,13 @@ io.on("connection", (socket) => {
         })
         .catch((reject) => {
           console.log(`随机昵称错误：${reject}`.error);
+          db.run(`INSERT INTO users VALUES('匿名', '${CID}', '2', '${Curentyyyymmdd()}${CurentTime()}')`);
+          socket.username = "匿名";
+          io.emit("system message", `@新用户 ${CID} 已连接。现在你的昵称是 匿名 噢，请前往 更多-设置 来更改昵称`);
+          socket.emit("chat message", {
+            CID: "0",
+            msg: help,
+          });
         });
     });
 
@@ -1637,10 +1642,10 @@ if (conn_go_cqhttp) {
                 //丢一个骰子，按reply_probability几率回复
                 let reply_flag = Math.floor(Math.random() * 100);
                 //如果被@了，那么回复几率上升80%
-                let at_replaced_msg = req.body.message; //要把[CQ:at,qq=${self_qq}] 去除掉，否则聊天核心会乱成一锅粥
+                let at_replaced_msg = req.body.message; //要把[CQ:at,qq=${bot_qq}] 去除掉，否则聊天核心会乱成一锅粥
                 if (xiaoye_ated.test(req.body.message)) {
                   reply_flag -= 80;
-                  at_replaced_msg = req.body.message.replace(`[CQ:at,qq=${self_qq}]`, "").trim(); //去除@小夜
+                  at_replaced_msg = req.body.message.replace(`[CQ:at,qq=${bot_qq}]`, "").trim(); //去除@小夜
                 }
                 //骰子命中，那就让小夜来自动回复
                 if (reply_flag < reply_probability) {
@@ -2305,6 +2310,7 @@ function PrprDoge() {
 //读取配置文件 config.json
 function ReadConfig() {
   return new Promise((resolve, reject) => {
+    console.log(`开始读取配置`.log);
     fs.readFile(path.join(`${process.cwd()}`, "config", "config.json"), "utf-8", function (err, data) {
       if (!err) {
         resolve(JSON.parse(data));

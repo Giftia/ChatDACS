@@ -11,7 +11,7 @@
 <br/>
 示例 DEMO：<a href="http://chatdacs.giftia.moe/" target="_blank">chatdacs.giftia.moe</a><br/>
 简易搭建教程 Tutorials：<a href="https://zhuanlan.zhihu.com/p/67995935" target="_blank">zhuanlan.zhihu.com/p/67995935</a><br/>
-词库来源于小夜计划：<a href="https://github.com/Giftia/Project_Xiaoye" target="_blank">github.com/Giftia/Project_Xiaoye</a>
+隶属于星野夜蝶Official：<a href="https://github.com/Giftia/Project_Xiaoye" target="_blank">github.com/Giftia/Project_Xiaoye</a>
 </p>
   <p align="center">
   <img src="https://img.shields.io/uptimerobot/ratio/m783632550-7da46d24226cb151b978c810?style=for-the-badge" alt="Uptime(30 days)" />&nbsp;
@@ -42,16 +42,29 @@
 
 ## ⚡️ 快速启动 Quick start
 
-进入自动化部署工作流 Actions，
-点击成功构建的 Compile ChatDACS for Windows，
-在页面下方的 Artifacts 下载自动构建好的 ChatDACS 包，
-解压开来，直接运行 exe 就可以辣。
+不想要枯燥的部署和配置操作，只想要快速运行一个属于自己的小夜？首先来试试快速启动吧：
+
+进入自动化部署工作流 Actions https://github.com/Giftia/ChatDACS/actions，
+
+点击最新成功构建的 Compile ChatDACS for Windows 工作流，
+
+在页面下方的 Artifacts 里点击下载自动构建好的 ChatDACS 包，解压出来，
+
+打开 plugins\go-cqhttp 文件夹里的 config.yml 文件，修改并保存第 4、5 行的 qq 和密码为 bot 使用的 qq 帐号密码，
+
+然后运行 go-cqhttp_windows_amd64.exe，看看 qq 有没有正常登陆上，
+
+之后打开 config 文件夹里的 config.json 文件，修改并保存第 8 行 bot_qq 后的参数为 bot 使用的 qq 帐号，
+
+最后直接运行 chatdacs.exe 就可以辣。
+
+（正在逐步改善启动便捷性，以后会越来越方便的）
 
 ---
 
 ## ✅ 快速部署 Quick deploy
 
-如果在启动 exe 之后出现了各种问题，那么请尝试快速部署步骤：
+如果在快速启动过程中出现了各种的问题，那么请尝试快速部署：
 
 首先去 https://nodejs.org/zh-cn/ 下载安装 LTS(长期支持版) Node.js，
 
@@ -65,7 +78,11 @@
 
 ## 🛠 手动部署 Manual deployment
 
-若您的操作系统和架构并不是常用的 Windows OS x64，或者是在快速启动、部署过程出现了错误，请按如下操作进行常规的手动部署：
+若您的操作系统和架构并不是常见的 Windows OS x64，
+
+或者是在快速启动、部署过程出现了错误，
+
+亦或者是还想给小夜加一些功能，请按如下操作进行常规的手动部署：
 
 打开系统的 shell ，如 Bash、CMD、PowerShell 等，用 cd 命令进入代码根目录运行：
 
@@ -87,7 +104,9 @@ node index.js
 
 好了，它应该已经启动了 🎉。更详细的部署和配置说明请查看 index.js 文件。
 
-如果想要生成适合您的系统的绿色免安装运行 exe 文件，可以使用手动打包指令：
+如果还是有问题的话，请进群来问问题吧，我们有问必答噢。点击链接加入群聊【星野夜蝶   粉丝群】：https://jq.qq.com/?_wv=1027&k=ovqyydCe
+
+如果想要手动生成适合您的系统的绿色免安装运行 exe 文件，可以使用手动打包指令：
 
 ```bash
 pkg .
@@ -133,4 +152,4 @@ pkg .
 
 ---
 
-如有任何疑问、建议或者需要联系我，请加 QQ 群 120243247：点击链接加入群聊【星野夜蝶   粉丝群】：https://jq.qq.com/?_wv=1027&k=ovqyydCe
+禁止任何形式的倒卖转售，如有任何疑问、建议或者需要联系我，请加 QQ 群 120243247：点击链接加入群聊【星野夜蝶   粉丝群】：https://jq.qq.com/?_wv=1027&k=ovqyydCe

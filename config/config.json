@@ -4,6 +4,9 @@
   "baidu_app_id": "2333333",
   "baidu_api_key": "2333333",
   "baidu_secret_key": "2333333",
+  "blive_room_id": "49148",
+  "bot_qq": "1648468212",
+  "qq_admin_list": ["1005056803", "2418754147", "38263547"],
   "black_list_words": [
     "群:",
     "群：",
