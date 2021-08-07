@@ -43,7 +43,7 @@ ChatDACS：一个无需服务器，可私有化部署、可独立运行于内网
 */
 
 //系统配置和开关，根据你的需要改动
-const version = "ChatDACS 3.0.3-Dev"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS 3.0.5-Dev"; //版本号，会显示在浏览器tab与标题栏
 const chat_swich = 1; //web端自动聊天开关，需数据库中配置聊天表，自带的数据库已经配置好小夜嘴臭语录，开箱即用
 const news_swich = 0; //web端首屏新闻开关
 const conn_go_cqhttp = 1; //qqBot小夜开关，需要自行配置以接入go-cqhttp，反向 HTTP POST 于 127.0.0.1:80/bot
@@ -55,7 +55,7 @@ const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const thanks =
   "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、还有我的朋友们，以及倾心分享知识的各位";
-const updatelog = `<h1>3.0.4-Dev<br/>我有一个朋友优化</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议不要用噢；</li></ul>`;
+const updatelog = `<h1>3.0.5-Dev<br/>集成自动化构建</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议不要用噢；</li></ul>`;
 
 //qqBot配置
 const self_qq = 1648468212; //qqBot使用的qq帐号
@@ -74,8 +74,6 @@ const max_mine_count = 3; //最大共存地雷数
 //杂项配置
 const blive_room_id = "49148"; //哔哩哔哩直播间id
 let cos_total_count = 50; //初始化随机cos上限，50个应该比较保守，使用随机cos功能后会自动更新为最新值
-
-
 
 /*
  *
@@ -104,14 +102,14 @@ const fs = require("fs");
 const path = require("path");
 const jieba = require("nodejieba"); //中文分词器
 jieba.load({
-  dict: path.join(`${process.cwd()}`,"config","jieba.dict.utf8"),
-  hmmDict: path.join(`${process.cwd()}`,"config","hmm_model.utf8"),
-  userDict: path.join(`${process.cwd()}`,"config","userDict.txt"), //加载自定义分词库
-  idfDict: path.join(`${process.cwd()}`,"config","idf.utf8"),
-  stopWordDict: path.join(`${process.cwd()}`,"config","stopWordDict.txt"), //加载分词库黑名单
+  dict: path.join(`${process.cwd()}`, "config", "jieba.dict.utf8"),
+  hmmDict: path.join(`${process.cwd()}`, "config", "hmm_model.utf8"),
+  userDict: path.join(`${process.cwd()}`, "config", "userDict.txt"), //加载自定义分词库
+  idfDict: path.join(`${process.cwd()}`, "config", "idf.utf8"),
+  stopWordDict: path.join(`${process.cwd()}`, "config", "stopWordDict.txt"), //加载分词库黑名单
 });
 
-console.log(process.cwd())
+console.log(process.cwd());
 
 const AipSpeech = require("baidu-aip-sdk").speech; //百度语音sdk
 const crypto = require("crypto"); //编码库，用于sha1生成文件名
@@ -157,7 +155,7 @@ const is_qq_reg = new RegExp("^[1-9][0-9]{4,9}$"); //校验是否是合法的qq�
 const has_qq_reg = new RegExp("\\[CQ:at,qq=(.*)\\]"); //匹配是否有@
 const admin_reg = new RegExp("\\/admin (.*)"); //匹配管理员指令
 const setu_reg = new RegExp(".*图.*来.*|.*来.*图.*"); //匹配色图来指令
-const i_have_a_friend_reg = new RegExp("我有一个朋友说.*"); //匹配我有个朋友指令
+const i_have_a_friend_reg = new RegExp("我有一个朋友说.*|我有个朋友说.*"); //匹配我有个朋友指令
 
 //固定变量
 let onlineusers = 0;
@@ -2307,7 +2305,7 @@ function PrprDoge() {
 //读取配置文件 config.json
 function ReadConfig() {
   return new Promise((resolve, reject) => {
-    fs.readFile(path.join(`${process.cwd()}`,"config","config.json"), "utf-8", function (err, data) {
+    fs.readFile(path.join(`${process.cwd()}`, "config", "config.json"), "utf-8", function (err, data) {
       if (!err) {
         resolve(JSON.parse(data));
       } else {
@@ -2589,4 +2587,5 @@ function RainbowPi() {
   });
 }
 
-//中二病でも恋がしたい！
+/*風は予告なく吹く
+我跟你讲，CTRL + K0 是比 ALT + SHIFT + F 还爽的快捷键*/

@@ -33,7 +33,7 @@
 - [x] 与经过 2w+用户调教养成的人工智能机器人小夜实时聊天 `Chat with Ai Xiaoye`
 - [x] 令人激动的、实用的在线涩图功能 `Nice pictures`
 - [x] 图片、视频与文件分享 `Share your images,videos and files`
-- [x] 与 go-cqhttp 对接，实现了简易的机器人框架 `Connectable with go-cqhttp`
+- [x] 与 go-cqhttp 对接，实现了小夜 v3 分支框架 `Connectable with go-cqhttp`
 - [ ] 自定义表情包 `Use your own stickers`
 - [ ] 私聊 `Private chat`
 - [ ] 付费内容 `Premium content`
@@ -42,7 +42,18 @@
 
 ## ⚡️ 快速启动 Quick start
 
-首先去 https://nodejs.org/zh-cn/ 下载安装长期支持版 Node.js，
+进入自动化部署工作流 Actions，
+点击成功构建的 Compile ChatDACS for Windows，
+在页面下方的 Artifacts 下载自动构建好的 ChatDACS 包，
+解压开来，直接运行 exe 就可以辣。
+
+---
+
+## ✅ 快速部署 Quick deploy
+
+如果在启动 exe 之后出现了各种问题，那么请尝试快速部署步骤：
+
+首先去 https://nodejs.org/zh-cn/ 下载安装 LTS(长期支持版) Node.js，
 
 然后下载最新代码压缩包 https://github.com/Giftia/ChatDACS/archive/refs/heads/master.zip ，
 
@@ -54,7 +65,7 @@
 
 ## 🛠 手动部署 Manual deployment
 
-若您的操作系统并不是 Windows OS，或者是在快速启动过程出现了错误，请按如下操作手动部署：
+若您的操作系统和架构并不是常用的 Windows OS x64，或者是在快速启动、部署过程出现了错误，请按如下操作进行常规的手动部署：
 
 打开系统的 shell ，如 Bash、CMD、PowerShell 等，用 cd 命令进入代码根目录运行：
 
@@ -76,7 +87,8 @@ node index.js
 
 好了，它应该已经启动了 🎉。更详细的部署和配置说明请查看 index.js 文件。
 
-打包：
+如果想要生成适合您的系统的绿色免安装运行 exe 文件，可以使用手动打包指令：
+
 ```bash
 pkg .
 ```
@@ -85,40 +97,40 @@ pkg .
 
 ## 😘 赞助者致谢名单：https://afdian.net/@xiaoye_bot
 
-|  用户名   | 金额/人民币  |  留言：  |
-|  ----  | :----:  | ----  |
-| 卖萌傲娇萝莉赛高  | 30 | 很好玩的bot，加油|
-| 眠眠打破_  | 13.14 | 初次遇见小夜应该是18年初的时候 那时还在备战高考 今天的我正式走上了工作岗位 看到小夜复出 很感动 请p主喝杯奶茶 希望能在炎炎夏日为您带来一点糖分 愿p主和小夜的故事能够长远书写下去 |
-| xian_yui  | 10 | 夜爹冲鸭 |
-| On my own.  | 10 | 好耶 |
-| 冰菓  | 15.21 | 缇娜加油奥，在学代码了，等我学成归来了和你一块干  小夜 |
-| 爱发电用户_vcFq  | 30 | 为什么没有连续包月折扣！！ |
-| 爱发电用户_TWAG  | 10 |
-| kono豆豆da！  | 5 | 奶茶可以灌在膀胱里么嘤（bushi） |
-| 砂糖酱  | 50 |
-| 爱发电用户_VhfC  | 10 |
-| 咕咕子  | 10 |
-| 爱发电用户_7jHF  | 10 |
-| 十八  | 5 | 夜爸爸加油 |
-| 棒棒槌子  | 5 |
-| 砂糖酱  | 50 |
-| 棒棒槌子  | 5 |
-| 砂糖酱  | 66 | 嗯 加点油 |
-| 爱发电用户_Jc5b  | 30 |
-| 玫瑰陨星之忆  | 5 |
-| 玫瑰陨星之忆  | 6.66 |
-| 爱发电用户_WJPF  | 5 |
-| 滑小稽  | 5 |
-| Yui  | 10 |
-| 多芒小丸子  | 10 |
-| 爱发电用户_wScP  | 6 |
-| 昀翳  | 50 |
-| 爱发电用户_KGMa  | 10 |
-| 余薪  | 10 | 不知道做不做得出ai思考性行为... |
-| 爱发电用户_qr83  | 10 | xxxx)hhjjiskejeududnn3kssioskwnssj |
+| 用户名           | 金额/人民币 | 留言：                                                                                                                                                                                |
+| ---------------- | :---------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 卖萌傲娇萝莉赛高 |     30      | 很好玩的 bot，加油                                                                                                                                                                    |
+| 眠眠打破\_       |    13.14    | 初次遇见小夜应该是 18 年初的时候 那时还在备战高考 今天的我正式走上了工作岗位 看到小夜复出 很感动 请 p 主喝杯奶茶 希望能在炎炎夏日为您带来一点糖分 愿 p 主和小夜的故事能够长远书写下去 |
+| xian_yui         |     10      | 夜爹冲鸭                                                                                                                                                                              |
+| On my own.       |     10      | 好耶                                                                                                                                                                                  |
+| 冰菓             |    15.21    | 缇娜加油奥，在学代码了，等我学成归来了和你一块干 小夜                                                                                                                                 |
+| 爱发电用户\_vcFq |     30      | 为什么没有连续包月折扣！！                                                                                                                                                            |
+| 爱发电用户\_TWAG |     10      |
+| kono 豆豆 da！   |      5      | 奶茶可以灌在膀胱里么嘤（bushi）                                                                                                                                                       |
+| 砂糖酱           |     50      |
+| 爱发电用户\_VhfC |     10      |
+| 咕咕子           |     10      |
+| 爱发电用户\_7jHF |     10      |
+| 十八             |      5      | 夜爸爸加油                                                                                                                                                                            |
+| 棒棒槌子         |      5      |
+| 砂糖酱           |     50      |
+| 棒棒槌子         |      5      |
+| 砂糖酱           |     66      | 嗯 加点油                                                                                                                                                                             |
+| 爱发电用户\_Jc5b |     30      |
+| 玫瑰陨星之忆     |      5      |
+| 玫瑰陨星之忆     |    6.66     |
+| 爱发电用户\_WJPF |      5      |
+| 滑小稽           |      5      |
+| Yui              |     10      |
+| 多芒小丸子       |     10      |
+| 爱发电用户\_wScP |      6      |
+| 昀翳             |     50      |
+| 爱发电用户\_KGMa |     10      |
+| 余薪             |     10      | 不知道做不做得出 ai 思考性行为...                                                                                                                                                     |
+| 爱发电用户\_qr83 |     10      | xxxx)hhjjiskejeududnn3kssioskwnssj                                                                                                                                                    |
 
-对本项目提供帮助的致谢名单（排名不分先后）：https://niconi.co.ni/  、 https://www.layui.com/  、 https://lceda.cn/  、 https://www.dnspod.cn/  、 Daisy_Liu  、 http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html  、 https://ihateregex.io/  、 https://www.maoken.com/  、 https://www.ngrok.cc/  、 https://uptimerobot.com/  、 https://shields.io/  、 https://ctf.bugku.com/  、 https://blog.squix.org/  、 https://hostker.com/  、 https://www.tianapi.com/  、 https://api.sumt.cn/  、 https://github.com/Mrs4s/go-cqhttp  、 https://colorhunt.co/  、 https://github.com/  、 https://gitee.com/  、 https://github.com/windrises/dialogue.moe  、 https://api.oddfar.com/ 、 https://github.com/ssp97 、 还有我的朋友们，以及倾心分享知识的各位
+对本项目提供帮助的致谢名单（排名不分先后）：https://niconi.co.ni/ 、 https://www.layui.com/ 、 https://lceda.cn/ 、 https://www.dnspod.cn/ 、 Daisy_Liu 、 http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html 、 https://ihateregex.io/ 、 https://www.maoken.com/ 、 https://www.ngrok.cc/ 、 https://uptimerobot.com/ 、 https://shields.io/ 、 https://ctf.bugku.com/ 、 https://blog.squix.org/ 、 https://hostker.com/ 、 https://www.tianapi.com/ 、 https://api.sumt.cn/ 、 https://github.com/Mrs4s/go-cqhttp 、 https://colorhunt.co/ 、 https://github.com/ 、 https://gitee.com/ 、 https://github.com/windrises/dialogue.moe 、 https://api.oddfar.com/ 、 https://github.com/ssp97 、 还有我的朋友们，以及倾心分享知识的各位
 
 ---
 
-如有任何疑问、建议或者需要联系我，请加 QQ 群 120243247：点击链接加入群聊【星野夜蝶 粉丝群】：https://jq.qq.com/?_wv=1027&k=ovqyydCe
+如有任何疑问、建议或者需要联系我，请加 QQ 群 120243247：点击链接加入群聊【星野夜蝶   粉丝群】：https://jq.qq.com/?_wv=1027&k=ovqyydCe
