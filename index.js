@@ -50,7 +50,7 @@ if(_cn_reg.test(`${process.cwd()}`)){
 }
 
 //系统配置和开关，根据你的需要改动
-const version = "ChatDACS 3.0.3-Dev"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS 3.0.5-Dev"; //版本号，会显示在浏览器tab与标题栏
 const chat_swich = 1; //web端自动聊天开关，需数据库中配置聊天表，自带的数据库已经配置好小夜嘴臭语录，开箱即用
 const news_swich = 0; //web端首屏新闻开关
 const conn_go_cqhttp = 1; //qqBot小夜开关，需要自行配置以接入go-cqhttp，反向 HTTP POST 于 127.0.0.1:80/bot
@@ -62,10 +62,9 @@ const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const thanks =
   "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、还有我的朋友们，以及倾心分享知识的各位";
-const updatelog = `<h1>3.0.4-Dev<br/>我有一个朋友优化</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议不要用噢；</li></ul>`;
+const updatelog = `<h1>3.0.5-Dev<br/>集成自动化构建</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议不要用噢；</li></ul>`;
 
 //qqBot配置
-const self_qq = 1648468212; //qqBot使用的qq帐号
 const topN = 5; //限制分词权重数量，设置得越低，更侧重大意，回复更贴近重点，但容易重复相同的回复；设置得越高，回复会更随意、更沙雕，但更容易答非所问
 let reply_probability = 1; //qqBot小夜回复几率，单位是%，可通过 /admin_change_reply_probability 指令更改
 let fudu_probability = 1; //qqBot小夜复读几率，单位是%，可通过 /admin_change_fudu_probability 指令更改
@@ -73,16 +72,11 @@ let chaos_probability = 0; //qqBot小夜抽风几率，随机抽风舔狗，单�
 const req_fuliji_list = ["福利姬", "买家秀"]; //福利姬指令列表
 const req_ECY_list = ["来点二次元", "二次元"]; //二次元图指令列表
 const req_no_trap_list = ["今日不带套", "今日不戴套", "今天不带套", "今天不戴套"]; //今日不带套指令列表
-let black_list_words; //教学系统敏感词池
-let qq_admin_list; //qqBot小夜的管理员列表
 const qqimg_to_web = 0; //qq侧接收到的图片保存与转发开关，虽然经常可以收到一些好康的图，但是非常占硬盘空间
 const max_mine_count = 3; //最大共存地雷数
 
 //杂项配置
-const blive_room_id = "49148"; //哔哩哔哩直播间id
 let cos_total_count = 50; //初始化随机cos上限，50个应该比较保守，使用随机cos功能后会自动更新为最新值
-
-
 
 /*
  *
@@ -111,14 +105,25 @@ const fs = require("fs");
 const path = require("path");
 const jieba = require("nodejieba"); //中文分词器
 jieba.load({
-  dict: path.join(`${process.cwd()}`,"config","jieba.dict.utf8"),
-  hmmDict: path.join(`${process.cwd()}`,"config","hmm_model.utf8"),
-  userDict: path.join(`${process.cwd()}`,"config","userDict.txt"), //加载自定义分词库
-  idfDict: path.join(`${process.cwd()}`,"config","idf.utf8"),
-  stopWordDict: path.join(`${process.cwd()}`,"config","stopWordDict.txt"), //加载分词库黑名单
+  dict: path.join(`${process.cwd()}`, "config", "jieba.dict.utf8"),
+  hmmDict: path.join(`${process.cwd()}`, "config", "hmm_model.utf8"),
+  userDict: path.join(`${process.cwd()}`, "config", "userDict.txt"), //加载自定义分词库
+  idfDict: path.join(`${process.cwd()}`, "config", "idf.utf8"),
+  stopWordDict: path.join(`${process.cwd()}`, "config", "stopWordDict.txt"), //加载分词库黑名单
 });
 
-console.log(process.cwd())
+//日志染色颜色配置
+colors.setTheme({
+  alert: "inverse",
+  random: "random",
+  on: "magenta",
+  off: "green",
+  warn: "yellow",
+  error: "red",
+  log: "blue",
+});
+
+console.log(`当前工作目录：${process.cwd()}`.log);
 
 const AipSpeech = require("baidu-aip-sdk").speech; //百度语音sdk
 const crypto = require("crypto"); //编码库，用于sha1生成文件名
@@ -139,11 +144,17 @@ process.on("unhandledRejection", (err) => {
   console.log(`未捕获的promise异常：${err}`.error);
 });
 
+//固定变量
+let onlineusers = 0;
+let Tiankey, sumtkey, baidu_app_id, baidu_api_key, baidu_secret_key;
+var boom_timer; //60s计时器
+let last_danmu_timeline, bot_qq, black_list_words, qq_admin_list, blive_room_id;
+
 //正则
 const rename_reg = new RegExp("^/rename [\u4e00-\u9fa5a-z0-9]{1,10}$"); //允许1-10长度的数英汉昵称
 const bv2av_reg = new RegExp("^[a-zA-Z0-9]{10,12}$"); //匹配bv号
 const isImage_reg = new RegExp("\\[CQ:image,file="); //匹配qqBot图片
-const xiaoye_ated = new RegExp(`\\[CQ:at,qq=${self_qq}\\]`); //匹配小夜被@
+const xiaoye_ated = new RegExp(`\\[CQ:at,qq=${bot_qq}\\]`); //匹配小夜被@
 const change_reply_probability_reg = new RegExp("^/admin_change_reply_probability [0-9]*"); //匹配修改qqBot小夜回复率
 const change_fudu_probability_reg = new RegExp("^/admin_change_fudu_probability [0-9]*"); //匹配修改qqBot小夜复读率
 const img_url_reg = new RegExp("https(.*term=3)"); //匹配图片地址
@@ -164,13 +175,7 @@ const is_qq_reg = new RegExp("^[1-9][0-9]{4,9}$"); //校验是否是合法的qq�
 const has_qq_reg = new RegExp("\\[CQ:at,qq=(.*)\\]"); //匹配是否有@
 const admin_reg = new RegExp("\\/admin (.*)"); //匹配管理员指令
 const setu_reg = new RegExp(".*图.*来.*|.*来.*图.*"); //匹配色图来指令
-const i_have_a_friend_reg = new RegExp("我有一个朋友说.*"); //匹配我有个朋友指令
-
-//固定变量
-let onlineusers = 0;
-let Tiankey, sumtkey, baidu_app_id, baidu_api_key, baidu_secret_key;
-let last_danmu_timeline;
-var boom_timer; //60s计时器
+const i_have_a_friend_reg = new RegExp("我有一个朋友说.*|我有个朋友说.*"); //匹配我有个朋友指令
 
 //声明TTS调用接口
 let SpeechClient;
@@ -183,54 +188,45 @@ ReadConfig()
     baidu_app_id = resolve.baidu_app_id; //百度应用id
     baidu_api_key = resolve.baidu_api_key; //百度接口key
     baidu_secret_key = resolve.baidu_secret_key; //百度接口密钥
-    SpeechClient = new AipSpeech(baidu_app_id, baidu_api_key, baidu_secret_key); //建立TTS调用接口
-    black_list_words = resolve.black_list_words; //教学系统的黑名单
+    blive_room_id = resolve.blive_room_id; //哔哩哔哩直播间id
+    bot_qq = resolve.bot_qq; //qqBot使用的qq帐号
     qq_admin_list = resolve.qq_admin_list; //qqBot小夜的管理员列表
+    black_list_words = resolve.black_list_words; //教学系统的黑名单
+    SpeechClient = new AipSpeech(baidu_app_id, baidu_api_key, baidu_secret_key); //建立TTS调用接口
+
+    console.log(version.alert);
+
+    if (chat_swich) {
+      console.log("系统配置：web端自动聊天开启".on);
+    } else {
+      console.log("系统配置：web端自动聊天关闭".off);
+    }
+
+    if (news_swich) {
+      console.log("系统配置：web端首屏新闻开启".on);
+    } else {
+      console.log("系统配置：web端首屏新闻关闭".off);
+    }
+
+    if (conn_go_cqhttp) {
+      console.log(`系统配置：qqBot小夜开启，使用QQ帐号 ${bot_qq}，请确认 plugins/go-cqhttp 文件夹内的 config.yml 是否配置正确并启动go-cqhttp`.on);
+    } else {
+      console.log("系统配置：qqBot小夜关闭".off);
+    }
+
+    if (Now_On_Live) {
+      console.log(`系统配置：小夜直播对线开启，请确认哔哩哔哩直播间id是否为 ${blive_room_id}`.on);
+    } else {
+      console.log("系统配置：小夜直播对线关闭".off);
+    }
+
+    http.listen(80, () => {
+      console.log(`${Curentyyyymmdd()}${CurentTime()} 系统启动完毕，访问 127.0.0.1 即可进入web端`.alert);
+    });
   })
   .catch((reject) => {
     console.log(`载入api接口密钥文件错误，错误信息：${reject}`.error);
   });
-
-//debug颜色配置
-colors.setTheme({
-  ver: "inverse",
-  random: "random",
-  on: "magenta",
-  off: "green",
-  warn: "yellow",
-  error: "red",
-  log: "blue",
-});
-
-console.log(version.ver);
-
-if (chat_swich) {
-  console.log("系统配置：web端自动聊天开启".on);
-} else {
-  console.log("系统配置：web端自动聊天关闭".off);
-}
-
-if (news_swich) {
-  console.log("系统配置：web端首屏新闻开启".on);
-} else {
-  console.log("系统配置：web端首屏新闻关闭".off);
-}
-
-if (conn_go_cqhttp) {
-  console.log(`系统配置：qqBot小夜开启，请确认 plugins/go-cqhttp 文件夹内的 config.yml 是否配置正确并启动go-cqhttp`.on);
-} else {
-  console.log("系统配置：qqBot小夜关闭".off);
-}
-
-if (Now_On_Live) {
-  console.log(`系统配置：小夜直播对线开启，请确认哔哩哔哩直播间id是否为 ${blive_room_id}`.on);
-} else {
-  console.log("系统配置：小夜直播对线关闭".off);
-}
-
-http.listen(80, () => {
-  console.log(`${Curentyyyymmdd()}${CurentTime()} 系统启动，访问 127.0.0.1 即可使用`.log);
-});
 
 /*
  *
@@ -291,6 +287,13 @@ io.on("connection", (socket) => {
         })
         .catch((reject) => {
           console.log(`随机昵称错误：${reject}`.error);
+          db.run(`INSERT INTO users VALUES('匿名', '${CID}', '2', '${Curentyyyymmdd()}${CurentTime()}')`);
+          socket.username = "匿名";
+          io.emit("system message", `@新用户 ${CID} 已连接。现在你的昵称是 匿名 噢，请前往 更多-设置 来更改昵称`);
+          socket.emit("chat message", {
+            CID: "0",
+            msg: help,
+          });
         });
     });
 
@@ -1138,8 +1141,8 @@ if (conn_go_cqhttp) {
                   let holly_hand_grenade = Math.floor(Math.random() * 1000); //丢一个骰子，判断手雷是否变成神圣手雷
                   let success_flag = Math.floor(Math.random() * 100); //丢一个骰子，判断手雷是否成功丢出
                   let boom_time = Math.floor(Math.random() * 60 * 2); //造成伤害时间
-                  if (holly_hand_grenade < 1) {
-                    //1‰几率变成神圣手雷
+                  if (holly_hand_grenade < 10) {
+                    //运营方暗调了出率，10‰几率变成神圣手雷
                     request(`http://127.0.0.1:5700/set_group_whole_ban?group_id=${req.body.group_id}&enable=1`, function (error, _response, _body) {
                       if (!error) {
                         console.log(`触发了神圣手雷，群 ${req.body.group_id} 被全体禁言`.error);
@@ -1264,7 +1267,7 @@ if (conn_go_cqhttp) {
                 //希望的花
                 if (hope_flower_reg.test(req.body.message)) {
                   let who;
-                  let boom_time = Math.floor(Math.random() * 60 * 9) + 60; //造成60-300伤害时间
+                  let boom_time = Math.floor(Math.random() * 30); //造成0-30伤害时间
                   if (req.body.message === "希望的花") {
                     console.log(`群 ${req.body.group_id} 的群员 ${req.body.user_id} 朝自己丢出一朵希望的花`.log);
                     res.send({ reply: `团长，你在做什么啊！团长！希望的花，不要乱丢啊啊啊啊` });
@@ -1292,7 +1295,7 @@ if (conn_go_cqhttp) {
                       if (!error) {
                         console.log(`群 ${req.body.group_id} 的 群员 ${req.body.user_id} 救活了 ${who}`.log);
                         res.send({
-                          reply: `团长，团长你在做什么啊团长，团长！为什么要救他啊，哼，呃，啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊！！！团长救活了[CQ:at,qq=${who}]，但自己被炸成重伤，休养生息${boom_time}秒！不要停下来啊！`,
+                          reply: `团长，团长你在做什么啊团长，团长！为什么要救他啊，哼，呃，啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊！！！团长救下了[CQ:at,qq=${who}]，但自己被炸飞了，休养生息${boom_time}秒！不要停下来啊！`,
                         });
                       } else {
                         console.log("请求127.0.0.1:5700/set_group_whole_ban错误：", error);
@@ -1646,10 +1649,10 @@ if (conn_go_cqhttp) {
                 //丢一个骰子，按reply_probability几率回复
                 let reply_flag = Math.floor(Math.random() * 100);
                 //如果被@了，那么回复几率上升80%
-                let at_replaced_msg = req.body.message; //要把[CQ:at,qq=${self_qq}] 去除掉，否则聊天核心会乱成一锅粥
+                let at_replaced_msg = req.body.message; //要把[CQ:at,qq=${bot_qq}] 去除掉，否则聊天核心会乱成一锅粥
                 if (xiaoye_ated.test(req.body.message)) {
                   reply_flag -= 80;
-                  at_replaced_msg = req.body.message.replace(`[CQ:at,qq=${self_qq}]`, "").trim(); //去除@小夜
+                  at_replaced_msg = req.body.message.replace(`[CQ:at,qq=${bot_qq}]`, "").trim(); //去除@小夜
                 }
                 //骰子命中，那就让小夜来自动回复
                 if (reply_flag < reply_probability) {
@@ -2314,7 +2317,8 @@ function PrprDoge() {
 //读取配置文件 config.json
 function ReadConfig() {
   return new Promise((resolve, reject) => {
-    fs.readFile(path.join(`${process.cwd()}`,"config","config.json"), "utf-8", function (err, data) {
+    console.log(`开始读取配置`.log);
+    fs.readFile(path.join(`${process.cwd()}`, "config", "config.json"), "utf-8", function (err, data) {
       if (!err) {
         resolve(JSON.parse(data));
       } else {
@@ -2502,6 +2506,12 @@ function GetLaststDanmu() {
     request(`https://api.live.bilibili.com/xlive/web-room/v1/dM/gethistory?roomid=${blive_room_id}`, (err, response, body) => {
       if (!err) {
         body = JSON.parse(body); //居然返回的是字符串而不是json
+        try {
+          body.data.room[0].text;
+        } catch (err) {
+          console.log(`直播间刚开，还没有弹幕`.error);
+          reject("直播间刚开，还没有弹幕", err, response);
+        }
         resolve({ text: body.data.room[body.data.room.length - 1].text, timeline: body.data.room[body.data.room.length - 1].timeline });
       } else {
         reject(err, response);
@@ -2590,4 +2600,5 @@ function RainbowPi() {
   });
 }
 
-//中二病でも恋がしたい！
+/*風は予告なく吹く
+我跟你讲，CTRL + K0 是比 ALT + SHIFT + F 还爽的快捷键*/
