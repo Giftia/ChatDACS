@@ -42,6 +42,13 @@ ChatDACS：一个无需服务器，可私有化部署、可独立运行于内网
 
 */
 
+// 中文路径检查
+const _cn_reg = new RegExp("[\u4e00-\u9fa5]");
+if(_cn_reg.test(`${process.cwd()}`)){
+	console.log("存在中文路劲，请检查！");
+	while(1);
+}
+
 //系统配置和开关，根据你的需要改动
 const version = "ChatDACS 3.0.3-Dev"; //版本号，会显示在浏览器tab与标题栏
 const chat_swich = 1; //web端自动聊天开关，需数据库中配置聊天表，自带的数据库已经配置好小夜嘴臭语录，开箱即用
