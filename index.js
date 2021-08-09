@@ -52,7 +52,7 @@ if (_cn_reg.test(`${process.cwd()}`)) {
 }
 
 //系统配置和开关，以及固定变量
-const version = "ChatDACS 3.0.6-Dev"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS 3.0.7-Dev"; //版本号，会显示在浏览器tab与标题栏
 const html = "/static/index.html"; //前端页面路径，old.html为旧版前端
 var boom_timer; //60s计时器
 let onlineusers = 0, //预定义
@@ -87,12 +87,12 @@ const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const thanks =
   "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、还有我的朋友们，以及倾心分享知识的各位";
-const updatelog = `<h1>3.0.6-Dev<br/>集成自动化构建</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议不要用噢；</li></ul>`;
+const updatelog = `<h1>3.0.7-Dev<br/>修复群欢迎和戳一戳不受群开关控制</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议不要用噢；</li></ul>`;
 
-/*
+/*好了！以上就是系统的基本配置，如果没有必要，请不要再往下继续编辑了。请保存本文件。祝使用愉快！
  *
- *好了！以上就是系统的基本配置，如果没有必要，请不要再往下继续编辑了。请保存本文件。祝使用愉快！
  *
+ *下面开始就是核心代码咯，小心误操作噢
  */
 
 //模块依赖和底层配置
@@ -488,1039 +488,1035 @@ io.on("connection", (socket) => {
 //qqBot小夜核心代码，对接go-cqhttp
 function start_qqbot() {
   app.post("/bot", (req, res) => {
-    if (req.body.message) {
-      let notify;
-      switch (req.body.message_type) {
-        case "private":
-          notify = `qqBot小夜收到 ${req.body.user_id} (${req.body.sender.nickname}) 发来的消息：${req.body.message}`;
-          break;
-        case "group":
-          notify = `qqBot小夜收到群 ${req.body.group_id} 的 ${req.body.user_id} (${req.body.sender.nickname}) 发来的消息：${req.body.message}`;
-          break;
-        default:
-          res.send();
-          return 0;
-      }
-      console.log(notify);
-      io.emit("system message", `@${notify}`);
-
-      //转发图片到web端，按需启用
-      if (qqimg_to_web) {
-        if (isImage_reg.test(req.body.message)) {
-          let url = img_url_reg.exec(req.body.message);
-          SaveQQimg(url)
-            .then((resolve) => {
-              io.emit("qqpic message", resolve);
-            })
-            .catch((reject) => {
-              console.log(reject.error);
-            });
-          res.send();
-        }
-      }
-
-      //转发视频到web端
-      if (isVideo_reg.test(req.body.message)) {
-        let url = video_url_reg.exec(req.body.message)[0];
-        io.emit("qqvideo message", { file: url, filename: "qq视频" });
+    let notify;
+    switch (req.body.sub_type) {
+      case "friend":
+      case "group":
+        notify = `qqBot小夜收到好友 ${req.body.user_id} (${req.body.sender.nickname}) 发来的消息：${req.body.message}`;
+        break;
+      case "normal":
+        notify = `qqBot小夜收到群 ${req.body.group_id} 的 ${req.body.user_id} (${req.body.sender.nickname}) 发来的消息：${req.body.message}`;
+        break;
+      case "approve":
+        console.log(`${req.body.user_id} 加入了群 ${req.body.group_id}，小夜欢迎了ta`.log);
+        break;
+      case "poke":
+        console.log(`${req.body.user_id} 戳了一下 ${req.body.target_id}`.log);
+        break;
+      default:
         res.send();
         return 0;
-      }
+    }
+    console.log(notify);
+    io.emit("system message", `@${notify}`);
 
-      //群服务开关判断
-      if (req.body.message_type === "group") {
-        //服务启用开关
-        if (req.body.message === "张菊") {
-          //查询请求者是否是管理员，只有管理员才可以让小夜张菊，该操作优先度最高
-          request(
-            `http://127.0.0.1:5700/get_group_member_info?group_id=${req.body.group_id}&user_id=${req.body.user_id}`,
-            function (_error, _response, body) {
-              body = JSON.parse(body);
-              if (body.data.role === "owner" || body.data.role === "admin") {
-                console.log(`群 ${req.body.group_id} 启用了小夜服务`.log);
-                db.run(`UPDATE qq_group SET talk_enabled = '1' WHERE group_id ='${req.body.group_id}'`);
-                res.send({ reply: "小夜的菊花被管理员张开了，小夜在本群的所有服务已经启用，要停用请发 闭菊" });
-                return 0;
-                //不是管理，再看看是不是qqBot管理员
-              } else {
-                for (let i in qq_admin_list) {
-                  if (req.body.user_id == qq_admin_list[i]) {
-                    console.log(`群 ${req.body.group_id} 启用了小夜服务`.log);
-                    db.run(`UPDATE qq_group SET talk_enabled = '1' WHERE group_id ='${req.body.group_id}'`);
-                    res.send({ reply: "小夜的菊花被主人张开了，小夜在本群的所有服务已经启用，要停用请发 闭菊" });
-                    return 0;
-                  }
+    //转发图片到web端，按需启用
+    if (qqimg_to_web) {
+      if (isImage_reg.test(req.body.message)) {
+        let url = img_url_reg.exec(req.body.message);
+        SaveQQimg(url)
+          .then((resolve) => {
+            io.emit("qqpic message", resolve);
+          })
+          .catch((reject) => {
+            console.log(reject.error);
+          });
+        res.send();
+      }
+    }
+
+    //转发视频到web端
+    if (isVideo_reg.test(req.body.message)) {
+      let url = video_url_reg.exec(req.body.message)[0];
+      io.emit("qqvideo message", { file: url, filename: "qq视频" });
+      res.send();
+      return 0;
+    }
+
+    //群服务开关判断
+    if (req.body.message_type === "group" || req.body.notice_type === "group_increase" || req.body.sub_type === "poke") {
+      //服务启用开关
+      if (req.body.message === "张菊") {
+        //查询请求者是否是管理员，只有管理员才可以让小夜张菊，该操作优先度最高
+        request(
+          `http://127.0.0.1:5700/get_group_member_info?group_id=${req.body.group_id}&user_id=${req.body.user_id}`,
+          function (_error, _response, body) {
+            body = JSON.parse(body);
+            if (body.data.role === "owner" || body.data.role === "admin") {
+              console.log(`群 ${req.body.group_id} 启用了小夜服务`.log);
+              db.run(`UPDATE qq_group SET talk_enabled = '1' WHERE group_id ='${req.body.group_id}'`);
+              res.send({ reply: "小夜的菊花被管理员张开了，小夜在本群的所有服务已经启用，要停用请发 闭菊" });
+              return 0;
+              //不是管理，再看看是不是qqBot管理员
+            } else {
+              for (let i in qq_admin_list) {
+                if (req.body.user_id == qq_admin_list[i]) {
+                  console.log(`群 ${req.body.group_id} 启用了小夜服务`.log);
+                  db.run(`UPDATE qq_group SET talk_enabled = '1' WHERE group_id ='${req.body.group_id}'`);
+                  res.send({ reply: "小夜的菊花被主人张开了，小夜在本群的所有服务已经启用，要停用请发 闭菊" });
+                  return 0;
                 }
-                //看来真不是管理员呢
-                res.send({ reply: "你不是群管理呢，小夜不张，张菊需要让管理员来帮忙张噢" });
+              }
+              //看来真不是管理员呢
+              res.send({ reply: "你不是群管理呢，小夜不张，张菊需要让管理员来帮忙张噢" });
+              return 0;
+            }
+          }
+        );
+      }
+      //在收到群消息的时候搜索群是否存在于qq_group表，判断聊天开关
+      else {
+        db.all(`SELECT * FROM qq_group WHERE group_id = '${req.body.group_id}'`, (err, sql) => {
+          if (!err && sql[0]) {
+            //群存在于qq_group表则判断聊天开关 talk_enabled，闭嘴了就无视掉所有消息
+            if (sql[0].talk_enabled === 0) {
+              console.log(`群 ${req.body.group_id} 服务已停用，无视群所有消息`.error);
+              res.send();
+              return 0;
+            } else {
+              //服务启用了，允许进入后续的指令系统
+
+              /*                                                                    群指令系统                                                                  */
+
+              //地雷爆炸判断，先判断这条消息是否引爆，再从数据库取来群地雷数组，引爆后删除地雷，原先的地雷是用随机数生成被炸前最大回复作为引信，现在换一种思路，用更简单的随机数引爆
+              let boom_flag = Math.floor(Math.random() * 100); //踩中flag
+              //如果判定踩中，检查该群是否有雷
+              if (boom_flag < 10) {
+                db.all(`SELECT * FROM mine WHERE group_id = '${req.body.group_id}'`, (err, sql) => {
+                  if (!err && sql[0]) {
+                    //有则判断是否哑雷
+                    let unboom = Math.floor(Math.random() * 100); //是否哑雷
+                    if (unboom < 30) {
+                      //是哑雷，直接删除地雷
+                      console.log(`${sql[0].placed_qq} 在群 ${sql[0].group_id} 埋的地雷被踩中，但这是一颗哑雷`.log);
+                      db.run(`DELETE FROM mine WHERE mine_id = '${sql[0].mine_id}' `);
+                      res.send({
+                        reply: `[CQ:at,qq=${req.body.user_id}]恭喜你躲过一劫，[CQ:at,qq=${sql[0].placed_qq}]埋的地雷掺了沙子，是哑雷，炸了，但没有完全炸`,
+                      });
+                      //成功引爆并删除地雷
+                    } else {
+                      let boom_time = Math.floor(Math.random() * 60 * 2); //造成伤害时间
+                      console.log(`${sql[0].placed_qq} 在群 ${sql[0].group_id} 埋的地雷被引爆，雷已经被删除`.log);
+                      db.run(`DELETE FROM mine WHERE mine_id = '${sql[0].mine_id}' `);
+                      res.send({
+                        reply: `[CQ:at,qq=${req.body.user_id}]恭喜你，被[CQ:at,qq=${sql[0].placed_qq}]所埋地雷炸伤，休养生息${boom_time}秒！`,
+                        ban: 1,
+                        ban_duration: boom_time,
+                      });
+                    }
+                  }
+                });
+                //return 0; //如果return 0的话不会进入后续操作，只会炸，如果注释掉会出现和指令同时响应的情况
+              }
+
+              //服务停用开关
+              if (req.body.message === "闭菊") {
+                console.log(`群 ${req.body.group_id} 停止了小夜服务`.error);
+                db.run(`UPDATE qq_group SET talk_enabled = '0' WHERE group_id ='${req.body.group_id}'`);
+                res.send({ reply: "小夜的菊花闭上了，小夜在本群的所有服务已经停用，取消请发 张菊" });
                 return 0;
               }
-            }
-          );
-        }
-        //在收到群消息的时候搜索群是否存在于qq_group表，判断聊天开关
-        else {
-          db.all(`SELECT * FROM qq_group WHERE group_id = '${req.body.group_id}'`, (err, sql) => {
-            if (!err && sql[0]) {
-              //群存在于qq_group表则判断聊天开关 talk_enabled，闭嘴了就无视掉所有消息
-              if (sql[0].talk_enabled === 0) {
-                console.log(`群 ${req.body.group_id} 服务已停用，无视群所有消息`.error);
-                res.send();
+
+              //测试指令
+              if (req.body.message === "/ping") {
+                let runtime = process.hrtime();
+                console.log("Pong!".log);
+                runtime = process.hrtime(runtime)[1] / 1000 / 1000;
+                res.send({ reply: `Pong! ${runtime}ms` });
                 return 0;
-              } else {
-                //服务启用了，允许进入后续的指令系统
+              }
 
-                /*                                                                    群指令系统                                                                  */
+              //教学系统，抄板于虹原翼版小夜v3
+              if (teach_reg.test(req.body.message)) {
+                let msg = req.body.message;
+                msg = msg.replace(/'/g, "[非法字符]"); //防爆
+                msg = msg.replace(/</g, "[非法字符]"); //防爆
+                msg = msg.replace(/>/g, "[非法字符]"); //防爆
+                msg = msg.substr(2).split("答：");
+                if (msg.length !== 2) {
+                  console.log(`教学指令：分割有误，退出教学`.error);
+                  res.send({ reply: "你教的姿势不对噢qwq" });
+                  return 0;
+                }
+                let ask = msg[0].trim(),
+                  ans = msg[1].trim();
+                if (ask == "" || ans == "") {
+                  console.log(`问/答为空，退出教学`.error);
+                  res.send({ reply: "你教的姿势不对噢qwq" });
+                  return 0;
+                }
+                if (ask.indexOf(/\r?\n/g) !== -1) {
+                  console.log(`教学指令：关键词换行了，退出教学`.error);
+                  res.send({ reply: "关键词不能换行啦qwq" });
+                  return 0;
+                }
+                console.log(`${req.body.user_id}(${req.body.sender.nickname}) 想要教给小夜：问：${ask} 答：${ans}，现在开始检测合法性`.log);
+                for (let i in black_list_words) {
+                  if (
+                    ask.toLowerCase().indexOf(black_list_words[i].toLowerCase()) !== -1 ||
+                    ans.toLowerCase().indexOf(black_list_words[i].toLowerCase()) !== -1
+                  ) {
+                    console.log(`教学指令：检测到不允许的词：${black_list_words[i]}，退出教学`.error);
+                    res.send({ reply: `你教的内容里有主人不允许小夜学习的词：${black_list_words[i]} qwq` });
+                    return 0;
+                  }
+                }
+                if (Buffer.from(ask).length < 4) {
+                  //关键词最低长度：4个英文或2个汉字
+                  console.log(`教学指令：关键词太短，退出教学`.error);
+                  res.send({ reply: "关键词太短了啦qwq，至少要4个字节啦" });
+                  return 0;
+                }
+                if (ask.length > 350 || ans.length > 350) {
+                  //图片长度差不多是350左右
+                  console.log(`教学指令：教的太长了，退出教学`.error);
+                  res.send({ reply: "你教的内容太长了，小夜要坏掉了qwq，不要呀" });
+                  return 0;
+                }
+                //到这里都没有出错的话就视为没有问题，可以让小夜学了
+                console.log(`教学指令：没有检测到问题，可以学习`.log);
+                db.run(`INSERT INTO chat VALUES('${ask}', '${ans}')`);
+                console.log(`教学指令：学习成功`.log);
+                res.send({ reply: `哇！小夜学会啦！对我说：${ask} 试试吧，小夜有可能会回复 ${ans} 噢` });
+                return 0;
+              }
 
-                //地雷爆炸判断，先判断这条消息是否引爆，再从数据库取来群地雷数组，引爆后删除地雷，原先的地雷是用随机数生成被炸前最大回复作为引信，现在换一种思路，用更简单的随机数引爆
-                let boom_flag = Math.floor(Math.random() * 100); //踩中flag
-                //如果判定踩中，检查该群是否有雷
-                if (boom_flag < 10) {
-                  db.all(`SELECT * FROM mine WHERE group_id = '${req.body.group_id}'`, (err, sql) => {
-                    if (!err && sql[0]) {
-                      //有则判断是否哑雷
-                      let unboom = Math.floor(Math.random() * 100); //是否哑雷
-                      if (unboom < 30) {
-                        //是哑雷，直接删除地雷
-                        console.log(`${sql[0].placed_qq} 在群 ${sql[0].group_id} 埋的地雷被踩中，但这是一颗哑雷`.log);
-                        db.run(`DELETE FROM mine WHERE mine_id = '${sql[0].mine_id}' `);
-                        res.send({
-                          reply: `[CQ:at,qq=${req.body.user_id}]恭喜你躲过一劫，[CQ:at,qq=${sql[0].placed_qq}]埋的地雷掺了沙子，是哑雷，炸了，但没有完全炸`,
-                        });
-                        //成功引爆并删除地雷
-                      } else {
-                        let boom_time = Math.floor(Math.random() * 60 * 2); //造成伤害时间
-                        console.log(`${sql[0].placed_qq} 在群 ${sql[0].group_id} 埋的地雷被引爆，雷已经被删除`.log);
-                        db.run(`DELETE FROM mine WHERE mine_id = '${sql[0].mine_id}' `);
-                        res.send({
-                          reply: `[CQ:at,qq=${req.body.user_id}]恭喜你，被[CQ:at,qq=${sql[0].placed_qq}]所埋地雷炸伤，休养生息${boom_time}秒！`,
-                          ban: 1,
-                          ban_duration: boom_time,
-                        });
-                      }
-                    }
+              //balabala教学，对于一些难以回复的对话，小夜的词库中没有搜索到回复的时候，小夜会随机回复这些回复
+              if (teach_balabala_reg.test(req.body.message)) {
+                let msg = req.body.message;
+                msg = msg.replace(/'/g, "[非法字符]"); //防爆
+                msg = msg.replace(/</g, "[非法字符]"); //防爆
+                msg = msg.replace(/>/g, "[非法字符]"); //防爆
+                msg = msg.replace("/说不出话 ", "");
+                console.log(`${req.body.user_id}(${req.body.sender.nickname}) 想要教给小夜balabala：${msg}，现在开始检测合法性`.log);
+                for (let i in black_list_words) {
+                  if (
+                    msg.toLowerCase().indexOf(black_list_words[i].toLowerCase()) !== -1 ||
+                    msg.toLowerCase().indexOf(black_list_words[i].toLowerCase()) !== -1
+                  ) {
+                    console.log(`balabala教学：检测到不允许的词：${black_list_words[i]}，退出教学`.error);
+                    res.send({ reply: "你教的内容里有主人不允许小夜学习的词qwq" });
+                    return 0;
+                  }
+                }
+                console.log(`balabala教学：没有检测到问题，可以学习`.log);
+                db.run(`INSERT INTO balabala VALUES('${msg}')`);
+                console.log(`balabala教学：学习成功`.log);
+                res.send({ reply: `哇！小夜学会啦！小夜可能在说不出话的时候说 ${msg} 噢` });
+                return 0;
+              }
+
+              //色图
+              if (setu_reg.test(req.body.message)) {
+                RandomCos()
+                  .then((resolve) => {
+                    let setu_file = `http://127.0.0.1/${resolve.replace(/\//g, "\\")}`;
+                    res.send({
+                      reply: `[CQ:image,file=${setu_file},url=${setu_file}]`,
+                    });
+                  })
+                  .catch((reject) => {
+                    console.log(`RandomCos(): rejected, and err:${reject}`.error);
+                    res.send({ reply: `你要的色图发送失败啦：${reject}` });
                   });
-                  //return 0; //如果return 0的话不会进入后续操作，只会炸，如果注释掉会出现和指令同时响应的情况
-                }
+                return 0;
+              }
 
-                //服务停用开关
-                if (req.body.message === "闭菊") {
-                  console.log(`群 ${req.body.group_id} 停止了小夜服务`.error);
-                  db.run(`UPDATE qq_group SET talk_enabled = '0' WHERE group_id ='${req.body.group_id}'`);
-                  res.send({ reply: "小夜的菊花闭上了，小夜在本群的所有服务已经停用，取消请发 张菊" });
-                  return 0;
-                }
-
-                //测试指令
-                if (req.body.message === "/ping") {
-                  let runtime = process.hrtime();
-                  console.log("Pong!".log);
-                  runtime = process.hrtime(runtime)[1] / 1000 / 1000;
-                  res.send({ reply: `Pong! ${runtime}ms` });
-                  return 0;
-                }
-
-                //教学系统，抄板于虹原翼版小夜v3
-                if (teach_reg.test(req.body.message)) {
-                  let msg = req.body.message;
-                  msg = msg.replace(/'/g, "[非法字符]"); //防爆
-                  msg = msg.replace(/</g, "[非法字符]"); //防爆
-                  msg = msg.replace(/>/g, "[非法字符]"); //防爆
-                  msg = msg.substr(2).split("答：");
-                  if (msg.length !== 2) {
-                    console.log(`教学指令：分割有误，退出教学`.error);
-                    res.send({ reply: "你教的姿势不对噢qwq" });
-                    return 0;
-                  }
-                  let ask = msg[0].trim(),
-                    ans = msg[1].trim();
-                  if (ask == "" || ans == "") {
-                    console.log(`问/答为空，退出教学`.error);
-                    res.send({ reply: "你教的姿势不对噢qwq" });
-                    return 0;
-                  }
-                  if (ask.indexOf(/\r?\n/g) !== -1) {
-                    console.log(`教学指令：关键词换行了，退出教学`.error);
-                    res.send({ reply: "关键词不能换行啦qwq" });
-                    return 0;
-                  }
-                  console.log(`${req.body.user_id}(${req.body.sender.nickname}) 想要教给小夜：问：${ask} 答：${ans}，现在开始检测合法性`.log);
-                  for (let i in black_list_words) {
-                    if (
-                      ask.toLowerCase().indexOf(black_list_words[i].toLowerCase()) !== -1 ||
-                      ans.toLowerCase().indexOf(black_list_words[i].toLowerCase()) !== -1
-                    ) {
-                      console.log(`教学指令：检测到不允许的词：${black_list_words[i]}，退出教学`.error);
-                      res.send({ reply: `你教的内容里有主人不允许小夜学习的词：${black_list_words[i]} qwq` });
-                      return 0;
-                    }
-                  }
-                  if (Buffer.from(ask).length < 4) {
-                    //关键词最低长度：4个英文或2个汉字
-                    console.log(`教学指令：关键词太短，退出教学`.error);
-                    res.send({ reply: "关键词太短了啦qwq，至少要4个字节啦" });
-                    return 0;
-                  }
-                  if (ask.length > 350 || ans.length > 350) {
-                    //图片长度差不多是350左右
-                    console.log(`教学指令：教的太长了，退出教学`.error);
-                    res.send({ reply: "你教的内容太长了，小夜要坏掉了qwq，不要呀" });
-                    return 0;
-                  }
-                  //到这里都没有出错的话就视为没有问题，可以让小夜学了
-                  console.log(`教学指令：没有检测到问题，可以学习`.log);
-                  db.run(`INSERT INTO chat VALUES('${ask}', '${ans}')`);
-                  console.log(`教学指令：学习成功`.log);
-                  res.send({ reply: `哇！小夜学会啦！对我说：${ask} 试试吧，小夜有可能会回复 ${ans} 噢` });
-                  return 0;
-                }
-
-                //balabala教学，对于一些难以回复的对话，小夜的词库中没有搜索到回复的时候，小夜会随机回复这些回复
-                if (teach_balabala_reg.test(req.body.message)) {
-                  let msg = req.body.message;
-                  msg = msg.replace(/'/g, "[非法字符]"); //防爆
-                  msg = msg.replace(/</g, "[非法字符]"); //防爆
-                  msg = msg.replace(/>/g, "[非法字符]"); //防爆
-                  msg = msg.replace("/说不出话 ", "");
-                  console.log(`${req.body.user_id}(${req.body.sender.nickname}) 想要教给小夜balabala：${msg}，现在开始检测合法性`.log);
-                  for (let i in black_list_words) {
-                    if (
-                      msg.toLowerCase().indexOf(black_list_words[i].toLowerCase()) !== -1 ||
-                      msg.toLowerCase().indexOf(black_list_words[i].toLowerCase()) !== -1
-                    ) {
-                      console.log(`balabala教学：检测到不允许的词：${black_list_words[i]}，退出教学`.error);
-                      res.send({ reply: "你教的内容里有主人不允许小夜学习的词qwq" });
-                      return 0;
-                    }
-                  }
-                  console.log(`balabala教学：没有检测到问题，可以学习`.log);
-                  db.run(`INSERT INTO balabala VALUES('${msg}')`);
-                  console.log(`balabala教学：学习成功`.log);
-                  res.send({ reply: `哇！小夜学会啦！小夜可能在说不出话的时候说 ${msg} 噢` });
-                  return 0;
-                }
-
-                //色图
-                if (setu_reg.test(req.body.message)) {
-                  RandomCos()
+              //福利姬
+              for (let i in req_fuliji_list) {
+                if (req.body.message === req_fuliji_list[i]) {
+                  RandomTbshow()
                     .then((resolve) => {
-                      let setu_file = `http://127.0.0.1/${resolve.replace(/\//g, "\\")}`;
                       res.send({
-                        reply: `[CQ:image,file=${setu_file},url=${setu_file}]`,
+                        reply: `[CQ:image,file=${resolve},url=${resolve}]`,
                       });
                     })
                     .catch((reject) => {
                       console.log(`RandomCos(): rejected, and err:${reject}`.error);
-                      res.send({ reply: `你要的色图发送失败啦：${reject}` });
+                      res.send({ reply: `你要的福利姬色图发送失败啦：${reject}` });
                     });
                   return 0;
                 }
+              }
 
-                //福利姬
-                for (let i in req_fuliji_list) {
-                  if (req.body.message === req_fuliji_list[i]) {
-                    RandomTbshow()
+              //来点二次元
+              for (let i in req_ECY_list) {
+                if (req.body.message === req_ECY_list[i]) {
+                  RandomECY()
+                    .then((resolve) => {
+                      res.send({
+                        reply: `[CQ:image,file=${resolve},url=${resolve}]`,
+                      });
+                    })
+                    .catch((reject) => {
+                      console.log(`RandomCos(): rejected, and err:${reject}`.error);
+                      res.send({ reply: `你要的二次元色图发送失败啦：${reject}` });
+                    });
+                  return 0;
+                }
+              }
+
+              //舔我
+              if (req.body.message === "/舔我") {
+                PrprDoge()
+                  .then((resolve) => {
+                    console.log(`舔狗舔了一口：${resolve}`.log);
+                    res.send({ reply: resolve });
+                  })
+                  .catch((reject) => {
+                    console.log(`随机舔狗错误：${reject}`.error);
+                  });
+                return 0;
+              }
+
+              //彩虹屁
+              if (req.body.message === "/彩虹屁") {
+                RainbowPi()
+                  .then((resolve) => {
+                    console.log(`放了一个彩虹屁：${resolve}`.log);
+                    res.send({ reply: resolve });
+                  })
+                  .catch((reject) => {
+                    console.log(`彩虹屁错误：${reject}`.error);
+                  });
+                return 0;
+              }
+
+              //吠，直接把文字转化为语音
+              if (yap_reg.test(req.body.message)) {
+                let tex = req.body.message;
+                tex = tex.replace("/吠 ", "");
+                BetterTTS(tex)
+                  .then((resolve) => {
+                    let tts_file = `[CQ:record,file=http://127.0.0.1${resolve.file},url=http://127.0.0.1${resolve.file}]`;
+                    res.send({ reply: tts_file });
+                  })
+                  .catch((reject) => {
+                    console.log(`TTS错误：${reject}`.error);
+                  });
+                return 0;
+              }
+
+              //嘴臭，小夜的回复转化为语音
+              if (come_yap_reg.test(req.body.message)) {
+                let message = req.body.message;
+                message = message.replace("/嘴臭 ", "");
+                console.log(`有人对线说 ${message}，小夜要嘴臭了`.log);
+                io.emit("sysrem message", `@有人对线说 ${message}，小夜要嘴臭了`);
+                ChatProcess(message)
+                  .then((resolve) => {
+                    let reply = resolve;
+                    BetterTTS(reply)
                       .then((resolve) => {
-                        res.send({
-                          reply: `[CQ:image,file=${resolve},url=${resolve}]`,
-                        });
+                        let tts_file = `[CQ:record,file=http://127.0.0.1${resolve.file},url=http://127.0.0.1${resolve.file}]`;
+                        res.send({ reply: tts_file });
                       })
                       .catch((reject) => {
-                        console.log(`RandomCos(): rejected, and err:${reject}`.error);
-                        res.send({ reply: `你要的福利姬色图发送失败啦：${reject}` });
+                        console.log(`TTS错误：${reject}`.error);
                       });
-                    return 0;
-                  }
-                }
-
-                //来点二次元
-                for (let i in req_ECY_list) {
-                  if (req.body.message === req_ECY_list[i]) {
-                    RandomECY()
+                  })
+                  .catch((reject) => {
+                    //如果没有匹配到回复，那就回复一句默认语音
+                    console.log(`${reject}，语音没有回复`.warn);
+                    BetterTTS()
                       .then((resolve) => {
-                        res.send({
-                          reply: `[CQ:image,file=${resolve},url=${resolve}]`,
-                        });
+                        let tts_file = `[CQ:record,file=http://127.0.0.1${resolve.file},url=http://127.0.0.1${resolve.file}]`;
+                        res.send({ reply: tts_file });
                       })
                       .catch((reject) => {
-                        console.log(`RandomCos(): rejected, and err:${reject}`.error);
-                        res.send({ reply: `你要的二次元色图发送失败啦：${reject}` });
+                        console.log(`TTS错误：${reject}`.error);
                       });
-                    return 0;
+                  });
+                return 0;
+              }
+
+              //prpr，来自jjbot的功能
+              if (prpr_reg.test(req.body.message)) {
+                let bodyPart = [
+                  "手掌",
+                  "双脚",
+                  "熊脸",
+                  "脸蛋",
+                  "鼻子",
+                  "小嘴",
+                  "咪咪",
+                  "大雕",
+                  "蛋蛋",
+                  "大× [不忍直视]",
+                  "双眼",
+                  "脖子",
+                  "胸口",
+                  "大腿",
+                  "脚踝",
+                  "那里 >////<",
+                  "腋下",
+                  "耳朵",
+                  "小腿",
+                  "袜子",
+                  "臭脚",
+                ];
+                let msg = req.body.message;
+                let who = req.body.sender.nickname;
+                if (!who) who = "小夜";
+                prpr_who = msg.replace("/prpr ", "");
+                if (!prpr_who || prpr_who === "/prpr") {
+                  prpr_who = prpr_who.replace("/prpr", "");
+                  prpr_who = "自己";
+                }
+                let random_bodyPart = bodyPart[Math.floor(Math.random() * bodyPart.length)];
+                let final = `${who} 舔了舔 ${prpr_who} 的 ${random_bodyPart}，我好兴奋啊！`;
+                console.log(`prpr指令：${final} `.log);
+                res.send({ reply: final });
+                return 0;
+              }
+
+              //今日不带套
+              for (let i in req_no_trap_list) {
+                if (req.body.message === req_no_trap_list[i]) {
+                  let now = new Date();
+                  let year = now.getFullYear();
+                  let month = now.getMonth() + 1;
+                  let day = now.getDate();
+                  if (month > 2) {
+                    year++;
                   }
-                }
-
-                //舔我
-                if (req.body.message === "/舔我") {
-                  PrprDoge()
-                    .then((resolve) => {
-                      console.log(`舔狗舔了一口：${resolve}`.log);
-                      res.send({ reply: resolve });
-                    })
-                    .catch((reject) => {
-                      console.log(`随机舔狗错误：${reject}`.error);
-                    });
-                  return 0;
-                }
-
-                //彩虹屁
-                if (req.body.message === "/彩虹屁") {
-                  RainbowPi()
-                    .then((resolve) => {
-                      console.log(`放了一个彩虹屁：${resolve}`.log);
-                      res.send({ reply: resolve });
-                    })
-                    .catch((reject) => {
-                      console.log(`彩虹屁错误：${reject}`.error);
-                    });
-                  return 0;
-                }
-
-                //吠，直接把文字转化为语音
-                if (yap_reg.test(req.body.message)) {
-                  let tex = req.body.message;
-                  tex = tex.replace("/吠 ", "");
-                  BetterTTS(tex)
-                    .then((resolve) => {
-                      let tts_file = `[CQ:record,file=http://127.0.0.1${resolve.file},url=http://127.0.0.1${resolve.file}]`;
-                      res.send({ reply: tts_file });
-                    })
-                    .catch((reject) => {
-                      console.log(`TTS错误：${reject}`.error);
-                    });
-                  return 0;
-                }
-
-                //嘴臭，小夜的回复转化为语音
-                if (come_yap_reg.test(req.body.message)) {
-                  let message = req.body.message;
-                  message = message.replace("/嘴臭 ", "");
-                  console.log(`有人对线说 ${message}，小夜要嘴臭了`.log);
-                  io.emit("sysrem message", `@有人对线说 ${message}，小夜要嘴臭了`);
-                  ChatProcess(message)
-                    .then((resolve) => {
-                      let reply = resolve;
-                      BetterTTS(reply)
-                        .then((resolve) => {
-                          let tts_file = `[CQ:record,file=http://127.0.0.1${resolve.file},url=http://127.0.0.1${resolve.file}]`;
-                          res.send({ reply: tts_file });
-                        })
-                        .catch((reject) => {
-                          console.log(`TTS错误：${reject}`.error);
-                        });
-                    })
-                    .catch((reject) => {
-                      //如果没有匹配到回复，那就回复一句默认语音
-                      console.log(`${reject}，语音没有回复`.warn);
-                      BetterTTS()
-                        .then((resolve) => {
-                          let tts_file = `[CQ:record,file=http://127.0.0.1${resolve.file},url=http://127.0.0.1${resolve.file}]`;
-                          res.send({ reply: tts_file });
-                        })
-                        .catch((reject) => {
-                          console.log(`TTS错误：${reject}`.error);
-                        });
-                    });
-                  return 0;
-                }
-
-                //prpr，来自jjbot的功能
-                if (prpr_reg.test(req.body.message)) {
-                  let bodyPart = [
-                    "手掌",
-                    "双脚",
-                    "熊脸",
-                    "脸蛋",
-                    "鼻子",
-                    "小嘴",
-                    "咪咪",
-                    "大雕",
-                    "蛋蛋",
-                    "大× [不忍直视]",
-                    "双眼",
-                    "脖子",
-                    "胸口",
-                    "大腿",
-                    "脚踝",
-                    "那里 >////<",
-                    "腋下",
-                    "耳朵",
-                    "小腿",
-                    "袜子",
-                    "臭脚",
-                  ];
-                  let msg = req.body.message;
-                  let who = req.body.sender.nickname;
-                  if (!who) who = "小夜";
-                  prpr_who = msg.replace("/prpr ", "");
-                  if (!prpr_who || prpr_who === "/prpr") {
-                    prpr_who = prpr_who.replace("/prpr", "");
-                    prpr_who = "自己";
-                  }
-                  let random_bodyPart = bodyPart[Math.floor(Math.random() * bodyPart.length)];
-                  let final = `${who} 舔了舔 ${prpr_who} 的 ${random_bodyPart}，我好兴奋啊！`;
-                  console.log(`prpr指令：${final} `.log);
+                  let star_set_name = "魔羯水瓶双鱼牡羊金牛双子巨蟹狮子处女天秤天蝎射手魔羯";
+                  let star_set_days = [20, 19, 21, 21, 21, 22, 23, 23, 23, 23, 22, 22];
+                  let star_set_result = star_set_name.substr(month * 2 - (day < star_set_days[month - 1] ? 2 : 0), 2);
+                  let shenxiao = ["猴", "鸡", "狗", "猪", "鼠", "牛", "虎", "兔", "龙", "蛇", "马", "羊"];
+                  let shenxiao_result = /^\d{4}$/.test(year) ? shenxiao[year % 12] : false;
+                  let final = `小夜温馨提示您：今日不戴套，孩子${star_set_result}座，属${shenxiao_result}，${year + 18}年高考，一本机率约${parseInt(
+                    Math.random() * (99 - 20 + 1) + 20,
+                    10
+                  )}`;
+                  console.log(`今日不带套指令：${final} `.log);
                   res.send({ reply: final });
                   return 0;
                 }
+              }
 
-                //今日不带套
-                for (let i in req_no_trap_list) {
-                  if (req.body.message === req_no_trap_list[i]) {
-                    let now = new Date();
-                    let year = now.getFullYear();
-                    let month = now.getMonth() + 1;
-                    let day = now.getDate();
-                    if (month > 2) {
-                      year++;
-                    }
-                    let star_set_name = "魔羯水瓶双鱼牡羊金牛双子巨蟹狮子处女天秤天蝎射手魔羯";
-                    let star_set_days = [20, 19, 21, 21, 21, 22, 23, 23, 23, 23, 22, 22];
-                    let star_set_result = star_set_name.substr(month * 2 - (day < star_set_days[month - 1] ? 2 : 0), 2);
-                    let shenxiao = ["猴", "鸡", "狗", "猪", "鼠", "牛", "虎", "兔", "龙", "蛇", "马", "羊"];
-                    let shenxiao_result = /^\d{4}$/.test(year) ? shenxiao[year % 12] : false;
-                    let final = `小夜温馨提示您：今日不戴套，孩子${star_set_result}座，属${shenxiao_result}，${year + 18}年高考，一本机率约${parseInt(
-                      Math.random() * (99 - 20 + 1) + 20,
-                      10
-                    )}`;
-                    console.log(`今日不带套指令：${final} `.log);
-                    res.send({ reply: final });
-                    return 0;
+              //avg模板，可以写简单的随机小说
+              if (req.body.message === "/画师算命") {
+                let paintstyle = ["厚涂", "美式", "韩风", "迪士尼风格", "日系赛璐璐", "日系平涂", "国风"];
+                let like = [
+                  "机械",
+                  "大腿",
+                  "美少年",
+                  "美少女",
+                  "奶子",
+                  "兄贵",
+                  "屁股",
+                  "脸蛋",
+                  "大屌",
+                  "给佬",
+                  "幼女",
+                  "JK",
+                  "黑丝",
+                  "胖次",
+                  "白丝",
+                  "小手",
+                  "【不可描述】",
+                ];
+                let andthen = [
+                  "有了一些同好",
+                  "被人骗稿多次",
+                  "找不到工作",
+                  "只能做外包",
+                  "出了很多本子",
+                  "被人骗炮",
+                  "做了自由职业者",
+                  "当了某大项目主美",
+                  "经常被抄袭",
+                  "在某站成名",
+                  "每天混吃等死",
+                ];
+                let buthen = ["被请喝茶", "被人寄刀片", "被举报", "本子卖到爆炸", "被人吐槽", "被人骗炮", "突然爆红", "被人抄袭", "在街角被蜀黍强暴"];
+                let atlast = [
+                  "因为画得不行转而卖艺，竟然变成了偶像",
+                  "做了一辈子社畜",
+                  "名垂青史但是变成了时代眼泪",
+                  "也没有出人头地，转行做了别的行业",
+                  "赚够了钱去了幻想乡",
+                  "因为断连载被愤怒的读者高呼飞出地球",
+                  "舒舒服服退休回老家结婚",
+                  "一直活跃在最前线，活到老画到老",
+                  "成为了魔法少女",
+                ];
+                let who = req.body.sender.nickname;
+                if (!who) who = "小夜";
+                let random_paintstyle = paintstyle[Math.floor(Math.random() * paintstyle.length)];
+                let random_like = like[Math.floor(Math.random() * like.length)];
+                let random_andthen = andthen[Math.floor(Math.random() * andthen.length)];
+                let random_buthen = buthen[Math.floor(Math.random() * buthen.length)];
+                let random_atlast = atlast[Math.floor(Math.random() * atlast.length)];
+                let final = `${who}是一名${random_paintstyle}画师，最喜欢画${random_like}，而且${random_andthen}，然而因为画得太过和谐而${random_buthen}，还因为这件事在微博上有了${(
+                  Math.random() * (1000000 - 1) +
+                  1
+                ).toFixed(0)}个粉丝，做了${(Math.random() * (100 - 1).toFixed(0) + 1).toFixed(0)}年画师，最后${random_atlast}。`;
+                console.log(`画师算命指令：${final} `.log);
+                res.send({ reply: final });
+                return 0;
+              }
+
+              //迫害，p图，这里需要重写复用
+              if (pohai_reg.test(req.body.message)) {
+                let pohai_list = ["唐可可", "上原步梦", "猛男狗", "令和", "鸭鸭"]; //迫害名单
+                let pohai_pic_list = ["coco_echo.jpg", "ayumu_qaq.jpg", "doge.jpg", "nianhao.jpg", "yaya.gif"]; //迫害图片列表
+                let pohai_pic = "coco_echo.jpg"; //迫害图片，如果被迫害人不在迫害名单里，那么默认迫害唐可可
+                let tex_config_list = {
+                  唐可可: ["390", "160", "-0.19", "8"],
+                  上原步梦: ["227", "440", "0", "26"],
+                  猛男狗: ["170", "100", "0", "0"],
+                  令和: ["130", "110", "-0.05", "1"],
+                  鸭鸭: ["30", "30", "0", "2"],
+                }; //迫害文字位置，left、top、rotate、多少字换行
+                let tex_config = tex_config_list.唐可可; //默认迫害文字位置是唐可可的
+                let msg = req.body.message + " "; //结尾加一个空格防爆
+
+                msg = msg.substr(3).split(" ");
+                let pohai_who = msg[1].trim(), //迫害谁
+                  pohai_tex = msg[2].trim(); //迫害文字
+
+                //先搜索被迫害人是否在迫害名单里
+                for (let i in pohai_list) {
+                  if (pohai_who === pohai_list[i]) {
+                    //被迫害人发现
+                    pohai_pic = pohai_pic_list[i];
+                    tex_config = tex_config_list[pohai_who];
+                    console.log(`被迫害人 ${pohai_who} 发现，使用迫害图 ${pohai_pic_list[i]}`.log);
                   }
                 }
 
-                //avg模板，可以写简单的随机小说
-                if (req.body.message === "/画师算命") {
-                  let paintstyle = ["厚涂", "美式", "韩风", "迪士尼风格", "日系赛璐璐", "日系平涂", "国风"];
-                  let like = [
-                    "机械",
-                    "大腿",
-                    "美少年",
-                    "美少女",
-                    "奶子",
-                    "兄贵",
-                    "屁股",
-                    "脸蛋",
-                    "大屌",
-                    "给佬",
-                    "幼女",
-                    "JK",
-                    "黑丝",
-                    "胖次",
-                    "白丝",
-                    "小手",
-                    "【不可描述】",
-                  ];
-                  let andthen = [
-                    "有了一些同好",
-                    "被人骗稿多次",
-                    "找不到工作",
-                    "只能做外包",
-                    "出了很多本子",
-                    "被人骗炮",
-                    "做了自由职业者",
-                    "当了某大项目主美",
-                    "经常被抄袭",
-                    "在某站成名",
-                    "每天混吃等死",
-                  ];
-                  let buthen = [
-                    "被请喝茶",
-                    "被人寄刀片",
-                    "被举报",
-                    "本子卖到爆炸",
-                    "被人吐槽",
-                    "被人骗炮",
-                    "突然爆红",
-                    "被人抄袭",
-                    "在街角被蜀黍强暴",
-                  ];
-                  let atlast = [
-                    "因为画得不行转而卖艺，竟然变成了偶像",
-                    "做了一辈子社畜",
-                    "名垂青史但是变成了时代眼泪",
-                    "也没有出人头地，转行做了别的行业",
-                    "赚够了钱去了幻想乡",
-                    "因为断连载被愤怒的读者高呼飞出地球",
-                    "舒舒服服退休回老家结婚",
-                    "一直活跃在最前线，活到老画到老",
-                    "成为了魔法少女",
-                  ];
-                  let who = req.body.sender.nickname;
-                  if (!who) who = "小夜";
-                  let random_paintstyle = paintstyle[Math.floor(Math.random() * paintstyle.length)];
-                  let random_like = like[Math.floor(Math.random() * like.length)];
-                  let random_andthen = andthen[Math.floor(Math.random() * andthen.length)];
-                  let random_buthen = buthen[Math.floor(Math.random() * buthen.length)];
-                  let random_atlast = atlast[Math.floor(Math.random() * atlast.length)];
-                  let final = `${who}是一名${random_paintstyle}画师，最喜欢画${random_like}，而且${random_andthen}，然而因为画得太过和谐而${random_buthen}，还因为这件事在微博上有了${(
-                    Math.random() * (1000000 - 1) +
-                    1
-                  ).toFixed(0)}个粉丝，做了${(Math.random() * (100 - 1).toFixed(0) + 1).toFixed(0)}年画师，最后${random_atlast}。`;
-                  console.log(`画师算命指令：${final} `.log);
-                  res.send({ reply: final });
-                  return 0;
+                //如果没有迫害文字的话，应该是省略了被迫害人，如 /迫害 迫害文字 这样，所以迫害文字是第一个参数
+                if (!pohai_tex) {
+                  pohai_tex = msg[1].trim();
                 }
 
-                //迫害，p图，这里需要重写复用
-                if (pohai_reg.test(req.body.message)) {
-                  let pohai_list = ["唐可可", "上原步梦", "猛男狗", "令和", "鸭鸭"]; //迫害名单
-                  let pohai_pic_list = ["coco_echo.jpg", "ayumu_qaq.jpg", "doge.jpg", "nianhao.jpg", "yaya.gif"]; //迫害图片列表
-                  let pohai_pic = "coco_echo.jpg"; //迫害图片，如果被迫害人不在迫害名单里，那么默认迫害唐可可
-                  let tex_config_list = {
-                    唐可可: ["390", "160", "-0.19", "8"],
-                    上原步梦: ["227", "440", "0", "26"],
-                    猛男狗: ["170", "100", "0", "0"],
-                    令和: ["130", "110", "-0.05", "1"],
-                    鸭鸭: ["30", "30", "0", "2"],
-                  }; //迫害文字位置，left、top、rotate、多少字换行
-                  let tex_config = tex_config_list.唐可可; //默认迫害文字位置是唐可可的
-                  let msg = req.body.message + " "; //结尾加一个空格防爆
-
-                  msg = msg.substr(3).split(" ");
-                  let pohai_who = msg[1].trim(), //迫害谁
-                    pohai_tex = msg[2].trim(); //迫害文字
-
-                  //先搜索被迫害人是否在迫害名单里
-                  for (let i in pohai_list) {
-                    if (pohai_who === pohai_list[i]) {
-                      //被迫害人发现
-                      pohai_pic = pohai_pic_list[i];
-                      tex_config = tex_config_list[pohai_who];
-                      console.log(`被迫害人 ${pohai_who} 发现，使用迫害图 ${pohai_pic_list[i]}`.log);
-                    }
-                  }
-
-                  //如果没有迫害文字的话，应该是省略了被迫害人，如 /迫害 迫害文字 这样，所以迫害文字是第一个参数
-                  if (!pohai_tex) {
-                    pohai_tex = msg[1].trim();
-                  }
-
-                  //如果迫害文字里有@某人，将[CQ:at,qq=QQ号]转为昵称
-                  if (has_qq_reg.test(pohai_tex)) {
-                    console.log(`存在@内容，将替换为昵称`.log);
-                    let at_start = pohai_tex.indexOf("[CQ:at,qq="); //取@开始
-                    let at_end = pohai_tex.indexOf("]"); //取@结束
-                    let tex_top = pohai_tex.substr(0, at_start); //取除了@外的字符串头
-                    let tex_bottom = pohai_tex.substr(at_end + 1); //取除了@外的字符串尾
-                    //获取qq
-                    let qq_id = pohai_tex.replace("[CQ:at,qq=", "");
-                    qq_id = qq_id.replace("]", "");
-                    qq_id = qq_id.trim();
-                    //如果是正确的qq号则替换
-                    if (is_qq_reg.test(qq_id)) {
-                      //获取qq号在群内的昵称
-                      request(
-                        `http://127.0.0.1:5700/get_group_member_info?group_id=${req.body.group_id}&user_id=${qq_id}&no_cache=0`,
-                        function (error, _response, body) {
-                          //这一步实在是太慢了啊实在不想异步了
-                          if (!error) {
-                            body = JSON.parse(body);
-                            pohai_tex = `${tex_top}${body.data.nickname}${tex_bottom}`; //拼接为完整的迫害tex
-                            //如果需要换行，按 tex_config[3] 来换行
-                            if (pohai_tex.length > tex_config[3]) {
-                              let enter = tex_config[3];
-                              let new_pohai_tex = "";
-                              for (let i = 0, j = 1; i < pohai_tex.length; i++, j++) {
-                                if (j && j % enter == 0) {
-                                  new_pohai_tex += pohai_tex[i] + "\n";
-                                } else {
-                                  new_pohai_tex += pohai_tex[i];
-                                }
+                //如果迫害文字里有@某人，将[CQ:at,qq=QQ号]转为昵称
+                if (has_qq_reg.test(pohai_tex)) {
+                  console.log(`存在@内容，将替换为昵称`.log);
+                  let at_start = pohai_tex.indexOf("[CQ:at,qq="); //取@开始
+                  let at_end = pohai_tex.indexOf("]"); //取@结束
+                  let tex_top = pohai_tex.substr(0, at_start); //取除了@外的字符串头
+                  let tex_bottom = pohai_tex.substr(at_end + 1); //取除了@外的字符串尾
+                  //获取qq
+                  let qq_id = pohai_tex.replace("[CQ:at,qq=", "");
+                  qq_id = qq_id.replace("]", "");
+                  qq_id = qq_id.trim();
+                  //如果是正确的qq号则替换
+                  if (is_qq_reg.test(qq_id)) {
+                    //获取qq号在群内的昵称
+                    request(
+                      `http://127.0.0.1:5700/get_group_member_info?group_id=${req.body.group_id}&user_id=${qq_id}&no_cache=0`,
+                      function (error, _response, body) {
+                        //这一步实在是太慢了啊实在不想异步了
+                        if (!error) {
+                          body = JSON.parse(body);
+                          pohai_tex = `${tex_top}${body.data.nickname}${tex_bottom}`; //拼接为完整的迫害tex
+                          //如果需要换行，按 tex_config[3] 来换行
+                          if (pohai_tex.length > tex_config[3]) {
+                            let enter = tex_config[3];
+                            let new_pohai_tex = "";
+                            for (let i = 0, j = 1; i < pohai_tex.length; i++, j++) {
+                              if (j && j % enter == 0) {
+                                new_pohai_tex += pohai_tex[i] + "\n";
+                              } else {
+                                new_pohai_tex += pohai_tex[i];
                               }
-                              pohai_tex = new_pohai_tex;
                             }
-                            //开始p图
-                            let sources = `${process.cwd()}\\static\\xiaoye\\ps\\${pohai_pic}`; //载入迫害图
-                            loadImage(sources).then((image) => {
-                              let canvas = createCanvas(parseInt(image.width), parseInt(image.height)); //根据迫害图尺寸创建画布
-                              let ctx = canvas.getContext("2d");
-                              ctx.drawImage(image, 0, 0);
-                              ctx.font = "30px Sans";
-                              ctx.textAlign = "center";
-                              ctx.rotate(tex_config[2]);
-                              //ctx.fillStyle = "#00ff00";
-                              let tex_width = Math.floor(ctx.measureText(pohai_tex).width);
-                              console.log(`文字宽度：${tex_width}`.log);
-                              ctx.fillText(pohai_tex, tex_config[0], tex_config[1]);
-                              let file_local = path.join(`${process.cwd()}`, `static`, `xiaoye`, `images`, `${sha1(canvas.toBuffer())}.jpg`);
-                              fs.writeFileSync(file_local, canvas.toBuffer());
-                              let file_online = `http://127.0.0.1/xiaoye/images/${sha1(canvas.toBuffer())}.jpg`;
-                              console.log(`迫害成功，图片发送：${file_online}`.log);
-                              res.send({
-                                reply: `[CQ:image,file=${file_online},url=${file_online}]`,
-                              });
-                            });
-                          } else {
-                            console.log("请求127.0.0.1:5700//get_group_member_info错误：", error);
-                            res.send({ reply: `日忒娘，怎么又出错了` });
+                            pohai_tex = new_pohai_tex;
                           }
-                        }
-                      );
-                    }
-                  } else {
-                    //如果需要换行，按 tex_config[3] 来换行
-                    if (pohai_tex.length > tex_config[3]) {
-                      let enter = tex_config[3];
-                      let new_pohai_tex = "";
-                      for (let i = 0, j = 1; i < pohai_tex.length; i++, j++) {
-                        if (j && j % enter == 0) {
-                          new_pohai_tex += pohai_tex[i] + "\n";
+                          //开始p图
+                          let sources = `${process.cwd()}\\static\\xiaoye\\ps\\${pohai_pic}`; //载入迫害图
+                          loadImage(sources).then((image) => {
+                            let canvas = createCanvas(parseInt(image.width), parseInt(image.height)); //根据迫害图尺寸创建画布
+                            let ctx = canvas.getContext("2d");
+                            ctx.drawImage(image, 0, 0);
+                            ctx.font = "30px Sans";
+                            ctx.textAlign = "center";
+                            ctx.rotate(tex_config[2]);
+                            //ctx.fillStyle = "#00ff00";
+                            let tex_width = Math.floor(ctx.measureText(pohai_tex).width);
+                            console.log(`文字宽度：${tex_width}`.log);
+                            ctx.fillText(pohai_tex, tex_config[0], tex_config[1]);
+                            let file_local = path.join(`${process.cwd()}`, `static`, `xiaoye`, `images`, `${sha1(canvas.toBuffer())}.jpg`);
+                            fs.writeFileSync(file_local, canvas.toBuffer());
+                            let file_online = `http://127.0.0.1/xiaoye/images/${sha1(canvas.toBuffer())}.jpg`;
+                            console.log(`迫害成功，图片发送：${file_online}`.log);
+                            res.send({
+                              reply: `[CQ:image,file=${file_online},url=${file_online}]`,
+                            });
+                          });
                         } else {
-                          new_pohai_tex += pohai_tex[i];
+                          console.log("请求127.0.0.1:5700//get_group_member_info错误：", error);
+                          res.send({ reply: `日忒娘，怎么又出错了` });
                         }
                       }
-                      pohai_tex = new_pohai_tex;
-                    }
-                    //开始p图
-                    let sources = `${process.cwd()}\\static\\xiaoye\\ps\\${pohai_pic}`; //载入迫害图
-                    loadImage(sources).then((image) => {
-                      let canvas = createCanvas(parseInt(image.width), parseInt(image.height)); //根据迫害图尺寸创建画布
-                      let ctx = canvas.getContext("2d");
-                      ctx.drawImage(image, 0, 0);
-                      ctx.font = "30px Sans";
-                      ctx.textAlign = "center";
-                      ctx.rotate(tex_config[2]);
-                      //ctx.fillStyle = "#00ff00";
-                      let tex_width = Math.floor(ctx.measureText(pohai_tex).width);
-                      console.log(`文字宽度：${tex_width}`.log);
-                      ctx.fillText(pohai_tex, tex_config[0], tex_config[1]);
-
-                      let file_local = path.join(`${process.cwd()}`, `static`, `xiaoye`, `images`, `${sha1(canvas.toBuffer())}.jpg`);
-                      fs.writeFileSync(file_local, canvas.toBuffer());
-                      let file_online = `http://127.0.0.1/xiaoye/images/${sha1(canvas.toBuffer())}.jpg`;
-                      console.log(`迫害成功，图片发送：${file_online}`.log);
-                      res.send({
-                        reply: `[CQ:image,file=${file_online},url=${file_online}]`,
-                      });
-                    });
+                    );
                   }
-                  return 0;
-                }
-
-                //一个手雷
-                if (hand_grenade_reg.test(req.body.message)) {
-                  let who;
-                  let holly_hand_grenade = Math.floor(Math.random() * 1000); //丢一个骰子，判断手雷是否变成神圣手雷
-                  let success_flag = Math.floor(Math.random() * 100); //丢一个骰子，判断手雷是否成功丢出
-                  let boom_time = Math.floor(Math.random() * 60 * 2); //造成伤害时间
-                  if (holly_hand_grenade < 10) {
-                    //运营方暗调了出率，10‰几率变成神圣手雷
-                    request(`http://127.0.0.1:5700/set_group_whole_ban?group_id=${req.body.group_id}&enable=1`, function (error, _response, _body) {
-                      if (!error) {
-                        console.log(`触发了神圣手雷，群 ${req.body.group_id} 被全体禁言`.error);
-                        res.send({
-                          reply: `噢，该死，我的上帝啊，真是不敢相信，瞧瞧我发现了什么，我发誓我没有看错，这竟然是一颗出现率为千分之一的神圣手雷！我是说，这是一颗毁天灭地的神圣手雷啊！哈利路亚！麻烦管理员解除一下`,
-                        });
+                } else {
+                  //如果需要换行，按 tex_config[3] 来换行
+                  if (pohai_tex.length > tex_config[3]) {
+                    let enter = tex_config[3];
+                    let new_pohai_tex = "";
+                    for (let i = 0, j = 1; i < pohai_tex.length; i++, j++) {
+                      if (j && j % enter == 0) {
+                        new_pohai_tex += pohai_tex[i] + "\n";
                       } else {
-                        console.log("请求127.0.0.1:5700/set_group_whole_ban错误：", error);
-                        res.send({ reply: `日忒娘，怎么又出错了` });
-                      }
-                    });
-                    return 0;
-                  } else {
-                    if (req.body.message === "一个手雷") {
-                      who = req.body.user_id; //如果没有要求炸谁，那就是炸自己
-                      console.log(`群 ${req.body.group_id} 的群员 ${req.body.user_id} 朝自己丢出一颗手雷`.log);
-                    } else {
-                      who = req.body.message;
-                      who = who.replace("一个手雷 ", "");
-                      who = who.replace("一个手雷", "");
-                      who = who.replace("[CQ:at,qq=", "");
-                      who = who.replace("]", "");
-                      who = who.trim();
-                      if (is_qq_reg.test(who)) {
-                        console.log(`群 ${req.body.group_id} 的 群员 ${req.body.user_id} 尝试向 ${who} 丢出一颗手雷`.log);
-                      } else {
-                        //目标不是qq号
-                        res.send({ reply: `你想丢给谁手雷啊，目标不可以是${who}，不要乱丢` });
-                        return 0;
+                        new_pohai_tex += pohai_tex[i];
                       }
                     }
-                    if (success_flag < 50 || who === req.body.user_id) {
-                      //50%几率被自己炸伤
-                      console.log(`群 ${req.body.group_id} 的 群员 ${req.body.user_id} 的手雷炸到了自己`.log);
-                      res.send({
-                        reply: `[CQ:at,qq=${req.body.user_id}] 小手一滑，被自己丢出的手雷炸伤，造成了${boom_time}秒的伤害，苍天有轮回，害人终害己，祝你下次好运`,
-                        ban: 1,
-                        ban_duration: boom_time,
-                      });
-                    } else {
-                      //成功丢出手雷
-                      request(
-                        `http://127.0.0.1:5700/set_group_ban?group_id=${req.body.group_id}&user_id=${who}&duration=${boom_time}`,
-                        function (error, _response, _body) {
-                          if (!error) {
-                            console.log(`群 ${req.body.group_id} 的 群员 ${req.body.user_id} 的手雷炸到了 ${who}`.log);
-                            res.send({
-                              reply: `恭喜[CQ:at,qq=${who}]被[CQ:at,qq=${req.body.user_id}]丢出的手雷炸伤，造成了${boom_time}秒的伤害，祝你下次好运`,
-                            });
-                          } else {
-                            console.log("请求127.0.0.1:5700/set_group_ban错误：", error);
-                            res.send({ reply: `日忒娘，怎么又出错了` });
-                          }
-                        }
-                      );
-                    }
+                    pohai_tex = new_pohai_tex;
                   }
-                  return 0;
-                }
-
-                //埋地雷
-                if (mine_reg.test(req.body.message)) {
-                  //获取该群是否已经达到最大共存地雷数
-                  db.all(`SELECT * FROM mine WHERE group_id = '${req.body.group_id}'`, (err, sql) => {
-                    if (!err) {
-                      let length = 0;
-                      try {
-                        length = sql.length;
-                      } catch (err) {
-                        console.log(`地雷为空`.log);
-                      }
-                      if (length < max_mine_count) {
-                        //地雷还没满，先获取自增ID最新值sql.seq，随后mine表增加群地雷
-                        db.all(`Select seq From sqlite_sequence Where name = 'mine'`, (err, sql) => {
-                          if (!err && sql[0]) {
-                            db.run(`INSERT INTO mine VALUES('${sql[0].seq + 1}', '${req.body.group_id}', '${req.body.user_id}')`);
-                            console.log(`${req.body.user_id} 在群 ${req.body.group_id} 埋了一颗地雷`.log);
-                            res.send({
-                              reply: `大伙注意啦！[CQ:at,qq=${req.body.user_id}]埋雷干坏事啦！`,
-                            });
-                          } else {
-                            console.log(`埋地雷出错了：${err}，${sql}`.error);
-                          }
-                        });
-                      } else {
-                        console.log(`群 ${req.body.group_id} 的地雷满了`.log);
-                        res.send({
-                          reply: `[CQ:at,qq=${req.body.user_id}] 这个群的地雷已经塞满啦，等有幸运群友踩中地雷之后再来埋吧`,
-                        });
-                      }
-                    } else {
-                      console.log(`获取该群地雷出错了：${err}，${sql}`.error);
-                    }
-                  });
-                  return 0;
-                }
-
-                //踩地雷
-                if (fuck_mine_reg.test(req.body.message)) {
-                  //搜索地雷库中现有地雷
-                  db.all(`SELECT * FROM mine WHERE group_id = '${req.body.group_id}'`, (err, sql) => {
-                    //有雷，直接炸，炸完删地雷
-                    if (!err && sql[0]) {
-                      let boom_time = Math.floor(Math.random() * 60 * 3) + 60; //造成伤害时间
-                      console.log(`${sql[0].placed_qq} 在群 ${sql[0].group_id} 埋的地雷被排爆，雷已经被删除`.log);
-                      db.run(`DELETE FROM mine WHERE mine_id = '${sql[0].mine_id}' `);
-                      res.send({
-                        reply: `[CQ:at,qq=${req.body.user_id}] 踩了一脚地雷，为什么要想不开呢，被[CQ:at,qq=${sql[0].placed_qq}]所埋地雷炸成重伤，休养生息${boom_time}秒！`,
-                        ban: 1,
-                        ban_duration: boom_time,
-                      });
-                    } else {
-                      //没有雷
-                      res.send({
-                        reply: `[CQ:at,qq=${req.body.user_id}] 这个雷区里的雷似乎已经被勇士们排干净了，不如趁现在埋一个吧！`,
-                      });
-                    }
-                  });
-                  return 0;
-                }
-
-                //希望的花
-                if (hope_flower_reg.test(req.body.message)) {
-                  let who;
-                  let boom_time = Math.floor(Math.random() * 30); //造成0-30伤害时间
-                  if (req.body.message === "希望的花") {
-                    console.log(`群 ${req.body.group_id} 的群员 ${req.body.user_id} 朝自己丢出一朵希望的花`.log);
-                    res.send({ reply: `团长，你在做什么啊！团长！希望的花，不要乱丢啊啊啊啊` });
-                    return 0;
-                  } else {
-                    who = req.body.message;
-                    who = who.replace("希望的花 ", "");
-                    who = who.replace("希望的花", "");
-                    who = who.replace("[CQ:at,qq=", "");
-                    who = who.replace("]", "");
-                    who = who.trim();
-                    if (is_qq_reg.test(who)) {
-                      console.log(`群 ${req.body.group_id} 的 群员 ${req.body.user_id} 向 ${who} 丢出一朵希望的花`.log);
-                    } else {
-                      //目标不是qq号
-                      res.send({ reply: `团长，你在做什么啊！团长！希望的花目标不可以是${who}，不要乱丢啊啊啊啊` });
-                      return 0;
-                    }
-                  }
-
-                  //先救活目标
-                  request(
-                    `http://127.0.0.1:5700/set_group_ban?group_id=${req.body.group_id}&user_id=${who}&duration=0`,
-                    function (error, _response, _body) {
-                      if (!error) {
-                        console.log(`群 ${req.body.group_id} 的 群员 ${req.body.user_id} 救活了 ${who}`.log);
-                        res.send({
-                          reply: `团长，团长你在做什么啊团长，团长！为什么要救他啊，哼，呃，啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊！！！团长救下了[CQ:at,qq=${who}]，但自己被炸飞了，休养生息${boom_time}秒！不要停下来啊！`,
-                        });
-                      } else {
-                        console.log("请求127.0.0.1:5700/set_group_whole_ban错误：", error);
-                        res.send({ reply: `日忒娘，怎么又出错了` });
-                      }
-                    }
-                  );
-
-                  //再禁言团长
-                  request(
-                    `http://127.0.0.1:5700/set_group_ban?group_id=${req.body.group_id}&user_id=${req.body.user_id}&duration=${boom_time}`,
-                    function (error, _response, _body) {
-                      if (!error) {
-                        console.log(`${req.body.user_id} 自己被炸伤${boom_time}秒`.log);
-                      } else {
-                        console.log("请求127.0.0.1:5700/set_group_whole_ban错误：", error);
-                        res.send({ reply: `日忒娘，怎么又出错了` });
-                      }
-                    }
-                  );
-                  return 0;
-                }
-
-                //击鼓传雷
-                if (loop_bomb_reg.test(req.body.message)) {
-                  //先检查群有没有开始游戏
-                  db.all(`SELECT * FROM qq_group WHERE group_id = '${req.body.group_id}'`, (err, sql) => {
-                    if (!err && sql[0]) {
-                      //判断游戏开关 loop_bomb_enabled，没有开始的话就开始游戏，如果游戏已经超时结束了的话重新开始
-                      if (sql[0].loop_bomb_enabled === 0 || 60 - process.hrtime([sql[0].loop_bomb_start_time, 0])[0] < 0) {
-                        //游戏开始
-                        db.run(`UPDATE qq_group SET loop_bomb_enabled = '1' WHERE group_id ='${req.body.group_id}'`);
-                        let text = "击鼓传雷游戏开始啦，这是一个只有死亡才能结束的游戏，做好准备了吗";
-                        request(
-                          `http://127.0.0.1:5700/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(text)}`,
-                          function (error, _response, _body) {
-                            if (!error) {
-                              console.log(`群 ${req.body.group_id} 开始了击鼓传雷`.log);
-                              io.emit("system message", `@群 ${req.body.group_id} 开始了击鼓传雷`);
-                            } else {
-                              console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
-                            }
-                          }
-                        );
-
-                        //给发起人出题，等待ta回答
-                        ECYWenDa()
-                          .then((resolve) => {
-                            let question = `那么[CQ:at,qq=${req.body.user_id}]请听题：${resolve.quest} 请告诉小夜：击鼓传雷 你的答案，时间剩余59秒`;
-                            let answer = resolve.result; //把答案、目标人、开始时间存入数据库
-                            db.run(
-                              `UPDATE qq_group SET loop_bomb_answer = '${answer}', loop_bomb_onwer = '${
-                                req.body.user_id
-                              }' , loop_bomb_start_time = '${process.hrtime()[0]}' WHERE group_id ='${req.body.group_id}'`
-                            );
-
-                            //丢出问题
-                            setTimeout(function () {
-                              request(
-                                `http://127.0.0.1:5700/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(question)}`,
-                                function (error, _response, _body) {
-                                  if (!error) {
-                                    console.log(`群 ${req.body.group_id} 开始了击鼓传雷`.log);
-                                    io.emit("system message", `@群 ${req.body.group_id} 开始了击鼓传雷`);
-                                  } else {
-                                    console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
-                                  }
-                                }
-                              );
-                            }, 1000);
-                          })
-                          .catch((reject) => {
-                            res.send({ reply: `日忒娘，怎么又出错了：${reject}` });
-                            console.log(`日忒娘，怎么又出错了：${reject}`.error);
-                          });
-
-                        //开始倒计时，倒计时结束宣布游戏结束
-                        boom_timer = setTimeout(function () {
-                          console.log(`群 ${req.body.group_id} 的击鼓传雷到达时间，炸了`.log);
-                          let boom_time = Math.floor(Math.random() * 60 * 3) + 60; //造成伤害时间
-                          //获取这个雷现在是谁手上，炸ta
-                          db.all(`SELECT * FROM qq_group WHERE group_id = '${req.body.group_id}'`, (err, sql) => {
-                            if (!err && sql[0]) {
-                              request(
-                                `http://127.0.0.1:5700/set_group_ban?group_id=${req.body.group_id}&user_id=${sql[0].loop_bomb_onwer}&duration=${boom_time}`,
-                                function (error, _response, _body) {
-                                  if (!error) {
-                                    console.log(`${sql[0].loop_bomb_onwer} 在群 ${req.body.group_id} 回答超时，被炸伤${boom_time}秒`.log);
-                                    let end = `时间到了，pia，雷在[CQ:at,qq=${sql[0].loop_bomb_onwer}]手上炸了，你被炸成重伤了，休养生息${boom_time}秒！游戏结束！下次加油噢，那么答案公布：${sql[0].loop_bomb_answer}`;
-                                    request(
-                                      `http://127.0.0.1:5700/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(end)}`,
-                                      function (error, _response, _body) {
-                                        if (!error) {
-                                          io.emit(
-                                            "system message",
-                                            `@${sql[0].loop_bomb_onwer} 在群 ${req.body.group_id} 回答超时，被炸伤${boom_time}秒`
-                                          );
-                                        } else {
-                                          console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
-                                        }
-                                      }
-                                    );
-                                    //游戏结束，清空数据
-                                    db.run(
-                                      `UPDATE qq_group SET loop_bomb_enabled = '0', loop_bomb_answer = '', loop_bomb_onwer = '' , loop_bomb_start_time = '' WHERE group_id ='${req.body.group_id}'`
-                                    );
-                                    return 0;
-                                  } else {
-                                    console.log("请求127.0.0.1:5700/set_group_whole_ban错误：", error);
-                                  }
-                                }
-                              );
-                              io.emit("system message", `@群 ${req.body.group_id} 的击鼓传雷到达时间，炸了`);
-                            }
-                          });
-                        }, 1000 * 60);
-
-                        //已经开始游戏了，判断答案对不对
-                      } else {
-                        your_answer = req.body.message;
-                        your_answer = your_answer.replace("击鼓传雷 ", "");
-                        your_answer = your_answer.replace("击鼓传雷", "");
-                        your_answer = your_answer.trim();
-                        //从数据库里取答案判断
-                        db.all(`SELECT * FROM qq_group WHERE group_id = '${req.body.group_id}'`, (err, sql) => {
-                          if (!err && sql[0]) {
-                            //判断答案 loop_bomb_answer、是否本人回答
-                            if (sql[0].loop_bomb_answer == your_answer && sql[0].loop_bomb_onwer == req.body.user_id) {
-                              //答对了
-                              res.send({
-                                reply: `[CQ:at,qq=${req.body.user_id}] 回答正确！答案确实是${sql[0].loop_bomb_answer}！`,
-                              });
-
-                              //答题成功，然后要把雷传给随机幸运群友，进入下一题
-                              setTimeout(function () {
-                                request(`http://127.0.0.1:5700/get_group_member_list?group_id=${req.body.group_id}`, (err, response, body) => {
-                                  body = JSON.parse(body);
-                                  if (!err && body.data.length != 0) {
-                                    var rand_user_id = Math.floor(Math.random() * body.data.length);
-                                    console.log(`随机选取一个群友：${body.data[rand_user_id].user_id}`.log);
-                                    let rand_user = body.data[rand_user_id].user_id;
-
-                                    //选完之后开始下一轮游戏，先查询剩余时间，然后给随机幸运群友出题，等待ta回答
-                                    db.all(`SELECT * FROM qq_group WHERE group_id = '${req.body.group_id}'`, (err, sql) => {
-                                      if (!err && sql[0]) {
-                                        ECYWenDa()
-                                          .then((resolve) => {
-                                            let diff = 60 - process.hrtime([sql[0].loop_bomb_start_time, 0])[0]; //剩余时间
-                                            let question = `抽到了幸运群友[CQ:at,qq=${rand_user}]！请听题：${resolve.quest} 请告诉小夜： 击鼓传雷 你的答案，时间还剩余${diff}秒`;
-                                            let answer = resolve.result; //把答案、目标人存入数据库
-                                            db.run(
-                                              `UPDATE qq_group SET loop_bomb_answer = '${answer}', loop_bomb_onwer = '${rand_user}' WHERE group_id ='${req.body.group_id}'`
-                                            );
-                                            request(
-                                              `http://127.0.0.1:5700/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(question)}`,
-                                              function (error, _response, _body) {
-                                                if (!error) {
-                                                  console.log(`群 ${req.body.group_id} 开始了下一轮击鼓传雷`.log);
-                                                  io.emit("system message", `@群 ${req.body.group_id} 开始了下一轮击鼓传雷`);
-                                                } else {
-                                                  console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
-                                                }
-                                              }
-                                            );
-                                          })
-                                          .catch((reject) => {
-                                            res.send({ reply: `日忒娘，怎么又出错了：${reject}` });
-                                            console.log(`日忒娘，怎么又出错了：${reject}`.error);
-                                          });
-                                      }
-                                    });
-                                  } else {
-                                    console.log("随机选取一个群友错误。错误原因：" + JSON.stringify(response.body));
-                                  }
-                                  return 0;
-                                });
-                              }, 500);
-
-                              //不是本人回答，来捣乱的
-                            } else if (sql[0].loop_bomb_onwer != req.body.user_id) {
-                              res.send({
-                                reply: `[CQ:at,qq=${req.body.user_id}] 你是来捣乱的嘛，这个雷是[CQ:at,qq=${sql[0].loop_bomb_onwer}]的，不要抢答呀`,
-                              });
-
-                              //答错了
-                            } else {
-                              let boom_time = Math.floor(Math.random() * 60 * 3) + 60; //造成伤害时间
-                              console.log(`${req.body.user_id} 在群 ${req.body.group_id} 回答错误，被炸伤${boom_time}秒`.log);
-                              clearTimeout(boom_timer);
-                              res.send({
-                                reply: `[CQ:at,qq=${req.body.user_id}] 回答错误，好可惜，你被炸成重伤了，休养生息${boom_time}秒！游戏结束！下次加油噢，那么答案公布：${sql[0].loop_bomb_answer}`,
-                                ban: 1,
-                                ban_duration: boom_time,
-                              });
-
-                              //游戏结束，删掉游戏记录
-                              db.run(
-                                `UPDATE qq_group SET loop_bomb_enabled = '0', loop_bomb_answer = '', loop_bomb_onwer = '' , loop_bomb_start_time = '' WHERE group_id ='${req.body.group_id}'`
-                              );
-                              return 0;
-                            }
-                          }
-                        });
-                      }
-                    }
-                  });
-                }
-
-                //我有个朋友
-                if (i_have_a_friend_reg.test(req.body.message)) {
-                  //指定目标的话
-                  if (has_qq_reg.test(req.body.message)) {
-                    var msg_in = req.body.message.split("说")[1];
-                    var msg = msg_in.split("[CQ:at,qq=")[0].trim();
-                    var who = msg_in.split("[CQ:at,qq=")[1];
-                    var who = who.replace("]", "").trim();
-                    if (is_qq_reg.test(who)) {
-                      var sources = `https://api.sumt.cn/api/qq.logo.php?qq=${who}`; //载入头像
-                    }
-                    //没指定目标
-                  } else {
-                    var msg = req.body.message.split("说")[1];
-                    var sources = `https://api.sumt.cn/api/qq.logo.php?qq=${req.body.user_id}`; //没有指定谁，那这个朋友就是ta自己
-                  }
-
+                  //开始p图
+                  let sources = `${process.cwd()}\\static\\xiaoye\\ps\\${pohai_pic}`; //载入迫害图
                   loadImage(sources).then((image) => {
-                    let canvas = createCanvas(350, 80);
+                    let canvas = createCanvas(parseInt(image.width), parseInt(image.height)); //根据迫害图尺寸创建画布
                     let ctx = canvas.getContext("2d");
-                    ctx.fillStyle = "WHITE";
-                    ctx.fillRect(0, 0, 350, 80);
-                    ctx.font = "20px SimHei";
-                    ctx.textAlign = "left";
-                    ctx.fillStyle = "#000000";
-                    ctx.fillText("沙雕网友群", 90.5, 35.5);
-                    ctx.font = "16px SimHei";
-                    ctx.fillStyle = "#716F81";
-                    ctx.fillText(`沙雕网友：${msg}`, 90.5, 55.5);
-                    ctx.font = "13px SimHei";
-                    ctx.fillText(CurentTime(), 280.5, 35.5);
-
-                    ctx.beginPath();
-                    ctx.arc(40, 40, 28, 0, 2 * Math.PI);
-                    ctx.fill();
-                    ctx.clip();
-                    ctx.drawImage(image, 10, 10, 60, 60);
-                    ctx.closePath();
+                    ctx.drawImage(image, 0, 0);
+                    ctx.font = "30px Sans";
+                    ctx.textAlign = "center";
+                    ctx.rotate(tex_config[2]);
+                    //ctx.fillStyle = "#00ff00";
+                    let tex_width = Math.floor(ctx.measureText(pohai_tex).width);
+                    console.log(`文字宽度：${tex_width}`.log);
+                    ctx.fillText(pohai_tex, tex_config[0], tex_config[1]);
 
                     let file_local = path.join(`${process.cwd()}`, `static`, `xiaoye`, `images`, `${sha1(canvas.toBuffer())}.jpg`);
                     fs.writeFileSync(file_local, canvas.toBuffer());
                     let file_online = `http://127.0.0.1/xiaoye/images/${sha1(canvas.toBuffer())}.jpg`;
-                    console.log(`我有个朋友合成成功，图片发送：${file_online}`.log);
+                    console.log(`迫害成功，图片发送：${file_online}`.log);
                     res.send({
                       reply: `[CQ:image,file=${file_online},url=${file_online}]`,
                     });
                   });
+                }
+                return 0;
+              }
+
+              //一个手雷
+              if (hand_grenade_reg.test(req.body.message)) {
+                let who;
+                let holly_hand_grenade = Math.floor(Math.random() * 1000); //丢一个骰子，判断手雷是否变成神圣手雷
+                let success_flag = Math.floor(Math.random() * 100); //丢一个骰子，判断手雷是否成功丢出
+                let boom_time = Math.floor(Math.random() * 60 * 2); //造成伤害时间
+                if (holly_hand_grenade < 10) {
+                  //运营方暗调了出率，10‰几率变成神圣手雷
+                  request(`http://127.0.0.1:5700/set_group_whole_ban?group_id=${req.body.group_id}&enable=1`, function (error, _response, _body) {
+                    if (!error) {
+                      console.log(`触发了神圣手雷，群 ${req.body.group_id} 被全体禁言`.error);
+                      res.send({
+                        reply: `噢，该死，我的上帝啊，真是不敢相信，瞧瞧我发现了什么，我发誓我没有看错，这竟然是一颗出现率为千分之一的神圣手雷！我是说，这是一颗毁天灭地的神圣手雷啊！哈利路亚！麻烦管理员解除一下`,
+                      });
+                    } else {
+                      console.log("请求127.0.0.1:5700/set_group_whole_ban错误：", error);
+                      res.send({ reply: `日忒娘，怎么又出错了` });
+                    }
+                  });
                   return 0;
+                } else {
+                  if (req.body.message === "一个手雷") {
+                    who = req.body.user_id; //如果没有要求炸谁，那就是炸自己
+                    console.log(`群 ${req.body.group_id} 的群员 ${req.body.user_id} 朝自己丢出一颗手雷`.log);
+                  } else {
+                    who = req.body.message;
+                    who = who.replace("一个手雷 ", "");
+                    who = who.replace("一个手雷", "");
+                    who = who.replace("[CQ:at,qq=", "");
+                    who = who.replace("]", "");
+                    who = who.trim();
+                    if (is_qq_reg.test(who)) {
+                      console.log(`群 ${req.body.group_id} 的 群员 ${req.body.user_id} 尝试向 ${who} 丢出一颗手雷`.log);
+                    } else {
+                      //目标不是qq号
+                      res.send({ reply: `你想丢给谁手雷啊，目标不可以是${who}，不要乱丢` });
+                      return 0;
+                    }
+                  }
+                  if (success_flag < 50 || who === req.body.user_id) {
+                    //50%几率被自己炸伤
+                    console.log(`群 ${req.body.group_id} 的 群员 ${req.body.user_id} 的手雷炸到了自己`.log);
+                    res.send({
+                      reply: `[CQ:at,qq=${req.body.user_id}] 小手一滑，被自己丢出的手雷炸伤，造成了${boom_time}秒的伤害，苍天有轮回，害人终害己，祝你下次好运`,
+                      ban: 1,
+                      ban_duration: boom_time,
+                    });
+                  } else {
+                    //成功丢出手雷
+                    request(
+                      `http://127.0.0.1:5700/set_group_ban?group_id=${req.body.group_id}&user_id=${who}&duration=${boom_time}`,
+                      function (error, _response, _body) {
+                        if (!error) {
+                          console.log(`群 ${req.body.group_id} 的 群员 ${req.body.user_id} 的手雷炸到了 ${who}`.log);
+                          res.send({
+                            reply: `恭喜[CQ:at,qq=${who}]被[CQ:at,qq=${req.body.user_id}]丢出的手雷炸伤，造成了${boom_time}秒的伤害，祝你下次好运`,
+                          });
+                        } else {
+                          console.log("请求127.0.0.1:5700/set_group_ban错误：", error);
+                          res.send({ reply: `日忒娘，怎么又出错了` });
+                        }
+                      }
+                    );
+                  }
+                }
+                return 0;
+              }
+
+              //埋地雷
+              if (mine_reg.test(req.body.message)) {
+                //获取该群是否已经达到最大共存地雷数
+                db.all(`SELECT * FROM mine WHERE group_id = '${req.body.group_id}'`, (err, sql) => {
+                  if (!err) {
+                    let length = 0;
+                    try {
+                      length = sql.length;
+                    } catch (err) {
+                      console.log(`地雷为空`.log);
+                    }
+                    if (length < max_mine_count) {
+                      //地雷还没满，先获取自增ID最新值sql.seq，随后mine表增加群地雷
+                      db.all(`Select seq From sqlite_sequence Where name = 'mine'`, (err, sql) => {
+                        if (!err && sql[0]) {
+                          db.run(`INSERT INTO mine VALUES('${sql[0].seq + 1}', '${req.body.group_id}', '${req.body.user_id}')`);
+                          console.log(`${req.body.user_id} 在群 ${req.body.group_id} 埋了一颗地雷`.log);
+                          res.send({
+                            reply: `大伙注意啦！[CQ:at,qq=${req.body.user_id}]埋雷干坏事啦！`,
+                          });
+                        } else {
+                          console.log(`埋地雷出错了：${err}，${sql}`.error);
+                        }
+                      });
+                    } else {
+                      console.log(`群 ${req.body.group_id} 的地雷满了`.log);
+                      res.send({
+                        reply: `[CQ:at,qq=${req.body.user_id}] 这个群的地雷已经塞满啦，等有幸运群友踩中地雷之后再来埋吧`,
+                      });
+                    }
+                  } else {
+                    console.log(`获取该群地雷出错了：${err}，${sql}`.error);
+                  }
+                });
+                return 0;
+              }
+
+              //踩地雷
+              if (fuck_mine_reg.test(req.body.message)) {
+                //搜索地雷库中现有地雷
+                db.all(`SELECT * FROM mine WHERE group_id = '${req.body.group_id}'`, (err, sql) => {
+                  //有雷，直接炸，炸完删地雷
+                  if (!err && sql[0]) {
+                    let boom_time = Math.floor(Math.random() * 60 * 3) + 60; //造成伤害时间
+                    console.log(`${sql[0].placed_qq} 在群 ${sql[0].group_id} 埋的地雷被排爆，雷已经被删除`.log);
+                    db.run(`DELETE FROM mine WHERE mine_id = '${sql[0].mine_id}' `);
+                    res.send({
+                      reply: `[CQ:at,qq=${req.body.user_id}] 踩了一脚地雷，为什么要想不开呢，被[CQ:at,qq=${sql[0].placed_qq}]所埋地雷炸成重伤，休养生息${boom_time}秒！`,
+                      ban: 1,
+                      ban_duration: boom_time,
+                    });
+                  } else {
+                    //没有雷
+                    res.send({
+                      reply: `[CQ:at,qq=${req.body.user_id}] 这个雷区里的雷似乎已经被勇士们排干净了，不如趁现在埋一个吧！`,
+                    });
+                  }
+                });
+                return 0;
+              }
+
+              //希望的花
+              if (hope_flower_reg.test(req.body.message)) {
+                let who;
+                let boom_time = Math.floor(Math.random() * 30); //造成0-30伤害时间
+                if (req.body.message === "希望的花") {
+                  console.log(`群 ${req.body.group_id} 的群员 ${req.body.user_id} 朝自己丢出一朵希望的花`.log);
+                  res.send({ reply: `团长，你在做什么啊！团长！希望的花，不要乱丢啊啊啊啊` });
+                  return 0;
+                } else {
+                  who = req.body.message;
+                  who = who.replace("希望的花 ", "");
+                  who = who.replace("希望的花", "");
+                  who = who.replace("[CQ:at,qq=", "");
+                  who = who.replace("]", "");
+                  who = who.trim();
+                  if (is_qq_reg.test(who)) {
+                    console.log(`群 ${req.body.group_id} 的 群员 ${req.body.user_id} 向 ${who} 丢出一朵希望的花`.log);
+                  } else {
+                    //目标不是qq号
+                    res.send({ reply: `团长，你在做什么啊！团长！希望的花目标不可以是${who}，不要乱丢啊啊啊啊` });
+                    return 0;
+                  }
                 }
 
-                //查询运行状态
-                if (req.body.message === "/status") {
-                  console.log(`查询运行状态`.log);
-                  let stat = `企划：星野夜蝶Official
+                //先救活目标
+                request(
+                  `http://127.0.0.1:5700/set_group_ban?group_id=${req.body.group_id}&user_id=${who}&duration=0`,
+                  function (error, _response, _body) {
+                    if (!error) {
+                      console.log(`群 ${req.body.group_id} 的 群员 ${req.body.user_id} 救活了 ${who}`.log);
+                      res.send({
+                        reply: `团长，团长你在做什么啊团长，团长！为什么要救他啊，哼，呃，啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊！！！团长救下了[CQ:at,qq=${who}]，但自己被炸飞了，休养生息${boom_time}秒！不要停下来啊！`,
+                      });
+                    } else {
+                      console.log("请求127.0.0.1:5700/set_group_whole_ban错误：", error);
+                      res.send({ reply: `日忒娘，怎么又出错了` });
+                    }
+                  }
+                );
+
+                //再禁言团长
+                request(
+                  `http://127.0.0.1:5700/set_group_ban?group_id=${req.body.group_id}&user_id=${req.body.user_id}&duration=${boom_time}`,
+                  function (error, _response, _body) {
+                    if (!error) {
+                      console.log(`${req.body.user_id} 自己被炸伤${boom_time}秒`.log);
+                    } else {
+                      console.log("请求127.0.0.1:5700/set_group_whole_ban错误：", error);
+                      res.send({ reply: `日忒娘，怎么又出错了` });
+                    }
+                  }
+                );
+                return 0;
+              }
+
+              //击鼓传雷
+              if (loop_bomb_reg.test(req.body.message)) {
+                //先检查群有没有开始游戏
+                db.all(`SELECT * FROM qq_group WHERE group_id = '${req.body.group_id}'`, (err, sql) => {
+                  if (!err && sql[0]) {
+                    //判断游戏开关 loop_bomb_enabled，没有开始的话就开始游戏，如果游戏已经超时结束了的话重新开始
+                    if (sql[0].loop_bomb_enabled === 0 || 60 - process.hrtime([sql[0].loop_bomb_start_time, 0])[0] < 0) {
+                      //游戏开始
+                      db.run(`UPDATE qq_group SET loop_bomb_enabled = '1' WHERE group_id ='${req.body.group_id}'`);
+                      let text = "击鼓传雷游戏开始啦，这是一个只有死亡才能结束的游戏，做好准备了吗";
+                      request(
+                        `http://127.0.0.1:5700/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(text)}`,
+                        function (error, _response, _body) {
+                          if (!error) {
+                            console.log(`群 ${req.body.group_id} 开始了击鼓传雷`.log);
+                            io.emit("system message", `@群 ${req.body.group_id} 开始了击鼓传雷`);
+                          } else {
+                            console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
+                          }
+                        }
+                      );
+
+                      //给发起人出题，等待ta回答
+                      ECYWenDa()
+                        .then((resolve) => {
+                          let question = `那么[CQ:at,qq=${req.body.user_id}]请听题：${resolve.quest} 请告诉小夜：击鼓传雷 你的答案，时间剩余59秒`;
+                          let answer = resolve.result; //把答案、目标人、开始时间存入数据库
+                          db.run(
+                            `UPDATE qq_group SET loop_bomb_answer = '${answer}', loop_bomb_onwer = '${req.body.user_id}' , loop_bomb_start_time = '${
+                              process.hrtime()[0]
+                            }' WHERE group_id ='${req.body.group_id}'`
+                          );
+
+                          //丢出问题
+                          setTimeout(function () {
+                            request(
+                              `http://127.0.0.1:5700/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(question)}`,
+                              function (error, _response, _body) {
+                                if (!error) {
+                                  console.log(`群 ${req.body.group_id} 开始了击鼓传雷`.log);
+                                  io.emit("system message", `@群 ${req.body.group_id} 开始了击鼓传雷`);
+                                } else {
+                                  console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
+                                }
+                              }
+                            );
+                          }, 1000);
+                        })
+                        .catch((reject) => {
+                          res.send({ reply: `日忒娘，怎么又出错了：${reject}` });
+                          console.log(`日忒娘，怎么又出错了：${reject}`.error);
+                        });
+
+                      //开始倒计时，倒计时结束宣布游戏结束
+                      boom_timer = setTimeout(function () {
+                        console.log(`群 ${req.body.group_id} 的击鼓传雷到达时间，炸了`.log);
+                        let boom_time = Math.floor(Math.random() * 60 * 3) + 60; //造成伤害时间
+                        //获取这个雷现在是谁手上，炸ta
+                        db.all(`SELECT * FROM qq_group WHERE group_id = '${req.body.group_id}'`, (err, sql) => {
+                          if (!err && sql[0]) {
+                            request(
+                              `http://127.0.0.1:5700/set_group_ban?group_id=${req.body.group_id}&user_id=${sql[0].loop_bomb_onwer}&duration=${boom_time}`,
+                              function (error, _response, _body) {
+                                if (!error) {
+                                  console.log(`${sql[0].loop_bomb_onwer} 在群 ${req.body.group_id} 回答超时，被炸伤${boom_time}秒`.log);
+                                  let end = `时间到了，pia，雷在[CQ:at,qq=${sql[0].loop_bomb_onwer}]手上炸了，你被炸成重伤了，休养生息${boom_time}秒！游戏结束！下次加油噢，那么答案公布：${sql[0].loop_bomb_answer}`;
+                                  request(
+                                    `http://127.0.0.1:5700/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(end)}`,
+                                    function (error, _response, _body) {
+                                      if (!error) {
+                                        io.emit(
+                                          "system message",
+                                          `@${sql[0].loop_bomb_onwer} 在群 ${req.body.group_id} 回答超时，被炸伤${boom_time}秒`
+                                        );
+                                      } else {
+                                        console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
+                                      }
+                                    }
+                                  );
+                                  //游戏结束，清空数据
+                                  db.run(
+                                    `UPDATE qq_group SET loop_bomb_enabled = '0', loop_bomb_answer = '', loop_bomb_onwer = '' , loop_bomb_start_time = '' WHERE group_id ='${req.body.group_id}'`
+                                  );
+                                  return 0;
+                                } else {
+                                  console.log("请求127.0.0.1:5700/set_group_whole_ban错误：", error);
+                                }
+                              }
+                            );
+                            io.emit("system message", `@群 ${req.body.group_id} 的击鼓传雷到达时间，炸了`);
+                          }
+                        });
+                      }, 1000 * 60);
+
+                      //已经开始游戏了，判断答案对不对
+                    } else {
+                      your_answer = req.body.message;
+                      your_answer = your_answer.replace("击鼓传雷 ", "");
+                      your_answer = your_answer.replace("击鼓传雷", "");
+                      your_answer = your_answer.trim();
+                      //从数据库里取答案判断
+                      db.all(`SELECT * FROM qq_group WHERE group_id = '${req.body.group_id}'`, (err, sql) => {
+                        if (!err && sql[0]) {
+                          //判断答案 loop_bomb_answer、是否本人回答
+                          if (sql[0].loop_bomb_answer == your_answer && sql[0].loop_bomb_onwer == req.body.user_id) {
+                            //答对了
+                            res.send({
+                              reply: `[CQ:at,qq=${req.body.user_id}] 回答正确！答案确实是${sql[0].loop_bomb_answer}！`,
+                            });
+
+                            //答题成功，然后要把雷传给随机幸运群友，进入下一题
+                            setTimeout(function () {
+                              request(`http://127.0.0.1:5700/get_group_member_list?group_id=${req.body.group_id}`, (err, response, body) => {
+                                body = JSON.parse(body);
+                                if (!err && body.data.length != 0) {
+                                  var rand_user_id = Math.floor(Math.random() * body.data.length);
+                                  console.log(`随机选取一个群友：${body.data[rand_user_id].user_id}`.log);
+                                  let rand_user = body.data[rand_user_id].user_id;
+
+                                  //选完之后开始下一轮游戏，先查询剩余时间，然后给随机幸运群友出题，等待ta回答
+                                  db.all(`SELECT * FROM qq_group WHERE group_id = '${req.body.group_id}'`, (err, sql) => {
+                                    if (!err && sql[0]) {
+                                      ECYWenDa()
+                                        .then((resolve) => {
+                                          let diff = 60 - process.hrtime([sql[0].loop_bomb_start_time, 0])[0]; //剩余时间
+                                          let question = `抽到了幸运群友[CQ:at,qq=${rand_user}]！请听题：${resolve.quest} 请告诉小夜： 击鼓传雷 你的答案，时间还剩余${diff}秒`;
+                                          let answer = resolve.result; //把答案、目标人存入数据库
+                                          db.run(
+                                            `UPDATE qq_group SET loop_bomb_answer = '${answer}', loop_bomb_onwer = '${rand_user}' WHERE group_id ='${req.body.group_id}'`
+                                          );
+                                          request(
+                                            `http://127.0.0.1:5700/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(question)}`,
+                                            function (error, _response, _body) {
+                                              if (!error) {
+                                                console.log(`群 ${req.body.group_id} 开始了下一轮击鼓传雷`.log);
+                                                io.emit("system message", `@群 ${req.body.group_id} 开始了下一轮击鼓传雷`);
+                                              } else {
+                                                console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
+                                              }
+                                            }
+                                          );
+                                        })
+                                        .catch((reject) => {
+                                          res.send({ reply: `日忒娘，怎么又出错了：${reject}` });
+                                          console.log(`日忒娘，怎么又出错了：${reject}`.error);
+                                        });
+                                    }
+                                  });
+                                } else {
+                                  console.log("随机选取一个群友错误。错误原因：" + JSON.stringify(response.body));
+                                }
+                                return 0;
+                              });
+                            }, 500);
+
+                            //不是本人回答，来捣乱的
+                          } else if (sql[0].loop_bomb_onwer != req.body.user_id) {
+                            res.send({
+                              reply: `[CQ:at,qq=${req.body.user_id}] 你是来捣乱的嘛，这个雷是[CQ:at,qq=${sql[0].loop_bomb_onwer}]的，不要抢答呀`,
+                            });
+
+                            //答错了
+                          } else {
+                            let boom_time = Math.floor(Math.random() * 60 * 3) + 60; //造成伤害时间
+                            console.log(`${req.body.user_id} 在群 ${req.body.group_id} 回答错误，被炸伤${boom_time}秒`.log);
+                            clearTimeout(boom_timer);
+                            res.send({
+                              reply: `[CQ:at,qq=${req.body.user_id}] 回答错误，好可惜，你被炸成重伤了，休养生息${boom_time}秒！游戏结束！下次加油噢，那么答案公布：${sql[0].loop_bomb_answer}`,
+                              ban: 1,
+                              ban_duration: boom_time,
+                            });
+
+                            //游戏结束，删掉游戏记录
+                            db.run(
+                              `UPDATE qq_group SET loop_bomb_enabled = '0', loop_bomb_answer = '', loop_bomb_onwer = '' , loop_bomb_start_time = '' WHERE group_id ='${req.body.group_id}'`
+                            );
+                            return 0;
+                          }
+                        }
+                      });
+                    }
+                  }
+                });
+              }
+
+              //我有个朋友
+              if (i_have_a_friend_reg.test(req.body.message)) {
+                //指定目标的话
+                if (has_qq_reg.test(req.body.message)) {
+                  var msg_in = req.body.message.split("说")[1];
+                  var msg = msg_in.split("[CQ:at,qq=")[0].trim();
+                  var who = msg_in.split("[CQ:at,qq=")[1];
+                  var who = who.replace("]", "").trim();
+                  if (is_qq_reg.test(who)) {
+                    var sources = `https://api.sumt.cn/api/qq.logo.php?qq=${who}`; //载入头像
+                  }
+                  //没指定目标
+                } else {
+                  var msg = req.body.message.split("说")[1];
+                  var sources = `https://api.sumt.cn/api/qq.logo.php?qq=${req.body.user_id}`; //没有指定谁，那这个朋友就是ta自己
+                }
+
+                loadImage(sources).then((image) => {
+                  let canvas = createCanvas(350, 80);
+                  let ctx = canvas.getContext("2d");
+                  ctx.fillStyle = "WHITE";
+                  ctx.fillRect(0, 0, 350, 80);
+                  ctx.font = "20px SimHei";
+                  ctx.textAlign = "left";
+                  ctx.fillStyle = "#000000";
+                  ctx.fillText("沙雕网友群", 90.5, 35.5);
+                  ctx.font = "16px SimHei";
+                  ctx.fillStyle = "#716F81";
+                  ctx.fillText(`沙雕网友：${msg}`, 90.5, 55.5);
+                  ctx.font = "13px SimHei";
+                  ctx.fillText(CurentTime(), 280.5, 35.5);
+
+                  ctx.beginPath();
+                  ctx.arc(40, 40, 28, 0, 2 * Math.PI);
+                  ctx.fill();
+                  ctx.clip();
+                  ctx.drawImage(image, 10, 10, 60, 60);
+                  ctx.closePath();
+
+                  let file_local = path.join(`${process.cwd()}`, `static`, `xiaoye`, `images`, `${sha1(canvas.toBuffer())}.jpg`);
+                  fs.writeFileSync(file_local, canvas.toBuffer());
+                  let file_online = `http://127.0.0.1/xiaoye/images/${sha1(canvas.toBuffer())}.jpg`;
+                  console.log(`我有个朋友合成成功，图片发送：${file_online}`.log);
+                  res.send({
+                    reply: `[CQ:image,file=${file_online},url=${file_online}]`,
+                  });
+                });
+                return 0;
+              }
+
+              //查询运行状态
+              if (req.body.message === "/status") {
+                console.log(`查询运行状态`.log);
+                let stat = `企划：星野夜蝶Official
 核心版本：${version}
 使用QQ帐号：${req.body.self_id}
 宿主内核架构：${os.hostname()} ${os.platform()} ${os.arch()}
@@ -1529,238 +1525,250 @@ function start_qqbot() {
 如果该小夜出现任何故障，请联系该小夜领养员或者开发人员。
 点击链接加入群聊【星野夜蝶 地雷群】：https://jq.qq.com/?_wv=1027&k=bTZSd2iI
 `;
-                  res.send({
-                    reply: stat,
-                  });
-                  return 0;
-                }
-
-                //管理员功能：提醒停止服务的群启用小夜
-                if (req.body.message === "/admin alert_open") {
-                  for (let i in qq_admin_list) {
-                    if (req.body.user_id == qq_admin_list[i]) {
-                      console.log(`管理员启动了提醒任务`.log);
-                      AlertOpen().then((resolve) => {
-                        res.send({
-                          reply: `管理员启动了提醒任务，开始提醒停止服务的群启用小夜……${resolve}`,
-                        });
-                      });
-                      return 0;
-                    }
-                  }
-                }
-
-                //管理员功能：执行sql
-                if (admin_reg.test(req.body.message)) {
-                  for (let i in qq_admin_list) {
-                    if (req.body.user_id == qq_admin_list[i]) {
-                      let admin_code = req.body.message.replace("/admin sql ", "");
-                      console.log(`管理员sql指令`.log);
-                      db.run(admin_code);
-                      res.send({
-                        reply: `管理员sql指令执行完毕`,
-                      });
-                      return 0;
-                    }
-                  }
-                }
-
-                /*                    要新增指令与功能请在这条分割线的上方添加，在下面添加有可能会导致冲突以及不可预料的异常                    */
-
-                //随机抽风，丢一个骰子，按 chaos_probability 几率抽风
-                let chaos_flag = Math.floor(Math.random() * 1000);
-                if (chaos_flag < chaos_probability) {
-                  //随机选一个群抽风
-                  let prprmsg;
-                  PrprDoge()
-                    .then((resolve) => {
-                      prprmsg = resolve;
-                      RandomGroupList()
-                        .then((resolve) => {
-                          request(
-                            "http://127.0.0.1:5700/send_group_msg?group_id=" + resolve + "&message=" + encodeURI(prprmsg),
-                            function (error, _response, _body) {
-                              if (!error) {
-                                console.log(`qqBot小夜在群 ${resolve} 抽风了，发送了 ${prprmsg}`.log);
-                                io.emit("system message", `@qqBot小夜在群 ${resolve} 抽风了，发送了 ${prprmsg}`);
-                              } else {
-                                console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
-                              }
-                            }
-                          );
-                        })
-                        .catch((reject) => {
-                          console.log(reject.error);
-                          res.send();
-                        });
-                    })
-                    .catch((reject) => {
-                      console.log(`随机舔狗错误：${reject}`.error);
-                    });
-                  return 0;
-                }
-
-                //丢一个骰子，按fudu_probability几率复读
-                let fudu_flag = Math.floor(Math.random() * 100);
-                if (fudu_flag < fudu_probability) {
-                  console.log(`qqBot小夜复读 ${req.body.message}`.log);
-                  io.emit("system message", `@qqBot小夜复读 ${req.body.message}`);
-                  res.send({ reply: req.body.message });
-                  return 0;
-                }
-
-                //丢一个骰子，按reply_probability几率回复
-                let reply_flag = Math.floor(Math.random() * 100);
-                //如果被@了，那么回复几率上升80%
-                let at_replaced_msg = req.body.message; //要把[CQ:at,qq=${bot_qq}] 去除掉，否则聊天核心会乱成一锅粥
-                if (xiaoye_ated.test(req.body.message)) {
-                  reply_flag -= 80;
-                  at_replaced_msg = req.body.message.replace(`[CQ:at,qq=${bot_qq}]`, "").trim(); //去除@小夜
-                }
-                //骰子命中，那就让小夜来自动回复
-                if (reply_flag < reply_probability) {
-                  ChatProcess(at_replaced_msg)
-                    .then((resolve) => {
-                      resolve = resolve.replace("&#91;name&#93;", `[CQ:at,qq=${req.body.user_id}]`); //替换[name]为正确的@
-                      console.log(`qqBot小夜回复 ${resolve}`.log);
-                      io.emit("system message", `@qqBot小夜回复：${resolve}`);
-                      res.send({ reply: resolve });
-                    })
-                    .catch((reject) => {
-                      //无匹配则随机回复balabala废话
-                      GetBalabalaList()
-                        .then((resolve) => {
-                          let random_balabala = resolve[Math.floor(Math.random() * resolve.length)].balabala;
-                          res.send({ reply: random_balabala });
-                          io.emit("system message", `@qqBot小夜觉得${random_balabala}`);
-                          console.log(`${reject}，qqBot小夜觉得${random_balabala}`.log);
-                        })
-                        .catch((reject) => {
-                          console.log(`小夜试图balabala但出错了：${reject}`.error);
-                          res.send({ reply: `小夜试图balabala但出错了：${reject}` });
-                          io.emit("system message", `@qqBot小夜试图balabala但出错了：${reject}`);
-                        });
-                    });
-                } else {
-                  //res.send(); //相当于严格模式，如果有多条res.send将会报错
-                }
+                res.send({
+                  reply: stat,
+                });
+                return 0;
               }
-              //群不存在于qq_group表则写入qq_group表
-            } else {
-              console.log(`${req.body.group_id} 这个群不在qq_group表里，现在写入到qq_group表`.log);
-              db.run(`INSERT INTO qq_group VALUES('${req.body.group_id}', '1', '0', '', '', '')`);
+
+              //群欢迎
+              if (req.body.notice_type === "group_increase") {
+                let final = `[CQ:at,qq=${req.body.user_id}] 你好呀，我是本群RBQ担当小夜！小夜的使用说明书在这里 https://blog.giftia.moe/ 噢，请问主人是要先吃饭呢，还是先洗澡呢，还是先*我呢~`;
+                console.log(`${req.body.user_id} 加入了群 ${req.body.group_id}，小夜欢迎了ta`.log);
+                res.send({ reply: final });
+                request(
+                  "http://127.0.0.1:5700/send_group_msg?group_id=" + req.body.group_id + "&message=" + encodeURI(final),
+                  function (error, _response, _body) {
+                    if (!error) {
+                      console.log(`${req.body.user_id} 加入了群 ${req.body.group_id}，小夜欢迎了ta`.log);
+                    } else {
+                      console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
+                    }
+                  }
+                );
+                return 0;
+              }
+
+              //戳一戳
+              if (req.body.sub_type === "poke") {
+                let action = [
+                  "攥",
+                  "跨",
+                  "蹲",
+                  "抱",
+                  "挂",
+                  "炸",
+                  "蹦",
+                  "跳",
+                  "飘",
+                  "坐",
+                  "扫",
+                  "提",
+                  "搬",
+                  "推",
+                  "挑",
+                  "抬",
+                  "捕",
+                  "捉",
+                  "抓",
+                  "涌",
+                  "抽",
+                  "摘",
+                  "取",
+                  "挂",
+                  "拴",
+                  "寻",
+                  "望",
+                  "踏",
+                  "淦",
+                  "扭",
+                  "捏",
+                  "草",
+                  "日",
+                ];
+                let turn_to = [
+                  "沉鱼落雁",
+                  "眉目如画",
+                  "风度翩翩",
+                  "文质彬彬",
+                  "聪明伶俐",
+                  "眉清目秀",
+                  "面黄肌瘦",
+                  "冰清玉洁",
+                  "垂头丧气",
+                  "滔滔不绝",
+                  "美如冠玉",
+                  "鹤发童颜",
+                  "豁达大度",
+                  "眉飞色舞",
+                  "闭月羞花",
+                  "出淤泥而不染",
+                  "倾国倾城",
+                ];
+                let rand_action = action[Math.floor(Math.random() * action.length)];
+                let turn_to_action = turn_to[Math.floor(Math.random() * turn_to.length)];
+                let final = `你${rand_action}了一下[CQ:at,qq=${req.body.target_id}]，ta变得${turn_to_action}了`;
+                request(
+                  "http://127.0.0.1:5700/send_group_msg?group_id=" + req.body.group_id + "&message=" + encodeURI(final),
+                  function (error, _response, _body) {
+                    if (!error) {
+                      console.log(`${req.body.user_id} ${rand_action} 了一下 ${req.body.target_id}，ta变得${turn_to_action}了`.log);
+                    } else {
+                      console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
+                    }
+                  }
+                );
+                return 0;
+              }
+
+              //管理员功能：提醒停止服务的群启用小夜
+              if (req.body.message === "/admin alert_open") {
+                for (let i in qq_admin_list) {
+                  if (req.body.user_id == qq_admin_list[i]) {
+                    console.log(`管理员启动了提醒任务`.log);
+                    AlertOpen().then((resolve) => {
+                      res.send({
+                        reply: `管理员启动了提醒任务，开始提醒停止服务的群启用小夜……${resolve}`,
+                      });
+                    });
+                    return 0;
+                  }
+                }
+                res.send({
+                  reply: `你不是狗管理噢，不能让小夜这样那样的`,
+                });
+                return 0;
+              }
+
+              //管理员功能：执行sql
+              if (admin_reg.test(req.body.message)) {
+                for (let i in qq_admin_list) {
+                  if (req.body.user_id == qq_admin_list[i]) {
+                    let admin_code = req.body.message.replace("/admin sql ", "");
+                    console.log(`管理员sql指令`.log);
+                    db.run(admin_code);
+                    res.send({
+                      reply: `管理员sql指令执行完毕`,
+                    });
+                    return 0;
+                  }
+                }
+                res.send({
+                  reply: `你不是狗管理噢，不能让小夜这样那样的`,
+                });
+                return 0;
+              }
+
+              /*                    要新增指令与功能请在这条分割线的上方添加，在下面添加有可能会导致冲突以及不可预料的异常                    */
+
+              //随机抽风，丢一个骰子，按 chaos_probability 几率抽风
+              let chaos_flag = Math.floor(Math.random() * 1000);
+              if (chaos_flag < chaos_probability) {
+                //随机选一个群抽风
+                let prprmsg;
+                PrprDoge()
+                  .then((resolve) => {
+                    prprmsg = resolve;
+                    RandomGroupList()
+                      .then((resolve) => {
+                        request(
+                          "http://127.0.0.1:5700/send_group_msg?group_id=" + resolve + "&message=" + encodeURI(prprmsg),
+                          function (error, _response, _body) {
+                            if (!error) {
+                              console.log(`qqBot小夜在群 ${resolve} 抽风了，发送了 ${prprmsg}`.log);
+                              io.emit("system message", `@qqBot小夜在群 ${resolve} 抽风了，发送了 ${prprmsg}`);
+                            } else {
+                              console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
+                            }
+                          }
+                        );
+                      })
+                      .catch((reject) => {
+                        console.log(reject.error);
+                        res.send();
+                      });
+                  })
+                  .catch((reject) => {
+                    console.log(`随机舔狗错误：${reject}`.error);
+                  });
+                return 0;
+              }
+
+              //丢一个骰子，按fudu_probability几率复读
+              let fudu_flag = Math.floor(Math.random() * 100);
+              if (fudu_flag < fudu_probability) {
+                console.log(`qqBot小夜复读 ${req.body.message}`.log);
+                io.emit("system message", `@qqBot小夜复读 ${req.body.message}`);
+                res.send({ reply: req.body.message });
+                return 0;
+              }
+
+              //丢一个骰子，按reply_probability几率回复
+              let reply_flag = Math.floor(Math.random() * 100);
+              //如果被@了，那么回复几率上升80%
+              let at_replaced_msg = req.body.message; //要把[CQ:at,qq=${bot_qq}] 去除掉，否则聊天核心会乱成一锅粥
+              if (xiaoye_ated.test(req.body.message)) {
+                reply_flag -= 80;
+                at_replaced_msg = req.body.message.replace(`[CQ:at,qq=${bot_qq}]`, "").trim(); //去除@小夜
+              }
+              //骰子命中，那就让小夜来自动回复
+              if (reply_flag < reply_probability) {
+                ChatProcess(at_replaced_msg)
+                  .then((resolve) => {
+                    resolve = resolve.replace("&#91;name&#93;", `[CQ:at,qq=${req.body.user_id}]`); //替换[name]为正确的@
+                    console.log(`qqBot小夜回复 ${resolve}`.log);
+                    io.emit("system message", `@qqBot小夜回复：${resolve}`);
+                    res.send({ reply: resolve });
+                  })
+                  .catch((reject) => {
+                    //无匹配则随机回复balabala废话
+                    GetBalabalaList()
+                      .then((resolve) => {
+                        let random_balabala = resolve[Math.floor(Math.random() * resolve.length)].balabala;
+                        res.send({ reply: random_balabala });
+                        io.emit("system message", `@qqBot小夜觉得${random_balabala}`);
+                        console.log(`${reject}，qqBot小夜觉得${random_balabala}`.log);
+                      })
+                      .catch((reject) => {
+                        console.log(`小夜试图balabala但出错了：${reject}`.error);
+                        res.send({ reply: `小夜试图balabala但出错了：${reject}` });
+                        io.emit("system message", `@qqBot小夜试图balabala但出错了：${reject}`);
+                      });
+                  });
+              } else {
+                //res.send(); //相当于严格模式，如果有多条res.send将会报错
+              }
             }
-          });
-        }
-      } else if (req.body.message_type === "private" && 1 === 0) {
-        //私聊回复，现在已经关闭
-        ChatProcess(req.body.message)
-          .then((resolve) => {
-            console.log(`qqBot小夜回复 ${resolve}`.log);
-            io.emit("system message", `@qqBot小夜回复：${resolve}`);
-            res.send({ reply: resolve });
-          })
-          .catch((reject) => {
-            //无匹配则随机回复balabala废话
-            GetBalabalaList()
-              .then((resolve) => {
-                let random_balabala = resolve[Math.floor(Math.random() * resolve.length)].balabala;
-                res.send({ reply: random_balabala });
-                io.emit("system message", `@qqBot小夜觉得${random_balabala}`);
-                console.log(`${reject}，qqBot小夜觉得${random_balabala}`.log);
-              })
-              .catch((reject) => {
-                console.log(`小夜试图balabala但出错了：${reject}`.error);
-                res.send({ reply: `小夜试图balabala但出错了：${reject}` });
-                io.emit("system message", `@qqBot小夜试图balabala但出错了：${reject}`);
-              });
-          });
-      } else {
-        res.send();
+            //群不存在于qq_group表则写入qq_group表
+          } else {
+            console.log(`${req.body.group_id} 这个群不在qq_group表里，现在写入到qq_group表`.log);
+            db.run(`INSERT INTO qq_group VALUES('${req.body.group_id}', '1', '0', '', '', '')`);
+          }
+        });
       }
-    }
-    //入群欢迎
-    else if (req.body.notice_type === "group_increase") {
-      let final = `[CQ:at,qq=${req.body.user_id}] 你好呀，我是本群RBQ担当小夜！小夜的使用说明书在这里 https://blog.giftia.moe/ 噢，请问主人是要先吃饭呢，还是先洗澡呢，还是先*我呢~`;
-      request(
-        "http://127.0.0.1:5700/send_group_msg?group_id=" + req.body.group_id + "&message=" + encodeURI(final),
-        function (error, _response, _body) {
-          if (!error) {
-            console.log(`${req.body.user_id} 加入了群 ${req.body.group_id}，小夜欢迎了ta`.log);
-          } else {
-            console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
-          }
-        }
-      );
-      //搓一搓
-    } else if (req.body.sub_type === "poke") {
-      let action = [
-        "攥",
-        "跨",
-        "蹲",
-        "抱",
-        "挂",
-        "炸",
-        "蹦",
-        "跳",
-        "飘",
-        "坐",
-        "扫",
-        "提",
-        "搬",
-        "推",
-        "挑",
-        "抬",
-        "捕",
-        "捉",
-        "抓",
-        "涌",
-        "抽",
-        "摘",
-        "取",
-        "挂",
-        "拴",
-        "寻",
-        "望",
-        "踏",
-        "淦",
-        "扭",
-        "捏",
-        "草",
-        "日",
-      ];
-      let turn_to = [
-        "沉鱼落雁",
-        "眉目如画",
-        "风度翩翩",
-        "文质彬彬",
-        "聪明伶俐",
-        "眉清目秀",
-        "面黄肌瘦",
-        "冰清玉洁",
-        "垂头丧气",
-        "滔滔不绝",
-        "美如冠玉",
-        "鹤发童颜",
-        "豁达大度",
-        "眉飞色舞",
-        "闭月羞花",
-        "出淤泥而不染",
-        "倾国倾城",
-      ];
-      let rand_action = action[Math.floor(Math.random() * action.length)];
-      let turn_to_action = turn_to[Math.floor(Math.random() * turn_to.length)];
-      let final = `你${rand_action}了一下[CQ:at,qq=${req.body.target_id}]，ta变得${turn_to_action}了`;
-      request(
-        "http://127.0.0.1:5700/send_group_msg?group_id=" + req.body.group_id + "&message=" + encodeURI(final),
-        function (error, _response, _body) {
-          if (!error) {
-            console.log(`${req.body.user_id} ${rand_action} 了一下 ${req.body.target_id}，ta变得${turn_to_action}了`.log);
-          } else {
-            console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
-          }
-        }
-      );
+    } else if (req.body.message_type === "private" && 1 === 0) {
+      //私聊回复，现在已经关闭
+      ChatProcess(req.body.message)
+        .then((resolve) => {
+          console.log(`qqBot小夜回复 ${resolve}`.log);
+          io.emit("system message", `@qqBot小夜回复：${resolve}`);
+          res.send({ reply: resolve });
+        })
+        .catch((reject) => {
+          //无匹配则随机回复balabala废话
+          GetBalabalaList()
+            .then((resolve) => {
+              let random_balabala = resolve[Math.floor(Math.random() * resolve.length)].balabala;
+              res.send({ reply: random_balabala });
+              io.emit("system message", `@qqBot小夜觉得${random_balabala}`);
+              console.log(`${reject}，qqBot小夜觉得${random_balabala}`.log);
+            })
+            .catch((reject) => {
+              console.log(`小夜试图balabala但出错了：${reject}`.error);
+              res.send({ reply: `小夜试图balabala但出错了：${reject}` });
+              io.emit("system message", `@qqBot小夜试图balabala但出错了：${reject}`);
+            });
+        });
     } else {
       res.send();
     }
