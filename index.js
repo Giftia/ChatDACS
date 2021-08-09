@@ -52,7 +52,7 @@ if (_cn_reg.test(`${process.cwd()}`)) {
 }
 
 //系统配置和开关，以及固定变量
-const version = "ChatDACS 3.0.7-Dev"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS 3.0.8-Dev"; //版本号，会显示在浏览器tab与标题栏
 const html = "/static/index.html"; //前端页面路径，old.html为旧版前端
 var boom_timer; //60s计时器
 let onlineusers = 0, //预定义
@@ -87,7 +87,7 @@ const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const thanks =
   "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、还有我的朋友们，以及倾心分享知识的各位";
-const updatelog = `<h1>3.0.7-Dev<br/>修复群欢迎和戳一戳不受群开关控制</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议不要用噢；</li></ul>`;
+const updatelog = `<h1>3.0.8-Dev<br/>修复群欢迎失效，增加qq一致性判断，增加ping跑分</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议不要用噢；</li></ul>`;
 
 /*好了！以上就是系统的基本配置，如果没有必要，请不要再往下继续编辑了。请保存本文件。祝使用愉快！
  *
@@ -498,7 +498,7 @@ function start_qqbot() {
         notify = `qqBot小夜收到群 ${req.body.group_id} 的 ${req.body.user_id} (${req.body.sender.nickname}) 发来的消息：${req.body.message}`;
         break;
       case "approve":
-        console.log(`${req.body.user_id} 加入了群 ${req.body.group_id}，小夜欢迎了ta`.log);
+        console.log(`${req.body.user_id} 加入了群 ${req.body.group_id}`.log);
         break;
       case "poke":
         console.log(`${req.body.user_id} 戳了一下 ${req.body.target_id}`.log);
@@ -619,10 +619,17 @@ function start_qqbot() {
 
               //测试指令
               if (req.body.message === "/ping") {
-                let runtime = process.hrtime();
                 console.log("Pong!".log);
+                let test = Math.random() * 10000;
+                let runtime = process.hrtime();
+
+                for (i = 1.0; i < 114514.0; i++) {
+                  test += i + i / 10.0;
+                }
+
                 runtime = process.hrtime(runtime)[1] / 1000 / 1000;
-                res.send({ reply: `Pong! ${runtime}ms` });
+
+                res.send({ reply: `Pong! ${test} in ${runtime}ms` });
                 return 0;
               }
 
@@ -1516,15 +1523,21 @@ function start_qqbot() {
               //查询运行状态
               if (req.body.message === "/status") {
                 console.log(`查询运行状态`.log);
-                let stat = `企划：星野夜蝶Official
+                let stat = "";
+                if (bot_qq != req.body.self_id) {
+                  stat = `错误：检测到小夜实际使用的qq：${req.body.self_id} 与配置的qq：${bot_qq} 不一致，请去 config/config.yml 里修改为一致的噢，不然 @我 是说不出话来的`;
+                } else {
+                  stat = `企划：星野夜蝶Official
 核心版本：${version}
 使用QQ帐号：${req.body.self_id}
 宿主内核架构：${os.hostname()} ${os.platform()} ${os.arch()}
 正常运行时间：${Math.round(os.uptime() / 60 / 60)}小时
 剩余内存：${Math.round(os.freemem() / 1024 / 1024)}MB
 如果该小夜出现任何故障，请联系该小夜领养员或者开发人员。
-点击链接加入群聊【星野夜蝶 地雷群】：https://jq.qq.com/?_wv=1027&k=bTZSd2iI
+点击加入夜爹开发群：https://jq.qq.com/?_wv=1027&k=bTZSd2iI
 `;
+                }
+
                 res.send({
                   reply: stat,
                 });
@@ -1534,8 +1547,6 @@ function start_qqbot() {
               //群欢迎
               if (req.body.notice_type === "group_increase") {
                 let final = `[CQ:at,qq=${req.body.user_id}] 你好呀，我是本群RBQ担当小夜！小夜的使用说明书在这里 https://blog.giftia.moe/ 噢，请问主人是要先吃饭呢，还是先洗澡呢，还是先*我呢~`;
-                console.log(`${req.body.user_id} 加入了群 ${req.body.group_id}，小夜欢迎了ta`.log);
-                res.send({ reply: final });
                 request(
                   "http://127.0.0.1:5700/send_group_msg?group_id=" + req.body.group_id + "&message=" + encodeURI(final),
                   function (error, _response, _body) {
