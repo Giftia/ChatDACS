@@ -6,34 +6,41 @@
       星野夜蝶<br/>
       Hoshino Yedie<br/>
     </h1>
-    <h2 align="center">沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)</h2>
+    <h2 align="center">
+      沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)
+    </h2>
     <p align="center">
-    一个无需服务器，可私有化部署、可独立运行于内网的H5聊天工具。<br/>
-    技术栈：语言——Node.js，web框架——Express，前端组件库——layui。<br/>
-    开箱即用，非常好用，我的朋友。<br/>
-    画师：塘李<br/>
-    <br/>
-    示例 DEMO：<a href="http://chatdacs.giftia.moe/" target="_blank">chatdacs.giftia.moe</a><br/>
-    简易搭建教程 Tutorials：<a href="https://zhuanlan.zhihu.com/p/67995935" target="_blank">zhuanlan.zhihu.com/p/67995935</a><br/>
-    隶属于星野夜蝶Official：<a href="https://github.com/Giftia/Project_Xiaoye" target="_blank">github.com/Giftia/Project_Xiaoye</a>
-    <br>
+      一个无需服务器，可私有化部署、可独立运行于内网的H5聊天工具。<br/>
+      技术栈：语言——Node.js，web框架——Express，前端组件库——layui。<br/>
+      开箱即用，非常好用，我的朋友。<br/>
+      画师：塘李<br/>
+      <br/>
+      示例 DEMO：<a href="http://chatdacs.giftia.moe/" target="_blank">chatdacs.giftia.moe</a><br/>
+      简易搭建教程 Tutorials：<a href="https://zhuanlan.zhihu.com/p/67995935" target="_blank">zhuanlan.zhihu.com/p/67995935</a><br/>
+      隶属于星野夜蝶Official：<a href="https://github.com/Giftia/Project_Xiaoye" target="_blank">github.com/Giftia/Project_Xiaoye</a>
+      <br>
+    </p>
   </td>
 
   <td style="width:20%;vertical-align:top;">
-    <img src="https://github.com/Giftia/ChatDACS/blob/master/static/xiaoye/images/yedie_out.png" style="width:100px;" alt="stand" />
+    <img src="https://raw.githubusercontent.com/Giftia/ChatDACS/master/static/xiaoye/images/yedie_out.png" width="200" alt="stand" />
+    <p align="center">
+      星野夜蝶 立绘
+    </p>
   </td>
   </tr>
 </table>
 
 <p align="center">
-  <img src="https://img.shields.io/uptimerobot/ratio/m783632550-7da46d24226cb151b978c810?style=for-the-badge" alt="Uptime(30 days)" />&nbsp;
+  <img src="https://img.shields.io/uptimerobot/ratio/m783632550-7da46d24226cb151b978c810?label=%E5%AD%98%E6%B4%BB%E7%8E%87&style=for-the-badge" alt="Uptime(30 days)" />
+  &nbsp;
   <img src="https://img.shields.io/website?label=demo&style=for-the-badge&up_message=online&url=http://chatdacs.giftia.moe/" alt="Demo" />
   &nbsp;
-  <img src="https://img.shields.io/github/v/release/Giftia/ChatDACS?style=for-the-badge" alt="GitHub release latest" />
+  <img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/Giftia/ChatDACS/Compile%20ChatDACS%20for%20Windows?label=%E8%87%AA%E5%8A%A8%E6%9E%84%E5%BB%BA&style=for-the-badge">
   &nbsp;
-  <img src="https://img.shields.io/github/license/Giftia/ChatDACS?style=for-the-badge" alt="License" />
+  <img src="https://img.shields.io/github/license/Giftia/ChatDACS?label=%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF&style=for-the-badge" alt="License" />
   &nbsp;
-  <img src="https://img.shields.io/github/languages/code-size/Giftia/ChatDACS?style=for-the-badge" alt="Code size" />
+  <img src="https://img.shields.io/github/languages/code-size/Giftia/ChatDACS?label=%E4%BB%A3%E7%A0%81%E5%A4%A7%E5%B0%8F&style=for-the-badge" alt="Code size" />
 </p>
 
 ---
