@@ -1,31 +1,81 @@
 # ChatDACS配置文件
 
-System: #系统配置和开关，根据你的需要改动
-  chat_swich: 1 #web端自动聊天开关
-  news_swich: 0 #web端首屏新闻开关
-  conn_go_cqhttp: 1 #qqBot小夜开关，需要自行配置以接入go-cqhttp，反向 HTTP POST 于 127.0.0.1:80/bot
-  Now_On_Live: 0 #接入哔哩哔哩直播聊天开关
+#系统配置和开关，根据你的需要改动
+System:
+  #web端自动聊天开关：
+  chat_swich: 1
 
-ApiKey: #接口密钥配置，可选，不配置并不影响使用。若想使用更完善的功能，请访问以下申请地址，申请自己的接口密钥，并填入相应配置项
-  Tiankey: "" #天行接口key，用于 随机昵称、舔狗、彩虹屁 功能，申请地址 https://www.tianapi.com/
-  sumtkey: "" #卡特实验室接口key，用于 随机买家秀、随机二次元图 功能，申请地址 https://api.sumt.cn/
-  baidu_app_id: "" #百度应用id，用于普通小夜语音tts接口，申请地址 https://cloud.baidu.com/
-  baidu_api_key: "" #百度接口key
-  baidu_secret_key: "" #百度接口密钥
+  #qqBot小夜开关，需要自行配置以接入go-cqhttp，反向 HTTP POST 于 127.0.0.1:80/bot：
+  conn_go_cqhttp: 1
 
-qqBot: #qqBot配置
-  bot_qq: "1648468212" #qqBot使用的qq帐号
-  qq_admin_list: ["1005056803", "2418754147", "38263547"] #qqBot小夜的管理员列表
-  topN: 5 #限制分词权重数量，设置得越低，更侧重大意，回复更贴近重点，但容易重复相同的回复；设置得越高，回复会更随意、更沙雕，但更容易答非所问
-  reply_probability: 1 #qqBot小夜回复几率，单位是%，可通过 /admin_change_reply_probability 指令更改
-  fudu_probability: 1 #qqBot小夜复读几率，单位是%，可通过 /admin_change_fudu_probability 指令更改
-  chaos_probability: 0 #qqBot小夜抽风几率，随机抽风舔狗，单位是‰
-  req_fuliji_list: ["福利姬", "买家秀"] #福利姬指令列表
-  req_ECY_list: ["来点二次元", "二次元"] #二次元图指令列表
-  req_no_trap_list: ["今日不带套", "今日不戴套", "今天不带套", "今天不戴套"] #今日不带套指令列表
-  qqimg_to_web: 0 #qq侧接收到的图片保存与转发开关，虽然经常可以收到一些好康的图，但是非常占硬盘空间
-  max_mine_count: 3 #最大共存地雷数
-  black_list_words: [
+  #接入哔哩哔哩直播聊天开关：
+  Now_On_Live: 0
+
+  #web端使用的本机端口，如果有冲突的话请更换端口：
+  web_port: 80
+
+  #监听go_cqhttp的反向http post服务，如果有冲突的话请更换监听接口：
+  go_cqhttp_service: "/bot"
+
+  #go_cqhttp的http接口地址，如果有冲突的话请更换地址：
+  go_cqhttp_api: "127.0.0.1:5700"
+
+#接口密钥配置
+ApiKey:
+  #天行接口key
+  Tiankey: ""
+
+  #卡特实验室接口key
+  sumtkey: ""
+
+  #百度应用id
+  baidu_app_id: ""
+
+  #百度接口key
+  baidu_api_key: ""
+
+  #百度接口密钥
+  baidu_secret_key: ""
+
+#qqBot配置
+qqBot:
+  #qqBot使用的qq帐号：
+  bot_qq: "1648468212"
+
+  #qqBot小夜的管理员列表：
+  qq_admin_list: ["1005056803", "2418754147", "38263547"]
+
+  #限制分词权重数量，设置得越低，更侧重大意，回复更贴近重点，但容易重复相同的回复，
+  #设置得越高，回复会更随意、更沙雕，但更容易答非所问：
+  topN: 5
+
+  #qqBot小夜回复几率，单位是%，可通过 /admin_change_reply_probability 指令更改：
+  reply_probability: 1
+
+  #qqBot小夜复读几率，单位是%，可通过 /admin_change_fudu_probability 指令更改：
+  fudu_probability: 1
+
+  #qqBot小夜抽风几率，随机抽风舔狗，单位是‰：
+  chaos_probability: 0
+
+  #福利姬指令列表：
+  req_fuliji_list: ["福利姬", "买家秀"]
+
+  #二次元图指令列表：
+  req_ECY_list: ["来点二次元", "二次元"]
+
+  #今日不带套指令列表：
+  req_no_trap_list: ["今日不带套", "今日不戴套", "今天不带套", "今天不戴套"]
+
+  #qq侧接收到的图片保存与转发开关，虽然经常可以收到一些好康的图，但是非常占硬盘空间：
+  qqimg_to_web: 0
+
+  #最大共存地雷数：
+  max_mine_count: 3
+
+  #教学系统的黑名单：
+  black_list_words:
+    [
       "群:",
       "群：",
       "你国",
@@ -129,8 +179,12 @@ qqBot: #qqBot配置
       "得风",
       "得雨",
       "是雨",
-    ] #教学系统的黑名单
+    ]
 
-Others: #杂项配置
-  blive_room_id: "49148" #哔哩哔哩直播间id
-  cos_total_count: 50 #初始化随机cos上限，50个应该比较保守，使用随机cos功能后会自动更新为最新值
+#杂项配置
+Others:
+  #哔哩哔哩直播间id：
+  blive_room_id: "49148"
+
+  #初始化随机cos上限，50个应该比较保守，使用随机cos功能后会自动更新为最新值：
+  cos_total_count: 50

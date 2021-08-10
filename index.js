@@ -52,7 +52,7 @@ if (_cn_reg.test(`${process.cwd()}`)) {
 }
 
 //系统配置和开关，以及固定变量
-const version = "ChatDACS v3.0.9-Dev"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS v3.0.10-Factory"; //版本号，会显示在浏览器tab与标题栏
 const html = "/static/index.html"; //前端页面路径，old.html为旧版前端
 var boom_timer; //60s计时器
 let onlineusers = 0, //预定义
@@ -67,9 +67,11 @@ let onlineusers = 0, //预定义
   qq_admin_list,
   blive_room_id,
   chat_swich,
-  news_swich,
   conn_go_cqhttp,
   Now_On_Live,
+  web_port,
+  go_cqhttp_service,
+  go_cqhttp_api,
   topN,
   reply_probability,
   fudu_probability,
@@ -87,7 +89,7 @@ const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const thanks =
   "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、还有我的朋友们，以及倾心分享知识的各位";
-const updatelog = `<h1>v3.0.9-Dev<br/>修了一些bug，群聊开关独立控制</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议不要用噢；</li></ul>`;
+const updatelog = `<h1>v3.0.10-Factory<br/>自定义使用端口，移除了web端新闻，修了[name]的解析问题</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议不要用噢；</li></ul>`;
 
 /*好了！以上就是系统的基本配置，如果没有必要，请不要再往下继续编辑了。请保存本文件。祝使用愉快！
  *
@@ -259,17 +261,6 @@ io.on("connection", (socket) => {
           });
         });
     });
-
-  if (news_swich) {
-    Getnews()
-      .then((resolve) => {
-        io.emit("system message", resolve); //过于影响新UI的聊天界面，改为在系统消息显示
-      })
-      .catch((reject) => {
-        console.log(`Getnews(): rejected, and err:${reject}`.error);
-        socket.emit("system message", `Getnews() err:${reject}`);
-      });
-  }
 
   socket.on("disconnect", () => {
     onlineusers--;
@@ -489,7 +480,7 @@ io.on("connection", (socket) => {
 
 //qqBot小夜核心代码，对接go-cqhttp
 function start_qqbot() {
-  app.post("/bot", (req, res) => {
+  app.post(go_cqhttp_service, (req, res) => {
     let notify;
     switch (req.body.sub_type) {
       case "friend":
@@ -503,7 +494,6 @@ function start_qqbot() {
         console.log(`${req.body.user_id} 加入了群 ${req.body.group_id}`.log);
         break;
       case "poke":
-        console.log(`${req.body.user_id} 戳了一下 ${req.body.target_id}`.log);
         break;
       default:
         res.send();
@@ -547,7 +537,7 @@ function start_qqbot() {
           //如果是自己要被张菊，那么张菊
           if (bot_qq == who) {
             request(
-              `http://127.0.0.1:5700/get_group_member_info?group_id=${req.body.group_id}&user_id=${req.body.user_id}`,
+              `http://${go_cqhttp_api}/get_group_member_info?group_id=${req.body.group_id}&user_id=${req.body.user_id}`,
               function (_error, _response, body) {
                 body = JSON.parse(body);
                 if (body.data.role === "owner" || body.data.role === "admin") {
@@ -610,14 +600,34 @@ function start_qqbot() {
                       });
                       //成功引爆并删除地雷
                     } else {
-                      let boom_time = Math.floor(Math.random() * 60 * 2); //造成伤害时间
-                      console.log(`${sql[0].placed_qq} 在群 ${sql[0].group_id} 埋的地雷被引爆，雷已经被删除`.log);
-                      db.run(`DELETE FROM mine WHERE mine_id = '${sql[0].mine_id}' `);
-                      res.send({
-                        reply: `[CQ:at,qq=${req.body.user_id}]恭喜你，被[CQ:at,qq=${sql[0].placed_qq}]所埋地雷炸伤，休养生息${boom_time}秒！`,
-                        ban: 1,
-                        ban_duration: boom_time,
-                      });
+                      let holly_hand_grenade = Math.floor(Math.random() * 1000); //丢一个骰子，判断地雷是否变成神圣地雷
+                      if (holly_hand_grenade < 10) {
+                        //运营方暗调了出率，10‰几率变成神圣地雷
+                        request(
+                          `http://${go_cqhttp_api}/set_group_whole_ban?group_id=${req.body.group_id}&enable=1`,
+                          function (error, _response, _body) {
+                            if (!error) {
+                              console.log(`触发了神圣地雷，群 ${req.body.group_id} 被全体禁言`.error);
+                              res.send({
+                                reply: `噢，该死，我的上帝啊，真是不敢相信，瞧瞧我发现了什么，我发誓我没有看错，这竟然是一颗出现率为千分之一的神圣地雷！我是说，这是一颗毁天灭地的神圣地雷啊！哈利路亚！麻烦管理员解除一下`,
+                              });
+                            } else {
+                              console.log("请求${go_cqhttp_api}/set_group_whole_ban错误：", error);
+                              res.send({ reply: `日忒娘，怎么又出错了` });
+                            }
+                          }
+                        );
+                        return 0;
+                      } else {
+                        let boom_time = Math.floor(Math.random() * 60 * 2); //造成伤害时间
+                        console.log(`${sql[0].placed_qq} 在群 ${sql[0].group_id} 埋的地雷被引爆，雷已经被删除`.log);
+                        db.run(`DELETE FROM mine WHERE mine_id = '${sql[0].mine_id}' `);
+                        res.send({
+                          reply: `[CQ:at,qq=${req.body.user_id}]恭喜你，被[CQ:at,qq=${sql[0].placed_qq}]所埋地雷炸伤，休养生息${boom_time}秒！`,
+                          ban: 1,
+                          ban_duration: boom_time,
+                        });
+                      }
                     }
                   }
                 });
@@ -1048,7 +1058,7 @@ function start_qqbot() {
                   if (is_qq_reg.test(qq_id)) {
                     //获取qq号在群内的昵称
                     request(
-                      `http://127.0.0.1:5700/get_group_member_info?group_id=${req.body.group_id}&user_id=${qq_id}&no_cache=0`,
+                      `http://${go_cqhttp_api}/get_group_member_info?group_id=${req.body.group_id}&user_id=${qq_id}&no_cache=0`,
                       function (error, _response, body) {
                         //这一步实在是太慢了啊实在不想异步了
                         if (!error) {
@@ -1089,7 +1099,7 @@ function start_qqbot() {
                             });
                           });
                         } else {
-                          console.log("请求127.0.0.1:5700//get_group_member_info错误：", error);
+                          console.log("请求${go_cqhttp_api}//get_group_member_info错误：", error);
                           res.send({ reply: `日忒娘，怎么又出错了` });
                         }
                       }
@@ -1143,14 +1153,14 @@ function start_qqbot() {
                 let boom_time = Math.floor(Math.random() * 60 * 2); //造成伤害时间
                 if (holly_hand_grenade < 10) {
                   //运营方暗调了出率，10‰几率变成神圣手雷
-                  request(`http://127.0.0.1:5700/set_group_whole_ban?group_id=${req.body.group_id}&enable=1`, function (error, _response, _body) {
+                  request(`http://${go_cqhttp_api}/set_group_whole_ban?group_id=${req.body.group_id}&enable=1`, function (error, _response, _body) {
                     if (!error) {
                       console.log(`触发了神圣手雷，群 ${req.body.group_id} 被全体禁言`.error);
                       res.send({
                         reply: `噢，该死，我的上帝啊，真是不敢相信，瞧瞧我发现了什么，我发誓我没有看错，这竟然是一颗出现率为千分之一的神圣手雷！我是说，这是一颗毁天灭地的神圣手雷啊！哈利路亚！麻烦管理员解除一下`,
                       });
                     } else {
-                      console.log("请求127.0.0.1:5700/set_group_whole_ban错误：", error);
+                      console.log("请求${go_cqhttp_api}/set_group_whole_ban错误：", error);
                       res.send({ reply: `日忒娘，怎么又出错了` });
                     }
                   });
@@ -1185,7 +1195,7 @@ function start_qqbot() {
                   } else {
                     //成功丢出手雷
                     request(
-                      `http://127.0.0.1:5700/set_group_ban?group_id=${req.body.group_id}&user_id=${who}&duration=${boom_time}`,
+                      `http://${go_cqhttp_api}/set_group_ban?group_id=${req.body.group_id}&user_id=${who}&duration=${boom_time}`,
                       function (error, _response, _body) {
                         if (!error) {
                           console.log(`群 ${req.body.group_id} 的 群员 ${req.body.user_id} 的手雷炸到了 ${who}`.log);
@@ -1193,7 +1203,7 @@ function start_qqbot() {
                             reply: `恭喜[CQ:at,qq=${who}]被[CQ:at,qq=${req.body.user_id}]丢出的手雷炸伤，造成了${boom_time}秒的伤害，祝你下次好运`,
                           });
                         } else {
-                          console.log("请求127.0.0.1:5700/set_group_ban错误：", error);
+                          console.log("请求${go_cqhttp_api}/set_group_ban错误：", error);
                           res.send({ reply: `日忒娘，怎么又出错了` });
                         }
                       }
@@ -1290,7 +1300,7 @@ function start_qqbot() {
 
                 //先救活目标
                 request(
-                  `http://127.0.0.1:5700/set_group_ban?group_id=${req.body.group_id}&user_id=${who}&duration=0`,
+                  `http://${go_cqhttp_api}/set_group_ban?group_id=${req.body.group_id}&user_id=${who}&duration=0`,
                   function (error, _response, _body) {
                     if (!error) {
                       console.log(`群 ${req.body.group_id} 的 群员 ${req.body.user_id} 救活了 ${who}`.log);
@@ -1298,7 +1308,7 @@ function start_qqbot() {
                         reply: `团长，团长你在做什么啊团长，团长！为什么要救他啊，哼，呃，啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊！！！团长救下了[CQ:at,qq=${who}]，但自己被炸飞了，休养生息${boom_time}秒！不要停下来啊！`,
                       });
                     } else {
-                      console.log("请求127.0.0.1:5700/set_group_whole_ban错误：", error);
+                      console.log("请求${go_cqhttp_api}/set_group_whole_ban错误：", error);
                       res.send({ reply: `日忒娘，怎么又出错了` });
                     }
                   }
@@ -1306,12 +1316,12 @@ function start_qqbot() {
 
                 //再禁言团长
                 request(
-                  `http://127.0.0.1:5700/set_group_ban?group_id=${req.body.group_id}&user_id=${req.body.user_id}&duration=${boom_time}`,
+                  `http://${go_cqhttp_api}/set_group_ban?group_id=${req.body.group_id}&user_id=${req.body.user_id}&duration=${boom_time}`,
                   function (error, _response, _body) {
                     if (!error) {
                       console.log(`${req.body.user_id} 自己被炸伤${boom_time}秒`.log);
                     } else {
-                      console.log("请求127.0.0.1:5700/set_group_whole_ban错误：", error);
+                      console.log("请求${go_cqhttp_api}/set_group_whole_ban错误：", error);
                       res.send({ reply: `日忒娘，怎么又出错了` });
                     }
                   }
@@ -1330,13 +1340,13 @@ function start_qqbot() {
                       db.run(`UPDATE qq_group SET loop_bomb_enabled = '1' WHERE group_id ='${req.body.group_id}'`);
                       let text = "击鼓传雷游戏开始啦，这是一个只有死亡才能结束的游戏，做好准备了吗";
                       request(
-                        `http://127.0.0.1:5700/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(text)}`,
+                        `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(text)}`,
                         function (error, _response, _body) {
                           if (!error) {
                             console.log(`群 ${req.body.group_id} 开始了击鼓传雷`.log);
                             io.emit("system message", `@群 ${req.body.group_id} 开始了击鼓传雷`);
                           } else {
-                            console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
+                            console.log("请求${go_cqhttp_api}/send_group_msg错误：", error);
                           }
                         }
                       );
@@ -1355,13 +1365,13 @@ function start_qqbot() {
                           //丢出问题
                           setTimeout(function () {
                             request(
-                              `http://127.0.0.1:5700/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(question)}`,
+                              `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(question)}`,
                               function (error, _response, _body) {
                                 if (!error) {
                                   console.log(`群 ${req.body.group_id} 开始了击鼓传雷`.log);
                                   io.emit("system message", `@群 ${req.body.group_id} 开始了击鼓传雷`);
                                 } else {
-                                  console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
+                                  console.log("请求${go_cqhttp_api}/send_group_msg错误：", error);
                                 }
                               }
                             );
@@ -1380,13 +1390,13 @@ function start_qqbot() {
                         db.all(`SELECT * FROM qq_group WHERE group_id = '${req.body.group_id}'`, (err, sql) => {
                           if (!err && sql[0]) {
                             request(
-                              `http://127.0.0.1:5700/set_group_ban?group_id=${req.body.group_id}&user_id=${sql[0].loop_bomb_onwer}&duration=${boom_time}`,
+                              `http://${go_cqhttp_api}/set_group_ban?group_id=${req.body.group_id}&user_id=${sql[0].loop_bomb_onwer}&duration=${boom_time}`,
                               function (error, _response, _body) {
                                 if (!error) {
                                   console.log(`${sql[0].loop_bomb_onwer} 在群 ${req.body.group_id} 回答超时，被炸伤${boom_time}秒`.log);
                                   let end = `时间到了，pia，雷在[CQ:at,qq=${sql[0].loop_bomb_onwer}]手上炸了，你被炸成重伤了，休养生息${boom_time}秒！游戏结束！下次加油噢，那么答案公布：${sql[0].loop_bomb_answer}`;
                                   request(
-                                    `http://127.0.0.1:5700/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(end)}`,
+                                    `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(end)}`,
                                     function (error, _response, _body) {
                                       if (!error) {
                                         io.emit(
@@ -1394,7 +1404,7 @@ function start_qqbot() {
                                           `@${sql[0].loop_bomb_onwer} 在群 ${req.body.group_id} 回答超时，被炸伤${boom_time}秒`
                                         );
                                       } else {
-                                        console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
+                                        console.log("请求${go_cqhttp_api}/send_group_msg错误：", error);
                                       }
                                     }
                                   );
@@ -1404,7 +1414,7 @@ function start_qqbot() {
                                   );
                                   return 0;
                                 } else {
-                                  console.log("请求127.0.0.1:5700/set_group_whole_ban错误：", error);
+                                  console.log("请求${go_cqhttp_api}/set_group_whole_ban错误：", error);
                                 }
                               }
                             );
@@ -1431,7 +1441,7 @@ function start_qqbot() {
 
                             //答题成功，然后要把雷传给随机幸运群友，进入下一题
                             setTimeout(function () {
-                              request(`http://127.0.0.1:5700/get_group_member_list?group_id=${req.body.group_id}`, (err, response, body) => {
+                              request(`http://${go_cqhttp_api}/get_group_member_list?group_id=${req.body.group_id}`, (err, response, body) => {
                                 body = JSON.parse(body);
                                 if (!err && body.data.length != 0) {
                                   var rand_user_id = Math.floor(Math.random() * body.data.length);
@@ -1450,13 +1460,13 @@ function start_qqbot() {
                                             `UPDATE qq_group SET loop_bomb_answer = '${answer}', loop_bomb_onwer = '${rand_user}' WHERE group_id ='${req.body.group_id}'`
                                           );
                                           request(
-                                            `http://127.0.0.1:5700/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(question)}`,
+                                            `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(question)}`,
                                             function (error, _response, _body) {
                                               if (!error) {
                                                 console.log(`群 ${req.body.group_id} 开始了下一轮击鼓传雷`.log);
                                                 io.emit("system message", `@群 ${req.body.group_id} 开始了下一轮击鼓传雷`);
                                               } else {
-                                                console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
+                                                console.log("请求${go_cqhttp_api}/send_group_msg错误：", error);
                                               }
                                             }
                                           );
@@ -1582,12 +1592,12 @@ function start_qqbot() {
               if (req.body.notice_type === "group_increase") {
                 let final = `[CQ:at,qq=${req.body.user_id}] 你好呀，我是本群RBQ担当小夜！小夜的使用说明书在这里 https://blog.giftia.moe/ 噢，请问主人是要先吃饭呢，还是先洗澡呢，还是先*我呢~`;
                 request(
-                  "http://127.0.0.1:5700/send_group_msg?group_id=" + req.body.group_id + "&message=" + encodeURI(final),
+                  "http://${go_cqhttp_api}/send_group_msg?group_id=" + req.body.group_id + "&message=" + encodeURI(final),
                   function (error, _response, _body) {
                     if (!error) {
                       console.log(`${req.body.user_id} 加入了群 ${req.body.group_id}，小夜欢迎了ta`.log);
                     } else {
-                      console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
+                      console.log("请求${go_cqhttp_api}/send_group_msg错误：", error);
                     }
                   }
                 );
@@ -1598,12 +1608,12 @@ function start_qqbot() {
               if (req.body.sub_type === "poke") {
                 let final = `请不要戳小小夜 >_<`;
                 request(
-                  "http://127.0.0.1:5700/send_group_msg?group_id=" + req.body.group_id + "&message=" + encodeURI(final),
+                  "http://${go_cqhttp_api}/send_group_msg?group_id=" + req.body.group_id + "&message=" + encodeURI(final),
                   function (error, _response, _body) {
                     if (!error) {
                       console.log(`${req.body.user_id} 戳了一下 ${req.body.target_id}`.log);
                     } else {
-                      console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
+                      console.log("请求${go_cqhttp_api}/send_group_msg错误：", error);
                     }
                   }
                 );
@@ -1661,13 +1671,13 @@ function start_qqbot() {
                     RandomGroupList()
                       .then((resolve) => {
                         request(
-                          "http://127.0.0.1:5700/send_group_msg?group_id=" + resolve + "&message=" + encodeURI(prprmsg),
+                          "http://${go_cqhttp_api}/send_group_msg?group_id=" + resolve + "&message=" + encodeURI(prprmsg),
                           function (error, _response, _body) {
                             if (!error) {
                               console.log(`qqBot小夜在群 ${resolve} 抽风了，发送了 ${prprmsg}`.log);
                               io.emit("system message", `@qqBot小夜在群 ${resolve} 抽风了，发送了 ${prprmsg}`);
                             } else {
-                              console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
+                              console.log("请求${go_cqhttp_api}/send_group_msg错误：", error);
                             }
                           }
                         );
@@ -1704,7 +1714,7 @@ function start_qqbot() {
               if (reply_flag < reply_probability) {
                 ChatProcess(at_replaced_msg)
                   .then((resolve) => {
-                    resolve = resolve.replace("&#91;name&#93;", `[CQ:at,qq=${req.body.user_id}]`); //替换[name]为正确的@
+                    resolve = resolve.replace("[name]", `[CQ:at,qq=${req.body.user_id}]`); //替换[name]为正确的@
                     console.log(`qqBot小夜回复 ${resolve}`.log);
                     io.emit("system message", `@qqBot小夜回复：${resolve}`);
                     res.send({ reply: resolve });
@@ -2300,9 +2310,11 @@ function ReadConfig() {
 async function InitConfig() {
   let resolve = await ReadConfig();
   chat_swich = resolve.System.chat_swich;
-  news_swich = resolve.System.news_swich;
   conn_go_cqhttp = resolve.System.conn_go_cqhttp;
   Now_On_Live = resolve.System.Now_On_Live;
+  web_port = resolve.System.web_port;
+  go_cqhttp_service = resolve.System.go_cqhttp_service;
+  go_cqhttp_api = resolve.System.go_cqhttp_api;
 
   Tiankey = resolve.ApiKey.Tiankey; //天行接口key
   sumtkey = resolve.ApiKey.sumtkey; //卡特实验室接口key
@@ -2336,14 +2348,11 @@ async function InitConfig() {
     console.log("系统配置：web端自动聊天关闭".off);
   }
 
-  if (news_swich) {
-    console.log("系统配置：web端首屏新闻开启".on);
-  } else {
-    console.log("系统配置：web端首屏新闻关闭".off);
-  }
-
   if (conn_go_cqhttp) {
-    console.log(`系统配置：qqBot小夜开启，使用QQ帐号 ${bot_qq}，请确认 plugins/go-cqhttp 文件夹内的 config.yml 是否配置正确并启动go-cqhttp`.on);
+    console.log(
+      `系统配置：qqBot小夜开启，将使用配置的QQ帐号 ${bot_qq}、对接go-cqhttp接口 ${go_cqhttp_api}、监听反向post于 127.0.0.1:${web_port}${go_cqhttp_service}，请确认是否配置正确并启动go-cqhttp`
+        .on
+    );
     xiaoye_ated = new RegExp(`\\[CQ:at,qq=${bot_qq}\\]`); //匹配小夜被@
     start_qqbot();
   } else {
@@ -2357,8 +2366,8 @@ async function InitConfig() {
     console.log("系统配置：小夜直播对线关闭".off);
   }
 
-  http.listen(80, () => {
-    console.log(`${Curentyyyymmdd()}${CurentTime()} 系统启动完毕，访问 127.0.0.1 即可进入web端`.alert);
+  http.listen(web_port, () => {
+    console.log(`${Curentyyyymmdd()}${CurentTime()} 系统启动完毕，访问 127.0.0.1:${web_port} 即可进入web端`.alert);
   });
 }
 
@@ -2456,7 +2465,7 @@ function SaveQQimg(imgUrl) {
 //随机选取一个群
 function RandomGroupList() {
   return new Promise((resolve, reject) => {
-    request("http://127.0.0.1:5700/get_group_list", (err, response, body) => {
+    request("http://${go_cqhttp_api}/get_group_list", (err, response, body) => {
       body = JSON.parse(body);
       if (!err && body.data.length != 0) {
         var rand_group_num = Math.floor(Math.random() * body.data.length);
@@ -2569,12 +2578,12 @@ function DelayAlert(service_stoped_list) {
     console.log(`qqBot小夜将会延时 ${delay_time} 秒后提醒群 ${service_stoped_list[i]} 张菊，提醒文本为：${random_alert_msg}`.log);
     setTimeout(function () {
       request(
-        `http://127.0.0.1:5700/send_group_msg?group_id=${service_stoped_list[i]}&message=${encodeURI(random_alert_msg)}`,
+        `http://${go_cqhttp_api}/send_group_msg?group_id=${service_stoped_list[i]}&message=${encodeURI(random_alert_msg)}`,
         function (error, _response, _body) {
           if (!error) {
             console.log(`qqBot小夜提醒了群 ${service_stoped_list[i]} 张菊，提醒文本为：${random_alert_msg}`.log);
           } else {
-            console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
+            console.log("请求${go_cqhttp_api}/send_group_msg错误：", error);
           }
         }
       );
