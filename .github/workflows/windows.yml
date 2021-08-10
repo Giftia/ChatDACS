@@ -37,6 +37,8 @@ jobs:
           copy static temp -r
           copy plugins temp -r
           copy db.db temp
+          copy README.md temp
+          copy LICENSE temp
 
     - name: Upload data dir
       uses: actions/upload-artifact@v2
