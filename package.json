@@ -31,7 +31,7 @@
     "@babel/preset-env": "^7.7.7",
     "babel-loader": "^8.0.6",
     "webpack": "^4.41.5",
-    "webpack-cli": "^3.3.10"
+    "webpack-cli": "^4.7.2"
   },
   "repository": {
     "type": "git",
