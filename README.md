@@ -1,20 +1,31 @@
-<h1 align="center">
-  <img src="https://repository-images.githubusercontent.com/171253757/27be1b16-8dbb-41ba-90b5-4b28157f3def" width="200" height="200" alt="ChatDACS"/><br/>
-  星野夜蝶<br/>
-  Hoshino Yedie<br/>
-</h1>
-<h2 align="center">沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)</h2>
+<table width="100%" border="0">
+  <tr>
+  <td style="width:80%;vertical-align:top;">
+    <h1 align="center">
+      <img src="https://repository-images.githubusercontent.com/171253757/27be1b16-8dbb-41ba-90b5-4b28157f3def" width="200" height="200" alt="ChatDACS"/><br/>
+      星野夜蝶<br/>
+      Hoshino Yedie<br/>
+    </h1>
+    <h2 align="center">沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)</h2>
+    <p align="center">
+    一个无需服务器，可私有化部署、可独立运行于内网的H5聊天工具。<br/>
+    技术栈：语言——Node.js，web框架——Express，前端组件库——layui。<br/>
+    开箱即用，非常好用，我的朋友。<br/>
+    画师：塘李<br/>
+    <br/>
+    示例 DEMO：<a href="http://chatdacs.giftia.moe/" target="_blank">chatdacs.giftia.moe</a><br/>
+    简易搭建教程 Tutorials：<a href="https://zhuanlan.zhihu.com/p/67995935" target="_blank">zhuanlan.zhihu.com/p/67995935</a><br/>
+    隶属于星野夜蝶Official：<a href="https://github.com/Giftia/Project_Xiaoye" target="_blank">github.com/Giftia/Project_Xiaoye</a>
+    <br>
+  </td>
+
+  <td style="width:20%;vertical-align:top;">
+    <img src="https://github.com/Giftia/ChatDACS/blob/master/static/xiaoye/images/yedie_out.png" style="width:100px;" alt="stand" />
+  </td>
+  </tr>
+</table>
+
 <p align="center">
-一个无需服务器，可私有化部署、可独立运行于内网的H5聊天工具。<br/>
-技术栈：语言——Node.js，web框架——Express，前端组件库——layui。<br/>
-开箱即用，非常好用，我的朋友。<br/>
-画师：塘李<br/>
-<br/>
-示例 DEMO：<a href="http://chatdacs.giftia.moe/" target="_blank">chatdacs.giftia.moe</a><br/>
-简易搭建教程 Tutorials：<a href="https://zhuanlan.zhihu.com/p/67995935" target="_blank">zhuanlan.zhihu.com/p/67995935</a><br/>
-隶属于星野夜蝶Official：<a href="https://github.com/Giftia/Project_Xiaoye" target="_blank">github.com/Giftia/Project_Xiaoye</a>
-</p>
-  <p align="center">
   <img src="https://img.shields.io/uptimerobot/ratio/m783632550-7da46d24226cb151b978c810?style=for-the-badge" alt="Uptime(30 days)" />&nbsp;
   <img src="https://img.shields.io/website?label=demo&style=for-the-badge&up_message=online&url=http://chatdacs.giftia.moe/" alt="Demo" />
   &nbsp;
@@ -23,7 +34,7 @@
   <img src="https://img.shields.io/github/license/Giftia/ChatDACS?style=for-the-badge" alt="License" />
   &nbsp;
   <img src="https://img.shields.io/github/languages/code-size/Giftia/ChatDACS?style=for-the-badge" alt="Code size" />
-  </p>
+</p>
 
 ---
 

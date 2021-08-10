@@ -52,7 +52,7 @@ if (_cn_reg.test(`${process.cwd()}`)) {
 }
 
 //系统配置和开关，以及固定变量
-const version = "ChatDACS 3.0.8-Dev"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS v3.0.9-Dev"; //版本号，会显示在浏览器tab与标题栏
 const html = "/static/index.html"; //前端页面路径，old.html为旧版前端
 var boom_timer; //60s计时器
 let onlineusers = 0, //预定义
@@ -87,7 +87,7 @@ const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const thanks =
   "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、还有我的朋友们，以及倾心分享知识的各位";
-const updatelog = `<h1>3.0.8-Dev<br/>修复群欢迎失效，增加qq一致性判断，增加ping跑分</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议不要用噢；</li></ul>`;
+const updatelog = `<h1>v3.0.9-Dev<br/>修了一些bug，群聊开关独立控制</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议不要用噢；</li></ul>`;
 
 /*好了！以上就是系统的基本配置，如果没有必要，请不要再往下继续编辑了。请保存本文件。祝使用愉快！
  *
@@ -182,6 +182,8 @@ const has_qq_reg = new RegExp("\\[CQ:at,qq=(.*)\\]"); //匹配是否有@
 const admin_reg = new RegExp("\\/admin (.*)"); //匹配管理员指令
 const setu_reg = new RegExp(".*图.*来.*|.*来.*图.*"); //匹配色图来指令
 const i_have_a_friend_reg = new RegExp("我有一个朋友说.*|我有个朋友说.*"); //匹配我有个朋友指令
+const open_ju = new RegExp("张菊.*"); //匹配张菊指令
+const close_ju = new RegExp("闭菊.*"); //匹配闭菊指令
 
 //声明TTS调用接口
 let SpeechClient;
@@ -536,33 +538,46 @@ function start_qqbot() {
     //群服务开关判断
     if (req.body.message_type === "group" || req.body.notice_type === "group_increase" || req.body.sub_type === "poke") {
       //服务启用开关
-      if (req.body.message === "张菊") {
-        //查询请求者是否是管理员，只有管理员才可以让小夜张菊，该操作优先度最高
-        request(
-          `http://127.0.0.1:5700/get_group_member_info?group_id=${req.body.group_id}&user_id=${req.body.user_id}`,
-          function (_error, _response, body) {
-            body = JSON.parse(body);
-            if (body.data.role === "owner" || body.data.role === "admin") {
-              console.log(`群 ${req.body.group_id} 启用了小夜服务`.log);
-              db.run(`UPDATE qq_group SET talk_enabled = '1' WHERE group_id ='${req.body.group_id}'`);
-              res.send({ reply: "小夜的菊花被管理员张开了，小夜在本群的所有服务已经启用，要停用请发 闭菊" });
-              return 0;
-              //不是管理，再看看是不是qqBot管理员
-            } else {
-              for (let i in qq_admin_list) {
-                if (req.body.user_id == qq_admin_list[i]) {
+      //指定小夜的话
+      if (open_ju.test(req.body.message) && has_qq_reg.test(req.body.message)) {
+        var msg_in = req.body.message.split("菊")[1];
+        var who = msg_in.split("[CQ:at,qq=")[1];
+        var who = who.replace("]", "").trim();
+        if (is_qq_reg.test(who)) {
+          //如果是自己要被张菊，那么张菊
+          if (bot_qq == who) {
+            request(
+              `http://127.0.0.1:5700/get_group_member_info?group_id=${req.body.group_id}&user_id=${req.body.user_id}`,
+              function (_error, _response, body) {
+                body = JSON.parse(body);
+                if (body.data.role === "owner" || body.data.role === "admin") {
                   console.log(`群 ${req.body.group_id} 启用了小夜服务`.log);
                   db.run(`UPDATE qq_group SET talk_enabled = '1' WHERE group_id ='${req.body.group_id}'`);
-                  res.send({ reply: "小夜的菊花被主人张开了，小夜在本群的所有服务已经启用，要停用请发 闭菊" });
+                  res.send({ reply: "小夜的菊花被管理员张开了，这只小夜在本群的所有服务已经启用，要停用请发 闭菊" });
+                  return 0;
+                  //不是管理，再看看是不是qqBot管理员
+                } else {
+                  for (let i in qq_admin_list) {
+                    if (req.body.user_id == qq_admin_list[i]) {
+                      console.log(`群 ${req.body.group_id} 启用了小夜服务`.log);
+                      db.run(`UPDATE qq_group SET talk_enabled = '1' WHERE group_id ='${req.body.group_id}'`);
+                      res.send({ reply: "小夜的菊花被主人张开了，这只小夜在本群的所有服务已经启用，要停用请发 闭菊" });
+                      return 0;
+                    }
+                  }
+                  //看来真不是管理员呢
+                  res.send({ reply: "你不是群管理呢，小夜不张，张菊需要让管理员来帮忙张噢" });
                   return 0;
                 }
               }
-              //看来真不是管理员呢
-              res.send({ reply: "你不是群管理呢，小夜不张，张菊需要让管理员来帮忙张噢" });
-              return 0;
-            }
+            );
+            return 0;
+            //不是这只小夜被张菊的话，嘲讽那只小夜
+          } else {
+            res.send({ reply: `${msg_in}说你呢，快张菊！` });
+            return 0;
           }
-        );
+        }
       }
       //在收到群消息的时候搜索群是否存在于qq_group表，判断聊天开关
       else {
@@ -610,7 +625,26 @@ function start_qqbot() {
               }
 
               //服务停用开关
-              if (req.body.message === "闭菊") {
+              //指定小夜的话
+              if (close_ju.test(req.body.message) && has_qq_reg.test(req.body.message)) {
+                var msg_in = req.body.message.split("菊")[1];
+                var who = msg_in.split("[CQ:at,qq=")[1];
+                var who = who.replace("]", "").trim();
+                if (is_qq_reg.test(who)) {
+                  //如果是自己要被闭菊，那么闭菊
+                  if (bot_qq == who) {
+                    console.log(`群 ${req.body.group_id} 停止了小夜服务`.error);
+                    db.run(`UPDATE qq_group SET talk_enabled = '0' WHERE group_id ='${req.body.group_id}'`);
+                    res.send({ reply: "小夜的菊花闭上了，这只小夜在本群的所有服务已经停用，取消请发 张菊" });
+                    return 0;
+                    //不是这只小夜被闭菊的话，嘲讽那只小夜
+                  } else {
+                    res.send({ reply: `${msg_in}说你呢，快闭菊！` });
+                    return 0;
+                  }
+                }
+                //没指定小夜
+              } else if (req.body.message === "闭菊") {
                 console.log(`群 ${req.body.group_id} 停止了小夜服务`.error);
                 db.run(`UPDATE qq_group SET talk_enabled = '0' WHERE group_id ='${req.body.group_id}'`);
                 res.send({ reply: "小夜的菊花闭上了，小夜在本群的所有服务已经停用，取消请发 张菊" });
@@ -1498,7 +1532,7 @@ function start_qqbot() {
                   ctx.fillText("沙雕网友群", 90.5, 35.5);
                   ctx.font = "16px SimHei";
                   ctx.fillStyle = "#716F81";
-                  ctx.fillText(`沙雕网友：${msg}`, 90.5, 55.5);
+                  ctx.fillText(`沙雕网友: ${msg}`, 90.5, 55.5);
                   ctx.font = "13px SimHei";
                   ctx.fillText(CurentTime(), 280.5, 35.5);
 
@@ -1562,68 +1596,12 @@ function start_qqbot() {
 
               //戳一戳
               if (req.body.sub_type === "poke") {
-                let action = [
-                  "攥",
-                  "跨",
-                  "蹲",
-                  "抱",
-                  "挂",
-                  "炸",
-                  "蹦",
-                  "跳",
-                  "飘",
-                  "坐",
-                  "扫",
-                  "提",
-                  "搬",
-                  "推",
-                  "挑",
-                  "抬",
-                  "捕",
-                  "捉",
-                  "抓",
-                  "涌",
-                  "抽",
-                  "摘",
-                  "取",
-                  "挂",
-                  "拴",
-                  "寻",
-                  "望",
-                  "踏",
-                  "淦",
-                  "扭",
-                  "捏",
-                  "草",
-                  "日",
-                ];
-                let turn_to = [
-                  "沉鱼落雁",
-                  "眉目如画",
-                  "风度翩翩",
-                  "文质彬彬",
-                  "聪明伶俐",
-                  "眉清目秀",
-                  "面黄肌瘦",
-                  "冰清玉洁",
-                  "垂头丧气",
-                  "滔滔不绝",
-                  "美如冠玉",
-                  "鹤发童颜",
-                  "豁达大度",
-                  "眉飞色舞",
-                  "闭月羞花",
-                  "出淤泥而不染",
-                  "倾国倾城",
-                ];
-                let rand_action = action[Math.floor(Math.random() * action.length)];
-                let turn_to_action = turn_to[Math.floor(Math.random() * turn_to.length)];
-                let final = `你${rand_action}了一下[CQ:at,qq=${req.body.target_id}]，ta变得${turn_to_action}了`;
+                let final = `请不要戳小小夜 >_<`;
                 request(
                   "http://127.0.0.1:5700/send_group_msg?group_id=" + req.body.group_id + "&message=" + encodeURI(final),
                   function (error, _response, _body) {
                     if (!error) {
-                      console.log(`${req.body.user_id} ${rand_action} 了一下 ${req.body.target_id}，ta变得${turn_to_action}了`.log);
+                      console.log(`${req.body.user_id} 戳了一下 ${req.body.target_id}`.log);
                     } else {
                       console.log("请求127.0.0.1:5700/send_group_msg错误：", error);
                     }
@@ -2565,8 +2543,8 @@ function GetLaststDanmu() {
         try {
           body.data.room[0].text;
         } catch (err) {
-          console.log(`直播间刚开，还没有弹幕`.error);
-          reject("直播间刚开，还没有弹幕", err, response);
+          reject("直播间刚开，还没有弹幕，请再等等吧", err, response);
+          return 0;
         }
         resolve({ text: body.data.room[body.data.room.length - 1].text, timeline: body.data.room[body.data.room.length - 1].timeline });
       } else {
