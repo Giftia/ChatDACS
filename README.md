@@ -73,7 +73,7 @@
 
 然后运行 go-cqhttp_windows_amd64.exe，看看 qq 有没有正常登陆上，
 
-之后打开 config 文件夹里的 config.yml 文件，修改并保存第 17 行 bot_qq 的配置项为 bot 使用的 qq 帐号，
+之后打开 config 文件夹里的 config.yml 文件，修改并保存第 43 行 bot_qq 的配置项为 bot 使用的 qq 帐号，
 
 最后直接运行 chatdacs.exe 就可以辣。
 
