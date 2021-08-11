@@ -52,7 +52,7 @@ if (_cn_reg.test(`${process.cwd()}`)) {
 }
 
 //系统配置和开关，以及固定变量
-const version = "ChatDACS v3.0.10-Factory"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS v3.0.11-Debug"; //版本号，会显示在浏览器tab与标题栏
 const html = "/static/index.html"; //前端页面路径，old.html为旧版前端
 var boom_timer; //60s计时器
 let onlineusers = 0, //预定义
@@ -82,14 +82,15 @@ let onlineusers = 0, //预定义
   qqimg_to_web,
   max_mine_count,
   cos_total_count,
-  xiaoye_ated;
+  xiaoye_ated,
+  c1c_count = 0;
 
 //web端配置
 const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const thanks =
   "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、还有我的朋友们，以及倾心分享知识的各位";
-const updatelog = `<h1>v3.0.10-Factory<br/>自定义使用端口，移除了web端新闻，修了[name]的解析问题</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议不要用噢；</li></ul>`;
+const updatelog = `<h1>v3.0.11-Debug<br/>追回莫名其妙被删掉的教学系统，加了报错功能</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议不要用噢；</li></ul>`;
 
 /*好了！以上就是系统的基本配置，如果没有必要，请不要再往下继续编辑了。请保存本文件。祝使用愉快！
  *
@@ -125,24 +126,10 @@ jieba.load({
   stopWordDict: path.join(`${process.cwd()}`, "config", "stopWordDict.txt"), //加载分词库黑名单
 });
 const yaml = require("yaml"); //使用yaml解析配置文件
-
-//日志染色颜色配置
-colors.setTheme({
-  alert: "inverse",
-  random: "random",
-  on: "magenta",
-  off: "green",
-  warn: "yellow",
-  error: "red",
-  log: "blue",
-});
-
-console.log(`当前工作目录：${process.cwd()}`.log);
-
 const AipSpeech = require("baidu-aip-sdk").speech; //百度语音sdk
 const crypto = require("crypto"); //编码库，用于sha1生成文件名
 const voiceplayer = require("play-sound")((opts = { player: `${process.cwd()}/plugins/cmdmp3win.exe` })); //mp3静默播放工具，用于直播时播放语音
-const { createCanvas, loadImage } = require("canvas"); //用于绘制文字图像，迫害p图
+const { createCanvas, loadImage, Image } = require("canvas"); //用于绘制文字图像，迫害p图
 const { resolve } = require("path");
 const os = require("os"); //用于获取系统工作状态
 const { exit } = require("process");
@@ -165,7 +152,7 @@ const bv2av_reg = new RegExp("^[a-zA-Z0-9]{10,12}$"); //匹配bv号
 const isImage_reg = new RegExp("\\[CQ:image,file="); //匹配qqBot图片
 const change_reply_probability_reg = new RegExp("^/admin_change_reply_probability [0-9]*"); //匹配修改qqBot小夜回复率
 const change_fudu_probability_reg = new RegExp("^/admin_change_fudu_probability [0-9]*"); //匹配修改qqBot小夜复读率
-const img_url_reg = new RegExp("https(.*term=3)"); //匹配图片地址
+const img_url_reg = new RegExp("https(.*term=)"); //匹配图片地址
 const isVideo_reg = new RegExp("^\\[CQ:video,file="); //匹配qqBot图片
 const video_url_reg = new RegExp("http(.*term=unknow)"); //匹配视频地址
 const yap_reg = new RegExp("^\\/吠 (.*)"); //匹配请求语音
@@ -186,9 +173,25 @@ const setu_reg = new RegExp(".*图.*来.*|.*来.*图.*"); //匹配色图来指�
 const i_have_a_friend_reg = new RegExp("我有一个朋友说.*|我有个朋友说.*"); //匹配我有个朋友指令
 const open_ju = new RegExp("张菊.*"); //匹配张菊指令
 const close_ju = new RegExp("闭菊.*"); //匹配闭菊指令
+const black_history = new RegExp("\\[CQ:reply,id=.*黑历史"); //匹配黑历史指令
+const roll_black_history = new RegExp("来点黑历史"); //匹配来点黑历史指令
+const feed_back = new RegExp("/报错"); //匹配报错指令
+
+//日志染色颜色配置
+colors.setTheme({
+  alert: "inverse",
+  random: "random",
+  on: "magenta",
+  off: "green",
+  warn: "yellow",
+  error: "red",
+  log: "blue",
+});
 
 //声明TTS调用接口
 let SpeechClient;
+
+console.log(`当前工作目录：${process.cwd()}`.log);
 
 //载入配置
 InitConfig();
@@ -645,7 +648,7 @@ function start_qqbot() {
                   if (bot_qq == who) {
                     console.log(`群 ${req.body.group_id} 停止了小夜服务`.error);
                     db.run(`UPDATE qq_group SET talk_enabled = '0' WHERE group_id ='${req.body.group_id}'`);
-                    res.send({ reply: "小夜的菊花闭上了，这只小夜在本群的所有服务已经停用，取消请发 张菊" });
+                    res.send({ reply: `小夜的菊花闭上了，这只小夜在本群的所有服务已经停用，取消请发 张菊\[CQ:at,qq=${bot_qq}\]` });
                     return 0;
                     //不是这只小夜被闭菊的话，嘲讽那只小夜
                   } else {
@@ -657,7 +660,7 @@ function start_qqbot() {
               } else if (req.body.message === "闭菊") {
                 console.log(`群 ${req.body.group_id} 停止了小夜服务`.error);
                 db.run(`UPDATE qq_group SET talk_enabled = '0' WHERE group_id ='${req.body.group_id}'`);
-                res.send({ reply: "小夜的菊花闭上了，小夜在本群的所有服务已经停用，取消请发 张菊" });
+                res.send({ reply: `小夜的菊花闭上了，小夜在本群的所有服务已经停用，取消请发 张菊\[CQ:at,qq=${bot_qq}\]` });
                 return 0;
               }
 
@@ -674,6 +677,67 @@ function start_qqbot() {
                 runtime = process.hrtime(runtime)[1] / 1000 / 1000;
 
                 res.send({ reply: `Pong! ${test} in ${runtime}ms` });
+                return 0;
+              }
+
+              //报错
+              if (feed_back.test(req.body.message)) {
+                console.log("有人想报错".log);
+                let msg = `用户 ${req.body.user_id}(${req.body.sender.nickname}) 报告了错误：`;
+                msg += req.body.message.replace("/报错 ", "");
+                msg = msg.replace("/报错", "");
+                request(`http://${go_cqhttp_api}/send_group_msg?group_id=120243247&message=${encodeURI(msg)}`, function (error, _response, _body) {
+                  if (!error) {
+                    console.log(`${req.body.user_id} 反馈了错误 ${msg}`.log);
+                  } else {
+                    console.log("请求${go_cqhttp_api}/send_group_msg错误：", error);
+                  }
+                });
+
+                res.send({ reply: `谢谢您的反馈，小夜已经把您的反馈信息发给了开发团队辣` });
+                return 0;
+              }
+
+              //戳一戳
+              if (req.body.sub_type === "poke" && req.body.target_id == bot_qq) {
+                c1c_count++;
+                if (c1c_count > 2) {
+                  c1c_count = 0;
+                  let final = "哎呀戳坏了，不理你了 ٩(๑`^´๑)۶";
+                  request(
+                    `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(final)}`,
+                    function (error, _response, _body) {
+                      if (!error) {
+                        console.log(`${req.body.user_id} 戳了一下 ${req.body.target_id}`.log);
+                        request(
+                          `http://${go_cqhttp_api}/set_group_ban?group_id=${req.body.group_id}&user_id=${req.body.user_id}&duration=10`,
+                          function (error, _response, _body) {
+                            if (!error) {
+                              console.log(`小夜生气了，${req.body.user_id} 被禁言`.error);
+                            } else {
+                              console.log("请求${go_cqhttp_api}/set_group_ban错误：", error);
+                              res.send({ reply: `日忒娘，怎么又出错了` });
+                            }
+                          }
+                        );
+                      } else {
+                        console.log("请求${go_cqhttp_api}/send_group_msg错误：", error);
+                      }
+                    }
+                  );
+                } else {
+                  let final = `请不要戳小小夜 >_<`;
+                  request(
+                    `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(final)}`,
+                    function (error, _response, _body) {
+                      if (!error) {
+                        console.log(`${req.body.user_id} 戳了一下 ${req.body.target_id}`.log);
+                      } else {
+                        console.log("请求${go_cqhttp_api}/send_group_msg错误：", error);
+                      }
+                    }
+                  );
+                }
                 return 0;
               }
 
@@ -939,7 +1003,7 @@ function start_qqbot() {
                   let final = `小夜温馨提示您：今日不戴套，孩子${star_set_result}座，属${shenxiao_result}，${year + 18}年高考，一本机率约${parseInt(
                     Math.random() * (99 - 20 + 1) + 20,
                     10
-                  )}`;
+                  )}%`;
                   console.log(`今日不带套指令：${final} `.log);
                   res.send({ reply: final });
                   return 0;
@@ -1011,16 +1075,17 @@ function start_qqbot() {
 
               //迫害，p图，这里需要重写复用
               if (pohai_reg.test(req.body.message)) {
-                let pohai_list = ["唐可可", "上原步梦", "猛男狗", "令和", "鸭鸭"]; //迫害名单
-                let pohai_pic_list = ["coco_echo.jpg", "ayumu_qaq.jpg", "doge.jpg", "nianhao.jpg", "yaya.gif"]; //迫害图片列表
+                let pohai_list = ["唐可可", "上原步梦", "猛男狗", "令和", "鸭鸭", "陈睿"]; //迫害名单
+                let pohai_pic_list = ["coco_echo.jpg", "ayumu_qaq.jpg", "doge.jpg", "nianhao.jpg", "yaya.gif", "bilibili.png"]; //迫害图片列表
                 let pohai_pic = "coco_echo.jpg"; //迫害图片，如果被迫害人不在迫害名单里，那么默认迫害唐可可
                 let tex_config_list = {
-                  唐可可: ["390", "160", "-0.19", "8"],
-                  上原步梦: ["227", "440", "0", "26"],
-                  猛男狗: ["170", "100", "0", "0"],
-                  令和: ["130", "110", "-0.05", "1"],
-                  鸭鸭: ["30", "30", "0", "2"],
-                }; //迫害文字位置，left、top、rotate、多少字换行
+                  唐可可: ["390", "160", "-0.19", "8", "30"],
+                  上原步梦: ["227", "440", "0", "26", "30"],
+                  猛男狗: ["200", "100", "0", "0", "30"],
+                  令和: ["130", "110", "-0.05", "1", "30"],
+                  鸭鸭: ["30", "30", "0", "2", "30"],
+                  陈睿: ["94", "390", "-0.01", "12", "15"],
+                }; //迫害文字位置，left、top、rotate、多少字换行、字体大小
                 let tex_config = tex_config_list.唐可可; //默认迫害文字位置是唐可可的
                 let msg = req.body.message + " "; //结尾加一个空格防爆
 
@@ -1083,7 +1148,7 @@ function start_qqbot() {
                             let canvas = createCanvas(parseInt(image.width), parseInt(image.height)); //根据迫害图尺寸创建画布
                             let ctx = canvas.getContext("2d");
                             ctx.drawImage(image, 0, 0);
-                            ctx.font = "30px Sans";
+                            ctx.font = `${tex_config[4]}px Sans`;
                             ctx.textAlign = "center";
                             ctx.rotate(tex_config[2]);
                             //ctx.fillStyle = "#00ff00";
@@ -1125,7 +1190,7 @@ function start_qqbot() {
                     let canvas = createCanvas(parseInt(image.width), parseInt(image.height)); //根据迫害图尺寸创建画布
                     let ctx = canvas.getContext("2d");
                     ctx.drawImage(image, 0, 0);
-                    ctx.font = "30px Sans";
+                    ctx.font = `${tex_config[4]}px Sans`;
                     ctx.textAlign = "center";
                     ctx.rotate(tex_config[2]);
                     //ctx.fillStyle = "#00ff00";
@@ -1564,24 +1629,127 @@ function start_qqbot() {
                 return 0;
               }
 
+              //砍了，黑历史，将指定的回复制图并放入黑历史文件夹
+              if (black_history.test(req.body.message)) {
+                //从 [CQ:reply,id=265936982][CQ:at,qq=38263547] 黑历史 消息里获取id
+
+                var msg_in = req.body.message.split("id=")[1];
+                var id = msg_in.split("][CQ:at,qq=")[0].trim();
+
+                request(`http://${go_cqhttp_api}/get_msg?message_id=${id}`, function (error, _response, body) {
+                  body = JSON.parse(body);
+                  if (!error) {
+                    console.log(`获取黑历史消息`.log);
+                    let canvas = createCanvas(700, 160);
+                    let ctx = canvas.getContext("2d");
+
+                    var sources = `https://api.sumt.cn/api/qq.logo.php?qq=${body.data.sender.user_id}`;
+
+                    loadImage(sources).then((image) => {
+                      //先画底色
+                      ctx.fillStyle = "#EAEDF4";
+                      ctx.fillRect(0, 0, 700, 160);
+
+                      //先画聊天框
+                      let ltk_left = 60,
+                        ltk_top = 20;
+
+                      const top = new Image();
+                      top.onload = () => ctx.drawImage(top, ltk_left, ltk_top, 630, 144);
+                      top.onerror = (err) => {
+                        throw err;
+                      };
+                      top.src = `${process.cwd()}\\static\\xiaoye\\ps\\black_history_top.png`;
+
+                      const mid = new Image();
+                      mid.onload = () => ctx.drawImage(mid, ltk_left, ltk_top, 630, 144);
+                      mid.onerror = (err) => {
+                        throw err;
+                      };
+                      mid.src = `${process.cwd()}\\static\\xiaoye\\ps\\black_history_mid.png`;
+
+                      const bott = new Image();
+                      bott.onload = () => ctx.drawImage(bott, ltk_left, ltk_top, 630, 144);
+                      bott.onerror = (err) => {
+                        throw err;
+                      };
+                      bott.src = `${process.cwd()}\\static\\xiaoye\\ps\\black_history_bott.png`;
+
+                      //试试画图片
+                      if (isImage_reg.test(body.data.message)) {
+                        let url = img_url_reg.exec(body.data.message)[0];
+                        console.log(url);
+                        const piccc = new Image();
+                        piccc.onload = () => ctx.drawImage(piccc, 0, 0, 200, 200);
+                        piccc.onerror = (err) => {
+                          throw err;
+                        };
+                        piccc.src = url;
+                      }
+
+                      //再画内容
+                      ctx.font = "19px SimHei";
+                      ctx.textAlign = "left";
+                      ctx.fillStyle = "#716F81";
+                      ctx.fillText(`${body.data.sender.nickname}`, 100.5, 25.5);
+                      ctx.font = "24px SimHei";
+                      ctx.fillStyle = "#000000";
+                      let tex = body.data.message;
+                      if (body.data.message.length > 37) {
+                        let enter = 37;
+                        let new_tex = "";
+                        for (let i = 0, j = 1; i < body.data.message.length; i++, j++) {
+                          if (j && j % enter == 0) {
+                            new_tex += body.data.message[i] + "\n";
+                          } else {
+                            new_tex += body.data.message[i];
+                          }
+                        }
+                        tex = new_tex;
+                      }
+                      ctx.fillText(`${tex}`, 100.5, 66.5);
+
+                      ctx.beginPath();
+                      ctx.arc(40, 40, 28, 0, 2 * Math.PI);
+                      ctx.fill();
+                      ctx.clip();
+                      ctx.drawImage(image, 10, 10, 60, 60);
+                      ctx.closePath();
+
+                      let file_local = path.join(`${process.cwd()}`, `static`, `xiaoye`, `black_history`, `${sha1(canvas.toBuffer())}.jpg`);
+                      fs.writeFileSync(file_local, canvas.toBuffer());
+                      let file_online = `http://127.0.0.1/xiaoye/black_history/${sha1(canvas.toBuffer())}.jpg`;
+                      console.log(`黑历史合成成功，图片发送：${file_online}`.log);
+                      res.send({
+                        reply: `[CQ:image,file=${file_online},url=${file_online}]`,
+                      });
+                    });
+                  } else {
+                    console.log("请求${go_cqhttp_api}/get_msg错误：", error);
+                  }
+                });
+                return 0;
+              }
+
               //查询运行状态
               if (req.body.message === "/status") {
                 console.log(`查询运行状态`.log);
                 let stat = "";
-                if (bot_qq != req.body.self_id) {
-                  stat = `错误：检测到小夜实际使用的qq：${req.body.self_id} 与配置的qq：${bot_qq} 不一致，请去 config/config.yml 里修改为一致的噢，不然 @我 是说不出话来的`;
-                } else {
-                  stat = `企划：星野夜蝶Official
+                let self_id = req.body.self_id;
+                self_id != bot_qq
+                  ? (self_id = `错误：检测到小夜实际使用的qq：${req.body.self_id} 与配置的qq：${bot_qq} 不一致，请去 config/config.yml 里修改为一致的噢，不然 @我 是说不出话来的`)
+                  : (self_id = self_id); //试着用一下三元运算符，比if稍微绕一些，但是习惯了非常符合直觉，原理是：当?前的条件成立时，执行:前的语句，不成立的话执行:后的语句
+                self_id != "1648468212" ? (self_id = self_id) : (self_id = "1648468212(小小夜本家)"); //试着用一下三元运算符
+                stat = `企划：星野夜蝶Official
 核心版本：${version}
-使用QQ帐号：${req.body.self_id}
+使用QQ帐号：${self_id}
 宿主内核架构：${os.hostname()} ${os.platform()} ${os.arch()}
 正常运行时间：${Math.round(os.uptime() / 60 / 60)}小时
 剩余内存：${Math.round(os.freemem() / 1024 / 1024)}MB
-如果该小夜出现任何故障，请联系该小夜领养员或者开发人员。
+如果该小夜出现任何故障，请联系该小夜领养员，
+也可以发送 /报错 小夜的错误 来提交bug给开发团队。
 点击加入夜爹开发群：https://jq.qq.com/?_wv=1027&k=bTZSd2iI
 `;
-                }
-
                 res.send({
                   reply: stat,
                 });
@@ -1592,26 +1760,10 @@ function start_qqbot() {
               if (req.body.notice_type === "group_increase") {
                 let final = `[CQ:at,qq=${req.body.user_id}] 你好呀，我是本群RBQ担当小夜！小夜的使用说明书在这里 https://blog.giftia.moe/ 噢，请问主人是要先吃饭呢，还是先洗澡呢，还是先*我呢~`;
                 request(
-                  "http://${go_cqhttp_api}/send_group_msg?group_id=" + req.body.group_id + "&message=" + encodeURI(final),
+                  `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(final)}`,
                   function (error, _response, _body) {
                     if (!error) {
                       console.log(`${req.body.user_id} 加入了群 ${req.body.group_id}，小夜欢迎了ta`.log);
-                    } else {
-                      console.log("请求${go_cqhttp_api}/send_group_msg错误：", error);
-                    }
-                  }
-                );
-                return 0;
-              }
-
-              //戳一戳
-              if (req.body.sub_type === "poke") {
-                let final = `请不要戳小小夜 >_<`;
-                request(
-                  "http://${go_cqhttp_api}/send_group_msg?group_id=" + req.body.group_id + "&message=" + encodeURI(final),
-                  function (error, _response, _body) {
-                    if (!error) {
-                      console.log(`${req.body.user_id} 戳了一下 ${req.body.target_id}`.log);
                     } else {
                       console.log("请求${go_cqhttp_api}/send_group_msg错误：", error);
                     }
@@ -1671,7 +1823,7 @@ function start_qqbot() {
                     RandomGroupList()
                       .then((resolve) => {
                         request(
-                          "http://${go_cqhttp_api}/send_group_msg?group_id=" + resolve + "&message=" + encodeURI(prprmsg),
+                          `http://${go_cqhttp_api}/send_group_msg?group_id=${resolve}&message=${encodeURI(prprmsg)}`,
                           function (error, _response, _body) {
                             if (!error) {
                               console.log(`qqBot小夜在群 ${resolve} 抽风了，发送了 ${prprmsg}`.log);
@@ -1718,6 +1870,7 @@ function start_qqbot() {
                     console.log(`qqBot小夜回复 ${resolve}`.log);
                     io.emit("system message", `@qqBot小夜回复：${resolve}`);
                     res.send({ reply: resolve });
+                    return 0;
                   })
                   .catch((reject) => {
                     //无匹配则随机回复balabala废话
@@ -1727,11 +1880,13 @@ function start_qqbot() {
                         res.send({ reply: random_balabala });
                         io.emit("system message", `@qqBot小夜觉得${random_balabala}`);
                         console.log(`${reject}，qqBot小夜觉得${random_balabala}`.log);
+                        return 0;
                       })
                       .catch((reject) => {
                         console.log(`小夜试图balabala但出错了：${reject}`.error);
                         res.send({ reply: `小夜试图balabala但出错了：${reject}` });
                         io.emit("system message", `@qqBot小夜试图balabala但出错了：${reject}`);
+                        return 0;
                       });
                   });
               } else {
@@ -2465,7 +2620,7 @@ function SaveQQimg(imgUrl) {
 //随机选取一个群
 function RandomGroupList() {
   return new Promise((resolve, reject) => {
-    request("http://${go_cqhttp_api}/get_group_list", (err, response, body) => {
+    request(`http://${go_cqhttp_api}/get_group_list`, (err, response, body) => {
       body = JSON.parse(body);
       if (!err && body.data.length != 0) {
         var rand_group_num = Math.floor(Math.random() * body.data.length);
@@ -2567,10 +2722,10 @@ function GetLaststDanmu() {
 function DelayAlert(service_stoped_list) {
   let alert_msg = [
     //提醒文本列表
-    "呜呜呜，把人家冷落了那么久，能不能让小夜张菊了呢...",
-    "闭菊那么久了，朕的菊花痒了！还不快让小夜张菊！",
-    "小夜也想为大家带来快乐，所以让小夜张菊，好吗？",
-    "欧尼酱，不要再无视我了，小夜那里很舒服的，让小夜张菊试试吧~",
+    `呜呜呜，把人家冷落了那么久，能不能让小夜张菊了呢...小夜的张菊指令更新了，现在需要发 张菊\[CQ:at,qq=${bot_qq}\] 才可以了噢`,
+    `闭菊那么久了，朕的菊花痒了！还不快让小夜张菊！小夜的张菊指令更新了，现在需要发 张菊\[CQ:at,qq=${bot_qq}\] 才可以了噢`,
+    `小夜也想为大家带来快乐，所以让小夜张菊，好吗？小夜的张菊指令更新了，现在需要发 张菊\[CQ:at,qq=${bot_qq}\] 才可以了噢`,
+    `欧尼酱，不要再无视我了，小夜那里很舒服的，让小夜张菊试试吧~小夜的张菊指令更新了，现在需要发 张菊\[CQ:at,qq=${bot_qq}\] 才可以了噢`,
   ];
   for (let i in service_stoped_list) {
     let delay_time = Math.floor(Math.random() * 60); //随机延时0到60秒
