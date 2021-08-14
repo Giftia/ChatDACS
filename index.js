@@ -52,7 +52,7 @@ if (_cn_reg.test(`${process.cwd()}`)) {
 }
 
 //系统配置和开关，以及固定变量
-const version = `ChatDACS v3.0.12-Bug`; //版本号，会显示在浏览器tab与标题栏
+const version = `ChatDACS v3.0.13-Dev`; //版本号，会显示在浏览器tab与标题栏
 const html = "/static/index.html"; //前端页面路径，old.html为旧版前端
 var boom_timer; //60s计时器
 let onlineusers = 0, //预定义
@@ -90,7 +90,7 @@ const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const thanks =
   "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、还有我的朋友们，以及倾心分享知识的各位";
-const updatelog = `<h1>v3.0.12-Bug<br/>加了七夕特别功能孤寡，修了go-cqhttp端过多的waring报错，debug染色优化，砍了黑历史，修了重复响应事件的缺陷，减少了被风控概率</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议不要用噢；</li></ul>`;
+const updatelog = `<h1>v3.0.13-Dev<br/>加了七夕特别功能孤寡，修了go-cqhttp端过多的waring报错，debug染色优化，砍了黑历史，修了重复响应事件的缺陷，减少了被风控概率</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议不要用噢；</li></ul>`;
 
 /*好了！以上就是系统的基本配置，如果没有必要，请不要再往下继续编辑了。请保存本文件。祝使用愉快！
  *
@@ -1850,7 +1850,7 @@ function start_qqbot() {
                       });
                   });
               } else {
-                //res.send(); //相当于严格模式，如果有多条res.send将会报错
+                res.send(); //相当于严格模式，如果有多条res.send将会报错
               }
             }
             //群不存在于qq_group表则写入qq_group表
@@ -2735,7 +2735,7 @@ function Gugua(who) {
     "1.jpg",
     "2.jpg",
     "3.jpg",
-    "4.gif",
+    "4.png",
     "5.gif",
   ];
   for (let i in gugua_pic_list) {
