@@ -52,7 +52,7 @@ if (_cn_reg.test(`${process.cwd()}`)) {
 }
 
 //系统配置和开关，以及固定变量
-const version = `ChatDACS v3.0.13-Dev`; //版本号，会显示在浏览器tab与标题栏
+const version = `ChatDACS v3.0.14-Dev`; //版本号，会显示在浏览器tab与标题栏
 const html = "/static/index.html"; //前端页面路径，old.html为旧版前端
 var boom_timer; //60s计时器
 let onlineusers = 0, //预定义
@@ -90,7 +90,7 @@ const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const thanks =
   "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、还有我的朋友们，以及倾心分享知识的各位";
-const updatelog = `<h1>v3.0.13-Dev<br/>加了七夕特别功能孤寡，修了go-cqhttp端过多的waring报错，debug染色优化，砍了黑历史，修了重复响应事件的缺陷，减少了被风控概率</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议不要用噢；</li></ul>`;
+const updatelog = `<h1>v3.0.14-Dev<br/>孤寡加了是谁点的</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议不要用噢；</li></ul>`;
 
 /*好了！以上就是系统的基本配置，如果没有必要，请不要再往下继续编辑了。请保存本文件。祝使用愉快！
  *
@@ -157,12 +157,12 @@ const change_fudu_probability_reg = new RegExp("^/admin_change_fudu_probability 
 const img_url_reg = new RegExp("https(.*term=)"); //匹配图片地址
 const isVideo_reg = new RegExp("^\\[CQ:video,file="); //匹配qqBot图片
 const video_url_reg = new RegExp("http(.*term=unknow)"); //匹配视频地址
-const yap_reg = new RegExp("^\\/吠 (.*)"); //匹配请求语音
-const come_yap_reg = new RegExp("^\\/嘴臭 (.*)"); //匹配对话语音
+const yap_reg = new RegExp("^/吠.*"); //匹配请求语音
+const come_yap_reg = new RegExp("^/嘴臭(.*)"); //匹配对话语音
 const teach_reg = new RegExp("^问：(.*)答：(.*)"); //匹配教学指令
-const prpr_reg = new RegExp("^\\/prpr (.*)"); //匹配prpr
-const pohai_reg = new RegExp("^\\/迫害 (.*)"); //匹配迫害p图
-const teach_balabala_reg = new RegExp("^\\/说不出话 (.*)"); //匹配balabala教学
+const prpr_reg = new RegExp("^/prpr (.*)"); //匹配prpr
+const pohai_reg = new RegExp("^/迫害 (.*)"); //匹配迫害p图
+const teach_balabala_reg = new RegExp("^/说不出话 (.*)"); //匹配balabala教学
 const hand_grenade_reg = new RegExp("^一个手雷(.*)"); //匹配一个手雷
 const mine_reg = new RegExp("埋地雷"); //匹配埋地雷
 const fuck_mine_reg = new RegExp("踩地雷"); //匹配踩地雷
@@ -393,6 +393,7 @@ io.on("connection", (socket) => {
       //吠
     } else if (yap_reg.test(msg)) {
       msg = msg.replace("/吠 ", "");
+      msg = msg.replace("/吠", "");
       BetterTTS(msg)
         .then((resolve) => {
           io.emit("audio message", resolve);
@@ -912,8 +913,8 @@ function start_qqbot() {
 
               //吠，直接把文字转化为语音
               if (yap_reg.test(req.body.message)) {
-                let tex = req.body.message;
-                tex = tex.replace("/吠 ", "");
+                let tex = req.body.message.replace("/吠 ", "");
+                tex = tex.replace("/吠", "");
                 BetterTTS(tex)
                   .then((resolve) => {
                     let tts_file = `[CQ:record,file=http://127.0.0.1${resolve.file},url=http://127.0.0.1${resolve.file}]`;
@@ -927,8 +928,8 @@ function start_qqbot() {
 
               //嘴臭，小夜的回复转化为语音
               if (come_yap_reg.test(req.body.message)) {
-                let message = req.body.message;
-                message = message.replace("/嘴臭 ", "");
+                let message = req.body.message.replace("/嘴臭 ", "");
+                message = message.replace("/嘴臭", "");
                 console.log(`有人对线说 ${message}，小夜要嘴臭了`.log);
                 io.emit("sysrem message", `@有人对线说 ${message}，小夜要嘴臭了`);
                 ChatProcess(message)
@@ -1681,8 +1682,8 @@ function start_qqbot() {
 
               //孤寡
               if (gugua.test(req.body.message)) {
-                if (req.body.message === "/孤寡") {
-                  res.send({ reply: `小夜收到了你的孤寡订单，现在就开始孤寡你了` });
+                if (req.body.message == "/孤寡") {
+                  res.send({ reply: `小夜收到了你的孤寡订单，现在就开始孤寡你了噢孤寡~` });
                   Gugua(req.body.user_id);
                   return 0;
                 }
@@ -1697,13 +1698,27 @@ function start_qqbot() {
                     if (!err && body.data.length != 0) {
                       for (let i in body.data) {
                         if (who == body.data[i].user_id) {
-                          console.log(`群 ${req.body.group_id} 的 群员 ${req.body.user_id} 孤寡了 ${who}`.log);
                           res.send({ reply: `小夜收到了你的孤寡订单，现在就开始孤寡\[CQ:at,qq=${who}\]了噢孤寡~` });
+                          request(
+                            `http://${go_cqhttp_api}/send_private_msg?user_id=${who}&message=${encodeURI(
+                              `您好，我是孤寡小夜，您的好友 ${req.body.user_id} 给您点了一份孤寡套餐，请查收`
+                            )}`,
+                            function (error, _response, _body) {
+                              if (!error) {
+                                console.log(`群 ${req.body.group_id} 的 群员 ${req.body.user_id} 孤寡了 ${who}`.log);
+                              } else {
+                                console.log("请求${go_cqhttp_api}/send_private_msg错误：", error);
+                              }
+                            }
+                          );
                           Gugua(who);
                           return 0;
                         }
                       }
-                      res.send({ reply: `小夜没有\[CQ:at,qq=${who}\]的好友，没有办法孤寡ta呢，请先让ta加小夜为好友吧` });
+                      res.send({
+                        reply: `小夜没有\[CQ:at,qq=${who}\]的好友，没有办法孤寡ta呢，请先让ta加小夜为好友吧，小夜就在群里给大家孤寡一下吧`,
+                      });
+                      QunGugua(req.body.group_id);
                     } else {
                       reject("随机选取一个群错误。错误原因：" + JSON.stringify(response.body));
                     }
@@ -2748,6 +2763,32 @@ function Gugua(who) {
           console.log(`qqBot小夜孤寡了 ${who}，孤寡图为：${pic_now}`.log);
         } else {
           console.log("请求${go_cqhttp_api}/send_private_msg错误：", error);
+        }
+      });
+    }, 1000 * 5 * i);
+  }
+}
+
+//群发送孤寡
+function QunGugua(who) {
+  let gugua_pic_list = [
+    //图片列表
+    "1.jpg",
+    "2.jpg",
+    "3.jpg",
+    "4.png",
+    "5.gif",
+  ];
+  for (let i in gugua_pic_list) {
+    let file_local = path.join(`${process.cwd()}`, `static`, `xiaoye`, `ps`, `${gugua_pic_list[i]}`);
+    let file_online = `http://127.0.0.1/xiaoye/ps/${gugua_pic_list[i]}`;
+    let pic_now = `[CQ:image,file=${file_online},url=${file_online}]`;
+    setTimeout(function () {
+      request(`http://${go_cqhttp_api}/send_group_msg?group_id=${who}&message=${encodeURI(pic_now)}`, function (error, _response, _body) {
+        if (!error) {
+          console.log(`qqBot小夜孤寡了群 ${who}，孤寡图为：${pic_now}`.log);
+        } else {
+          console.log("请求${go_cqhttp_api}/send_group_msg错误：", error);
         }
       });
     }, 1000 * 5 * i);
