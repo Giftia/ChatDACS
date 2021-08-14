@@ -52,7 +52,7 @@ if (_cn_reg.test(`${process.cwd()}`)) {
 }
 
 //系统配置和开关，以及固定变量
-const version = "ChatDACS v3.0.11-Debug"; //版本号，会显示在浏览器tab与标题栏
+const version = `ChatDACS v3.0.12-Bug`; //版本号，会显示在浏览器tab与标题栏
 const html = "/static/index.html"; //前端页面路径，old.html为旧版前端
 var boom_timer; //60s计时器
 let onlineusers = 0, //预定义
@@ -90,7 +90,7 @@ const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const thanks =
   "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、还有我的朋友们，以及倾心分享知识的各位";
-const updatelog = `<h1>v3.0.11-Debug<br/>追回莫名其妙被删掉的教学系统，加了报错功能</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议不要用噢；</li></ul>`;
+const updatelog = `<h1>v3.0.12-Bug<br/>加了七夕特别功能孤寡，修了go-cqhttp端过多的waring报错，debug染色优化，砍了黑历史，修了重复响应事件的缺陷，减少了被风控概率</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议不要用噢；</li></ul>`;
 
 /*好了！以上就是系统的基本配置，如果没有必要，请不要再往下继续编辑了。请保存本文件。祝使用愉快！
  *
@@ -133,6 +133,8 @@ const { createCanvas, loadImage, Image } = require("canvas"); //用于绘制文�
 const { resolve } = require("path");
 const os = require("os"); //用于获取系统工作状态
 const { exit } = require("process");
+require.all = require("require.all"); //插件加载器
+const alphabet = require("alphabetjs");
 
 //错误捕获
 process.on("uncaughtException", (err) => {
@@ -173,19 +175,18 @@ const setu_reg = new RegExp(".*图.*来.*|.*来.*图.*"); //匹配色图来指�
 const i_have_a_friend_reg = new RegExp("我有一个朋友说.*|我有个朋友说.*"); //匹配我有个朋友指令
 const open_ju = new RegExp("张菊.*"); //匹配张菊指令
 const close_ju = new RegExp("闭菊.*"); //匹配闭菊指令
-const black_history = new RegExp("\\[CQ:reply,id=.*黑历史"); //匹配黑历史指令
-const roll_black_history = new RegExp("来点黑历史"); //匹配来点黑历史指令
-const feed_back = new RegExp("/报错"); //匹配报错指令
+const feed_back = new RegExp("/报错.*"); //匹配报错指令
+const ascii_draw = new RegExp("/字符画.*"); //匹配字符画指令
+const gugua = new RegExp("/孤寡.*"); //匹配字符画指令
 
 //日志染色颜色配置
 colors.setTheme({
   alert: "inverse",
-  random: "random",
-  on: "magenta",
-  off: "green",
-  warn: "yellow",
-  error: "red",
-  log: "blue",
+  on: "brightMagenta",
+  off: "brightGreen",
+  warn: "brightYellow",
+  error: "brightRed",
+  log: "brightBlue",
 });
 
 //声明TTS调用接口
@@ -484,6 +485,12 @@ io.on("connection", (socket) => {
 //qqBot小夜核心代码，对接go-cqhttp
 function start_qqbot() {
   app.post(go_cqhttp_service, (req, res) => {
+    //自动同意好友请求
+    if (req.body.request_type == "friend") {
+      console.log(`自动同意了 ${req.body.user_id} 好友请求`.log);
+      res.send({ approve: 1 });
+      return 0;
+    }
     let notify;
     switch (req.body.sub_type) {
       case "friend":
@@ -529,7 +536,12 @@ function start_qqbot() {
     }
 
     //群服务开关判断
-    if (req.body.message_type === "group" || req.body.notice_type === "group_increase" || req.body.sub_type === "poke") {
+    if (
+      req.body.message_type == "group" ||
+      req.body.notice_type == "group_increase" ||
+      req.body.sub_type == "poke" ||
+      req.body.sub_type == "friend_add"
+    ) {
       //服务启用开关
       //指定小夜的话
       if (open_ju.test(req.body.message) && has_qq_reg.test(req.body.message)) {
@@ -630,11 +642,12 @@ function start_qqbot() {
                           ban: 1,
                           ban_duration: boom_time,
                         });
+                        return 0;
                       }
                     }
                   }
                 });
-                //return 0; //如果return 0的话不会进入后续操作，只会炸，如果注释掉会出现和指令同时响应的情况
+                return 0;
               }
 
               //服务停用开关
@@ -1307,6 +1320,7 @@ function start_qqbot() {
                       res.send({
                         reply: `[CQ:at,qq=${req.body.user_id}] 这个群的地雷已经塞满啦，等有幸运群友踩中地雷之后再来埋吧`,
                       });
+                      return 0;
                     }
                   } else {
                     console.log(`获取该群地雷出错了：${err}，${sql}`.error);
@@ -1329,6 +1343,7 @@ function start_qqbot() {
                       ban: 1,
                       ban_duration: boom_time,
                     });
+                    return 0;
                   } else {
                     //没有雷
                     res.send({
@@ -1611,12 +1626,12 @@ function start_qqbot() {
                   ctx.font = "13px SimHei";
                   ctx.fillText(CurentTime(), 280.5, 35.5);
 
-                  ctx.beginPath();
+                  ctx.beginpath();
                   ctx.arc(40, 40, 28, 0, 2 * Math.PI);
                   ctx.fill();
                   ctx.clip();
                   ctx.drawImage(image, 10, 10, 60, 60);
-                  ctx.closePath();
+                  ctx.closepath();
 
                   let file_local = path.join(`${process.cwd()}`, `static`, `xiaoye`, `images`, `${sha1(canvas.toBuffer())}.jpg`);
                   fs.writeFileSync(file_local, canvas.toBuffer());
@@ -1625,108 +1640,6 @@ function start_qqbot() {
                   res.send({
                     reply: `[CQ:image,file=${file_online},url=${file_online}]`,
                   });
-                });
-                return 0;
-              }
-
-              //砍了，黑历史，将指定的回复制图并放入黑历史文件夹
-              if (black_history.test(req.body.message)) {
-                //从 [CQ:reply,id=265936982][CQ:at,qq=38263547] 黑历史 消息里获取id
-
-                var msg_in = req.body.message.split("id=")[1];
-                var id = msg_in.split("][CQ:at,qq=")[0].trim();
-
-                request(`http://${go_cqhttp_api}/get_msg?message_id=${id}`, function (error, _response, body) {
-                  body = JSON.parse(body);
-                  if (!error) {
-                    console.log(`获取黑历史消息`.log);
-                    let canvas = createCanvas(700, 160);
-                    let ctx = canvas.getContext("2d");
-
-                    var sources = `https://api.sumt.cn/api/qq.logo.php?qq=${body.data.sender.user_id}`;
-
-                    loadImage(sources).then((image) => {
-                      //先画底色
-                      ctx.fillStyle = "#EAEDF4";
-                      ctx.fillRect(0, 0, 700, 160);
-
-                      //先画聊天框
-                      let ltk_left = 60,
-                        ltk_top = 20;
-
-                      const top = new Image();
-                      top.onload = () => ctx.drawImage(top, ltk_left, ltk_top, 630, 144);
-                      top.onerror = (err) => {
-                        throw err;
-                      };
-                      top.src = `${process.cwd()}\\static\\xiaoye\\ps\\black_history_top.png`;
-
-                      const mid = new Image();
-                      mid.onload = () => ctx.drawImage(mid, ltk_left, ltk_top, 630, 144);
-                      mid.onerror = (err) => {
-                        throw err;
-                      };
-                      mid.src = `${process.cwd()}\\static\\xiaoye\\ps\\black_history_mid.png`;
-
-                      const bott = new Image();
-                      bott.onload = () => ctx.drawImage(bott, ltk_left, ltk_top, 630, 144);
-                      bott.onerror = (err) => {
-                        throw err;
-                      };
-                      bott.src = `${process.cwd()}\\static\\xiaoye\\ps\\black_history_bott.png`;
-
-                      //试试画图片
-                      if (isImage_reg.test(body.data.message)) {
-                        let url = img_url_reg.exec(body.data.message)[0];
-                        console.log(url);
-                        const piccc = new Image();
-                        piccc.onload = () => ctx.drawImage(piccc, 0, 0, 200, 200);
-                        piccc.onerror = (err) => {
-                          throw err;
-                        };
-                        piccc.src = url;
-                      }
-
-                      //再画内容
-                      ctx.font = "19px SimHei";
-                      ctx.textAlign = "left";
-                      ctx.fillStyle = "#716F81";
-                      ctx.fillText(`${body.data.sender.nickname}`, 100.5, 25.5);
-                      ctx.font = "24px SimHei";
-                      ctx.fillStyle = "#000000";
-                      let tex = body.data.message;
-                      if (body.data.message.length > 37) {
-                        let enter = 37;
-                        let new_tex = "";
-                        for (let i = 0, j = 1; i < body.data.message.length; i++, j++) {
-                          if (j && j % enter == 0) {
-                            new_tex += body.data.message[i] + "\n";
-                          } else {
-                            new_tex += body.data.message[i];
-                          }
-                        }
-                        tex = new_tex;
-                      }
-                      ctx.fillText(`${tex}`, 100.5, 66.5);
-
-                      ctx.beginPath();
-                      ctx.arc(40, 40, 28, 0, 2 * Math.PI);
-                      ctx.fill();
-                      ctx.clip();
-                      ctx.drawImage(image, 10, 10, 60, 60);
-                      ctx.closePath();
-
-                      let file_local = path.join(`${process.cwd()}`, `static`, `xiaoye`, `black_history`, `${sha1(canvas.toBuffer())}.jpg`);
-                      fs.writeFileSync(file_local, canvas.toBuffer());
-                      let file_online = `http://127.0.0.1/xiaoye/black_history/${sha1(canvas.toBuffer())}.jpg`;
-                      console.log(`黑历史合成成功，图片发送：${file_online}`.log);
-                      res.send({
-                        reply: `[CQ:image,file=${file_online},url=${file_online}]`,
-                      });
-                    });
-                  } else {
-                    console.log("请求${go_cqhttp_api}/get_msg错误：", error);
-                  }
                 });
                 return 0;
               }
@@ -1745,7 +1658,7 @@ function start_qqbot() {
 使用QQ帐号：${self_id}
 宿主内核架构：${os.hostname()} ${os.platform()} ${os.arch()}
 正常运行时间：${Math.round(os.uptime() / 60 / 60)}小时
-剩余内存：${Math.round(os.freemem() / 1024 / 1024)}MB
+小夜吃掉了 ${Math.round(process.memoryUsage().rss / 1024 / 1024)}MB/${Math.round(os.totalmem() / 1024 / 1024)}MB 内存
 如果该小夜出现任何故障，请联系该小夜领养员，
 也可以发送 /报错 小夜的错误 来提交bug给开发团队。
 点击加入夜爹开发群：https://jq.qq.com/?_wv=1027&k=bTZSd2iI
@@ -1753,6 +1666,53 @@ function start_qqbot() {
                 res.send({
                   reply: stat,
                 });
+                return 0;
+              }
+
+              //字符画
+              if (ascii_draw.test(req.body.message)) {
+                let str = alphabet(req.body.message.replace("/字符画 ", ""), "stereo");
+                console.log(str);
+                res.send({
+                  reply: str,
+                });
+                return 0;
+              }
+
+              //孤寡
+              if (gugua.test(req.body.message)) {
+                if (req.body.message === "/孤寡") {
+                  res.send({ reply: `小夜收到了你的孤寡订单，现在就开始孤寡你了` });
+                  Gugua(req.body.user_id);
+                  return 0;
+                }
+                let who = req.body.message.replace("/孤寡 ", "");
+                who = who.replace("/孤寡", "");
+                who = who.replace("[CQ:at,qq=", "");
+                who = who.replace("]", "");
+                who = who.trim();
+                if (is_qq_reg.test(who)) {
+                  request(`http://${go_cqhttp_api}/get_friend_list`, (err, response, body) => {
+                    body = JSON.parse(body);
+                    if (!err && body.data.length != 0) {
+                      for (let i in body.data) {
+                        if (who == body.data[i].user_id) {
+                          console.log(`群 ${req.body.group_id} 的 群员 ${req.body.user_id} 孤寡了 ${who}`.log);
+                          res.send({ reply: `小夜收到了你的孤寡订单，现在就开始孤寡\[CQ:at,qq=${who}\]了噢孤寡~` });
+                          Gugua(who);
+                          return 0;
+                        }
+                      }
+                      res.send({ reply: `小夜没有\[CQ:at,qq=${who}\]的好友，没有办法孤寡ta呢，请先让ta加小夜为好友吧` });
+                    } else {
+                      reject("随机选取一个群错误。错误原因：" + JSON.stringify(response.body));
+                    }
+                  });
+                } else {
+                  //目标不是qq号
+                  res.send({ reply: `你想孤寡谁啊，目标不可以是${who}，不要乱孤寡，小心孤寡你一辈子啊` });
+                  return 0;
+                }
                 return 0;
               }
 
@@ -1897,6 +1857,7 @@ function start_qqbot() {
           } else {
             console.log(`${req.body.group_id} 这个群不在qq_group表里，现在写入到qq_group表`.log);
             db.run(`INSERT INTO qq_group VALUES('${req.body.group_id}', '1', '0', '', '', '')`);
+            res.send();
           }
         });
       }
@@ -2509,6 +2470,22 @@ async function InitConfig() {
         .on
     );
     xiaoye_ated = new RegExp(`\\[CQ:at,qq=${bot_qq}\\]`); //匹配小夜被@
+    fs.readdir(path.join(`${process.cwd()}`, "plugins"), "utf-8", function (err, filelist) {
+      console.log(`开始批量加载插件……`.log);
+      if (!err) {
+        var modules = require.all({
+          dir: path.join(`${process.cwd()}`, "plugins"),
+          match: /.*\.js/,
+          require: /\.(js|json)$/,
+          recursive: false,
+          encoding: "utf-8",
+          tree: true,
+        });
+        console.log("插件已经加载：", modules);
+      } else {
+        console.log(err, data);
+      }
+    });
     start_qqbot();
   } else {
     console.log("系统配置：qqBot小夜关闭".off);
@@ -2584,6 +2561,11 @@ async function ChatProcess(msg) {
         console.log(`分词出最终关键词：`.log);
         console.log(msg);
       }
+      //之前是随机选一个关键词进行选择回复，但有更好的方案@ssp97：每个关键词轮询，选取回复量最多计数的回复，其他情况则随机
+      for (each in msg) {
+        console.log(`${msg}`.log);
+      }
+
       let rand_word_num = Math.floor(Math.random() * msg.length);
       console.log(`随机选择第 ${rand_word_num + 1} 个关键词 ${msg[rand_word_num].word} 来回复`.log);
       db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg[rand_word_num].word + "%'", (e_1, sql_2) => {
@@ -2743,6 +2725,32 @@ function DelayAlert(service_stoped_list) {
         }
       );
     }, 1000 * delay_time);
+  }
+}
+
+//私聊发送孤寡
+function Gugua(who) {
+  let gugua_pic_list = [
+    //图片列表
+    "1.jpg",
+    "2.jpg",
+    "3.jpg",
+    "4.gif",
+    "5.gif",
+  ];
+  for (let i in gugua_pic_list) {
+    let file_local = path.join(`${process.cwd()}`, `static`, `xiaoye`, `ps`, `${gugua_pic_list[i]}`);
+    let file_online = `http://127.0.0.1/xiaoye/ps/${gugua_pic_list[i]}`;
+    let pic_now = `[CQ:image,file=${file_online},url=${file_online}]`;
+    setTimeout(function () {
+      request(`http://${go_cqhttp_api}/send_private_msg?user_id=${who}&message=${encodeURI(pic_now)}`, function (error, _response, _body) {
+        if (!error) {
+          console.log(`qqBot小夜孤寡了 ${who}，孤寡图为：${pic_now}`.log);
+        } else {
+          console.log("请求${go_cqhttp_api}/send_private_msg错误：", error);
+        }
+      });
+    }, 1000 * 5 * i);
   }
 }
 
