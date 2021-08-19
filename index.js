@@ -2371,8 +2371,67 @@ async function InitConfig() {
   });
 }
 
+
+const sqliteAll = function(query){
+  return new Promise(function(resolve, reject) {
+    db.all(query,function(err, rows) {
+      if(err) reject(err.message)
+      else {
+          resolve(rows)
+      }
+    })
+  })
+}
+
+async function ChatJiebaFuzzy(msg) {
+  msg = msg.replace("/", "");
+  msg = jieba.extract(msg, topN); //按权重分词
+  let candidate = []
+  let candidateNextList = []
+  let candidateNextGrand = 0
+  console.log(`分词出关键词：`.log);
+  console.log(msg);
+  //收集数据开始
+  for (const key in msg) {
+    if (Object.hasOwnProperty.call(msg, key)) {
+      const element = msg[key];
+      console.log(element)
+      rows = await sqliteAll("SELECT * FROM chat WHERE ask LIKE '%"+element.word+"%'")
+      console.log(rows)
+      for (const k in rows) {
+        if (Object.hasOwnProperty.call(rows, k)) {
+          const answer = rows[k].answer;
+          if (candidate[answer] == undefined){
+            candidate[answer] = 1
+          }else{
+            candidate[answer] = candidate[answer] + 1
+          }
+        }
+      }
+    }
+  }
+  console.log(candidate)
+  // 筛选次数最多
+  for (const key in candidate) {
+    if (Object.hasOwnProperty.call(candidate, key)) {
+      const element = candidate[key];
+      if (element > candidateNextGrand){
+        candidateNextList = []
+        candidateNextGrand = element
+        candidateNextList.push(key)
+      }else if (element == candidateNextGrand){
+        candidateNextList.push(key)
+      }
+    }
+  }
+  console.log(candidateNextList)
+  return candidateNextList
+}
+
+
 //聊天处理，最核心区块，超智能(智障)的聊天算法：先整句搜索，再模糊搜索，没有的话再分词模糊搜索
 async function ChatProcess(msg) {
+  // 整句搜索
   const result_1 = await new Promise((resolve, _reject) => {
     console.log("开始整句搜索".log);
     db.all("SELECT * FROM chat WHERE ask = '" + msg + "'", (e, sql_1) => {
@@ -2389,6 +2448,10 @@ async function ChatProcess(msg) {
       }
     });
   });
+  if(result_1){
+    return result_1
+  }
+  // 模糊搜索
   const result_2 = await new Promise((resolve_1, _reject_1) => {
     console.log("开始模糊搜索".log);
     db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg + "%'", (e, sql_2) => {
@@ -2405,46 +2468,18 @@ async function ChatProcess(msg) {
       }
     });
   });
-  return await new Promise((resolve_2, reject_2) => {
-    if (result_1) {
-      //优先回复整句匹配
-      resolve_2(result_1);
-    } else if (result_2) {
-      //其次是模糊匹配
-      resolve_2(result_2);
-    } else {
-      //都没有匹配，进行分词模糊搜索
-      console.log("开始分词搜索".log);
-      msg = msg.replace("/", "");
-      msg = jieba.extract(msg, topN); //按权重分词
-      console.log(`分词出关键词：`.log);
-      console.log(msg);
-      if (msg.length == 0) {
-        reject_2(`不能分词，可能是语句无含义`.warn);
-      } else if (msg.length == 1) {
-        //如果就分词出一个关键词，那么可以加入一些噪声词以提高对话智能性，避免太单调
-        console.log("只有一个关键词，添加噪声词".log);
-        //若下面的噪声词为空，那么会从词库里随机取回复
-        msg.push({ word: "" });
-        console.log(`分词出最终关键词：`.log);
-        console.log(msg);
-      }
-      let rand_word_num = Math.floor(Math.random() * msg.length);
-      console.log(`随机选择第 ${rand_word_num + 1} 个关键词 ${msg[rand_word_num].word} 来回复`.log);
-      db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg[rand_word_num].word + "%'", (e_1, sql_2) => {
-        if (!e_1 && sql_2.length > 0) {
-          console.log(`对于关键词:  ${msg[rand_word_num].word} ，匹配到 ${sql_2.length} 条回复`.log);
-          let ans_1 = Math.floor(Math.random() * sql_2.length);
-          let answer_1 = JSON.stringify(sql_2[ans_1].answer);
-          answer_1 = answer_1.replace(/"/g, "");
-          console.log(`随机选取第 ${ans_1 + 1} 条回复：${answer_1}`.log);
-          resolve_2(answer_1);
-        } else {
-          reject_2(`聊天数据库中没有匹配到 ${msg[rand_word_num].word} 的回复`);
-        }
-      });
-    }
-  });
+  if(result_2){
+    return result_2
+  }
+  // 分词模糊搜索
+  let candidateList = await ChatJiebaFuzzy(msg);
+  if(candidateList.length > 0){
+    return candidateList[Math.floor(Math.random() * candidateList.length)]
+  }
+  // 随机敷衍
+  let result = await sqliteAll("SELECT * FROM balabala ORDER BY RANDOM()") //有待优化
+  //console.log(result)
+  return result[0].balabala
 }
 
 //保存qq侧传来的图
