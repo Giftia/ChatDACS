@@ -52,7 +52,7 @@ if (_cn_reg.test(`${process.cwd()}`)) {
 }
 
 //系统配置和开关，以及固定变量
-const version = `ChatDACS v3.0.14-Dev`; //版本号，会显示在浏览器tab与标题栏
+const version = `ChatDACS v3.0.15-Bug`; //版本号，会显示在浏览器tab与标题栏
 const html = "/static/index.html"; //前端页面路径，old.html为旧版前端
 var boom_timer; //60s计时器
 let onlineusers = 0, //预定义
@@ -90,7 +90,7 @@ const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const thanks =
   "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、还有我的朋友们，以及倾心分享知识的各位";
-const updatelog = `<h1>v3.0.14-Dev<br/>孤寡加了是谁点的</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议不要用噢；</li></ul>`;
+const updatelog = `<h1>v3.0.15-Bug<br/>有好多bug啊</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议不要用噢；</li></ul>`;
 
 /*好了！以上就是系统的基本配置，如果没有必要，请不要再往下继续编辑了。请保存本文件。祝使用愉快！
  *
@@ -164,20 +164,22 @@ const prpr_reg = new RegExp("^/prpr (.*)"); //匹配prpr
 const pohai_reg = new RegExp("^/迫害 (.*)"); //匹配迫害p图
 const teach_balabala_reg = new RegExp("^/说不出话 (.*)"); //匹配balabala教学
 const hand_grenade_reg = new RegExp("^一个手雷(.*)"); //匹配一个手雷
-const mine_reg = new RegExp("埋地雷"); //匹配埋地雷
-const fuck_mine_reg = new RegExp("踩地雷"); //匹配踩地雷
+const mine_reg = new RegExp("^埋地雷"); //匹配埋地雷
+const fuck_mine_reg = new RegExp("^踩地雷"); //匹配踩地雷
 const hope_flower_reg = new RegExp("^希望的花(.*)"); //匹配希望的花
 const loop_bomb_reg = new RegExp("^击鼓传雷(.*)"); //匹配击鼓传雷
 const is_qq_reg = new RegExp("^[1-9][0-9]{4,9}$"); //校验是否是合法的qq号
-const has_qq_reg = new RegExp("\\[CQ:at,qq=(.*)\\]"); //匹配是否有@
-const admin_reg = new RegExp("\\/admin (.*)"); //匹配管理员指令
-const setu_reg = new RegExp(".*图.*来.*|.*来.*图.*"); //匹配色图来指令
+const has_qq_reg = new RegExp("[CQ:at,qq=(.*)]"); //匹配是否有@
+const admin_reg = new RegExp("/admin (.*)"); //匹配管理员指令
+const setu_reg = new RegExp(".*图.*来.*|.*来.*图.*|.*色.*图.*"); //匹配色图来指令
 const i_have_a_friend_reg = new RegExp("我有一个朋友说.*|我有个朋友说.*"); //匹配我有个朋友指令
 const open_ju = new RegExp("张菊.*"); //匹配张菊指令
 const close_ju = new RegExp("闭菊.*"); //匹配闭菊指令
 const feed_back = new RegExp("/报错.*"); //匹配报错指令
 const ascii_draw = new RegExp("/字符画.*"); //匹配字符画指令
-const gugua = new RegExp("/孤寡.*"); //匹配字符画指令
+const gugua = new RegExp("/孤寡.*"); //匹配孤寡指令
+const cp_story = new RegExp("/cp.*"); //匹配cp文指令
+const fake_forward = new RegExp("/强制迫害.*"); //匹配伪造转发指令
 
 //日志染色颜色配置
 colors.setTheme({
@@ -196,6 +198,27 @@ console.log(`当前工作目录：${process.cwd()}`.log);
 
 //载入配置
 InitConfig();
+
+//载入插件;
+// fs.readdir(path.join(`${process.cwd()}`, "plugins"), "utf-8", function (err, _filelist) {
+//   console.log(`开始批量加载插件……`.log);
+//   if (!err) {
+//     var modules = require.all({
+//       dir: path.join(`${process.cwd()}`, "plugins"),
+//       match: /.*\.js/,
+//       require: /\.(js|json)$/,
+//       recursive: false,
+//       encoding: "utf-8",
+//       tree: true,
+//       resolve: function (modules) {
+//         modules.all.load();
+//       },
+//     });
+//     console.log("插件已经加载：", modules);
+//   } else {
+//     console.log(err, data);
+//   }
+// });
 
 /*
  *
@@ -301,9 +324,9 @@ io.on("connection", (socket) => {
   socket.on("chat message", (msg) => {
     let CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
     var msg = msg.msg;
-    msg = msg.replace(/'/g, "[非法字符]"); //防爆
-    msg = msg.replace(/</g, "[非法字符]"); //防爆
-    msg = msg.replace(/>/g, "[非法字符]"); //防爆
+    msg = msg.replace(/'/g, ""); //防爆
+    msg = msg.replace(/</g, ""); //防爆
+    msg = msg.replace(/>/g, ""); //防爆
     console.log(`${Curentyyyymmdd() + CurentTime()}收到用户 ${socket.username}(${CID}) 的消息: ${msg}`.warn);
     db.run(`INSERT INTO messages VALUES('${Curentyyyymmdd()}', '${CurentTime()}', '${CID}', '${msg}')`);
 
@@ -758,9 +781,7 @@ function start_qqbot() {
               //教学系统，抄板于虹原翼版小夜v3
               if (teach_reg.test(req.body.message)) {
                 let msg = req.body.message;
-                msg = msg.replace(/'/g, "[非法字符]"); //防爆
-                msg = msg.replace(/</g, "[非法字符]"); //防爆
-                msg = msg.replace(/>/g, "[非法字符]"); //防爆
+                msg = msg.replace(/'/g, ""); //防爆
                 msg = msg.substr(2).split("答：");
                 if (msg.length !== 2) {
                   console.log(`教学指令：分割有误，退出教学`.error);
@@ -813,10 +834,9 @@ function start_qqbot() {
               //balabala教学，对于一些难以回复的对话，小夜的词库中没有搜索到回复的时候，小夜会随机回复这些回复
               if (teach_balabala_reg.test(req.body.message)) {
                 let msg = req.body.message;
-                msg = msg.replace(/'/g, "[非法字符]"); //防爆
-                msg = msg.replace(/</g, "[非法字符]"); //防爆
-                msg = msg.replace(/>/g, "[非法字符]"); //防爆
+                msg = msg.replace(/'/g, ""); //防爆
                 msg = msg.replace("/说不出话 ", "");
+                msg = msg.replace("/说不出话", "");
                 console.log(`${req.body.user_id}(${req.body.sender.nickname}) 想要教给小夜balabala：${msg}，现在开始检测合法性`.log);
                 for (let i in black_list_words) {
                   if (
@@ -1084,6 +1104,159 @@ function start_qqbot() {
                 ).toFixed(0)}个粉丝，做了${(Math.random() * (100 - 1).toFixed(0) + 1).toFixed(0)}年画师，最后${random_atlast}。`;
                 console.log(`画师算命指令：${final} `.log);
                 res.send({ reply: final });
+                return 0;
+              }
+
+              //cp文生成器，语料来自 https://github.com/mxh-mini-apps/mxh-cp-stories/blob/master/src/assets/story.json
+              if (cp_story.test(req.body.message)) {
+                let msg = req.body.message + " "; //结尾加一个空格防爆
+                msg = msg.substr(3).split(" ");
+                let tops = msg[1].trim(), //小攻
+                  bottoms = msg[2].trim(); //小受
+
+                fs.readFile(path.join(`${process.cwd()}`, "config", "1and0story.json"), "utf-8", function (err, data) {
+                  if (!err) {
+                    console.log(JSON.parse(data));
+                  }
+                });
+
+                let who = req.body.sender.nickname;
+                if (!who) who = "小夜";
+                let random_paintstyle = paintstyle[Math.floor(Math.random() * paintstyle.length)];
+                let random_like = like[Math.floor(Math.random() * like.length)];
+                let random_andthen = andthen[Math.floor(Math.random() * andthen.length)];
+                let random_buthen = buthen[Math.floor(Math.random() * buthen.length)];
+                let random_atlast = atlast[Math.floor(Math.random() * atlast.length)];
+                let final = `${who}是一名${random_paintstyle}画师，最喜欢画${random_like}，而且${random_andthen}，然而因为画得太过和谐而${random_buthen}，还因为这件事在微博上有了${(
+                  Math.random() * (1000000 - 1) +
+                  1
+                ).toFixed(0)}个粉丝，做了${(Math.random() * (100 - 1).toFixed(0) + 1).toFixed(0)}年画师，最后${random_atlast}。`;
+                console.log(`画师算命指令：${final} `.log);
+                res.send({ reply: final });
+                return 0;
+              }
+
+              //伪造转发
+              if (fake_forward.test(req.body.message)) {
+                let who,
+                  name = req.body.sender.nickname,
+                  text,
+                  xiaoye_say,
+                  requestData;
+                if (req.body.message == "/强制迫害") {
+                  who = req.body.sender.user_id; //如果没有要求迫害谁，那就是迫害自己
+                } else {
+                  let msg = req.body.message + " "; //结尾加一个空格防爆
+
+                  // for (let i in msg.substr(i).split(" ")) {
+                  //   console.log(msg[i]);
+                  // }
+
+                  msg = msg.substr(4).split(" ");
+                  who = msg[1].trim(); //谁
+                  text = msg[2].trim(); //说啥
+                  xiaoye_say = msg[3].trim(); //小夜说啥
+                  who = who.replace("/强制迫害 ", "");
+                  who = who.replace("/强制迫害", "");
+                  who = who.replace("[CQ:at,qq=", "");
+                  who = who.replace("]", "");
+                  who = who.trim();
+                  if (is_qq_reg.test(who)) {
+                    console.log(`群 ${req.body.group_id} 的 群员 ${req.body.user_id} 尝试强制迫害 ${who}`.log);
+                  } else {
+                    //目标不是qq号
+                    who = req.body.sender.user_id; //如果没有要求迫害谁，那就是迫害自己
+                  }
+                }
+
+                if (!name) {
+                  name = req.body.sender.nickname;
+                }
+
+                if (!text) {
+                  text = "我是群友专用RBQ";
+                }
+
+                if (!xiaoye_say) {
+                  xiaoye_say =
+                    "[CQ:image,file=1ea870ec3656585d4a81e13648d66db5.image,url=https://gchat.qpic.cn/gchatpic_new/1277161008/2063243247-2238741340-1EA870EC3656585D4A81E13648D66DB5/0?term=3]";
+                }
+
+                //发送
+                //先获取昵称
+                request(
+                  `http://${go_cqhttp_api}/get_group_member_info?group_id=${req.body.group_id}&user_id=${who}&no_cache=0`,
+                  function (error, _response, body) {
+                    if (!error) {
+                      body = JSON.parse(body);
+                      name = body.data.nickname;
+
+                      requestData = {
+                        group_id: req.body.group_id,
+                        messages: [
+                          { type: "node", data: { name: name, uin: who, content: text } },
+                          {
+                            type: "node",
+                            data: {
+                              name: "星野夜蝶Official",
+                              uin: "1648468212",
+                              content: xiaoye_say,
+                            },
+                          },
+                        ],
+                      };
+
+                      request(
+                        {
+                          url: `http://${go_cqhttp_api}/send_group_forward_msg`,
+                          method: "POST",
+                          json: true,
+                          headers: {
+                            "content-type": "application/json",
+                          },
+                          body: requestData,
+                        },
+                        function (error, response, body) {
+                          if (!error && response.statusCode == 200) {
+                            console.log(body);
+                          }
+                        }
+                      );
+                    } else {
+                      requestData = {
+                        group_id: req.body.group_id,
+                        messages: [
+                          { type: "node", data: { name: name, uin: who, content: text } },
+                          {
+                            type: "node",
+                            data: {
+                              name: "星野夜蝶Official",
+                              uin: "1648468212",
+                              content: xiaoye_say,
+                            },
+                          },
+                        ],
+                      };
+
+                      request(
+                        {
+                          url: `http://${go_cqhttp_api}/send_group_forward_msg`,
+                          method: "POST",
+                          json: true,
+                          headers: {
+                            "content-type": "application/json",
+                          },
+                          body: requestData,
+                        },
+                        function (error, response, body) {
+                          if (!error && response.statusCode == 200) {
+                            console.log(body);
+                          }
+                        }
+                      );
+                    }
+                  }
+                );
                 return 0;
               }
 
@@ -1576,16 +1749,15 @@ function start_qqbot() {
                             let boom_time = Math.floor(Math.random() * 60 * 3) + 60; //造成伤害时间
                             console.log(`${req.body.user_id} 在群 ${req.body.group_id} 回答错误，被炸伤${boom_time}秒`.log);
                             clearTimeout(boom_timer);
+                            //游戏结束，删掉游戏记录
+                            db.run(
+                              `UPDATE qq_group SET loop_bomb_enabled = '0', loop_bomb_answer = '', loop_bomb_onwer = '' , loop_bomb_start_time = '' WHERE group_id ='${req.body.group_id}'`
+                            );
                             res.send({
                               reply: `[CQ:at,qq=${req.body.user_id}] 回答错误，好可惜，你被炸成重伤了，休养生息${boom_time}秒！游戏结束！下次加油噢，那么答案公布：${sql[0].loop_bomb_answer}`,
                               ban: 1,
                               ban_duration: boom_time,
                             });
-
-                            //游戏结束，删掉游戏记录
-                            db.run(
-                              `UPDATE qq_group SET loop_bomb_enabled = '0', loop_bomb_answer = '', loop_bomb_onwer = '' , loop_bomb_start_time = '' WHERE group_id ='${req.body.group_id}'`
-                            );
                             return 0;
                           }
                         }
@@ -1627,12 +1799,12 @@ function start_qqbot() {
                   ctx.font = "13px SimHei";
                   ctx.fillText(CurentTime(), 280.5, 35.5);
 
-                  ctx.beginpath();
+                  ctx.beginPath();
                   ctx.arc(40, 40, 28, 0, 2 * Math.PI);
                   ctx.fill();
                   ctx.clip();
                   ctx.drawImage(image, 10, 10, 60, 60);
-                  ctx.closepath();
+                  ctx.closePath();
 
                   let file_local = path.join(`${process.cwd()}`, `static`, `xiaoye`, `images`, `${sha1(canvas.toBuffer())}.jpg`);
                   fs.writeFileSync(file_local, canvas.toBuffer());
@@ -1654,10 +1826,8 @@ function start_qqbot() {
                   ? (self_id = `错误：检测到小夜实际使用的qq：${req.body.self_id} 与配置的qq：${bot_qq} 不一致，请去 config/config.yml 里修改为一致的噢，不然 @我 是说不出话来的`)
                   : (self_id = self_id); //试着用一下三元运算符，比if稍微绕一些，但是习惯了非常符合直觉，原理是：当?前的条件成立时，执行:前的语句，不成立的话执行:后的语句
                 self_id != "1648468212" ? (self_id = self_id) : (self_id = "1648468212(小小夜本家)"); //试着用一下三元运算符
-                stat = `企划：星野夜蝶Official
-核心版本：${version}
-使用QQ帐号：${self_id}
-宿主内核架构：${os.hostname()} ${os.platform()} ${os.arch()}
+                stat = `企划：星野夜蝶Official_${version}_${self_id}
+宿主内核架构：${os.hostname()} ${os.type()} ${os.arch()}
 正常运行时间：${Math.round(os.uptime() / 60 / 60)}小时
 小夜吃掉了 ${Math.round(process.memoryUsage().rss / 1024 / 1024)}MB/${Math.round(os.totalmem() / 1024 / 1024)}MB 内存
 如果该小夜出现任何故障，请联系该小夜领养员，
@@ -1785,6 +1955,15 @@ function start_qqbot() {
                 return 0;
               }
 
+              //管理员功能：修改聊天回复率
+              if (change_reply_probability_reg.test(req.body.message)) {
+                let msg = req.body.message.replace("/admin_change_reply_probability ", "");
+                reply_probability = msg;
+                res.send({
+                  reply: `小夜回复率已修改为${msg}%`,
+                });
+              }
+
               /*                    要新增指令与功能请在这条分割线的上方添加，在下面添加有可能会导致冲突以及不可预料的异常                    */
 
               //随机抽风，丢一个骰子，按 chaos_probability 几率抽风
@@ -1841,7 +2020,10 @@ function start_qqbot() {
               if (reply_flag < reply_probability) {
                 ChatProcess(at_replaced_msg)
                   .then((resolve) => {
-                    resolve = resolve.replace("[name]", `[CQ:at,qq=${req.body.user_id}]`); //替换[name]为正确的@
+                    if (resolve.indexOf("[name]") || resolve.indexOf("&#91;name&#93;")) {
+                      resolve = resolve.toString().replace("[name]", `[CQ:at,qq=${req.body.user_id}]`); //替换[name]为正确的@
+                      resolve = resolve.toString().replace("&#91;name&#93;", `[CQ:at,qq=${req.body.user_id}]`); //替换[name]为正确的@
+                    }
                     console.log(`qqBot小夜回复 ${resolve}`.log);
                     io.emit("system message", `@qqBot小夜回复：${resolve}`);
                     res.send({ reply: resolve });
@@ -1967,9 +2149,7 @@ function LoopDanmu() {
         //教学系统，抄板于虹原翼版小夜v3
         if (teach_reg.test(resolve.text)) {
           let msg = resolve.text;
-          msg = msg.replace(/'/g, "[非法字符]"); //防爆
-          msg = msg.replace(/</g, "[非法字符]"); //防爆
-          msg = msg.replace(/>/g, "[非法字符]"); //防爆
+          msg = msg.replace(/'/g, ""); //防爆
           msg = msg.substr(2).split("答：");
           if (msg.length !== 2) {
             console.log(`教学指令：分割有误，退出教学`.error);
@@ -2485,22 +2665,6 @@ async function InitConfig() {
         .on
     );
     xiaoye_ated = new RegExp(`\\[CQ:at,qq=${bot_qq}\\]`); //匹配小夜被@
-    fs.readdir(path.join(`${process.cwd()}`, "plugins"), "utf-8", function (err, filelist) {
-      console.log(`开始批量加载插件……`.log);
-      if (!err) {
-        var modules = require.all({
-          dir: path.join(`${process.cwd()}`, "plugins"),
-          match: /.*\.js/,
-          require: /\.(js|json)$/,
-          recursive: false,
-          encoding: "utf-8",
-          tree: true,
-        });
-        console.log("插件已经加载：", modules);
-      } else {
-        console.log(err, data);
-      }
-    });
     start_qqbot();
   } else {
     console.log("系统配置：qqBot小夜关闭".off);
@@ -2518,81 +2682,87 @@ async function InitConfig() {
   });
 }
 
-//聊天处理，最核心区块，超智能(智障)的聊天算法：先整句搜索，再模糊搜索，没有的话再分词模糊搜索
+//聊天处理，最核心区块，超智能(智障)的聊天算法：整句搜索，模糊搜索，分词模糊搜索并轮询
 async function ChatProcess(msg) {
-  const result_1 = await new Promise((resolve, _reject) => {
+  const full_search = await new Promise((resolve, _reject) => {
     console.log("开始整句搜索".log);
-    db.all("SELECT * FROM chat WHERE ask = '" + msg + "'", (e, sql_1) => {
-      if (!e && sql_1.length > 0) {
-        console.log(`对于整句:  ${msg} ，匹配到 ${sql_1.length} 条回复`.log);
-        let ans = Math.floor(Math.random() * sql_1.length);
-        let answer = JSON.stringify(sql_1[ans].answer);
+    db.all("SELECT * FROM chat WHERE ask = '" + msg + "'", (e, sql) => {
+      if (!e && sql.length > 0) {
+        console.log(`对于整句:  ${msg} ，匹配到 ${sql.length} 条回复`.log);
+        let ans = Math.floor(Math.random() * sql.length);
+        let answer = JSON.stringify(sql[ans].answer);
         answer = answer.replace(/"/g, "");
         console.log(`随机选取第${ans + 1}条回复：${answer}`.log);
         resolve(answer);
+        return 0;
       } else {
-        console.log(`聊天数据库中没有匹配到整句 ${msg} 的回复，开始模糊搜索`.log);
+        console.log(`聊天数据库中没有匹配到整句 ${msg} 的回复`.log);
         resolve();
       }
     });
   });
-  const result_2 = await new Promise((resolve_1, _reject_1) => {
+
+  const like_serach = await new Promise((resolve, _reject) => {
     console.log("开始模糊搜索".log);
-    db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg + "%'", (e, sql_2) => {
-      if (!e && sql_2.length > 0) {
-        console.log(`模糊搜索: ${msg} ，匹配到 ${sql_2.length} 条回复`.log);
-        let ans = Math.floor(Math.random() * sql_2.length);
-        let answer = JSON.stringify(sql_2[ans].answer);
+    db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg + "%'", (e, sql) => {
+      if (!e && sql.length > 0) {
+        console.log(`模糊搜索: ${msg} ，匹配到 ${sql.length} 条回复`.log);
+        let ans = Math.floor(Math.random() * sql.length);
+        let answer = JSON.stringify(sql[ans].answer);
         answer = answer.replace(/"/g, "");
         console.log(`随机选取第${ans + 1}条回复：${answer}`.log);
-        resolve_1(`${answer}`);
+        resolve(answer);
+        return 0;
       } else {
-        console.log(`聊天数据库中没有匹配到 ${msg} 的模糊回复，开始分词搜索`.log);
-        resolve_1();
+        console.log(`聊天数据库中没有匹配到 ${msg} 的模糊回复`.log);
+        resolve();
       }
     });
   });
-  return await new Promise((resolve_2, reject_2) => {
-    if (result_1) {
+
+  return await new Promise((resolve, reject) => {
+    if (full_search) {
       //优先回复整句匹配
-      resolve_2(result_1);
-    } else if (result_2) {
+      console.log(`返回整句匹配`.alert);
+      resolve(full_search);
+      return 0;
+    } else if (like_serach) {
       //其次是模糊匹配
-      resolve_2(result_2);
+      console.log(`返回模糊匹配`.alert);
+      resolve(like_serach);
+      return 0;
     } else {
       //都没有匹配，进行分词模糊搜索
       console.log("开始分词搜索".log);
       msg = msg.replace("/", "");
       msg = jieba.extract(msg, topN); //按权重分词
-      console.log(`分词出关键词：`.log);
-      console.log(msg);
       if (msg.length == 0) {
-        reject_2(`不能分词，可能是语句无含义`.warn);
-      } else if (msg.length == 1) {
-        //如果就分词出一个关键词，那么可以加入一些噪声词以提高对话智能性，避免太单调
-        console.log("只有一个关键词，添加噪声词".log);
+        reject(`不能分词，可能是语句无含义`.warn);
+      } else if (msg.length < topN) {
+        //如果就分词关键词过少，那么可以加入一些噪声词以提高对话智能性，避免太单调
+        console.log(`只有${msg.length}个关键词，添加噪声词`.log);
         //若下面的噪声词为空，那么会从词库里随机取回复
         msg.push({ word: "" });
-        console.log(`分词出最终关键词：`.log);
-        console.log(msg);
       }
+      console.log(`分词出关键词：`.log);
+      console.log(msg);
       //之前是随机选一个关键词进行选择回复，但有更好的方案@ssp97：每个关键词轮询，选取回复量最多计数的回复，其他情况则随机
-      for (each in msg) {
-        console.log(`${msg}`.log);
-      }
-
       let rand_word_num = Math.floor(Math.random() * msg.length);
       console.log(`随机选择第 ${rand_word_num + 1} 个关键词 ${msg[rand_word_num].word} 来回复`.log);
-      db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg[rand_word_num].word + "%'", (e_1, sql_2) => {
-        if (!e_1 && sql_2.length > 0) {
-          console.log(`对于关键词:  ${msg[rand_word_num].word} ，匹配到 ${sql_2.length} 条回复`.log);
-          let ans_1 = Math.floor(Math.random() * sql_2.length);
-          let answer_1 = JSON.stringify(sql_2[ans_1].answer);
-          answer_1 = answer_1.replace(/"/g, "");
-          console.log(`随机选取第 ${ans_1 + 1} 条回复：${answer_1}`.log);
-          resolve_2(answer_1);
+      db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg[rand_word_num].word + "%'", (e_1, sql) => {
+        if (!e_1 && sql.length > 0) {
+          console.log(`对于关键词:  ${msg[rand_word_num].word} ，匹配到 ${sql.length} 条回复`.log);
+          let ans = Math.floor(Math.random() * sql.length);
+          let answer = JSON.stringify(sql[ans].answer);
+          answer = answer.replace(/"/g, "");
+          console.log(`随机选取第 ${ans + 1} 条回复：${answer}`.log);
+          console.log(`返回分词模糊匹配`.alert);
+          resolve(answer);
+          return 0;
         } else {
-          reject_2(`聊天数据库中没有匹配到 ${msg[rand_word_num].word} 的回复`);
+          reject(`聊天数据库中没有匹配到 ${msg[rand_word_num].word} 的回复`);
+          console.log(`分词结果无回复`.alert);
+          return 0;
         }
       });
     }
@@ -2754,7 +2924,6 @@ function Gugua(who) {
     "5.gif",
   ];
   for (let i in gugua_pic_list) {
-    let file_local = path.join(`${process.cwd()}`, `static`, `xiaoye`, `ps`, `${gugua_pic_list[i]}`);
     let file_online = `http://127.0.0.1/xiaoye/ps/${gugua_pic_list[i]}`;
     let pic_now = `[CQ:image,file=${file_online},url=${file_online}]`;
     setTimeout(function () {
@@ -2780,7 +2949,6 @@ function QunGugua(who) {
     "5.gif",
   ];
   for (let i in gugua_pic_list) {
-    let file_local = path.join(`${process.cwd()}`, `static`, `xiaoye`, `ps`, `${gugua_pic_list[i]}`);
     let file_online = `http://127.0.0.1/xiaoye/ps/${gugua_pic_list[i]}`;
     let pic_now = `[CQ:image,file=${file_online},url=${file_online}]`;
     setTimeout(function () {
@@ -2847,5 +3015,4 @@ function RainbowPi() {
   });
 }
 
-/*song for you(サニーピースver.)
-我跟你讲，CTRL + K0 是比 ALT + SHIFT + F 还爽的快捷键*/
+/*I wonder why… —— TVアニメ「凪のあすから」*/
