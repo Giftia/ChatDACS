@@ -2682,9 +2682,68 @@ async function InitConfig() {
   });
 }
 
-//聊天处理，最核心区块，超智能(智障)的聊天算法：整句搜索，模糊搜索，分词模糊搜索并轮询
+
+const sqliteAll = function(query){
+  return new Promise(function(resolve, reject) {
+    db.all(query,function(err, rows) {
+      if(err) reject(err.message)
+      else {
+          resolve(rows)
+      }
+    })
+  })
+}
+
+async function ChatJiebaFuzzy(msg) {
+  msg = msg.replace("/", "");
+  msg = jieba.extract(msg, topN); //按权重分词
+  let candidate = []
+  let candidateNextList = []
+  let candidateNextGrand = 0
+  console.log(`分词出关键词：`.log);
+  console.log(msg);
+  //收集数据开始
+  for (const key in msg) {
+    if (Object.hasOwnProperty.call(msg, key)) {
+      const element = msg[key];
+      console.log(element)
+      rows = await sqliteAll("SELECT * FROM chat WHERE ask LIKE '%"+element.word+"%'")
+      console.log(rows)
+      for (const k in rows) {
+        if (Object.hasOwnProperty.call(rows, k)) {
+          const answer = rows[k].answer;
+          if (candidate[answer] == undefined){
+            candidate[answer] = 1
+          }else{
+            candidate[answer] = candidate[answer] + 1
+          }
+        }
+      }
+    }
+  }
+  console.log(candidate)
+  // 筛选次数最多
+  for (const key in candidate) {
+    if (Object.hasOwnProperty.call(candidate, key)) {
+      const element = candidate[key];
+      if (element > candidateNextGrand){
+        candidateNextList = []
+        candidateNextGrand = element
+        candidateNextList.push(key)
+      }else if (element == candidateNextGrand){
+        candidateNextList.push(key)
+      }
+    }
+  }
+  console.log(candidateNextList)
+  return candidateNextList
+}
+
+
+//聊天处理，最核心区块，超智能(智障)的聊天算法：先整句搜索，再模糊搜索，没有的话再分词模糊搜索
 async function ChatProcess(msg) {
-  const full_search = await new Promise((resolve, _reject) => {
+  // 整句搜索
+  const result_1 = await new Promise((resolve, _reject) => {
     console.log("开始整句搜索".log);
     db.all("SELECT * FROM chat WHERE ask = '" + msg + "'", (e, sql) => {
       if (!e && sql.length > 0) {
@@ -2701,8 +2760,11 @@ async function ChatProcess(msg) {
       }
     });
   });
-
-  const like_serach = await new Promise((resolve, _reject) => {
+  if(result_1){
+    return result_1
+  }
+  // 模糊搜索
+  const result_2 = await new Promise((resolve_1, _reject_1) => {
     console.log("开始模糊搜索".log);
     db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg + "%'", (e, sql) => {
       if (!e && sql.length > 0) {
@@ -2719,54 +2781,18 @@ async function ChatProcess(msg) {
       }
     });
   });
-
-  return await new Promise((resolve, reject) => {
-    if (full_search) {
-      //优先回复整句匹配
-      console.log(`返回整句匹配`.alert);
-      resolve(full_search);
-      return 0;
-    } else if (like_serach) {
-      //其次是模糊匹配
-      console.log(`返回模糊匹配`.alert);
-      resolve(like_serach);
-      return 0;
-    } else {
-      //都没有匹配，进行分词模糊搜索
-      console.log("开始分词搜索".log);
-      msg = msg.replace("/", "");
-      msg = jieba.extract(msg, topN); //按权重分词
-      if (msg.length == 0) {
-        reject(`不能分词，可能是语句无含义`.warn);
-      } else if (msg.length < topN) {
-        //如果就分词关键词过少，那么可以加入一些噪声词以提高对话智能性，避免太单调
-        console.log(`只有${msg.length}个关键词，添加噪声词`.log);
-        //若下面的噪声词为空，那么会从词库里随机取回复
-        msg.push({ word: "" });
-      }
-      console.log(`分词出关键词：`.log);
-      console.log(msg);
-      //之前是随机选一个关键词进行选择回复，但有更好的方案@ssp97：每个关键词轮询，选取回复量最多计数的回复，其他情况则随机
-      let rand_word_num = Math.floor(Math.random() * msg.length);
-      console.log(`随机选择第 ${rand_word_num + 1} 个关键词 ${msg[rand_word_num].word} 来回复`.log);
-      db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg[rand_word_num].word + "%'", (e_1, sql) => {
-        if (!e_1 && sql.length > 0) {
-          console.log(`对于关键词:  ${msg[rand_word_num].word} ，匹配到 ${sql.length} 条回复`.log);
-          let ans = Math.floor(Math.random() * sql.length);
-          let answer = JSON.stringify(sql[ans].answer);
-          answer = answer.replace(/"/g, "");
-          console.log(`随机选取第 ${ans + 1} 条回复：${answer}`.log);
-          console.log(`返回分词模糊匹配`.alert);
-          resolve(answer);
-          return 0;
-        } else {
-          reject(`聊天数据库中没有匹配到 ${msg[rand_word_num].word} 的回复`);
-          console.log(`分词结果无回复`.alert);
-          return 0;
-        }
-      });
-    }
-  });
+  if(result_2){
+    return result_2
+  }
+  // 分词模糊搜索
+  let candidateList = await ChatJiebaFuzzy(msg);
+  if(candidateList.length > 0){
+    return candidateList[Math.floor(Math.random() * candidateList.length)]
+  }
+  // 随机敷衍
+  let result = await sqliteAll("SELECT * FROM balabala ORDER BY RANDOM()") //有待优化
+  //console.log(result)
+  return result[0].balabala
 }
 
 //保存qq侧传来的图
