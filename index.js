@@ -52,7 +52,7 @@ if (_cn_reg.test(`${process.cwd()}`)) {
 }
 
 //系统配置和开关，以及固定变量
-const version = `ChatDACS v3.0.15-Bug`; //版本号，会显示在浏览器tab与标题栏
+const version = `ChatDACS v3.0.15-Dev`; //版本号，会显示在浏览器tab与标题栏
 const html = "/static/index.html"; //前端页面路径，old.html为旧版前端
 var boom_timer; //60s计时器
 let onlineusers = 0, //预定义
@@ -90,7 +90,7 @@ const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const thanks =
   "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、还有我的朋友们，以及倾心分享知识的各位";
-const updatelog = `<h1>v3.0.15-Bug<br/>有好多bug啊</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议不要用噢；</li></ul>`;
+const updatelog = `<h1>v3.0.15-Dev<br/>床新的聊天算法，感谢@ssp97，增加cp文功能，增加伪造转发功能，修复迫害失败</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议先不要用噢；</li></ul>`;
 
 /*好了！以上就是系统的基本配置，如果没有必要，请不要再往下继续编辑了。请保存本文件。祝使用愉快！
  *
@@ -1116,23 +1116,25 @@ function start_qqbot() {
 
                 fs.readFile(path.join(`${process.cwd()}`, "config", "1and0story.json"), "utf-8", function (err, data) {
                   if (!err) {
-                    console.log(JSON.parse(data));
+                    story = JSON.parse(data);
+                    if (!tops) tops = req.body.sender.nickname;
+                    if (!bottoms) bottoms = req.body.sender.nickname;
+                    // for (let i in story) {
+                    //   if (tops == story[i].roles.gong || bottoms == story[i].roles.shou) {
+                    //     let index = Math.floor(Math.random() * story.length);
+                    //     res.send({ reply: `${tops} ${bottoms} ${index}` });
+                    //     return 0;
+                    //   }
+                    // }
+                    let index = story.length - 1;
+                    let story_index = Math.floor(Math.random() * story[index].stories.length);
+                    let story_select = story[index].stories[story_index];
+                    story_select = story_select.replace(/<攻>/g, tops);
+                    story_select = story_select.replace(/<受>/g, bottoms);
+                    console.log(`发送cp文：${story_select}`.log);
+                    res.send({ reply: `${story_select}` });
                   }
                 });
-
-                let who = req.body.sender.nickname;
-                if (!who) who = "小夜";
-                let random_paintstyle = paintstyle[Math.floor(Math.random() * paintstyle.length)];
-                let random_like = like[Math.floor(Math.random() * like.length)];
-                let random_andthen = andthen[Math.floor(Math.random() * andthen.length)];
-                let random_buthen = buthen[Math.floor(Math.random() * buthen.length)];
-                let random_atlast = atlast[Math.floor(Math.random() * atlast.length)];
-                let final = `${who}是一名${random_paintstyle}画师，最喜欢画${random_like}，而且${random_andthen}，然而因为画得太过和谐而${random_buthen}，还因为这件事在微博上有了${(
-                  Math.random() * (1000000 - 1) +
-                  1
-                ).toFixed(0)}个粉丝，做了${(Math.random() * (100 - 1).toFixed(0) + 1).toFixed(0)}年画师，最后${random_atlast}。`;
-                console.log(`画师算命指令：${final} `.log);
-                res.send({ reply: final });
                 return 0;
               }
 
@@ -2682,68 +2684,67 @@ async function InitConfig() {
   });
 }
 
-
-const sqliteAll = function(query){
-  return new Promise(function(resolve, reject) {
-    db.all(query,function(err, rows) {
-      if(err) reject(err.message)
+//异步sqliteALL by@ssp97
+const sqliteAll = function (query) {
+  return new Promise(function (resolve, reject) {
+    db.all(query, function (err, rows) {
+      if (err) reject(err.message);
       else {
-          resolve(rows)
+        resolve(rows);
       }
-    })
-  })
-}
+    });
+  });
+};
 
+//异步结巴 by@ssp97
 async function ChatJiebaFuzzy(msg) {
   msg = msg.replace("/", "");
   msg = jieba.extract(msg, topN); //按权重分词
-  let candidate = []
-  let candidateNextList = []
-  let candidateNextGrand = 0
+  let candidate = [];
+  let candidateNextList = [];
+  let candidateNextGrand = 0;
   console.log(`分词出关键词：`.log);
   console.log(msg);
   //收集数据开始
   for (const key in msg) {
     if (Object.hasOwnProperty.call(msg, key)) {
       const element = msg[key];
-      console.log(element)
-      rows = await sqliteAll("SELECT * FROM chat WHERE ask LIKE '%"+element.word+"%'")
-      console.log(rows)
+      console.log(element);
+      rows = await sqliteAll("SELECT * FROM chat WHERE ask LIKE '%" + element.word + "%'");
+      console.log(rows);
       for (const k in rows) {
         if (Object.hasOwnProperty.call(rows, k)) {
           const answer = rows[k].answer;
-          if (candidate[answer] == undefined){
-            candidate[answer] = 1
-          }else{
-            candidate[answer] = candidate[answer] + 1
+          if (candidate[answer] == undefined) {
+            candidate[answer] = 1;
+          } else {
+            candidate[answer] = candidate[answer] + 1;
           }
         }
       }
     }
   }
-  console.log(candidate)
+  console.log(candidate);
   // 筛选次数最多
   for (const key in candidate) {
     if (Object.hasOwnProperty.call(candidate, key)) {
       const element = candidate[key];
-      if (element > candidateNextGrand){
-        candidateNextList = []
-        candidateNextGrand = element
-        candidateNextList.push(key)
-      }else if (element == candidateNextGrand){
-        candidateNextList.push(key)
+      if (element > candidateNextGrand) {
+        candidateNextList = [];
+        candidateNextGrand = element;
+        candidateNextList.push(key);
+      } else if (element == candidateNextGrand) {
+        candidateNextList.push(key);
       }
     }
   }
-  console.log(candidateNextList)
-  return candidateNextList
+  console.log(candidateNextList);
+  return candidateNextList;
 }
 
-
-//聊天处理，最核心区块，超智能(智障)的聊天算法：先整句搜索，再模糊搜索，没有的话再分词模糊搜索
+//聊天处理，最核心区块，超智能(智障)的聊天算法：整句搜索，模糊搜索，分词模糊搜索并轮询
 async function ChatProcess(msg) {
-  // 整句搜索
-  const result_1 = await new Promise((resolve, _reject) => {
+  const full_search = await new Promise((resolve, _reject) => {
     console.log("开始整句搜索".log);
     db.all("SELECT * FROM chat WHERE ask = '" + msg + "'", (e, sql) => {
       if (!e && sql.length > 0) {
@@ -2760,11 +2761,14 @@ async function ChatProcess(msg) {
       }
     });
   });
-  if(result_1){
-    return result_1
+
+  if (full_search) {
+    //优先回复整句匹配
+    console.log(`返回整句匹配`.alert);
+    return full_search;
   }
-  // 模糊搜索
-  const result_2 = await new Promise((resolve_1, _reject_1) => {
+
+  const like_serach = await new Promise((resolve, _reject) => {
     console.log("开始模糊搜索".log);
     db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg + "%'", (e, sql) => {
       if (!e && sql.length > 0) {
@@ -2781,18 +2785,37 @@ async function ChatProcess(msg) {
       }
     });
   });
-  if(result_2){
-    return result_2
+
+  if (like_serach) {
+    //其次是模糊匹配
+    console.log(`返回模糊匹配`.alert);
+    return like_serach;
   }
+
   // 分词模糊搜索
   let candidateList = await ChatJiebaFuzzy(msg);
-  if(candidateList.length > 0){
-    return candidateList[Math.floor(Math.random() * candidateList.length)]
+  if (candidateList.length > 0) {
+    return candidateList[Math.floor(Math.random() * candidateList.length)];
   }
   // 随机敷衍
-  let result = await sqliteAll("SELECT * FROM balabala ORDER BY RANDOM()") //有待优化
+  let result = await sqliteAll("SELECT * FROM balabala ORDER BY RANDOM()"); //有待优化
   //console.log(result)
-  return result[0].balabala
+  return result[0].balabala;
+}
+
+//保存qq侧传来的图
+function SaveQQimg(imgUrl) {
+  return new Promise((resolve, reject) => {
+    request(imgUrl[0]).pipe(
+      fs.createWriteStream(`./static/xiaoye/images/${imgUrl[0].split("/")[imgUrl[0].split("/").length - 2]}.jpg`).on("close", (err) => {
+        if (!err) {
+          resolve(`/xiaoye/images/${imgUrl[0].split("/")[imgUrl[0].split("/").length - 2]}.jpg`);
+        } else {
+          reject("保存qq侧传来的图错误。错误原因：" + err);
+        }
+      })
+    );
+  });
 }
 
 //保存qq侧传来的图

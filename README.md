@@ -137,8 +137,8 @@ pkg .
 
 | 用户名           | 金额/人民币 | 留言：                                                                                                                                                                                |
 | ---------------- | :---------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 缤瑶 |     30      | 加油很喜欢小夜嘴臭的样子  |
-| 卖萌傲娇萝莉赛高 |     30      | 很好玩的 bot，加油  |
+| 缤瑶             |     30      | 加油很喜欢小夜嘴臭的样子                                                                                                                                                              |
+| 卖萌傲娇萝莉赛高 |     30      | 很好玩的 bot，加油                                                                                                                                                                    |
 | 眠眠打破\_       |    13.14    | 初次遇见小夜应该是 18 年初的时候 那时还在备战高考 今天的我正式走上了工作岗位 看到小夜复出 很感动 请 p 主喝杯奶茶 希望能在炎炎夏日为您带来一点糖分 愿 p 主和小夜的故事能够长远书写下去 |
 | xian_yui         |     10      | 夜爹冲鸭                                                                                                                                                                              |
 | On my own.       |     10      | 好耶                                                                                                                                                                                  |
@@ -168,7 +168,7 @@ pkg .
 | 余薪             |     10      | 不知道做不做得出 ai 思考性行为...                                                                                                                                                     |
 | 爱发电用户\_qr83 |     10      | xxxx)hhjjiskejeududnn3kssioskwnssj                                                                                                                                                    |
 
-对本项目提供帮助的致谢名单（排名不分先后）：https://niconi.co.ni/ 、 https://www.layui.com/ 、 https://lceda.cn/ 、 https://www.dnspod.cn/ 、 Daisy_Liu 、 http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html 、 https://ihateregex.io/ 、 https://www.maoken.com/ 、 https://www.ngrok.cc/ 、 https://uptimerobot.com/ 、 https://shields.io/ 、 https://ctf.bugku.com/ 、 https://blog.squix.org/ 、 https://hostker.com/ 、 https://www.tianapi.com/ 、 https://api.sumt.cn/ 、 https://github.com/Mrs4s/go-cqhttp 、 https://colorhunt.co/ 、 https://github.com/ 、 https://gitee.com/ 、 https://github.com/windrises/dialogue.moe 、 https://api.oddfar.com/ 、 https://github.com/ssp97 、 还有我的朋友们，以及倾心分享知识的各位
+对本项目提供帮助的致谢名单（排名不分先后）：https://niconi.co.ni/ 、 https://www.layui.com/ 、 https://lceda.cn/ 、 https://www.dnspod.cn/ 、 Daisy_Liu 、 http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html 、 https://ihateregex.io/ 、 https://www.maoken.com/ 、 https://www.ngrok.cc/ 、 https://uptimerobot.com/ 、 https://shields.io/ 、 https://ctf.bugku.com/ 、 https://blog.squix.org/ 、 https://hostker.com/ 、 https://www.tianapi.com/ 、 https://api.sumt.cn/ 、 https://github.com/Mrs4s/go-cqhttp 、 https://colorhunt.co/ 、 https://github.com/ 、 https://gitee.com/ 、 https://github.com/windrises/dialogue.moe 、 https://api.oddfar.com/ 、 https://github.com/ssp97 、https://github.com/mxh-mini-apps/mxh-cp-stories、 还有我的朋友们，以及倾心分享知识的各位
 
 ---
 
