@@ -87,7 +87,7 @@ let onlineusers = 0, //预定义
 
 //web端配置
 const help =
-  "主人你好，我是凌瑶。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人凌瑶实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
+  "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const thanks =
   "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、还有我的朋友们，以及倾心分享知识的各位";
 const updatelog = `<h1>v3.0.17-Dev<br/>修复击鼓传雷异常</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议先不要用噢；</li></ul>`;
@@ -152,8 +152,8 @@ process.on("unhandledRejection", (err) => {
 const rename_reg = new RegExp("^/rename [\u4e00-\u9fa5a-z0-9]{1,10}$"); //允许1-10长度的数英汉昵称
 const bv2av_reg = new RegExp("^[a-zA-Z0-9]{10,12}$"); //匹配bv号
 const isImage_reg = new RegExp("\\[CQ:image,file="); //匹配qqBot图片
-const change_reply_probability_reg = new RegExp("^/admin_change_reply_probability [0-9]*"); //匹配修改qqBot凌瑶回复率
-const change_fudu_probability_reg = new RegExp("^/admin_change_fudu_probability [0-9]*"); //匹配修改qqBot凌瑶复读率
+const change_reply_probability_reg = new RegExp("^/admin_change_reply_probability [0-9]*"); //匹配修改qqBot小夜回复率
+const change_fudu_probability_reg = new RegExp("^/admin_change_fudu_probability [0-9]*"); //匹配修改qqBot小夜复读率
 const img_url_reg = new RegExp("https(.*term=)"); //匹配图片地址
 const isVideo_reg = new RegExp("^\\[CQ:video,file="); //匹配qqBot图片
 const video_url_reg = new RegExp("http(.*term=unknow)"); //匹配视频地址
@@ -271,7 +271,7 @@ io.on("connection", (socket) => {
         .then((resolve) => {
           db.run(`INSERT INTO users VALUES('${resolve}', '${CID}', '2', '${Curentyyyymmdd()}${CurentTime()}')`);
           socket.username = resolve;
-          io.emit("system message", `@新用户 ${CID} 已连接。凌瑶帮你取了一个随机昵称：「${socket.username}」，请前往 更多-设置 来更改昵称`);
+          io.emit("system message", `@新用户 ${CID} 已连接。小夜帮你取了一个随机昵称：「${socket.username}」，请前往 更多-设置 来更改昵称`);
           socket.emit("chat message", {
             CID: "0",
             msg: help,
@@ -337,7 +337,7 @@ io.on("connection", (socket) => {
       db.run(`UPDATE users SET nickname = '${msg.slice(8)}' WHERE CID ='${CID}'`);
       io.emit("chat message", {
         CID: "0",
-        msg: `@昵称重命名完毕，凌瑶现在会称呼你为 ${msg.slice(8)} 啦`,
+        msg: `@昵称重命名完毕，小夜现在会称呼你为 ${msg.slice(8)} 啦`,
       });
     } else if (msg === "/log_view") {
       db.all("SELECT yyyymmdd, COUNT(*) As count FROM messages Group by yyyymmdd", (e, sql) => {
@@ -403,16 +403,16 @@ io.on("connection", (socket) => {
           console.log(`RandomECY(): rejected, and err:${reject}`.error);
           io.emit("system message", `@RandomECY() err:${reject}`);
         });
-      //更改qqBot凌瑶回复率
+      //更改qqBot小夜回复率
     } else if (change_reply_probability_reg.test(msg)) {
       msg = msg.replace("/admin_change_reply_probability ", "");
       reply_probability = msg;
-      socket.emit("system message", `qqBot凌瑶回复率已修改为${msg}%`);
-      //更改qqBot凌瑶复读率
+      socket.emit("system message", `qqBot小夜回复率已修改为${msg}%`);
+      //更改qqBot小夜复读率
     } else if (change_fudu_probability_reg.test(msg)) {
       msg = msg.replace("/admin_change_fudu_probability ", "");
       fudu_probability = msg;
-      socket.emit("system message", `qqBot凌瑶复读率已修改为${msg}%`);
+      socket.emit("system message", `qqBot小夜复读率已修改为${msg}%`);
       //吠
     } else if (yap_reg.test(msg)) {
       msg = msg.replace("/吠 ", "");
@@ -425,7 +425,7 @@ io.on("connection", (socket) => {
           console.log(`TTS错误：${reject}`.error);
           io.emit("system message", `@TTS错误：${reject}`);
         });
-    } //教学系统，抄板于虹原翼版凌瑶v3
+    } //教学系统，抄板于虹原翼版小夜v3
     else if (teach_reg.test(msg)) {
       msg = msg.substr(2).split("答：");
       if (msg.length !== 2) {
@@ -445,14 +445,14 @@ io.on("connection", (socket) => {
         io.emit("system message", `@关键词不能换行啦qwq`);
         return 0;
       }
-      console.log(`web端 ${socket.username} 想要教给凌瑶：问：${ask} 答：${ans}，现在开始检测合法性`.log);
+      console.log(`web端 ${socket.username} 想要教给小夜：问：${ask} 答：${ans}，现在开始检测合法性`.log);
       for (let i in black_list_words) {
         if (
           ask.toLowerCase().indexOf(black_list_words[i].toLowerCase()) !== -1 ||
           ans.toLowerCase().indexOf(black_list_words[i].toLowerCase()) !== -1
         ) {
           console.log(`教学指令：检测到不允许的词：${black_list_words[i]}，退出教学`.error);
-          io.emit("system message", `@你教的内容里有主人不允许凌瑶学习的词qwq`);
+          io.emit("system message", `@你教的内容里有主人不允许小夜学习的词qwq`);
           return 0;
         }
       }
@@ -465,14 +465,14 @@ io.on("connection", (socket) => {
       if (ask.length > 350 || ans.length > 350) {
         //图片长度差不多是350左右
         console.log(`教学指令：教的太长了，退出教学`.error);
-        io.emit("system message", `@你教的内容太长了，凌瑶要坏掉了qwq，不要呀`);
+        io.emit("system message", `@你教的内容太长了，小夜要坏掉了qwq，不要呀`);
         return 0;
       }
-      //到这里都没有出错的话就视为没有问题，可以让凌瑶学了
+      //到这里都没有出错的话就视为没有问题，可以让小夜学了
       console.log(`教学指令：没有检测到问题，可以学习`.log);
       db.run(`INSERT INTO chat VALUES('${ask}', '${ans}')`);
       console.log(`教学指令：学习成功`.log);
-      io.emit("system message", `@哇！凌瑶学会啦！对我说：${ask} 试试吧，凌瑶有可能会回复 ${ans} 噢`);
+      io.emit("system message", `@哇！小夜学会啦！对我说：${ask} 试试吧，小夜有可能会回复 ${ans} 噢`);
       return 0;
     } else {
       if (chat_swich) {
@@ -506,7 +506,7 @@ io.on("connection", (socket) => {
   });
 });
 
-//qqBot凌瑶核心代码，对接go-cqhttp
+//qqBot小夜核心代码，对接go-cqhttp
 function start_qqbot() {
   app.post(go_cqhttp_service, (req, res) => {
     //自动同意好友请求
@@ -519,10 +519,10 @@ function start_qqbot() {
     switch (req.body.sub_type) {
       case "friend":
       case "group":
-        notify = `qqBot凌瑶收到好友 ${req.body.user_id} (${req.body.sender.nickname}) 发来的消息：${req.body.message}`;
+        notify = `qqBot小夜收到好友 ${req.body.user_id} (${req.body.sender.nickname}) 发来的消息：${req.body.message}`;
         break;
       case "normal":
-        notify = `qqBot凌瑶收到群 ${req.body.group_id} 的 ${req.body.user_id} (${req.body.sender.nickname}) 发来的消息：${req.body.message}`;
+        notify = `qqBot小夜收到群 ${req.body.group_id} 的 ${req.body.user_id} (${req.body.sender.nickname}) 发来的消息：${req.body.message}`;
         break;
       case "approve":
         console.log(`${req.body.user_id} 加入了群 ${req.body.group_id}`.log);
@@ -583,7 +583,7 @@ function start_qqbot() {
       req.body.sub_type == "friend_add"
     ) {
       //服务启用开关
-      //指定凌瑶的话
+      //指定小夜的话
       if (open_ju.test(req.body.message) && has_qq_reg.test(req.body.message)) {
         var msg_in = req.body.message.split("菊")[1];
         var who = msg_in.split("[CQ:at,qq=")[1];
@@ -596,28 +596,28 @@ function start_qqbot() {
               function (_error, _response, body) {
                 body = JSON.parse(body);
                 if (body.data.role === "owner" || body.data.role === "admin") {
-                  console.log(`群 ${req.body.group_id} 启用了凌瑶服务`.log);
+                  console.log(`群 ${req.body.group_id} 启用了小夜服务`.log);
                   db.run(`UPDATE qq_group SET talk_enabled = '1' WHERE group_id ='${req.body.group_id}'`);
-                  res.send({ reply: "凌瑶的菊花被管理员张开了，这只凌瑶在本群的所有服务已经启用，要停用请发 闭菊" });
+                  res.send({ reply: "小夜的菊花被管理员张开了，这只小夜在本群的所有服务已经启用，要停用请发 闭菊" });
                   return 0;
                   //不是管理，再看看是不是qqBot管理员
                 } else {
                   for (let i in qq_admin_list) {
                     if (req.body.user_id == qq_admin_list[i]) {
-                      console.log(`群 ${req.body.group_id} 启用了凌瑶服务`.log);
+                      console.log(`群 ${req.body.group_id} 启用了小夜服务`.log);
                       db.run(`UPDATE qq_group SET talk_enabled = '1' WHERE group_id ='${req.body.group_id}'`);
-                      res.send({ reply: "凌瑶的菊花被主人张开了，这只凌瑶在本群的所有服务已经启用，要停用请发 闭菊" });
+                      res.send({ reply: "小夜的菊花被主人张开了，这只小夜在本群的所有服务已经启用，要停用请发 闭菊" });
                       return 0;
                     }
                   }
                   //看来真不是管理员呢
-                  res.send({ reply: "你不是群管理呢，凌瑶不张，张菊需要让管理员来帮忙张噢" });
+                  res.send({ reply: "你不是群管理呢，小夜不张，张菊需要让管理员来帮忙张噢" });
                   return 0;
                 }
               }
             );
             return 0;
-            //不是这只凌瑶被张菊的话，嘲讽那只凌瑶
+            //不是这只小夜被张菊的话，嘲讽那只小夜
           } else {
             res.send({ reply: `${msg_in}说你呢，快张菊！` });
             return 0;
@@ -691,7 +691,7 @@ function start_qqbot() {
               }
 
               //服务停用开关
-              //指定凌瑶的话
+              //指定小夜的话
               if (close_ju.test(req.body.message) && has_qq_reg.test(req.body.message)) {
                 var msg_in = req.body.message.split("菊")[1];
                 var who = msg_in.split("[CQ:at,qq=")[1];
@@ -699,21 +699,21 @@ function start_qqbot() {
                 if (is_qq_reg.test(who)) {
                   //如果是自己要被闭菊，那么闭菊
                   if (bot_qq == who) {
-                    console.log(`群 ${req.body.group_id} 停止了凌瑶服务`.error);
+                    console.log(`群 ${req.body.group_id} 停止了小夜服务`.error);
                     db.run(`UPDATE qq_group SET talk_enabled = '0' WHERE group_id ='${req.body.group_id}'`);
-                    res.send({ reply: `凌瑶的菊花闭上了，这只凌瑶在本群的所有服务已经停用，取消请发 张菊\[CQ:at,qq=${bot_qq}\]` });
+                    res.send({ reply: `小夜的菊花闭上了，这只小夜在本群的所有服务已经停用，取消请发 张菊\[CQ:at,qq=${bot_qq}\]` });
                     return 0;
-                    //不是这只凌瑶被闭菊的话，嘲讽那只凌瑶
+                    //不是这只小夜被闭菊的话，嘲讽那只小夜
                   } else {
                     res.send({ reply: `${msg_in}说你呢，快闭菊！` });
                     return 0;
                   }
                 }
-                //没指定凌瑶
+                //没指定小夜
               } else if (req.body.message === "闭菊") {
-                console.log(`群 ${req.body.group_id} 停止了凌瑶服务`.error);
+                console.log(`群 ${req.body.group_id} 停止了小夜服务`.error);
                 db.run(`UPDATE qq_group SET talk_enabled = '0' WHERE group_id ='${req.body.group_id}'`);
-                res.send({ reply: `凌瑶的菊花闭上了，凌瑶在本群的所有服务已经停用，取消请发 张菊\[CQ:at,qq=${bot_qq}\]` });
+                res.send({ reply: `小夜的菊花闭上了，小夜在本群的所有服务已经停用，取消请发 张菊\[CQ:at,qq=${bot_qq}\]` });
                 return 0;
               }
 
@@ -731,7 +731,7 @@ function start_qqbot() {
                   }
                 });
 
-                res.send({ reply: `谢谢您的反馈，凌瑶已经把您的反馈信息发给了开发团队辣` });
+                res.send({ reply: `谢谢您的反馈，小夜已经把您的反馈信息发给了开发团队辣` });
                 return 0;
               }
 
@@ -750,7 +750,7 @@ function start_qqbot() {
                           `http://${go_cqhttp_api}/set_group_ban?group_id=${req.body.group_id}&user_id=${req.body.user_id}&duration=10`,
                           function (error, _response, _body) {
                             if (!error) {
-                              console.log(`凌瑶生气了，${req.body.user_id} 被禁言`.error);
+                              console.log(`小夜生气了，${req.body.user_id} 被禁言`.error);
                             } else {
                               console.log("请求${go_cqhttp_api}/set_group_ban错误：", error);
                               res.send({ reply: `日忒娘，怎么又出错了` });
@@ -763,7 +763,7 @@ function start_qqbot() {
                     }
                   );
                 } else {
-                  let final = `请不要戳小凌瑶 >_<`;
+                  let final = `请不要戳小小夜 >_<`;
                   request(
                     `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(final)}`,
                     function (error, _response, _body) {
@@ -778,7 +778,7 @@ function start_qqbot() {
                 return 0;
               }
 
-              //教学系统，抄板于虹原翼版凌瑶v3
+              //教学系统，抄板于虹原翼版小夜v3
               if (teach_reg.test(req.body.message)) {
                 let msg = req.body.message;
                 msg = msg.replace(/'/g, ""); //防爆
@@ -800,14 +800,14 @@ function start_qqbot() {
                   res.send({ reply: "关键词不能换行啦qwq" });
                   return 0;
                 }
-                console.log(`${req.body.user_id}(${req.body.sender.nickname}) 想要教给凌瑶：问：${ask} 答：${ans}，现在开始检测合法性`.log);
+                console.log(`${req.body.user_id}(${req.body.sender.nickname}) 想要教给小夜：问：${ask} 答：${ans}，现在开始检测合法性`.log);
                 for (let i in black_list_words) {
                   if (
                     ask.toLowerCase().indexOf(black_list_words[i].toLowerCase()) !== -1 ||
                     ans.toLowerCase().indexOf(black_list_words[i].toLowerCase()) !== -1
                   ) {
                     console.log(`教学指令：检测到不允许的词：${black_list_words[i]}，退出教学`.error);
-                    res.send({ reply: `你教的内容里有主人不允许凌瑶学习的词：${black_list_words[i]} qwq` });
+                    res.send({ reply: `你教的内容里有主人不允许小夜学习的词：${black_list_words[i]} qwq` });
                     return 0;
                   }
                 }
@@ -820,38 +820,38 @@ function start_qqbot() {
                 if (ask.length > 350 || ans.length > 350) {
                   //图片长度差不多是350左右
                   console.log(`教学指令：教的太长了，退出教学`.error);
-                  res.send({ reply: "你教的内容太长了，凌瑶要坏掉了qwq，不要呀" });
+                  res.send({ reply: "你教的内容太长了，小夜要坏掉了qwq，不要呀" });
                   return 0;
                 }
-                //到这里都没有出错的话就视为没有问题，可以让凌瑶学了
+                //到这里都没有出错的话就视为没有问题，可以让小夜学了
                 console.log(`教学指令：没有检测到问题，可以学习`.log);
                 db.run(`INSERT INTO chat VALUES('${ask}', '${ans}')`);
                 console.log(`教学指令：学习成功`.log);
-                res.send({ reply: `哇！凌瑶学会啦！对我说：${ask} 试试吧，凌瑶有可能会回复 ${ans} 噢` });
+                res.send({ reply: `哇！小夜学会啦！对我说：${ask} 试试吧，小夜有可能会回复 ${ans} 噢` });
                 return 0;
               }
 
-              //balabala教学，对于一些难以回复的对话，凌瑶的词库中没有搜索到回复的时候，凌瑶会随机回复这些回复
+              //balabala教学，对于一些难以回复的对话，小夜的词库中没有搜索到回复的时候，小夜会随机回复这些回复
               if (teach_balabala_reg.test(req.body.message)) {
                 let msg = req.body.message;
                 msg = msg.replace(/'/g, ""); //防爆
                 msg = msg.replace("/说不出话 ", "");
                 msg = msg.replace("/说不出话", "");
-                console.log(`${req.body.user_id}(${req.body.sender.nickname}) 想要教给凌瑶balabala：${msg}，现在开始检测合法性`.log);
+                console.log(`${req.body.user_id}(${req.body.sender.nickname}) 想要教给小夜balabala：${msg}，现在开始检测合法性`.log);
                 for (let i in black_list_words) {
                   if (
                     msg.toLowerCase().indexOf(black_list_words[i].toLowerCase()) !== -1 ||
                     msg.toLowerCase().indexOf(black_list_words[i].toLowerCase()) !== -1
                   ) {
                     console.log(`balabala教学：检测到不允许的词：${black_list_words[i]}，退出教学`.error);
-                    res.send({ reply: "你教的内容里有主人不允许凌瑶学习的词qwq" });
+                    res.send({ reply: "你教的内容里有主人不允许小夜学习的词qwq" });
                     return 0;
                   }
                 }
                 console.log(`balabala教学：没有检测到问题，可以学习`.log);
                 db.run(`INSERT INTO balabala VALUES('${msg}')`);
                 console.log(`balabala教学：学习成功`.log);
-                res.send({ reply: `哇！凌瑶学会啦！凌瑶可能在说不出话的时候说 ${msg} 噢` });
+                res.send({ reply: `哇！小夜学会啦！小夜可能在说不出话的时候说 ${msg} 噢` });
                 return 0;
               }
 
@@ -946,12 +946,12 @@ function start_qqbot() {
                 return 0;
               }
 
-              //嘴臭，凌瑶的回复转化为语音
+              //嘴臭，小夜的回复转化为语音
               if (come_yap_reg.test(req.body.message)) {
                 let message = req.body.message.replace("/嘴臭 ", "");
                 message = message.replace("/嘴臭", "");
-                console.log(`有人对线说 ${message}，凌瑶要嘴臭了`.log);
-                io.emit("sysrem message", `@有人对线说 ${message}，凌瑶要嘴臭了`);
+                console.log(`有人对线说 ${message}，小夜要嘴臭了`.log);
+                io.emit("sysrem message", `@有人对线说 ${message}，小夜要嘴臭了`);
                 ChatProcess(message)
                   .then((resolve) => {
                     let reply = resolve;
@@ -1006,7 +1006,7 @@ function start_qqbot() {
                 ];
                 let msg = req.body.message;
                 let who = req.body.sender.nickname;
-                if (!who) who = "凌瑶";
+                if (!who) who = "小夜";
                 prpr_who = msg.replace("/prpr ", "");
                 if (!prpr_who || prpr_who === "/prpr") {
                   prpr_who = prpr_who.replace("/prpr", "");
@@ -1034,7 +1034,7 @@ function start_qqbot() {
                   let star_set_result = star_set_name.substr(month * 2 - (day < star_set_days[month - 1] ? 2 : 0), 2);
                   let shenxiao = ["猴", "鸡", "狗", "猪", "鼠", "牛", "虎", "兔", "龙", "蛇", "马", "羊"];
                   let shenxiao_result = /^\d{4}$/.test(year) ? shenxiao[year % 12] : false;
-                  let final = `凌瑶温馨提示您：今日不戴套，孩子${star_set_result}座，属${shenxiao_result}，${year + 18}年高考，一本机率约${parseInt(
+                  let final = `小夜温馨提示您：今日不戴套，孩子${star_set_result}座，属${shenxiao_result}，${year + 18}年高考，一本机率约${parseInt(
                     Math.random() * (99 - 20 + 1) + 20,
                     10
                   )}%`;
@@ -1092,7 +1092,7 @@ function start_qqbot() {
                   "成为了魔法少女",
                 ];
                 let who = req.body.sender.nickname;
-                if (!who) who = "凌瑶";
+                if (!who) who = "小夜";
                 let random_paintstyle = paintstyle[Math.floor(Math.random() * paintstyle.length)];
                 let random_like = like[Math.floor(Math.random() * like.length)];
                 let random_andthen = andthen[Math.floor(Math.random() * andthen.length)];
@@ -1158,7 +1158,7 @@ function start_qqbot() {
                   msg = msg.substr(4).split(" ");
                   who = msg[1].trim(); //谁
                   text = msg[2].trim(); //说啥
-                  xiaoye_say = msg[3].trim(); //凌瑶说啥
+                  xiaoye_say = msg[3].trim(); //小夜说啥
                   who = who.replace("/强制迫害 ", "");
                   who = who.replace("/强制迫害", "");
                   who = who.replace("[CQ:at,qq=", "");
@@ -1611,7 +1611,7 @@ function start_qqbot() {
                       //给发起人出题，等待ta回答
                       ECYWenDa()
                         .then((resolve) => {
-                          let question = `那么[CQ:at,qq=${req.body.user_id}]请听题：${resolve.quest} 请告诉凌瑶：击鼓传雷 你的答案，时间剩余59秒`;
+                          let question = `那么[CQ:at,qq=${req.body.user_id}]请听题：${resolve.quest} 请告诉小夜：击鼓传雷 你的答案，时间剩余59秒`;
                           let answer = resolve.result; //把答案、目标人、开始时间存入数据库
                           db.run(
                             `UPDATE qq_group SET loop_bomb_answer = '${answer}', loop_bomb_onwer = '${req.body.user_id}' , loop_bomb_start_time = '${
@@ -1719,7 +1719,7 @@ function start_qqbot() {
                                       ECYWenDa()
                                         .then((resolve) => {
                                           let diff = 60 - process.hrtime([sql[0].loop_bomb_start_time, 0])[0]; //剩余时间
-                                          let question = `抽到了幸运群友[CQ:at,qq=${rand_user}]！请听题：${resolve.quest} 请告诉凌瑶： 击鼓传雷 你的答案，时间还剩余${diff}秒`;
+                                          let question = `抽到了幸运群友[CQ:at,qq=${rand_user}]！请听题：${resolve.quest} 请告诉小夜： 击鼓传雷 你的答案，时间还剩余${diff}秒`;
                                           let answer = resolve.result; //把答案、目标人存入数据库
                                           db.run(
                                             `UPDATE qq_group SET loop_bomb_answer = '${answer}', loop_bomb_onwer = '${rand_user}' WHERE group_id ='${req.body.group_id}'`
@@ -1842,15 +1842,15 @@ function start_qqbot() {
                 let stat = "";
                 let self_id = req.body.self_id;
                 self_id != bot_qq
-                  ? (self_id = `错误：检测到凌瑶实际使用的qq：${req.body.self_id} 与配置的qq：${bot_qq} 不一致，请去 config/config.yml 里修改为一致的噢，不然 @我 是说不出话来的`)
+                  ? (self_id = `错误：检测到小夜实际使用的qq：${req.body.self_id} 与配置的qq：${bot_qq} 不一致，请去 config/config.yml 里修改为一致的噢，不然 @我 是说不出话来的`)
                   : (self_id = self_id); //试着用一下三元运算符，比if稍微绕一些，但是习惯了非常符合直觉，原理是：当?前的条件成立时，执行:前的语句，不成立的话执行:后的语句
-                self_id != "1648468212" ? (self_id = self_id) : (self_id = "1648468212(小凌瑶本家)"); //试着用一下三元运算符
+                self_id != "1648468212" ? (self_id = self_id) : (self_id = "1648468212(小小夜本家)"); //试着用一下三元运算符
                 stat = `企划：星野夜蝶Official_${version}_${self_id}
 宿主内核架构：${os.hostname()} ${os.type()} ${os.arch()}
 正常运行时间：${Math.round(os.uptime() / 60 / 60)}小时
-凌瑶吃掉了 ${Math.round(process.memoryUsage().rss / 1024 / 1024)}MB/${Math.round(os.totalmem() / 1024 / 1024)}MB 内存
-如果该凌瑶出现任何故障，请联系该凌瑶领养员，
-也可以发送 /报错 凌瑶的错误 来提交bug给开发团队。
+小夜吃掉了 ${Math.round(process.memoryUsage().rss / 1024 / 1024)}MB/${Math.round(os.totalmem() / 1024 / 1024)}MB 内存
+如果该小夜出现任何故障，请联系该小夜领养员，
+也可以发送 /报错 小夜的错误 来提交bug给开发团队。
 点击加入夜爹开发群：https://jq.qq.com/?_wv=1027&k=bTZSd2iI
 `;
                 res.send({
@@ -1872,7 +1872,7 @@ function start_qqbot() {
               //孤寡
               if (gugua.test(req.body.message)) {
                 if (req.body.message == "/孤寡") {
-                  res.send({ reply: `凌瑶收到了你的孤寡订单，现在就开始孤寡你了噢孤寡~` });
+                  res.send({ reply: `小夜收到了你的孤寡订单，现在就开始孤寡你了噢孤寡~` });
                   Gugua(req.body.user_id);
                   return 0;
                 }
@@ -1887,10 +1887,10 @@ function start_qqbot() {
                     if (!err && body.data.length != 0) {
                       for (let i in body.data) {
                         if (who == body.data[i].user_id) {
-                          res.send({ reply: `凌瑶收到了你的孤寡订单，现在就开始孤寡\[CQ:at,qq=${who}\]了噢孤寡~` });
+                          res.send({ reply: `小夜收到了你的孤寡订单，现在就开始孤寡\[CQ:at,qq=${who}\]了噢孤寡~` });
                           request(
                             `http://${go_cqhttp_api}/send_private_msg?user_id=${who}&message=${encodeURI(
-                              `您好，我是孤寡凌瑶，您的好友 ${req.body.user_id} 给您点了一份孤寡套餐，请查收`
+                              `您好，我是孤寡小夜，您的好友 ${req.body.user_id} 给您点了一份孤寡套餐，请查收`
                             )}`,
                             function (error, _response, _body) {
                               if (!error) {
@@ -1905,7 +1905,7 @@ function start_qqbot() {
                         }
                       }
                       res.send({
-                        reply: `凌瑶没有\[CQ:at,qq=${who}\]的好友，没有办法孤寡ta呢，请先让ta加凌瑶为好友吧，凌瑶就在群里给大家孤寡一下吧`,
+                        reply: `小夜没有\[CQ:at,qq=${who}\]的好友，没有办法孤寡ta呢，请先让ta加小夜为好友吧，小夜就在群里给大家孤寡一下吧`,
                       });
                       QunGugua(req.body.group_id);
                     } else {
@@ -1922,12 +1922,12 @@ function start_qqbot() {
 
               //群欢迎
               if (req.body.notice_type === "group_increase") {
-                let final = `[CQ:at,qq=${req.body.user_id}] 你好呀，我是本群RBQ担当凌瑶！凌瑶的使用说明书在这里 https://blog.giftia.moe/ 噢，请问主人是要先吃饭呢，还是先洗澡呢，还是先*我呢~`;
+                let final = `[CQ:at,qq=${req.body.user_id}] 你好呀，我是本群RBQ担当小夜！小夜的使用说明书在这里 https://blog.giftia.moe/ 噢，请问主人是要先吃饭呢，还是先洗澡呢，还是先*我呢~`;
                 request(
                   `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(final)}`,
                   function (error, _response, _body) {
                     if (!error) {
-                      console.log(`${req.body.user_id} 加入了群 ${req.body.group_id}，凌瑶欢迎了ta`.log);
+                      console.log(`${req.body.user_id} 加入了群 ${req.body.group_id}，小夜欢迎了ta`.log);
                     } else {
                       console.log("请求${go_cqhttp_api}/send_group_msg错误：", error);
                     }
@@ -1936,21 +1936,21 @@ function start_qqbot() {
                 return 0;
               }
 
-              //管理员功能：提醒停止服务的群启用凌瑶
+              //管理员功能：提醒停止服务的群启用小夜
               if (req.body.message === "/admin alert_open") {
                 for (let i in qq_admin_list) {
                   if (req.body.user_id == qq_admin_list[i]) {
                     console.log(`管理员启动了提醒任务`.log);
                     AlertOpen().then((resolve) => {
                       res.send({
-                        reply: `管理员启动了提醒任务，开始提醒停止服务的群启用凌瑶……${resolve}`,
+                        reply: `管理员启动了提醒任务，开始提醒停止服务的群启用小夜……${resolve}`,
                       });
                     });
                     return 0;
                   }
                 }
                 res.send({
-                  reply: `你不是狗管理噢，不能让凌瑶这样那样的`,
+                  reply: `你不是狗管理噢，不能让小夜这样那样的`,
                 });
                 return 0;
               }
@@ -1969,7 +1969,7 @@ function start_qqbot() {
                   }
                 }
                 res.send({
-                  reply: `你不是狗管理噢，不能让凌瑶这样那样的`,
+                  reply: `你不是狗管理噢，不能让小夜这样那样的`,
                 });
                 return 0;
               }
@@ -1979,7 +1979,7 @@ function start_qqbot() {
                 let msg = req.body.message.replace("/admin_change_reply_probability ", "");
                 reply_probability = msg;
                 res.send({
-                  reply: `凌瑶回复率已修改为${msg}%`,
+                  reply: `小夜回复率已修改为${msg}%`,
                 });
               }
 
@@ -1999,8 +1999,8 @@ function start_qqbot() {
                           `http://${go_cqhttp_api}/send_group_msg?group_id=${resolve}&message=${encodeURI(prprmsg)}`,
                           function (error, _response, _body) {
                             if (!error) {
-                              console.log(`qqBot凌瑶在群 ${resolve} 抽风了，发送了 ${prprmsg}`.log);
-                              io.emit("system message", `@qqBot凌瑶在群 ${resolve} 抽风了，发送了 ${prprmsg}`);
+                              console.log(`qqBot小夜在群 ${resolve} 抽风了，发送了 ${prprmsg}`.log);
+                              io.emit("system message", `@qqBot小夜在群 ${resolve} 抽风了，发送了 ${prprmsg}`);
                             } else {
                               console.log("请求${go_cqhttp_api}/send_group_msg错误：", error);
                             }
@@ -2021,8 +2021,8 @@ function start_qqbot() {
               //丢一个骰子，按fudu_probability几率复读
               let fudu_flag = Math.floor(Math.random() * 100);
               if (fudu_flag < fudu_probability) {
-                console.log(`qqBot凌瑶复读 ${req.body.message}`.log);
-                io.emit("system message", `@qqBot凌瑶复读 ${req.body.message}`);
+                console.log(`qqBot小夜复读 ${req.body.message}`.log);
+                io.emit("system message", `@qqBot小夜复读 ${req.body.message}`);
                 res.send({ reply: req.body.message });
                 return 0;
               }
@@ -2033,9 +2033,9 @@ function start_qqbot() {
               let at_replaced_msg = req.body.message; //要把[CQ:at,qq=${bot_qq}] 去除掉，否则聊天核心会乱成一锅粥
               if (xiaoye_ated.test(req.body.message)) {
                 reply_flag -= 80;
-                at_replaced_msg = req.body.message.replace(`[CQ:at,qq=${bot_qq}]`, "").trim(); //去除@凌瑶
+                at_replaced_msg = req.body.message.replace(`[CQ:at,qq=${bot_qq}]`, "").trim(); //去除@小夜
               }
-              //骰子命中，那就让凌瑶来自动回复
+              //骰子命中，那就让小夜来自动回复
               if (reply_flag < reply_probability) {
                 ChatProcess(at_replaced_msg)
                   .then((resolve) => {
@@ -2043,8 +2043,8 @@ function start_qqbot() {
                       resolve = resolve.toString().replace("[name]", `[CQ:at,qq=${req.body.user_id}]`); //替换[name]为正确的@
                       resolve = resolve.toString().replace("&#91;name&#93;", `[CQ:at,qq=${req.body.user_id}]`); //替换[name]为正确的@
                     }
-                    console.log(`qqBot凌瑶回复 ${resolve}`.log);
-                    io.emit("system message", `@qqBot凌瑶回复：${resolve}`);
+                    console.log(`qqBot小夜回复 ${resolve}`.log);
+                    io.emit("system message", `@qqBot小夜回复：${resolve}`);
                     res.send({ reply: resolve });
                     return 0;
                   })
@@ -2054,14 +2054,14 @@ function start_qqbot() {
                       .then((resolve) => {
                         let random_balabala = resolve[Math.floor(Math.random() * resolve.length)].balabala;
                         res.send({ reply: random_balabala });
-                        io.emit("system message", `@qqBot凌瑶觉得${random_balabala}`);
-                        console.log(`${reject}，qqBot凌瑶觉得${random_balabala}`.log);
+                        io.emit("system message", `@qqBot小夜觉得${random_balabala}`);
+                        console.log(`${reject}，qqBot小夜觉得${random_balabala}`.log);
                         return 0;
                       })
                       .catch((reject) => {
-                        console.log(`凌瑶试图balabala但出错了：${reject}`.error);
-                        res.send({ reply: `凌瑶试图balabala但出错了：${reject}` });
-                        io.emit("system message", `@qqBot凌瑶试图balabala但出错了：${reject}`);
+                        console.log(`小夜试图balabala但出错了：${reject}`.error);
+                        res.send({ reply: `小夜试图balabala但出错了：${reject}` });
+                        io.emit("system message", `@qqBot小夜试图balabala但出错了：${reject}`);
                         return 0;
                       });
                   });
@@ -2081,8 +2081,8 @@ function start_qqbot() {
       //私聊回复，现在已经关闭
       ChatProcess(req.body.message)
         .then((resolve) => {
-          console.log(`qqBot凌瑶回复 ${resolve}`.log);
-          io.emit("system message", `@qqBot凌瑶回复：${resolve}`);
+          console.log(`qqBot小夜回复 ${resolve}`.log);
+          io.emit("system message", `@qqBot小夜回复：${resolve}`);
           res.send({ reply: resolve });
         })
         .catch((reject) => {
@@ -2091,13 +2091,13 @@ function start_qqbot() {
             .then((resolve) => {
               let random_balabala = resolve[Math.floor(Math.random() * resolve.length)].balabala;
               res.send({ reply: random_balabala });
-              io.emit("system message", `@qqBot凌瑶觉得${random_balabala}`);
-              console.log(`${reject}，qqBot凌瑶觉得${random_balabala}`.log);
+              io.emit("system message", `@qqBot小夜觉得${random_balabala}`);
+              console.log(`${reject}，qqBot小夜觉得${random_balabala}`.log);
             })
             .catch((reject) => {
-              console.log(`凌瑶试图balabala但出错了：${reject}`.error);
-              res.send({ reply: `凌瑶试图balabala但出错了：${reject}` });
-              io.emit("system message", `@qqBot凌瑶试图balabala但出错了：${reject}`);
+              console.log(`小夜试图balabala但出错了：${reject}`.error);
+              res.send({ reply: `小夜试图balabala但出错了：${reject}` });
+              io.emit("system message", `@qqBot小夜试图balabala但出错了：${reject}`);
             });
         });
     } else {
@@ -2116,9 +2116,9 @@ function start_qqbot() {
           for (let i in sql) {
             service_stoped_list.push(sql[i].group_id);
           }
-          console.log(`以下群未启用凌瑶服务：${service_stoped_list} ，现在开始随机延时提醒`.log);
+          console.log(`以下群未启用小夜服务：${service_stoped_list} ，现在开始随机延时提醒`.log);
           DelayAlert(service_stoped_list);
-          resolve(`以下群未启用凌瑶服务：${service_stoped_list} ，现在开始随机延时提醒`);
+          resolve(`以下群未启用小夜服务：${service_stoped_list} ，现在开始随机延时提醒`);
         } else {
           console.log(`目前没有群是关闭服务的，挺好`.log);
         }
@@ -2143,10 +2143,10 @@ function LoopDanmu() {
         if (ditupao_flag < 1) {
           ChatProcess("").then((resolve) => {
             let reply = resolve;
-            console.log(`凌瑶开地图炮了：${reply}`.log);
-            //将直播凌瑶的回复写入txt，以便在直播姬显示
+            console.log(`小夜开地图炮了：${reply}`.log);
+            //将直播小夜的回复写入txt，以便在直播姬显示
             fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, reply);
-            //然后让凌瑶读出来
+            //然后让小夜读出来
             BetterTTS(reply)
               .then((resolve) => {
                 let tts_file = `${process.cwd()}\\static${resolve.file.replace("/", "\\")}`; //这里似乎有问题，ntfs短文件名无法转换
@@ -2165,7 +2165,7 @@ function LoopDanmu() {
         io.emit("sysrem message", `@弹幕传来： ${resolve.text}`);
 
         //卧槽这么多传参怎么复用啊
-        //教学系统，抄板于虹原翼版凌瑶v3
+        //教学系统，抄板于虹原翼版小夜v3
         if (teach_reg.test(resolve.text)) {
           let msg = resolve.text;
           msg = msg.replace(/'/g, ""); //防爆
@@ -2217,15 +2217,15 @@ function LoopDanmu() {
               });
             return 0;
           }
-          console.log(`弹幕想要教给凌瑶：问：${ask} 答：${ans}，现在开始检测合法性`.log);
+          console.log(`弹幕想要教给小夜：问：${ask} 答：${ans}，现在开始检测合法性`.log);
           for (let i in black_list_words) {
             if (
               ask.toLowerCase().indexOf(black_list_words[i].toLowerCase()) !== -1 ||
               ans.toLowerCase().indexOf(black_list_words[i].toLowerCase()) !== -1
             ) {
               console.log(`教学指令：检测到不允许的词：${black_list_words[i]}，退出教学`.error);
-              fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, `你教的内容里有主人不允许凌瑶学习的词：${black_list_words[i]} qwq`);
-              BetterTTS(`你教的内容里有主人不允许凌瑶学习的词：${black_list_words[i]} qwq`)
+              fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, `你教的内容里有主人不允许小夜学习的词：${black_list_words[i]} qwq`);
+              BetterTTS(`你教的内容里有主人不允许小夜学习的词：${black_list_words[i]} qwq`)
                 .then((resolve) => {
                   let tts_file = `${process.cwd()}\\static${resolve.file.replace("/", "\\")}`;
                   voiceplayer.play(tts_file, function (err) {
@@ -2256,8 +2256,8 @@ function LoopDanmu() {
           }
           if (ask.length > 100 || ans.length > 100) {
             console.log(`教学指令：教的太长了，退出教学`.error);
-            fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, `你教的内容太长了，凌瑶要坏掉了qwq，不要呀`);
-            BetterTTS("你教的内容太长了，凌瑶要坏掉了qwq，不要呀")
+            fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, `你教的内容太长了，小夜要坏掉了qwq，不要呀`);
+            BetterTTS("你教的内容太长了，小夜要坏掉了qwq，不要呀")
               .then((resolve) => {
                 let tts_file = `${process.cwd()}\\static${resolve.file.replace("/", "\\")}`;
                 voiceplayer.play(tts_file, function (err) {
@@ -2269,12 +2269,12 @@ function LoopDanmu() {
               });
             return 0;
           }
-          //到这里都没有出错的话就视为没有问题，可以让凌瑶学了
+          //到这里都没有出错的话就视为没有问题，可以让小夜学了
           console.log(`教学指令：没有检测到问题，可以学习`.log);
           db.run(`INSERT INTO chat VALUES('${ask}', '${ans}')`);
           console.log(`教学指令：学习成功`.log);
-          fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, `哇！凌瑶学会啦！对我说：${ask} 试试吧，凌瑶有可能会回复 ${ans} 噢`);
-          BetterTTS(`哇！凌瑶学会啦！对我说：${ask} 试试吧，凌瑶有可能会回复 ${ans} 噢`)
+          fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, `哇！小夜学会啦！对我说：${ask} 试试吧，小夜有可能会回复 ${ans} 噢`);
+          BetterTTS(`哇！小夜学会啦！对我说：${ask} 试试吧，小夜有可能会回复 ${ans} 噢`)
             .then((resolve) => {
               let tts_file = `${process.cwd()}\\static${resolve.file.replace("/", "\\")}`;
               voiceplayer.play(tts_file, function (err) {
@@ -2289,7 +2289,7 @@ function LoopDanmu() {
           ChatProcess(resolve.text)
             .then((resolve) => {
               let reply = resolve;
-              console.log(`凌瑶说：${reply}`.log);
+              console.log(`小夜说：${reply}`.log);
               fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, `${reply}`);
               BetterTTS(reply)
                 .then((resolve) => {
@@ -2319,10 +2319,10 @@ function LoopDanmu() {
                     .catch((reject) => {
                       console.log(`TTS错误：${reject}`.error);
                     });
-                  console.log(`${reject}，qqBot凌瑶觉得${random_balabala}`.log);
+                  console.log(`${reject}，qqBot小夜觉得${random_balabala}`.log);
                 })
                 .catch((reject) => {
-                  console.log(`凌瑶试图balabala但出错了：${reject}`.error);
+                  console.log(`小夜试图balabala但出错了：${reject}`.error);
                 });
             });
         }
@@ -2653,7 +2653,7 @@ async function InitConfig() {
   baidu_secret_key = resolve.ApiKey.baidu_secret_key; //百度接口密钥
 
   bot_qq = resolve.qqBot.bot_qq; //qqBot使用的qq帐号
-  qq_admin_list = resolve.qqBot.qq_admin_list; //qqBot凌瑶的管理员列表
+  qq_admin_list = resolve.qqBot.qq_admin_list; //qqBot小夜的管理员列表
   topN = resolve.qqBot.topN; //qqBot限制分词数量
   reply_probability = resolve.qqBot.reply_probability; //回复几率
   fudu_probability = resolve.qqBot.fudu_probability; //复读几率
@@ -2680,20 +2680,20 @@ async function InitConfig() {
 
   if (conn_go_cqhttp) {
     console.log(
-      `系统配置：qqBot凌瑶开启，将使用配置的QQ帐号 ${bot_qq}、对接go-cqhttp接口 ${go_cqhttp_api}、监听反向post于 127.0.0.1:${web_port}${go_cqhttp_service}，请确认是否配置正确并启动go-cqhttp`
+      `系统配置：qqBot小夜开启，将使用配置的QQ帐号 ${bot_qq}、对接go-cqhttp接口 ${go_cqhttp_api}、监听反向post于 127.0.0.1:${web_port}${go_cqhttp_service}，请确认是否配置正确并启动go-cqhttp`
         .on
     );
-    xiaoye_ated = new RegExp(`\\[CQ:at,qq=${bot_qq}\\]`); //匹配凌瑶被@
+    xiaoye_ated = new RegExp(`\\[CQ:at,qq=${bot_qq}\\]`); //匹配小夜被@
     start_qqbot();
   } else {
-    console.log("系统配置：qqBot凌瑶关闭".off);
+    console.log("系统配置：qqBot小夜关闭".off);
   }
 
   if (Now_On_Live) {
-    console.log(`系统配置：凌瑶直播对线开启，请确认哔哩哔哩直播间id是否为 ${blive_room_id}`.on);
+    console.log(`系统配置：小夜直播对线开启，请确认哔哩哔哩直播间id是否为 ${blive_room_id}`.on);
     start_live();
   } else {
-    console.log("系统配置：凌瑶直播对线关闭".off);
+    console.log("系统配置：小夜直播对线关闭".off);
   }
 
   http.listen(web_port, () => {
@@ -2893,7 +2893,7 @@ function TTS(tex) {
         if (result.data) {
           console.log(`${tex} 的语音合成成功`.log);
           fs.writeFileSync(`./static/xiaoye/tts/${sha1(result.data)}.mp3`, result.data);
-          let file = { file: `/xiaoye/tts/${sha1(result.data)}.mp3`, filename: "凌瑶语音回复" };
+          let file = { file: `/xiaoye/tts/${sha1(result.data)}.mp3`, filename: "小夜语音回复" };
           resolve(file);
         } else {
           // 合成服务发生错误
@@ -2920,7 +2920,7 @@ function BetterTTS(tex) {
         let base64Data = body.data.replace(/^data:audio\/x-mpeg;base64,/, "");
         let dataBuffer = Buffer.from(base64Data, "base64");
         fs.writeFileSync(`./static/xiaoye/tts/${sha1(dataBuffer)}.mp3`, dataBuffer);
-        let file = { file: `/xiaoye/tts/${sha1(dataBuffer)}.mp3`, filename: "凌瑶幼女版语音回复" };
+        let file = { file: `/xiaoye/tts/${sha1(dataBuffer)}.mp3`, filename: "小夜幼女版语音回复" };
         resolve(file);
       } else {
         //估计被发现扒接口了
@@ -2955,21 +2955,21 @@ function GetLaststDanmu() {
 function DelayAlert(service_stoped_list) {
   let alert_msg = [
     //提醒文本列表
-    `呜呜呜，把人家冷落了那么久，能不能让凌瑶张菊了呢...凌瑶的张菊指令更新了，现在需要发 张菊\[CQ:at,qq=${bot_qq}\] 才可以了噢`,
-    `闭菊那么久了，朕的菊花痒了！还不快让凌瑶张菊！凌瑶的张菊指令更新了，现在需要发 张菊\[CQ:at,qq=${bot_qq}\] 才可以了噢`,
-    `凌瑶也想为大家带来快乐，所以让凌瑶张菊，好吗？凌瑶的张菊指令更新了，现在需要发 张菊\[CQ:at,qq=${bot_qq}\] 才可以了噢`,
-    `欧尼酱，不要再无视我了，凌瑶那里很舒服的，让凌瑶张菊试试吧~凌瑶的张菊指令更新了，现在需要发 张菊\[CQ:at,qq=${bot_qq}\] 才可以了噢`,
+    `呜呜呜，把人家冷落了那么久，能不能让小夜张菊了呢...小夜的张菊指令更新了，现在需要发 张菊\[CQ:at,qq=${bot_qq}\] 才可以了噢`,
+    `闭菊那么久了，朕的菊花痒了！还不快让小夜张菊！小夜的张菊指令更新了，现在需要发 张菊\[CQ:at,qq=${bot_qq}\] 才可以了噢`,
+    `小夜也想为大家带来快乐，所以让小夜张菊，好吗？小夜的张菊指令更新了，现在需要发 张菊\[CQ:at,qq=${bot_qq}\] 才可以了噢`,
+    `欧尼酱，不要再无视我了，小夜那里很舒服的，让小夜张菊试试吧~小夜的张菊指令更新了，现在需要发 张菊\[CQ:at,qq=${bot_qq}\] 才可以了噢`,
   ];
   for (let i in service_stoped_list) {
     let delay_time = Math.floor(Math.random() * 60); //随机延时0到60秒
     let random_alert_msg = alert_msg[Math.floor(Math.random() * alert_msg.length)];
-    console.log(`qqBot凌瑶将会延时 ${delay_time} 秒后提醒群 ${service_stoped_list[i]} 张菊，提醒文本为：${random_alert_msg}`.log);
+    console.log(`qqBot小夜将会延时 ${delay_time} 秒后提醒群 ${service_stoped_list[i]} 张菊，提醒文本为：${random_alert_msg}`.log);
     setTimeout(function () {
       request(
         `http://${go_cqhttp_api}/send_group_msg?group_id=${service_stoped_list[i]}&message=${encodeURI(random_alert_msg)}`,
         function (error, _response, _body) {
           if (!error) {
-            console.log(`qqBot凌瑶提醒了群 ${service_stoped_list[i]} 张菊，提醒文本为：${random_alert_msg}`.log);
+            console.log(`qqBot小夜提醒了群 ${service_stoped_list[i]} 张菊，提醒文本为：${random_alert_msg}`.log);
           } else {
             console.log("请求${go_cqhttp_api}/send_group_msg错误：", error);
           }
@@ -2995,7 +2995,7 @@ function Gugua(who) {
     setTimeout(function () {
       request(`http://${go_cqhttp_api}/send_private_msg?user_id=${who}&message=${encodeURI(pic_now)}`, function (error, _response, _body) {
         if (!error) {
-          console.log(`qqBot凌瑶孤寡了 ${who}，孤寡图为：${pic_now}`.log);
+          console.log(`qqBot小夜孤寡了 ${who}，孤寡图为：${pic_now}`.log);
         } else {
           console.log("请求${go_cqhttp_api}/send_private_msg错误：", error);
         }
@@ -3020,7 +3020,7 @@ function QunGugua(who) {
     setTimeout(function () {
       request(`http://${go_cqhttp_api}/send_group_msg?group_id=${who}&message=${encodeURI(pic_now)}`, function (error, _response, _body) {
         if (!error) {
-          console.log(`qqBot凌瑶孤寡了群 ${who}，孤寡图为：${pic_now}`.log);
+          console.log(`qqBot小夜孤寡了群 ${who}，孤寡图为：${pic_now}`.log);
         } else {
           console.log("请求${go_cqhttp_api}/send_group_msg错误：", error);
         }
