@@ -52,7 +52,7 @@ if (_cn_reg.test(`${process.cwd()}`)) {
 }
 
 //系统配置和开关，以及固定变量
-const version = `ChatDACS v3.0.15-Dev`; //版本号，会显示在浏览器tab与标题栏
+const version = `ChatDACS v3.0.16-Dev`; //版本号，会显示在浏览器tab与标题栏
 const html = "/static/index.html"; //前端页面路径，old.html为旧版前端
 var boom_timer; //60s计时器
 let onlineusers = 0, //预定义
@@ -89,8 +89,8 @@ let onlineusers = 0, //预定义
 const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const thanks =
-  "对本项目提供帮助的致谢名单（排名不分先后）：https://niconi.co.ni/ 、 https://www.layui.com/ 、 https://lceda.cn/ 、 https://www.dnspod.cn/ 、 Daisy_Liu 、 http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html 、 https://ihateregex.io/ 、 https://www.maoken.com/ 、 https://www.ngrok.cc/ 、 https://uptimerobot.com/ 、 https://shields.io/ 、 https://ctf.bugku.com/ 、 https://blog.squix.org/ 、 https://hostker.com/ 、 https://www.tianapi.com/ 、 https://api.sumt.cn/ 、 https://github.com/Mrs4s/go-cqhttp 、 https://colorhunt.co/ 、 https://github.com/ 、 https://gitee.com/ 、 https://github.com/windrises/dialogue.moe 、 https://api.oddfar.com/ 、 https://github.com/ssp97 、https://github.com/mxh-mini-apps/mxh-cp-stories、 还有我的朋友们，以及倾心分享知识的各位";
-const updatelog = `<h1>v3.0.15-Dev<br/>床新的聊天算法，感谢@ssp97，增加cp文功能，增加伪造转发功能，修复迫害失败</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议先不要用噢；</li></ul>`;
+  "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、还有我的朋友们，以及倾心分享知识的各位";
+const updatelog = `<h1>v3.0.16-Dev<br/>修复cp文参数异常，修复击鼓传雷异常，修复/ping指令在闭菊时没有回应</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议先不要用噢；</li></ul>`;
 
 /*好了！以上就是系统的基本配置，如果没有必要，请不要再往下继续编辑了。请保存本文件。祝使用愉快！
  *
@@ -178,7 +178,7 @@ const close_ju = new RegExp("闭菊.*"); //匹配闭菊指令
 const feed_back = new RegExp("/报错.*"); //匹配报错指令
 const ascii_draw = new RegExp("/字符画.*"); //匹配字符画指令
 const gugua = new RegExp("/孤寡.*"); //匹配孤寡指令
-const cp_story = new RegExp("/cp.*"); //匹配cp文指令
+const cp_story = new RegExp("/cp.*|cp.*"); //匹配cp文指令
 const fake_forward = new RegExp("/强制迫害.*"); //匹配伪造转发指令
 
 //日志染色颜色配置
@@ -559,6 +559,22 @@ function start_qqbot() {
       return 0;
     }
 
+    //测试指令
+    if (req.body.message === "/ping") {
+      console.log("Pong!".log);
+      let test = Math.random() * 10000;
+      let runtime = process.hrtime();
+
+      for (i = 1.0; i < 114514.0; i++) {
+        test += i + i / 10.0;
+      }
+
+      runtime = process.hrtime(runtime)[1] / 1000 / 1000;
+
+      res.send({ reply: `Pong! ${test} in ${runtime}ms` });
+      return 0;
+    }
+
     //群服务开关判断
     if (
       req.body.message_type == "group" ||
@@ -698,22 +714,6 @@ function start_qqbot() {
                 console.log(`群 ${req.body.group_id} 停止了小夜服务`.error);
                 db.run(`UPDATE qq_group SET talk_enabled = '0' WHERE group_id ='${req.body.group_id}'`);
                 res.send({ reply: `小夜的菊花闭上了，小夜在本群的所有服务已经停用，取消请发 张菊\[CQ:at,qq=${bot_qq}\]` });
-                return 0;
-              }
-
-              //测试指令
-              if (req.body.message === "/ping") {
-                console.log("Pong!".log);
-                let test = Math.random() * 10000;
-                let runtime = process.hrtime();
-
-                for (i = 1.0; i < 114514.0; i++) {
-                  test += i + i / 10.0;
-                }
-
-                runtime = process.hrtime(runtime)[1] / 1000 / 1000;
-
-                res.send({ reply: `Pong! ${test} in ${runtime}ms` });
                 return 0;
               }
 
@@ -1110,7 +1110,8 @@ function start_qqbot() {
               //cp文生成器，语料来自 https://github.com/mxh-mini-apps/mxh-cp-stories/blob/master/src/assets/story.json
               if (cp_story.test(req.body.message)) {
                 let msg = req.body.message + " "; //结尾加一个空格防爆
-                msg = msg.substr(3).split(" ");
+                msg = msg.split(" ");
+                console.log(msg);
                 let tops = msg[1].trim(), //小攻
                   bottoms = msg[2].trim(); //小受
 
@@ -1691,9 +1692,17 @@ function start_qqbot() {
                           //判断答案 loop_bomb_answer、是否本人回答
                           if (sql[0].loop_bomb_answer == your_answer && sql[0].loop_bomb_onwer == req.body.user_id) {
                             //答对了
-                            res.send({
-                              reply: `[CQ:at,qq=${req.body.user_id}] 回答正确！答案确实是${sql[0].loop_bomb_answer}！`,
-                            });
+                            let end = `[CQ:at,qq=${req.body.user_id}] 回答正确！答案确实是${sql[0].loop_bomb_answer}！`;
+                            request(
+                              `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(end)}`,
+                              function (error, _response, _body) {
+                                if (!error) {
+                                  io.emit("system message", `@${sql[0].loop_bomb_onwer} 在群 ${req.body.group_id} 回答正确`);
+                                } else {
+                                  console.log("请求${go_cqhttp_api}/send_group_msg错误：", error);
+                                }
+                              }
+                            );
 
                             //答题成功，然后要把雷传给随机幸运群友，进入下一题
                             setTimeout(function () {
@@ -1751,15 +1760,15 @@ function start_qqbot() {
                             let boom_time = Math.floor(Math.random() * 60 * 3) + 60; //造成伤害时间
                             console.log(`${req.body.user_id} 在群 ${req.body.group_id} 回答错误，被炸伤${boom_time}秒`.log);
                             clearTimeout(boom_timer);
-                            //游戏结束，删掉游戏记录
-                            db.run(
-                              `UPDATE qq_group SET loop_bomb_enabled = '0', loop_bomb_answer = '', loop_bomb_onwer = '' , loop_bomb_start_time = '' WHERE group_id ='${req.body.group_id}'`
-                            );
                             res.send({
                               reply: `[CQ:at,qq=${req.body.user_id}] 回答错误，好可惜，你被炸成重伤了，休养生息${boom_time}秒！游戏结束！下次加油噢，那么答案公布：${sql[0].loop_bomb_answer}`,
                               ban: 1,
                               ban_duration: boom_time,
                             });
+                            //游戏结束，删掉游戏记录
+                            db.run(
+                              `UPDATE qq_group SET loop_bomb_enabled = '0', loop_bomb_answer = '', loop_bomb_onwer = '' , loop_bomb_start_time = '' WHERE group_id ='${req.body.group_id}'`
+                            );
                             return 0;
                           }
                         }
