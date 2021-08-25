@@ -22,7 +22,7 @@
   </td>
 
   <td style="width:20%;vertical-align:top;">
-    <img src="https://raw.githubusercontent.com/Giftia/ChatDACS/master/static/xiaoye/images/yedie_out.png" width="200" alt="stand" />
+    <img src="https://i.loli.net/2021/08/25/sILl6XREJMDPAmt.png" width="200" alt="stand" />
     <p align="center">
       星野夜蝶 立绘
     </p>
