@@ -90,7 +90,7 @@ const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const thanks =
   "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、还有我的朋友们，以及倾心分享知识的各位";
-const updatelog = `<h1>v3.0.17-Dev<br/>修复击鼓传雷异常</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议先不要用噢；</li></ul>`;
+const updatelog = `<h1>v3.0.17-Dev<br/>修复击鼓传雷异常，修复聊天回复率可被任何人更改的bug</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议先不要用噢；</li></ul>`;
 
 /*好了！以上就是系统的基本配置，如果没有必要，请不要再往下继续编辑了。请保存本文件。祝使用愉快！
  *
@@ -403,18 +403,8 @@ io.on("connection", (socket) => {
           console.log(`RandomECY(): rejected, and err:${reject}`.error);
           io.emit("system message", `@RandomECY() err:${reject}`);
         });
-      //更改qqBot小夜回复率
-    } else if (change_reply_probability_reg.test(msg)) {
-      msg = msg.replace("/admin_change_reply_probability ", "");
-      reply_probability = msg;
-      socket.emit("system message", `qqBot小夜回复率已修改为${msg}%`);
-      //更改qqBot小夜复读率
-    } else if (change_fudu_probability_reg.test(msg)) {
-      msg = msg.replace("/admin_change_fudu_probability ", "");
-      fudu_probability = msg;
-      socket.emit("system message", `qqBot小夜复读率已修改为${msg}%`);
-      //吠
-    } else if (yap_reg.test(msg)) {
+    } //吠
+    else if (yap_reg.test(msg)) {
       msg = msg.replace("/吠 ", "");
       msg = msg.replace("/吠", "");
       BetterTTS(msg)
@@ -1689,8 +1679,9 @@ function start_qqbot() {
                       //从数据库里取答案判断
                       db.all(`SELECT * FROM qq_group WHERE group_id = '${req.body.group_id}'`, (err, sql) => {
                         if (!err && sql[0]) {
-                          //判断答案 loop_bomb_answer、是否本人回答
-                          if (sql[0].loop_bomb_answer == your_answer && sql[0].loop_bomb_onwer == req.body.user_id) {
+                          //判断答案 loop_bomb_answer
+                          if (sql[0].loop_bomb_answer == your_answer) {
+                            //&& sql[0].loop_bomb_onwer == req.body.user_id) { //是否本人回答
                             //答对了
                             let end = `[CQ:at,qq=${req.body.user_id}] 回答正确！答案确实是${sql[0].loop_bomb_answer}！`;
                             request(
@@ -1749,19 +1740,19 @@ function start_qqbot() {
                               });
                             }, 500);
 
-                            //不是本人回答，来捣乱的
-                          } else if (sql[0].loop_bomb_onwer != req.body.user_id) {
-                            let end = `[CQ:at,qq=${req.body.user_id}] 你是来捣乱的嘛，这个雷是[CQ:at,qq=${sql[0].loop_bomb_onwer}]的，不要抢答呀`;
-                            request(
-                              `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(end)}`,
-                              function (error, _response, _body) {
-                                if (!error) {
-                                  io.emit("system message", `@${sql[0].loop_bomb_onwer} 在群 ${req.body.group_id} 来捣乱`);
-                                } else {
-                                  console.log("请求${go_cqhttp_api}/send_group_msg错误：", error);
-                                }
-                              }
-                            );
+                            //不是本人回答，是来抢答的
+                            // } else if (sql[0].loop_bomb_onwer != req.body.user_id) {
+                            //   let end = `[CQ:at,qq=${req.body.user_id}] 你是来捣乱的嘛，这个雷是[CQ:at,qq=${sql[0].loop_bomb_onwer}]的，不要抢答呀`;
+                            //   request(
+                            //     `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(end)}`,
+                            //     function (error, _response, _body) {
+                            //       if (!error) {
+                            //         io.emit("system message", `@${sql[0].loop_bomb_onwer} 在群 ${req.body.group_id} 来捣乱`);
+                            //       } else {
+                            //         console.log("请求${go_cqhttp_api}/send_group_msg错误：", error);
+                            //       }
+                            //     }
+                            //   );
 
                             //答错了
                           } else {
@@ -1920,6 +1911,16 @@ function start_qqbot() {
                 return 0;
               }
 
+              //黑白图
+              if (req.body.message == "/黑白图") {
+                let str = alphabet(req.body.message.replace("/字符画 ", ""), "stereo");
+                console.log(str);
+                res.send({
+                  reply: str,
+                });
+                return 0;
+              }
+
               //群欢迎
               if (req.body.notice_type === "group_increase") {
                 let final = `[CQ:at,qq=${req.body.user_id}] 你好呀，我是本群RBQ担当小夜！小夜的使用说明书在这里 https://blog.giftia.moe/ 噢，请问主人是要先吃饭呢，还是先洗澡呢，还是先*我呢~`;
@@ -1976,11 +1977,20 @@ function start_qqbot() {
 
               //管理员功能：修改聊天回复率
               if (change_reply_probability_reg.test(req.body.message)) {
-                let msg = req.body.message.replace("/admin_change_reply_probability ", "");
-                reply_probability = msg;
+                for (let i in qq_admin_list) {
+                  if (req.body.user_id == qq_admin_list[i]) {
+                    let msg = req.body.message.replace("/admin_change_reply_probability ", "");
+                    reply_probability = msg;
+                    res.send({
+                      reply: `小夜回复率已修改为${msg}%`,
+                    });
+                    return 0;
+                  }
+                }
                 res.send({
-                  reply: `小夜回复率已修改为${msg}%`,
+                  reply: `你不是狗管理噢，不能让小夜这样那样的`,
                 });
+                return 0;
               }
 
               /*                    要新增指令与功能请在这条分割线的上方添加，在下面添加有可能会导致冲突以及不可预料的异常                    */
@@ -2549,25 +2559,42 @@ function RandomTbshow() {
   });
 }
 
-//随机二次元图，旧接口 https://acg.yanwz.cn/api.php 已弃用
+//随机二次元图
 function RandomECY() {
   return new Promise((resolve, reject) => {
-    request(`https://api.sumt.cn/api/rand.acg.php?token=${sumtkey}&type=%E4%BA%8C%E6%AC%A1%E5%85%83&format=json`, (err, response, body) => {
-      body = JSON.parse(body);
-      if (!err && body.code === 200) {
-        let picUrl = body.pic_url;
+    request(`https://iw233.cn/api/Random.php`, (err, response, _body) => {
+      if (!err) {
+        let picUrl = response.request.uri.href;
         request(picUrl).pipe(
           fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
             console.log(`保存了好康的二次元图：${picUrl}，然后再给用户`.log);
           })
         ); //来之不易啊，保存为本地图片
-        resolve(body.pic_url); //但是不给本地地址，还是给的源地址，这样节省带宽
+        resolve(picUrl); //但是不给本地地址，还是给的源地址，这样节省带宽
       } else {
-        reject("随机二次元图错误，是卡特实验室接口的锅。错误原因：" + JSON.stringify(response.body));
+        reject("随机二次元图错误，是这个神秘接口的锅。错误原因：图片太鸡儿大了");
       }
     });
   });
 }
+// function RandomECY() {
+//   return new Promise((resolve, reject) => {
+//     request(`https://api.sumt.cn/api/rand.acg.php?token=${sumtkey}&type=%E4%BA%8C%E6%AC%A1%E5%85%83&format=json`, (err, response, body) => {
+//       body = JSON.parse(body);
+//       if (!err && body.code === 200) {
+//         let picUrl = body.pic_url;
+//         request(picUrl).pipe(
+//           fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
+//             console.log(`保存了好康的二次元图：${picUrl}，然后再给用户`.log);
+//           })
+//         ); //来之不易啊，保存为本地图片
+//         resolve(body.pic_url); //但是不给本地地址，还是给的源地址，这样节省带宽
+//       } else {
+//         reject("随机二次元图错误，是卡特实验室接口的锅。错误原因：" + JSON.stringify(response.body));
+//       }
+//     });
+//   });
+// }
 
 //随机冷知识
 function RandomHomeword() {
