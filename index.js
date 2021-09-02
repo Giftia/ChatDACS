@@ -52,7 +52,7 @@ if (_cn_reg.test(`${process.cwd()}`)) {
 }
 
 //系统配置和开关，以及固定变量
-const version = `ChatDACS v3.0.18-Dev`; //版本号，会显示在浏览器tab与标题栏
+const version = `ChatDACS v3.0.19-Dev`; //版本号，会显示在浏览器tab与标题栏
 const html = "/static/index.html"; //前端页面路径，old.html为旧版前端
 var boom_timer; //60s计时器
 let onlineusers = 0, //预定义
@@ -83,14 +83,16 @@ let onlineusers = 0, //预定义
   max_mine_count,
   cos_total_count,
   xiaoye_ated,
+  private_service_swich,
   c1c_count = 0;
 
 //web端配置
 const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const thanks =
-  "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、还有我的朋友们，以及倾心分享知识的各位";
-const updatelog = `<h1>v3.0.18-Dev<br/>增加击鼓传雷抢答惩罚和金手指，击鼓传雷金手指结束后自动恢复昵称，修复当使用非默认端口时数据发送异常的情况，色图指令新增匹配涩瑟，增加禁言1小时以上自动退群，修复部分日志显示异常，增加管理员处理加群请求，增加status指令自动更新bot所用qq，修复status指令导致报错的误发送</h1><br/><ul style="text-align:left"><li>· 测试版本啦，可能会有一些问题，虽然有很多好玩的新功能，这个版本还是建议先不要用噢；</li></ul>`;
+  "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、https://api.lolicon.app/、https://bww.lolicon.app/、https://iw233.cn/main.html、https://blog.csdn.net/jia20003/article/details/7228464、还有我的朋友们，以及倾心分享知识的各位";
+const update_text = `增加生成二维码，增加r18，增加来点xx，增加黑白生草图，优化一些codesmell`;
+const updatelog = `<h1>${version}</h1><br/>${update_text}`;
 
 /*好了！以上就是系统的基本配置，如果没有必要，请不要再往下继续编辑了。请保存本文件。祝使用愉快！
  *
@@ -129,7 +131,7 @@ const yaml = require("yaml"); //使用yaml解析配置文件
 const AipSpeech = require("baidu-aip-sdk").speech; //百度语音sdk
 const crypto = require("crypto"); //编码库，用于sha1生成文件名
 const voiceplayer = require("play-sound")((opts = { player: `${process.cwd()}/plugins/cmdmp3win.exe` })); //mp3静默播放工具，用于直播时播放语音
-const { createCanvas, loadImage, Image } = require("canvas"); //用于绘制文字图像，迫害p图
+const { createCanvas, loadImage } = require("canvas"); //用于绘制文字图像，迫害p图
 const { resolve } = require("path");
 const os = require("os"); //用于获取系统工作状态
 const { exit } = require("process");
@@ -181,6 +183,9 @@ const gugua = new RegExp("^/孤寡.*"); //匹配孤寡指令
 const cp_story = new RegExp("^/cp.*|^cp.*"); //匹配cp文指令
 const fake_forward = new RegExp("^/强制迫害.*"); //匹配伪造转发指令
 const approve_group_invite = new RegExp("^/批准 (.*)"); //匹配批准加群指令
+const make_qrcode = new RegExp("^qr (.*)"); //匹配生成二维码指令
+const come_some = new RegExp("^来点(.*)"); //匹配来点xx指令
+const bww_reg = new RegExp("^/黑白图 (.*)"); //匹配黑白图
 
 //日志染色颜色配置
 colors.setTheme({
@@ -243,21 +248,11 @@ io.on("connection", (socket) => {
     .then(([nickname, logintimes, lastlogintime]) => {
       console.log(`${Curentyyyymmdd() + CurentTime()}用户 ${nickname}(${CID}) 已连接`.log);
 
-      UpdateLogintimes(CID)
-        .then((resolve) => {
-          console.log(`update successfully, ${resolve}`);
-        })
-        .catch((reject) => {
-          console.log(`err, ${reject}`);
-        });
+      //更新登录次数
+      db.run(`UPDATE users SET logintimes = logintimes + 1 WHERE CID ='${CID}'`);
 
-      UpdateLastLogintime(CID)
-        .then((resolve) => {
-          console.log(`update successfully, ${resolve}`);
-        })
-        .catch((reject) => {
-          console.log(`err, ${reject}`);
-        });
+      //更新最后登陆时间
+      db.run(`UPDATE users SET lastlogintime = '${Curentyyyymmdd()}${CurentTime()}' WHERE CID ='${CID}'`);
 
       socket.username = nickname;
 
@@ -737,7 +732,7 @@ function start_qqbot() {
                   if (bot_qq == who) {
                     console.log(`群 ${req.body.group_id} 停止了小夜服务`.error);
                     db.run(`UPDATE qq_group SET talk_enabled = '0' WHERE group_id ='${req.body.group_id}'`);
-                    res.send({ reply: `小夜的菊花闭上了，这只小夜在本群的所有服务已经停用，取消请发 张菊\[CQ:at,qq=${bot_qq}\]` });
+                    res.send({ reply: `小夜的菊花闭上了，这只小夜在本群的所有服务已经停用，取消请发 张菊[CQ:at,qq=${bot_qq}]` });
                     return 0;
                     //不是这只小夜被闭菊的话，嘲讽那只小夜
                   } else {
@@ -749,7 +744,7 @@ function start_qqbot() {
               } else if (req.body.message === "闭菊") {
                 console.log(`群 ${req.body.group_id} 停止了小夜服务`.error);
                 db.run(`UPDATE qq_group SET talk_enabled = '0' WHERE group_id ='${req.body.group_id}'`);
-                res.send({ reply: `小夜的菊花闭上了，小夜在本群的所有服务已经停用，取消请发 张菊\[CQ:at,qq=${bot_qq}\]` });
+                res.send({ reply: `小夜的菊花闭上了，小夜在本群的所有服务已经停用，取消请发 张菊[CQ:at,qq=${bot_qq}]` });
                 return 0;
               }
 
@@ -909,6 +904,57 @@ function start_qqbot() {
                   .catch((reject) => {
                     console.log(`RandomCos(): rejected, and err:${reject}`.error);
                     res.send({ reply: `你要的色图发送失败啦：${reject}` });
+                  });
+                return 0;
+              }
+
+              //r18色图
+              if (req.body.message == "r18") {
+                RandomR18()
+                  .then((resolve) => {
+                    res.send();
+                    let setu_file = `http://127.0.0.1:${web_port}/${resolve.replace(/\//g, "\\")}`;
+                    console.log(setu_file);
+                    request(
+                      `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(
+                        `[CQ:image,file=${setu_file},url=${setu_file}]`
+                      )}`,
+                      function (error, _response, _body) {
+                        if (error) {
+                          console.log(`请求${go_cqhttp_api}/send_group_msg错误：${error}`);
+                        }
+                      }
+                    );
+                  })
+                  .catch((reject) => {
+                    console.log(`RandomR18(): rejected, and err:${reject}`.error);
+                    res.send({ reply: `你要的R18色图发送失败啦：${reject}` });
+                  });
+                return 0;
+              }
+
+              //来点xx
+              if (come_some.test(req.body.message)) {
+                let tag = req.body.message.match(come_some)[1];
+                SearchTag(tag)
+                  .then((resolve) => {
+                    res.send();
+                    let setu_file = `http://127.0.0.1:${web_port}/${resolve.replace(/\//g, "\\")}`;
+                    console.log(setu_file);
+                    request(
+                      `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(
+                        `[CQ:image,file=${setu_file},url=${setu_file}]`
+                      )}`,
+                      function (error, _response, _body) {
+                        if (error) {
+                          console.log(`请求${go_cqhttp_api}/send_group_msg错误：${error}`);
+                        }
+                      }
+                    );
+                  })
+                  .catch((reject) => {
+                    console.log(`SearchTag(): rejected, and err:${reject}`.error);
+                    res.send({ reply: `你要的来点xx发送失败啦：${reject}` });
                   });
                 return 0;
               }
@@ -1207,7 +1253,7 @@ function start_qqbot() {
                   who = who.replace("]", "");
                   who = who.trim();
                   if (is_qq_reg.test(who)) {
-                    console.log(`群 ${req.body.group_id} 的 群员 ${req.body.user_id} 尝试强制迫害 ${who}`.log);
+                    console.log(`群 ${req.body.group_id} 的 群员 ${req.body.user_id} 强制迫害 ${who}`.log);
                   } else {
                     //目标不是qq号
                     who = req.body.sender.user_id; //如果没有要求迫害谁，那就是迫害自己
@@ -2045,7 +2091,7 @@ function start_qqbot() {
                     if (!err && body.data.length != 0) {
                       for (let i in body.data) {
                         if (who == body.data[i].user_id) {
-                          res.send({ reply: `小夜收到了你的孤寡订单，现在就开始孤寡\[CQ:at,qq=${who}\]了噢孤寡~` });
+                          res.send({ reply: `小夜收到了你的孤寡订单，现在就开始孤寡[CQ:at,qq=${who}]了噢孤寡~` });
                           request(
                             `http://${go_cqhttp_api}/send_private_msg?user_id=${who}&message=${encodeURI(
                               `您好，我是孤寡小夜，您的好友 ${req.body.user_id} 给您点了一份孤寡套餐，请查收`
@@ -2063,7 +2109,7 @@ function start_qqbot() {
                         }
                       }
                       res.send({
-                        reply: `小夜没有\[CQ:at,qq=${who}\]的好友，没有办法孤寡ta呢，请先让ta加小夜为好友吧，小夜就在群里给大家孤寡一下吧`,
+                        reply: `小夜没有[CQ:at,qq=${who}]的好友，没有办法孤寡ta呢，请先让ta加小夜为好友吧，小夜就在群里给大家孤寡一下吧`,
                       });
                       QunGugua(req.body.group_id);
                     } else {
@@ -2078,12 +2124,93 @@ function start_qqbot() {
                 return 0;
               }
 
-              //黑白图
-              if (req.body.message == "/黑白图") {
-                let str = alphabet(req.body.message.replace("/字符画 ", ""), "stereo");
-                console.log(str);
+              //黑白生草图
+              if (bww_reg.test(req.body.message)) {
+                let msg = req.body.message + " " + " "; //结尾加2个空格防爆
+                msg = msg.substr(4).split(" ");
+                console.log(msg);
+                let pic = msg[1].trim(), //使用图片
+                  tex1 = msg[2].trim(), //使用文字1
+                  tex2 = msg[3].trim(); //使用文字2
+
+                //如果没有使用图片的话，默认图片
+                if (!pic) {
+                  pic =
+                    "[CQ:image,file=657109635d3492bdb455defa8936ad96.image,url=https://gchat.qpic.cn/gchatpic_new/1005056803/2063243247-2847024251-657109635D3492BDB455DEFA8936AD96/0?term=3]";
+                }
+
+                //如果没有使用文字的话，默认文字
+                if (!tex1) {
+                  tex1 = `当你凝望神圣手雷的时候，神圣手雷也在凝望你`;
+                }
+
+                if (!tex2) {
+                  tex2 = `あなたが神圣手雷を見つめるとき、神圣手雷もあなたを見つめています`;
+                }
+
+                //开始黑白
+                let sources = img_url_reg.exec(pic)[0]; //取图片链接
+                loadImage(sources).then((image) => {
+                  let canvas = createCanvas(parseInt(image.width), parseInt(image.height + 150)); //根据图片尺寸创建画布，并在下方加文字区
+                  let ctx = canvas.getContext("2d");
+                  ctx.drawImage(image, 0, 0);
+                  ctx.filter = "grayscale";
+                  ctx.fillStyle = "BLACK";
+                  ctx.fillRect(0, parseInt(image.height), parseInt(image.width), 150);
+                  ctx.font = `40px Sans`;
+                  ctx.textAlign = "center";
+                  ctx.fillStyle = "WHITE";
+                  ctx.fillText(tex1, parseInt(image.width) / 2, parseInt(image.height) + 70); //第一句
+                  ctx.font = `28px Sans`;
+                  ctx.fillText(tex2, parseInt(image.width) / 2, parseInt(image.height) + 110); //第二句
+
+                  //把图片挨个像素转为黑白
+                  let canvasData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                  for (var x = 0; x < canvasData.width; x++) {
+                    for (var y = 0; y < canvasData.height; y++) {
+                      // Index of the pixel in the array
+                      var idx = (x + y * canvasData.width) * 4;
+                      var r = canvasData.data[idx + 0];
+                      var g = canvasData.data[idx + 1];
+                      var b = canvasData.data[idx + 2];
+
+                      // calculate gray scale value
+                      var gray = 0.299 * r + 0.587 * g + 0.114 * b;
+
+                      // assign gray scale value
+                      canvasData.data[idx + 0] = gray; // Red channel
+                      canvasData.data[idx + 1] = gray; // Green channel
+                      canvasData.data[idx + 2] = gray; // Blue channel
+                      canvasData.data[idx + 3] = 255; // Alpha channel
+
+                      // add black border
+                      if (x < 8 || y < 8 || x > canvasData.width - 8 || y > canvasData.height - 8) {
+                        canvasData.data[idx + 0] = 0;
+                        canvasData.data[idx + 1] = 0;
+                        canvasData.data[idx + 2] = 0;
+                      }
+                    }
+                  }
+
+                  ctx.putImageData(canvasData, 0, 0);
+
+                  let file_local = path.join(`${process.cwd()}`, `static`, `xiaoye`, `images`, `${sha1(canvas.toBuffer())}.jpg`);
+                  fs.writeFileSync(file_local, canvas.toBuffer());
+                  let file_online = `http://127.0.0.1:${web_port}/xiaoye/images/${sha1(canvas.toBuffer())}.jpg`;
+                  console.log(`黑白成功，图片发送：${file_online}`.log);
+                  res.send({
+                    reply: `[CQ:image,file=${file_online},url=${file_online}]`,
+                  });
+                });
+
+                return 0;
+              }
+
+              //生成二维码
+              if (make_qrcode.test(req.body.message)) {
+                let content = req.body.message.match(make_qrcode)[1];
                 res.send({
-                  reply: str,
+                  reply: `[CQ:image,file=https://api.sumt.cn/api/qr.php?text=${content},url=https://api.sumt.cn/api/qr.php?text=${content}]`,
                 });
                 return 0;
               }
@@ -2254,8 +2381,8 @@ function start_qqbot() {
           }
         });
       }
-    } else if (req.body.message_type === "private" && 1 === 0) {
-      //私聊回复，现在已经关闭
+    } else if (req.body.message_type == "private" && private_service_swich == true) {
+      //私聊回复
       ChatProcess(req.body.message)
         .then((resolve) => {
           console.log(`qqBot小夜回复 ${resolve}`.log);
@@ -2628,34 +2755,6 @@ function GetUserData(msg) {
   });
 }
 
-//更新登录次数
-function UpdateLogintimes(msg) {
-  return new Promise((resolve, reject) => {
-    db.run(`UPDATE users SET logintimes = logintimes + 1 WHERE CID ='${msg}'`),
-      (err, sql) => {
-        if (!err && sql) {
-          resolve(sql);
-        } else {
-          reject(err);
-        }
-      };
-  });
-}
-
-//更新最后登陆时间
-function UpdateLastLogintime(msg) {
-  return new Promise((resolve, reject) => {
-    db.run(`UPDATE users SET lastlogintime = '${Curentyyyymmdd()}${CurentTime()}' WHERE CID ='${msg}'`),
-      (err, sql) => {
-        if (!err && sql) {
-          resolve(sql);
-        } else {
-          reject(err);
-        }
-      };
-  });
-}
-
 //BV转AV
 function Bv2Av(msg) {
   return new Promise((resolve, reject) => {
@@ -2704,6 +2803,46 @@ function RandomCos() {
         }
       }
     );
+  });
+}
+
+//随机r18
+function RandomR18() {
+  return new Promise((resolve, reject) => {
+    request("https://api.lolicon.app/setu/v2?r18=1&size=regular", (err, response, body) => {
+      body = JSON.parse(body);
+      if (!err) {
+        var picUrl = body.data[0].urls.regular;
+        console.log(`发送r18图片：${picUrl}`.log);
+        request(picUrl).pipe(
+          fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
+            resolve(`/images/${picUrl.split("/").pop()}`);
+          })
+        ); //绕过防盗链，保存为本地图片
+      } else {
+        reject("获取随机r18错误，错误原因：" + JSON.stringify(response.body));
+      }
+    });
+  });
+}
+
+//搜索tag
+function SearchTag(tag) {
+  return new Promise((resolve, reject) => {
+    request(`https://api.lolicon.app/setu/v2?r18=1&size=regular&tag=${encodeURI(tag)}`, (err, response, body) => {
+      body = JSON.parse(body);
+      if (!err) {
+        var picUrl = body.data[0].urls.regular;
+        console.log(`发送tag图片：${picUrl}`.log);
+        request(picUrl).pipe(
+          fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
+            resolve(`/images/${picUrl.split("/").pop()}`);
+          })
+        ); //绕过防盗链，保存为本地图片
+      } else {
+        reject("获取tag错误，错误原因：" + JSON.stringify(response.body));
+      }
+    });
   });
 }
 
@@ -2819,7 +2958,7 @@ function PrprDoge() {
 //读取配置文件 config.yml
 function ReadConfig() {
   return new Promise((resolve, reject) => {
-    console.log(`开始读取配置`.log);
+    console.log(`开始加载……`.log);
 
     fs.readFile(path.join(`${process.cwd()}`, "config", "config.yml"), "utf-8", function (err, data) {
       if (!err) {
@@ -2849,6 +2988,7 @@ async function InitConfig() {
 
   bot_qq = resolve.qqBot.bot_qq; //qqBot使用的qq帐号
   qq_admin_list = resolve.qqBot.qq_admin_list; //qqBot小夜的管理员列表
+  private_service_swich = resolve.qqBot.private_service_swich; //私聊开关
   topN = resolve.qqBot.topN; //qqBot限制分词数量
   reply_probability = resolve.qqBot.reply_probability; //回复几率
   fudu_probability = resolve.qqBot.fudu_probability; //复读几率
@@ -2865,34 +3005,36 @@ async function InitConfig() {
 
   SpeechClient = new AipSpeech(baidu_app_id, baidu_api_key, baidu_secret_key); //建立TTS调用接口
 
-  console.log(version.alert);
+  console.log(`_______________________________________\n`);
+  console.log(`\n         ${version}          \n`.alert);
 
   if (chat_swich) {
-    console.log("系统配置：web端自动聊天开启".on);
+    console.log("web端自动聊天开启\n".on);
   } else {
-    console.log("系统配置：web端自动聊天关闭".off);
+    console.log("web端自动聊天关闭\n".off);
   }
 
   if (conn_go_cqhttp) {
     console.log(
-      `系统配置：qqBot小夜开启，将使用配置的QQ帐号 ${bot_qq}、对接go-cqhttp接口 ${go_cqhttp_api}、监听反向post于 127.0.0.1:${web_port}${go_cqhttp_service}，请确认是否配置正确并启动go-cqhttp`
+      `qqBot小夜开启，配置：\n  ·使用QQ帐号 ${bot_qq}\n  ·对接go-cqhttp接口 ${go_cqhttp_api}\n  ·监听反向post于 127.0.0.1:${web_port}${go_cqhttp_service}\n  ·私聊服务是否开启：${private_service_swich}\n`
         .on
     );
     xiaoye_ated = new RegExp(`\\[CQ:at,qq=${bot_qq}\\]`); //匹配小夜被@
     start_qqbot();
   } else {
-    console.log("系统配置：qqBot小夜关闭".off);
+    console.log("qqBot小夜关闭\n".off);
   }
 
   if (Now_On_Live) {
-    console.log(`系统配置：小夜直播对线开启，请确认哔哩哔哩直播间id是否为 ${blive_room_id}`.on);
+    console.log(`小夜直播对线开启，请确认哔哩哔哩直播间id是否为 ${blive_room_id}\n`.on);
     start_live();
   } else {
-    console.log("系统配置：小夜直播对线关闭".off);
+    console.log("小夜直播对线关闭\n".off);
   }
 
   http.listen(web_port, () => {
-    console.log(`${Curentyyyymmdd()}${CurentTime()} 系统启动完毕，访问 127.0.0.1:${web_port} 即可进入web端`.alert);
+    console.log(`_______________________________________\n`);
+    console.log(`  ${Curentyyyymmdd()}${CurentTime()} 启动完毕，访问 127.0.0.1:${web_port} 即可进入web端  \n`.alert);
   });
 }
 
@@ -3150,10 +3292,10 @@ function GetLaststDanmu() {
 function DelayAlert(service_stoped_list) {
   let alert_msg = [
     //提醒文本列表
-    `呜呜呜，把人家冷落了那么久，能不能让小夜张菊了呢...小夜的张菊指令更新了，现在需要发 张菊\[CQ:at,qq=${bot_qq}\] 才可以了噢`,
-    `闭菊那么久了，朕的菊花痒了！还不快让小夜张菊！小夜的张菊指令更新了，现在需要发 张菊\[CQ:at,qq=${bot_qq}\] 才可以了噢`,
-    `小夜也想为大家带来快乐，所以让小夜张菊，好吗？小夜的张菊指令更新了，现在需要发 张菊\[CQ:at,qq=${bot_qq}\] 才可以了噢`,
-    `欧尼酱，不要再无视我了，小夜那里很舒服的，让小夜张菊试试吧~小夜的张菊指令更新了，现在需要发 张菊\[CQ:at,qq=${bot_qq}\] 才可以了噢`,
+    `呜呜呜，把人家冷落了那么久，能不能让小夜张菊了呢...小夜的张菊指令更新了，现在需要发 张菊[CQ:at,qq=${bot_qq}] 才可以了噢`,
+    `闭菊那么久了，朕的菊花痒了！还不快让小夜张菊！小夜的张菊指令更新了，现在需要发 张菊[CQ:at,qq=${bot_qq}] 才可以了噢`,
+    `小夜也想为大家带来快乐，所以让小夜张菊，好吗？小夜的张菊指令更新了，现在需要发 张菊[CQ:at,qq=${bot_qq}] 才可以了噢`,
+    `欧尼酱，不要再无视我了，小夜那里很舒服的，让小夜张菊试试吧~小夜的张菊指令更新了，现在需要发 张菊[CQ:at,qq=${bot_qq}] 才可以了噢`,
   ];
   for (let i in service_stoped_list) {
     let delay_time = Math.floor(Math.random() * 60); //随机延时0到60秒
@@ -3277,3 +3419,8 @@ function RainbowPi() {
 }
 
 /*I wonder why… —— TVアニメ「凪のあすから」*/
+
+/*
+    示例功能区块
+    let arg = req.body.message.match(reg)[1]; //取出reg(.*)内容作为arg
+*/
