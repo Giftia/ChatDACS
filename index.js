@@ -52,7 +52,7 @@ if (_cn_reg.test(`${process.cwd()}`)) {
 }
 
 //系统配置和开关，以及固定变量
-const version = `ChatDACS v3.0.19-Dev`; //版本号，会显示在浏览器tab与标题栏
+const version = `ChatDACS v3.0.20-Dev`; //版本号，会显示在浏览器tab与标题栏
 const html = "/static/index.html"; //前端页面路径，old.html为旧版前端
 var boom_timer; //60s计时器
 let onlineusers = 0, //预定义
@@ -91,7 +91,7 @@ const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const thanks =
   "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、https://api.lolicon.app/、https://bww.lolicon.app/、https://iw233.cn/main.html、https://blog.csdn.net/jia20003/article/details/7228464、还有我的朋友们，以及倾心分享知识的各位";
-const update_text = `增加生成二维码，增加r18，增加来点xx，增加黑白生草图，优化一些codesmell`;
+const update_text = `优化r18与来点xx提示`;
 const updatelog = `<h1>${version}</h1><br/>${update_text}`;
 
 /*好了！以上就是系统的基本配置，如果没有必要，请不要再往下继续编辑了。请保存本文件。祝使用愉快！
@@ -910,9 +910,9 @@ function start_qqbot() {
 
               //r18色图
               if (req.body.message == "r18") {
+                res.send({ reply: `你等等，我去找找你要的r18` });
                 RandomR18()
                   .then((resolve) => {
-                    res.send();
                     let setu_file = `http://127.0.0.1:${web_port}/${resolve.replace(/\//g, "\\")}`;
                     console.log(setu_file);
                     request(
@@ -928,7 +928,14 @@ function start_qqbot() {
                   })
                   .catch((reject) => {
                     console.log(`RandomR18(): rejected, and err:${reject}`.error);
-                    res.send({ reply: `你要的R18色图发送失败啦：${reject}` });
+                    request(
+                      `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(`你要的r18发送失败啦：${reject}`)}`,
+                      function (error, _response, _body) {
+                        if (error) {
+                          console.log(`请求${go_cqhttp_api}/send_group_msg错误：${error}`);
+                        }
+                      }
+                    );
                   });
                 return 0;
               }
@@ -936,9 +943,9 @@ function start_qqbot() {
               //来点xx
               if (come_some.test(req.body.message)) {
                 let tag = req.body.message.match(come_some)[1];
+                res.send({ reply: `你等等，我去找找你要的${tag}` });
                 SearchTag(tag)
                   .then((resolve) => {
-                    res.send();
                     let setu_file = `http://127.0.0.1:${web_port}/${resolve.replace(/\//g, "\\")}`;
                     console.log(setu_file);
                     request(
@@ -954,7 +961,16 @@ function start_qqbot() {
                   })
                   .catch((reject) => {
                     console.log(`SearchTag(): rejected, and err:${reject}`.error);
-                    res.send({ reply: `你要的来点xx发送失败啦：${reject}` });
+                    request(
+                      `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(
+                        `你要的${tag}发送失败啦：${reject}`
+                      )}`,
+                      function (error, _response, _body) {
+                        if (error) {
+                          console.log(`请求${go_cqhttp_api}/send_group_msg错误：${error}`);
+                        }
+                      }
+                    );
                   });
                 return 0;
               }
@@ -1845,6 +1861,18 @@ function start_qqbot() {
                                 }
                               );
                             } else {
+                              //回答正确
+                              //金手指关闭
+                              request(
+                                `http://${go_cqhttp_api}/set_group_card?group_id=${req.body.group_id}&user_id=${req.body.user_id}&card=`,
+                                function (error, _response, _body) {
+                                  if (!error) {
+                                    console.log(`击鼓传雷金手指已启动`.log);
+                                  } else {
+                                    console.log(`请求${go_cqhttp_api}/set_group_card错误：${error}`);
+                                  }
+                                }
+                              );
                               let end = `[CQ:at,qq=${req.body.user_id}] 回答正确！答案确实是 ${sql[0].loop_bomb_answer}！`;
                               request(
                                 `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(end)}`,
@@ -2814,9 +2842,17 @@ function RandomR18() {
       if (!err) {
         var picUrl = body.data[0].urls.regular;
         console.log(`发送r18图片：${picUrl}`.log);
-        request(picUrl).pipe(
+        request(picUrl, (err) => {
+          if (err) {
+            reject("获取tag错误，错误原因：" + err);
+          }
+        }).pipe(
           fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
-            resolve(`/images/${picUrl.split("/").pop()}`);
+            if (!err) {
+              resolve(`/images/${picUrl.split("/").pop()}`);
+            } else {
+              reject("这张色图太大了，下不下来");
+            }
           })
         ); //绕过防盗链，保存为本地图片
       } else {
@@ -2831,16 +2867,24 @@ function SearchTag(tag) {
   return new Promise((resolve, reject) => {
     request(`https://api.lolicon.app/setu/v2?r18=1&size=regular&tag=${encodeURI(tag)}`, (err, response, body) => {
       body = JSON.parse(body);
-      if (!err) {
+      if (!err && body.data[0] != null) {
         var picUrl = body.data[0].urls.regular;
         console.log(`发送tag图片：${picUrl}`.log);
-        request(picUrl).pipe(
-          fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
-            resolve(`/images/${picUrl.split("/").pop()}`);
+        request(picUrl, (err) => {
+          if (err) {
+            reject(`${tag}的色图太大了，下不下来`);
+          }
+        }).pipe(
+          fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (err) => {
+            if (!err) {
+              resolve(`/images/${picUrl.split("/").pop()}`);
+            } else {
+              reject(`${tag}的色图太大了，下不下来`);
+            }
           })
         ); //绕过防盗链，保存为本地图片
       } else {
-        reject("获取tag错误，错误原因：" + JSON.stringify(response.body));
+        reject(`找不到${tag}的色图`);
       }
     });
   });
