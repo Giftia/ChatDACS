@@ -1,18 +1,9 @@
 "use strict";
+/// <reference path="Global.ts" />
+/// <reference path="this.tools.ts" />
 exports.__esModule = true;
 exports.Core = void 0;
 //模块依赖和底层配置
-var compression = require("compression"); //用于gzip压缩
-var express = require("express"); //轻巧的express框架
-var app = require("express")();
-app.use(compression()); //对express所有路由启用gzip
-app.use(express.static("static")); //静态文件引入
-app.use(express.json()); //解析post
-app.use(express.urlencoded({ extended: false })); //解析post
-// const multer = require("multer"); //用于文件上传
-// const cookie = require("cookie");
-var http = require("http").Server(app);
-var io = require("socket.io")(http);
 var request = require("request");
 var sqlite3 = require("sqlite3").verbose();
 var db = new sqlite3.Database("db.db"); //数据库位置，默认与index.js同目录
@@ -26,34 +17,39 @@ jieba.load({
     idfDict: path.join("" + process.cwd(), "config", "idf.utf8"),
     stopWordDict: path.join("" + process.cwd(), "config", "stopWordDict.txt")
 });
+require.all = require("require.all"); //插件加载器
 var voiceplayer = require("play-sound")(({ player: process.cwd() + "/plugins/cmdmp3win.exe" })); //mp3静默播放工具，用于直播时播放语音
 var _a = require("canvas"), createCanvas = _a.createCanvas, loadImage = _a.loadImage; //用于绘制文字图像，迫害p图
-var resolve = require("path").resolve;
 var os = require("os"); //用于获取系统工作状态
-var exit = require("process").exit;
-require.all = require("require.all"); //插件加载器
 var alphabet = require("alphabetjs");
 var cookie = require("cookie");
 var Core = /** @class */ (function () {
-    function Core(global, tools) {
-        this.tools = null;
-        this.global = null;
+    function Core(app, http, io) {
+        this.app = app;
+        this.http = http;
+        this.io = io;
+    }
+    Core.prototype.init = function (global, tools) {
         this.global = global;
         this.tools = tools;
-    }
-    Core.prototype.init = function () {
+    };
+    Core.prototype.start = function () {
         var _this = this;
+        // 306
+        this.http.listen(this.global.web_port, function () {
+            console.log("_______________________________________\n");
+            console.log("  " + _this.tools.Curentyyyymmdd() + _this.tools.CurentTime() + " \u542F\u52A8\u5B8C\u6BD5\uFF0C\u8BBF\u95EE 127.0.0.1:" + _this.global.web_port + " \u5373\u53EF\u8FDB\u5165web\u7AEF  \n");
+        });
         //web端核心代码，socket事件处理
-        io.on("connection", function (socket) {
-            console.log('connection...');
+        this.io.on("connection", function (socket) {
             socket.emit("getcookie");
             var CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
             if (CID === undefined) {
                 socket.emit("getcookie");
                 return 0;
             }
-            socket.emit("version", g.version);
-            io.emit("onlineusers", ++g.onlineusers);
+            socket.emit("version", _this.global.version);
+            _this.io.emit("onlineusers", ++_this.global.onlineusers);
             //开始获取用户信息并处理
             _this.tools.GetUserData(CID)
                 .then(function (_a) {
@@ -64,7 +60,7 @@ var Core = /** @class */ (function () {
                 //更新最后登陆时间
                 db.run("UPDATE users SET lastlogintime = '" + _this.tools.Curentyyyymmdd() + _this.tools.CurentTime() + "' WHERE CID ='" + CID + "'");
                 socket.username = nickname;
-                io.emit("system message", "@\u6B22\u8FCE\u56DE\u6765\uFF0C" + socket.username + "(" + CID + ") \u3002\u8FD9\u662F\u4F60\u7B2C" + logintimes + "\u6B21\u8BBF\u95EE\u3002\u4E0A\u6B21\u8BBF\u95EE\u65F6\u95F4\uFF1A" + lastlogintime);
+                _this.io.emit("system message", "@\u6B22\u8FCE\u56DE\u6765\uFF0C" + socket.username + "(" + CID + ") \u3002\u8FD9\u662F\u4F60\u7B2C" + logintimes + "\u6B21\u8BBF\u95EE\u3002\u4E0A\u6B21\u8BBF\u95EE\u65F6\u95F4\uFF1A" + lastlogintime);
             })["catch"](function (reject) {
                 var CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
                 console.log("GetUserData(): rejected, and err:" + reject);
@@ -73,33 +69,33 @@ var Core = /** @class */ (function () {
                     .then(function (resolve) {
                     db.run("INSERT INTO users VALUES('" + resolve + "', '" + CID + "', '2', '" + _this.tools.Curentyyyymmdd() + _this.tools.CurentTime() + "')");
                     socket.username = resolve;
-                    io.emit("system message", "@\u65B0\u7528\u6237 " + CID + " \u5DF2\u8FDE\u63A5\u3002\u5C0F\u591C\u5E2E\u4F60\u53D6\u4E86\u4E00\u4E2A\u968F\u673A\u6635\u79F0\uFF1A\u300C" + socket.username + "\u300D\uFF0C\u8BF7\u524D\u5F80 \u66F4\u591A-\u8BBE\u7F6E \u6765\u66F4\u6539\u6635\u79F0");
+                    _this.io.emit("system message", "@\u65B0\u7528\u6237 " + CID + " \u5DF2\u8FDE\u63A5\u3002\u5C0F\u591C\u5E2E\u4F60\u53D6\u4E86\u4E00\u4E2A\u968F\u673A\u6635\u79F0\uFF1A\u300C" + socket.username + "\u300D\uFF0C\u8BF7\u524D\u5F80 \u66F4\u591A-\u8BBE\u7F6E \u6765\u66F4\u6539\u6635\u79F0");
                     socket.emit("chat message", {
                         CID: "0",
-                        msg: g.help
+                        msg: _this.global.help
                     });
                 })["catch"](function (reject) {
                     console.log("\u968F\u673A\u6635\u79F0\u9519\u8BEF\uFF1A" + reject);
                     db.run("INSERT INTO users VALUES('\u533F\u540D', '" + CID + "', '2', '" + _this.tools.Curentyyyymmdd() + _this.tools.CurentTime() + "')");
                     socket.username = "匿名";
-                    io.emit("system message", "@\u65B0\u7528\u6237 " + CID + " \u5DF2\u8FDE\u63A5\u3002\u73B0\u5728\u4F60\u7684\u6635\u79F0\u662F \u533F\u540D \u5662\uFF0C\u8BF7\u524D\u5F80 \u66F4\u591A-\u8BBE\u7F6E \u6765\u66F4\u6539\u6635\u79F0");
+                    _this.io.emit("system message", "@\u65B0\u7528\u6237 " + CID + " \u5DF2\u8FDE\u63A5\u3002\u73B0\u5728\u4F60\u7684\u6635\u79F0\u662F \u533F\u540D \u5662\uFF0C\u8BF7\u524D\u5F80 \u66F4\u591A-\u8BBE\u7F6E \u6765\u66F4\u6539\u6635\u79F0");
                     socket.emit("chat message", {
                         CID: "0",
-                        msg: g.help
+                        msg: _this.global.help
                     });
                 });
             });
             socket.on("disconnect", function () {
-                g.onlineusers--;
-                io.emit("g.onlineusers", g.onlineusers);
+                _this.global.onlineusers--;
+                _this.io.emit("onlineusers", _this.global.onlineusers);
                 console.log("" + _this.tools.Curentyyyymmdd() + _this.tools.CurentTime() + " \u7528\u6237 " + socket.username + " \u5DF2\u65AD\u5F00\u8FDE\u63A5");
-                io.emit("system message", "@用户 " + socket.username + " 已断开连接");
+                _this.io.emit("system message", "@用户 " + socket.username + " 已断开连接");
             });
             socket.on("typing", function () {
-                io.emit("typing", socket.username + " \u6B63\u5728\u8F93\u5165...");
+                _this.io.emit("typing", socket.username + " \u6B63\u5728\u8F93\u5165...");
             });
             socket.on("typing_over", function () {
-                io.emit("typing", "");
+                _this.io.emit("typing", "");
             });
             //用户设置
             socket.on("getsettings", function () {
@@ -108,11 +104,11 @@ var Core = /** @class */ (function () {
             });
             //更新日志
             socket.on("getupdatelog", function () {
-                socket.emit("updatelog", g.updatelog);
+                socket.emit("updatelog", _this.global.updatelog);
             });
             //致谢列表
             socket.on("thanks", function () {
-                socket.emit("thanks", g.thanks);
+                socket.emit("thanks", _this.global.thanks);
             });
             //web端最核心代码，聊天处理
             socket.on("chat message", function (msg) {
@@ -123,11 +119,11 @@ var Core = /** @class */ (function () {
                 msg = msg.replace(/>/g, ""); //防爆
                 console.log(_this.tools.Curentyyyymmdd() + _this.tools.CurentTime() + "\u6536\u5230\u7528\u6237 " + socket.username + "(" + CID + ") \u7684\u6D88\u606F: " + msg);
                 db.run("INSERT INTO messages VALUES('" + _this.tools.Curentyyyymmdd() + "', '" + _this.tools.CurentTime() + "', '" + CID + "', '" + msg + "')");
-                io.emit("chat message", { CID: CID, name: socket.username, msg: msg }); //用户广播
+                _this.io.emit("chat message", { CID: CID, name: socket.username, msg: msg }); //用户广播
                 //开始if地狱
-                if (g.rename_reg.test(msg)) {
+                if (_this.global.rename_reg.test(msg)) {
                     db.run("UPDATE users SET nickname = '" + msg.slice(8) + "' WHERE CID ='" + CID + "'");
-                    io.emit("chat message", {
+                    _this.io.emit("chat message", {
                         CID: "0",
                         msg: "@\u6635\u79F0\u91CD\u547D\u540D\u5B8C\u6BD5\uFF0C\u5C0F\u591C\u73B0\u5728\u4F1A\u79F0\u547C\u4F60\u4E3A " + msg.slice(8) + " \u5566"
                     });
@@ -140,129 +136,129 @@ var Core = /** @class */ (function () {
                                 data.push([sql[i].yyyymmdd, sql[i].count]);
                             }
                             console.log(data);
-                            io.emit("chart message", data);
+                            _this.io.emit("chart message", data);
                         }
                         else {
                             console.log("/log_view\u9519\u8BEF\uFF1A" + e);
-                            io.emit("chat message", { CID: "0", msg: "@" + e });
+                            _this.io.emit("chat message", { CID: "0", msg: "@" + e });
                         }
                     });
                 }
-                else if (g.bv2av_reg.test(msg)) {
+                else if (_this.global.bv2av_reg.test(msg)) {
                     msg = msg.replace(" ", "");
                     _this.tools.Bv2Av(msg)
                         .then(function (resolve) {
-                        io.emit("chat message", { CID: "0", msg: resolve });
+                        _this.io.emit("chat message", { CID: "0", msg: resolve });
                     })["catch"](function (reject) {
                         console.log("Bv2Av(): rejected, and err:" + reject);
-                        io.emit("system message", "@Bv2Av() err:" + reject);
+                        _this.io.emit("system message", "@Bv2Av() err:" + reject);
                     });
                 }
                 else if (msg === "/reload") {
-                    io.emit("reload");
+                    _this.io.emit("reload");
                 }
                 else if (msg === "/帮助") {
-                    io.emit("chat message", { CID: "0", msg: "@" + g.help });
+                    _this.io.emit("chat message", { CID: "0", msg: "@" + _this.global.help });
                 }
                 else if (msg === "/随机cos") {
                     _this.tools.RandomCos()
                         .then(function (resolve) {
-                        io.emit("pic message", resolve);
+                        _this.io.emit("pic message", resolve);
                     })["catch"](function (reject) {
                         console.log("RandomCos(): rejected, and err:" + reject);
-                        io.emit("system message", "@RandomCos() err:" + reject);
+                        _this.io.emit("system message", "@RandomCos() err:" + reject);
                     });
                 }
                 else if (msg === "/随机买家秀") {
                     _this.tools.RandomTbshow()
                         .then(function (resolve) {
-                        io.emit("pic message", resolve);
+                        _this.io.emit("pic message", resolve);
                     })["catch"](function (reject) {
                         console.log("RandomTbshow(): rejected, and err:" + reject);
-                        io.emit("system message", "@RandomTbshow() err:" + reject);
+                        _this.io.emit("system message", "@RandomTbshow() err:" + reject);
                     });
                 }
                 else if (msg === "/随机冷知识") {
                     _this.tools.RandomHomeword()
                         .then(function (resolve) {
-                        io.emit("chat message", { CID: "0", msg: "@" + resolve });
+                        _this.io.emit("chat message", { CID: "0", msg: "@" + resolve });
                     })["catch"](function (reject) {
                         console.log("RandomHomeword(): rejected, and err:" + reject);
-                        io.emit("system message", "@RandomHomeword() err:" + reject);
+                        _this.io.emit("system message", "@RandomHomeword() err:" + reject);
                     });
                 }
                 else if (msg === "/随机二次元图") {
                     _this.tools.RandomECY()
                         .then(function (resolve) {
-                        io.emit("pic message", resolve);
+                        _this.io.emit("pic message", resolve);
                     })["catch"](function (reject) {
                         console.log("RandomECY(): rejected, and err:" + reject);
-                        io.emit("system message", "@RandomECY() err:" + reject);
+                        _this.io.emit("system message", "@RandomECY() err:" + reject);
                     });
                 } //吠
-                else if (g.yap_reg.test(msg)) {
+                else if (_this.global.yap_reg.test(msg)) {
                     msg = msg.replace("/吠 ", "");
                     msg = msg.replace("/吠", "");
                     _this.tools.BetterTTS(msg)
                         .then(function (resolve) {
-                        io.emit("audio message", resolve);
+                        _this.io.emit("audio message", resolve);
                     })["catch"](function (reject) {
                         console.log("TTS\u9519\u8BEF\uFF1A" + reject);
-                        io.emit("system message", "@TTS\u9519\u8BEF\uFF1A" + reject);
+                        _this.io.emit("system message", "@TTS\u9519\u8BEF\uFF1A" + reject);
                     });
                 } //教学系统，抄板于虹原翼版小夜v3
-                else if (g.teach_reg.test(msg)) {
+                else if (_this.global.teach_reg.test(msg)) {
                     msg = msg.substr(2).split("答：");
                     if (msg.length !== 2) {
                         console.log("\u6559\u5B66\u6307\u4EE4\uFF1A\u5206\u5272\u6709\u8BEF\uFF0C\u9000\u51FA\u6559\u5B66");
-                        io.emit("system message", "@\u4F60\u6559\u7684\u59FF\u52BF\u4E0D\u5BF9\u5662qwq");
+                        _this.io.emit("system message", "@\u4F60\u6559\u7684\u59FF\u52BF\u4E0D\u5BF9\u5662qwq");
                         return 0;
                     }
                     var ask = msg[0].trim(), ans = msg[1].trim();
                     if (ask == "" || ans == "") {
                         console.log("\u95EE/\u7B54\u4E3A\u7A7A\uFF0C\u9000\u51FA\u6559\u5B66");
-                        io.emit("system message", "@\u4F60\u6559\u7684\u59FF\u52BF\u4E0D\u5BF9\u5662qwq");
+                        _this.io.emit("system message", "@\u4F60\u6559\u7684\u59FF\u52BF\u4E0D\u5BF9\u5662qwq");
                         return 0;
                     }
                     if (ask.indexOf(/\r?\n/g) !== -1) {
                         console.log("\u6559\u5B66\u6307\u4EE4\uFF1A\u5173\u952E\u8BCD\u6362\u884C\u4E86\uFF0C\u9000\u51FA\u6559\u5B66");
-                        io.emit("system message", "@\u5173\u952E\u8BCD\u4E0D\u80FD\u6362\u884C\u5566qwq");
+                        _this.io.emit("system message", "@\u5173\u952E\u8BCD\u4E0D\u80FD\u6362\u884C\u5566qwq");
                         return 0;
                     }
                     console.log("web\u7AEF " + socket.username + " \u60F3\u8981\u6559\u7ED9\u5C0F\u591C\uFF1A\u95EE\uFF1A" + ask + " \u7B54\uFF1A" + ans + "\uFF0C\u73B0\u5728\u5F00\u59CB\u68C0\u6D4B\u5408\u6CD5\u6027");
-                    for (var i in g.black_list_words) {
-                        if (ask.toLowerCase().indexOf(g.black_list_words[i].toLowerCase()) !== -1 ||
-                            ans.toLowerCase().indexOf(g.black_list_words[i].toLowerCase()) !== -1) {
-                            console.log("\u6559\u5B66\u6307\u4EE4\uFF1A\u68C0\u6D4B\u5230\u4E0D\u5141\u8BB8\u7684\u8BCD\uFF1A" + g.black_list_words[i] + "\uFF0C\u9000\u51FA\u6559\u5B66");
-                            io.emit("system message", "@\u4F60\u6559\u7684\u5185\u5BB9\u91CC\u6709\u4E3B\u4EBA\u4E0D\u5141\u8BB8\u5C0F\u591C\u5B66\u4E60\u7684\u8BCDqwq");
+                    for (var i in _this.global.black_list_words) {
+                        if (ask.toLowerCase().indexOf(_this.global.black_list_words[i].toLowerCase()) !== -1 ||
+                            ans.toLowerCase().indexOf(_this.global.black_list_words[i].toLowerCase()) !== -1) {
+                            console.log("\u6559\u5B66\u6307\u4EE4\uFF1A\u68C0\u6D4B\u5230\u4E0D\u5141\u8BB8\u7684\u8BCD\uFF1A" + _this.global.black_list_words[i] + "\uFF0C\u9000\u51FA\u6559\u5B66");
+                            _this.io.emit("system message", "@\u4F60\u6559\u7684\u5185\u5BB9\u91CC\u6709\u4E3B\u4EBA\u4E0D\u5141\u8BB8\u5C0F\u591C\u5B66\u4E60\u7684\u8BCDqwq");
                             return 0;
                         }
                     }
                     if (Buffer.from(ask).length < 4) {
                         //关键词最低长度：4个英文或2个汉字
                         console.log("\u6559\u5B66\u6307\u4EE4\uFF1A\u5173\u952E\u8BCD\u592A\u77ED\uFF0C\u9000\u51FA\u6559\u5B66");
-                        io.emit("system message", "@\u5173\u952E\u8BCD\u592A\u77ED\u4E86\u5566qwq\uFF0C\u81F3\u5C11\u89814\u4E2A\u5B57\u8282\u5566");
+                        _this.io.emit("system message", "@\u5173\u952E\u8BCD\u592A\u77ED\u4E86\u5566qwq\uFF0C\u81F3\u5C11\u89814\u4E2A\u5B57\u8282\u5566");
                         return 0;
                     }
                     if (ask.length > 350 || ans.length > 350) {
                         //图片长度差不多是350左右
                         console.log("\u6559\u5B66\u6307\u4EE4\uFF1A\u6559\u7684\u592A\u957F\u4E86\uFF0C\u9000\u51FA\u6559\u5B66");
-                        io.emit("system message", "@\u4F60\u6559\u7684\u5185\u5BB9\u592A\u957F\u4E86\uFF0C\u5C0F\u591C\u8981\u574F\u6389\u4E86qwq\uFF0C\u4E0D\u8981\u5440");
+                        _this.io.emit("system message", "@\u4F60\u6559\u7684\u5185\u5BB9\u592A\u957F\u4E86\uFF0C\u5C0F\u591C\u8981\u574F\u6389\u4E86qwq\uFF0C\u4E0D\u8981\u5440");
                         return 0;
                     }
                     //到这里都没有出错的话就视为没有问题，可以让小夜学了
                     console.log("\u6559\u5B66\u6307\u4EE4\uFF1A\u6CA1\u6709\u68C0\u6D4B\u5230\u95EE\u9898\uFF0C\u53EF\u4EE5\u5B66\u4E60");
                     db.run("INSERT INTO chat VALUES('" + ask + "', '" + ans + "')");
                     console.log("\u6559\u5B66\u6307\u4EE4\uFF1A\u5B66\u4E60\u6210\u529F");
-                    io.emit("system message", "@\u54C7\uFF01\u5C0F\u591C\u5B66\u4F1A\u5566\uFF01\u5BF9\u6211\u8BF4\uFF1A" + ask + " \u8BD5\u8BD5\u5427\uFF0C\u5C0F\u591C\u6709\u53EF\u80FD\u4F1A\u56DE\u590D " + ans + " \u5662");
+                    _this.io.emit("system message", "@\u54C7\uFF01\u5C0F\u591C\u5B66\u4F1A\u5566\uFF01\u5BF9\u6211\u8BF4\uFF1A" + ask + " \u8BD5\u8BD5\u5427\uFF0C\u5C0F\u591C\u6709\u53EF\u80FD\u4F1A\u56DE\u590D " + ans + " \u5662");
                     return 0;
                 }
                 else {
-                    if (g.chat_swich) {
+                    if (_this.global.chat_swich) {
                         //交给聊天函数处理
                         _this.tools.ChatProcess(msg)
                             .then(function (resolve) {
-                            io.emit("chat message", {
+                            _this.io.emit("chat message", {
                                 CID: "0",
                                 msg: resolve
                             });
@@ -272,7 +268,7 @@ var Core = /** @class */ (function () {
                             _this.tools.PrprDoge()
                                 .then(function (resolve) {
                                 console.log("\u8214\u72D7\u56DE\u590D\uFF1A" + resolve);
-                                io.emit("chat message", {
+                                _this.io.emit("chat message", {
                                     CID: "0",
                                     msg: resolve
                                 });
@@ -291,13 +287,13 @@ var Core = /** @class */ (function () {
     //qqBot小夜核心代码，对接go-cqhttp
     Core.prototype.start_qqbot = function () {
         var _this = this;
-        app.post(this.global.go_cqhttp_service, function (req, res) {
+        this.app.post(this.global.go_cqhttp_service, function (req, res) {
             //禁言1小时以上自动退群
             if (req.body.sub_type == "ban" && req.body.user_id == _this.global.bot_qq && req.body.duration >= 3599) {
                 request("http://" + _this.global.go_cqhttp_api + "/set_group_leave?group_id=" + req.body.group_id, function (error, _response, _body) {
                     if (!error) {
                         console.log("\u5C0F\u591C\u5728\u7FA4 " + req.body.group_id + " \u88AB\u7981\u8A00\u8D85\u8FC71\u5C0F\u65F6\uFF0C\u81EA\u52A8\u9000\u7FA4");
-                        io.emit("system message", "@\u5C0F\u591C\u5728\u7FA4 " + req.body.group_id + " \u88AB\u7981\u8A00\u8D85\u8FC71\u5C0F\u65F6\uFF0C\u81EA\u52A8\u9000\u7FA4");
+                        this.io.emit("system message", "@\u5C0F\u591C\u5728\u7FA4 " + req.body.group_id + " \u88AB\u7981\u8A00\u8D85\u8FC71\u5C0F\u65F6\uFF0C\u81EA\u52A8\u9000\u7FA4");
                     }
                     else {
                         console.log("\u8BF7\u6C42" + this.global.go_cqhttp_api + "/set_group_leave\u9519\u8BEF\uFF1A" + error);
@@ -361,14 +357,14 @@ var Core = /** @class */ (function () {
                     return 0;
             }
             console.log(notify);
-            io.emit("system message", "@" + notify);
+            _this.io.emit("system message", "@" + notify);
             //转发图片到web端，按需启用
             if (_this.global.qqimg_to_web) {
                 if (_this.global.isImage_reg.test(req.body.message)) {
                     var url = _this.global.img_url_reg.exec(req.body.message);
                     _this["this"].tools.SaveQQimg(url)
                         .then(function (resolve) {
-                        io.emit("qqpic message", resolve);
+                        _this.io.emit("qqpic message", resolve);
                     })["catch"](function (reject) {
                         console.log(reject.error);
                     });
@@ -378,7 +374,7 @@ var Core = /** @class */ (function () {
             //转发视频到web端
             if (_this.global.isVideo_reg.test(req.body.message)) {
                 var url = _this.global.video_url_reg.exec(req.body.message)[0];
-                io.emit("qqvideo message", { file: url, filename: "qq视频" });
+                _this.io.emit("qqvideo message", { file: url, filename: "qq视频" });
                 res.send();
                 return 0;
             }
@@ -791,7 +787,7 @@ var Core = /** @class */ (function () {
                                     var message = req.body.message.replace("/嘴臭 ", "");
                                     message = message.replace("/嘴臭", "");
                                     console.log("\u6709\u4EBA\u5BF9\u7EBF\u8BF4 " + message + "\uFF0C\u5C0F\u591C\u8981\u5634\u81ED\u4E86");
-                                    io.emit("sysrem message", "@\u6709\u4EBA\u5BF9\u7EBF\u8BF4 " + message + "\uFF0C\u5C0F\u591C\u8981\u5634\u81ED\u4E86");
+                                    _this.io.emit("sysrem message", "@\u6709\u4EBA\u5BF9\u7EBF\u8BF4 " + message + "\uFF0C\u5C0F\u591C\u8981\u5634\u81ED\u4E86");
                                     _this["this"].tools.ChatProcess(message)
                                         .then(function (resolve) {
                                         var reply = resolve;
@@ -1405,7 +1401,7 @@ var Core = /** @class */ (function () {
                                                 request("http://" + _this.global.go_cqhttp_api + "/send_group_msg?group_id=" + req.body.group_id + "&message=" + encodeURI(text), function (error, _response, _body) {
                                                     if (!error) {
                                                         console.log("\u7FA4 " + req.body.group_id + " \u5F00\u59CB\u4E86\u51FB\u9F13\u4F20\u96F7");
-                                                        io.emit("system message", "@\u7FA4 " + req.body.group_id + " \u5F00\u59CB\u4E86\u51FB\u9F13\u4F20\u96F7");
+                                                        this.io.emit("system message", "@\u7FA4 " + req.body.group_id + " \u5F00\u59CB\u4E86\u51FB\u9F13\u4F20\u96F7");
                                                     }
                                                     else {
                                                         console.log("\u8BF7\u6C42" + this.global.go_cqhttp_api + "/send_group_msg\u9519\u8BEF\uFF1A" + error);
@@ -1463,7 +1459,7 @@ var Core = /** @class */ (function () {
                                                                     var end = "\u65F6\u95F4\u5230\u4E86\uFF0Cpia\uFF0C\u96F7\u5728[CQ:at,qq=" + sql[0].loop_bomb_onwer + "]\u624B\u4E0A\u70B8\u4E86\uFF0C\u4F60\u88AB\u70B8\u6210\u91CD\u4F24\u4E86\uFF0C\u4F11\u517B\u751F\u606F" + boom_time + "\u79D2\uFF01\u6E38\u620F\u7ED3\u675F\uFF01\u4E0B\u6B21\u52A0\u6CB9\u5662\uFF0C\u90A3\u4E48\u7B54\u6848\u516C\u5E03\uFF1A" + sql[0].loop_bomb_answer;
                                                                     request("http://" + this.global.go_cqhttp_api + "/send_group_msg?group_id=" + req.body.group_id + "&message=" + encodeURI(end), function (error, _response, _body) {
                                                                         if (!error) {
-                                                                            io.emit("system message", "@" + sql[0].loop_bomb_onwer + " \u5728\u7FA4 " + req.body.group_id + " \u56DE\u7B54\u8D85\u65F6\uFF0C\u88AB\u70B8\u4F24" + boom_time + "\u79D2");
+                                                                            this.io.emit("system message", "@" + sql[0].loop_bomb_onwer + " \u5728\u7FA4 " + req.body.group_id + " \u56DE\u7B54\u8D85\u65F6\uFF0C\u88AB\u70B8\u4F24" + boom_time + "\u79D2");
                                                                         }
                                                                         else {
                                                                             console.log("\u8BF7\u6C42" + this.global.go_cqhttp_api + "/send_group_msg\u9519\u8BEF\uFF1A" + error);
@@ -1477,7 +1473,7 @@ var Core = /** @class */ (function () {
                                                                     console.log("\u8BF7\u6C42" + this.global.go_cqhttp_api + "/set_group_whole_ban\u9519\u8BEF\uFF1A" + error);
                                                                 }
                                                             });
-                                                            io.emit("system message", "@\u7FA4 " + req.body.group_id + " \u7684\u51FB\u9F13\u4F20\u96F7\u5230\u8FBE\u65F6\u95F4\uFF0C\u70B8\u4E86");
+                                                            _this.io.emit("system message", "@\u7FA4 " + req.body.group_id + " \u7684\u51FB\u9F13\u4F20\u96F7\u5230\u8FBE\u65F6\u95F4\uFF0C\u70B8\u4E86");
                                                         }
                                                     });
                                                 }, 1000 * 60));
@@ -1500,7 +1496,7 @@ var Core = /** @class */ (function () {
                                                                 var end = "[CQ:at,qq=" + req.body.user_id + "] \u62A2\u7B54\u6B63\u786E\uFF01\u7B54\u6848\u786E\u5B9E\u662F " + sql[0].loop_bomb_answer + "\uFF01\u4F46\u56E0\u4E3A\u62A2\u7B54\u4E86\u6240\u4EE5\u88AB\u60E9\u7F5A\u4E86\uFF01";
                                                                 request("http://" + _this.global.go_cqhttp_api + "/send_group_msg?group_id=" + req.body.group_id + "&message=" + encodeURI(end), function (error, _response, _body) {
                                                                     if (!error) {
-                                                                        io.emit("system message", "@" + req.body.user_id + " \u5728\u7FA4 " + req.body.group_id + " \u56DE\u7B54\u6B63\u786E");
+                                                                        this.io.emit("system message", "@" + req.body.user_id + " \u5728\u7FA4 " + req.body.group_id + " \u56DE\u7B54\u6B63\u786E");
                                                                         //金手指关闭
                                                                         request("http://" + this.global.go_cqhttp_api + "/set_group_card?group_id=" + req.body.group_id + "&user_id=" + sql[0].loop_bomb_onwer + "&card=", //req.body.user_id
                                                                         function (error, _response, _body) {
@@ -1541,7 +1537,7 @@ var Core = /** @class */ (function () {
                                                                 var end = "[CQ:at,qq=" + req.body.user_id + "] \u56DE\u7B54\u6B63\u786E\uFF01\u7B54\u6848\u786E\u5B9E\u662F " + sql[0].loop_bomb_answer + "\uFF01";
                                                                 request("http://" + _this.global.go_cqhttp_api + "/send_group_msg?group_id=" + req.body.group_id + "&message=" + encodeURI(end), function (error, _response, _body) {
                                                                     if (!error) {
-                                                                        io.emit("system message", "@" + sql[0].loop_bomb_onwer + " \u5728\u7FA4 " + req.body.group_id + " \u56DE\u7B54\u6B63\u786E");
+                                                                        this.io.emit("system message", "@" + sql[0].loop_bomb_onwer + " \u5728\u7FA4 " + req.body.group_id + " \u56DE\u7B54\u6B63\u786E");
                                                                     }
                                                                     else {
                                                                         console.log("\u8BF7\u6C42" + this.global.go_cqhttp_api + "/send_group_msg\u9519\u8BEF\uFF1A" + error);
@@ -1578,7 +1574,7 @@ var Core = /** @class */ (function () {
                                                                                     request("http://" + _this.global.go_cqhttp_api + "/send_group_msg?group_id=" + req.body.group_id + "&message=" + encodeURI(question), function (error, _response, _body) {
                                                                                         if (!error) {
                                                                                             console.log("\u7FA4 " + req.body.group_id + " \u5F00\u59CB\u4E86\u4E0B\u4E00\u8F6E\u51FB\u9F13\u4F20\u96F7");
-                                                                                            io.emit("system message", "@\u7FA4 " + req.body.group_id + " \u5F00\u59CB\u4E86\u4E0B\u4E00\u8F6E\u51FB\u9F13\u4F20\u96F7");
+                                                                                            this.io.emit("system message", "@\u7FA4 " + req.body.group_id + " \u5F00\u59CB\u4E86\u4E0B\u4E00\u8F6E\u51FB\u9F13\u4F20\u96F7");
                                                                                         }
                                                                                         else {
                                                                                             console.log("\u8BF7\u6C42" + this.global.go_cqhttp_api + "/send_group_msg\u9519\u8BEF\uFF1A" + error);
@@ -1606,7 +1602,7 @@ var Core = /** @class */ (function () {
                                                             clearTimeout(_this.global.boom_timer);
                                                             request("http://" + _this.global.go_cqhttp_api + "/send_group_msg?group_id=" + req.body.group_id + "&message=" + encodeURI(end), function (error, _response, _body) {
                                                                 if (!error) {
-                                                                    io.emit("system message", "@" + sql[0].loop_bomb_onwer + " \u5728\u7FA4 " + req.body.group_id + " \u56DE\u7B54\u6B63\u786E");
+                                                                    this.io.emit("system message", "@" + sql[0].loop_bomb_onwer + " \u5728\u7FA4 " + req.body.group_id + " \u56DE\u7B54\u6B63\u786E");
                                                                     //禁言
                                                                     request("http://" + this.global.go_cqhttp_api + "/set_group_ban?group_id=" + req.body.group_id + "&user_id=" + req.body.user_id + "&duration=" + boom_time_3, function (error, _response, _body) {
                                                                         if (!error) {
@@ -1932,7 +1928,7 @@ var Core = /** @class */ (function () {
                                             request("http://" + _this.global.go_cqhttp_api + "/send_group_msg?group_id=" + resolve + "&message=" + encodeURI(prprmsg_1), function (error, _response, _body) {
                                                 if (!error) {
                                                     console.log("qqBot\u5C0F\u591C\u5728\u7FA4 " + resolve + " \u62BD\u98CE\u4E86\uFF0C\u53D1\u9001\u4E86 " + prprmsg_1);
-                                                    io.emit("system message", "@qqBot\u5C0F\u591C\u5728\u7FA4 " + resolve + " \u62BD\u98CE\u4E86\uFF0C\u53D1\u9001\u4E86 " + prprmsg_1);
+                                                    this.io.emit("system message", "@qqBot\u5C0F\u591C\u5728\u7FA4 " + resolve + " \u62BD\u98CE\u4E86\uFF0C\u53D1\u9001\u4E86 " + prprmsg_1);
                                                 }
                                                 else {
                                                     console.log("\u8BF7\u6C42" + this.global.go_cqhttp_api + "/send_group_msg\u9519\u8BEF\uFF1A" + error);
@@ -1951,7 +1947,7 @@ var Core = /** @class */ (function () {
                                 var fudu_flag = Math.floor(Math.random() * 100);
                                 if (fudu_flag < _this.global.fudu_probability) {
                                     console.log("qqBot\u5C0F\u591C\u590D\u8BFB " + req.body.message);
-                                    io.emit("system message", "@qqBot\u5C0F\u591C\u590D\u8BFB " + req.body.message);
+                                    _this.io.emit("system message", "@qqBot\u5C0F\u591C\u590D\u8BFB " + req.body.message);
                                     res.send({ reply: req.body.message });
                                     return 0;
                                 }
@@ -1972,7 +1968,7 @@ var Core = /** @class */ (function () {
                                             resolve = resolve.toString().replace("&#91;name&#93;", "[CQ:at,qq=" + req.body.user_id + "]"); //替换[name]为正确的@
                                         }
                                         console.log("qqBot\u5C0F\u591C\u56DE\u590D " + resolve);
-                                        io.emit("system message", "@qqBot\u5C0F\u591C\u56DE\u590D\uFF1A" + resolve);
+                                        _this.io.emit("system message", "@qqBot\u5C0F\u591C\u56DE\u590D\uFF1A" + resolve);
                                         res.send({ reply: resolve });
                                         return 0;
                                     })["catch"](function (reject) {
@@ -1981,13 +1977,13 @@ var Core = /** @class */ (function () {
                                             .then(function (resolve) {
                                             var random_balabala = resolve[Math.floor(Math.random() * resolve.length)].balabala;
                                             res.send({ reply: random_balabala });
-                                            io.emit("system message", "@qqBot\u5C0F\u591C\u89C9\u5F97" + random_balabala);
+                                            _this.io.emit("system message", "@qqBot\u5C0F\u591C\u89C9\u5F97" + random_balabala);
                                             console.log(reject + "\uFF0CqqBot\u5C0F\u591C\u89C9\u5F97" + random_balabala);
                                             return 0;
                                         })["catch"](function (reject) {
                                             console.log("\u5C0F\u591C\u8BD5\u56FEbalabala\u4F46\u51FA\u9519\u4E86\uFF1A" + reject);
                                             res.send({ reply: "\u5C0F\u591C\u8BD5\u56FEbalabala\u4F46\u51FA\u9519\u4E86\uFF1A" + reject });
-                                            io.emit("system message", "@qqBot\u5C0F\u591C\u8BD5\u56FEbalabala\u4F46\u51FA\u9519\u4E86\uFF1A" + reject);
+                                            _this.io.emit("system message", "@qqBot\u5C0F\u591C\u8BD5\u56FEbalabala\u4F46\u51FA\u9519\u4E86\uFF1A" + reject);
                                             return 0;
                                         });
                                     });
@@ -2011,7 +2007,7 @@ var Core = /** @class */ (function () {
                 _this["this"].tools.ChatProcess(req.body.message)
                     .then(function (resolve) {
                     console.log("qqBot\u5C0F\u591C\u56DE\u590D " + resolve);
-                    io.emit("system message", "@qqBot\u5C0F\u591C\u56DE\u590D\uFF1A" + resolve);
+                    _this.io.emit("system message", "@qqBot\u5C0F\u591C\u56DE\u590D\uFF1A" + resolve);
                     res.send({ reply: resolve });
                 })["catch"](function (reject) {
                     //无匹配则随机回复balabala废话
@@ -2019,12 +2015,12 @@ var Core = /** @class */ (function () {
                         .then(function (resolve) {
                         var random_balabala = resolve[Math.floor(Math.random() * resolve.length)].balabala;
                         res.send({ reply: random_balabala });
-                        io.emit("system message", "@qqBot\u5C0F\u591C\u89C9\u5F97" + random_balabala);
+                        _this.io.emit("system message", "@qqBot\u5C0F\u591C\u89C9\u5F97" + random_balabala);
                         console.log(reject + "\uFF0CqqBot\u5C0F\u591C\u89C9\u5F97" + random_balabala);
                     })["catch"](function (reject) {
                         console.log("\u5C0F\u591C\u8BD5\u56FEbalabala\u4F46\u51FA\u9519\u4E86\uFF1A" + reject);
                         res.send({ reply: "\u5C0F\u591C\u8BD5\u56FEbalabala\u4F46\u51FA\u9519\u4E86\uFF1A" + reject });
-                        io.emit("system message", "@qqBot\u5C0F\u591C\u8BD5\u56FEbalabala\u4F46\u51FA\u9519\u4E86\uFF1A" + reject);
+                        _this.io.emit("system message", "@qqBot\u5C0F\u591C\u8BD5\u56FEbalabala\u4F46\u51FA\u9519\u4E86\uFF1A" + reject);
                     });
                 });
                 return 0;
@@ -2093,7 +2089,7 @@ var Core = /** @class */ (function () {
             else {
                 console.log("\u83B7\u53D6\u5230\u6700\u65B0\u5F39\u5E55\uFF1A" + resolve.text);
                 _this.global.last_danmu_timeline = resolve.timeline;
-                io.emit("sysrem message", "@\u5F39\u5E55\u4F20\u6765\uFF1A " + resolve.text);
+                _this.io.emit("sysrem message", "@\u5F39\u5E55\u4F20\u6765\uFF1A " + resolve.text);
                 //卧槽这么多传参怎么复用啊
                 //教学系统，抄板于虹原翼版小夜v3
                 if (_this.global.teach_reg.test(resolve.text)) {

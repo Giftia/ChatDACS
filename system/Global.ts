@@ -4,44 +4,42 @@ class Global {
     html = "/static/index.html"; //前端页面路径，old.html为旧版前端
     boom_timer; //60s计时器
     onlineusers = 0; //预定义
-    Tiankey;
-    sumtkey;
-    baidu_app_id;
-    baidu_api_key;
-    baidu_secret_key;
-    last_danmu_timeline;
-    bot_qq;
-    black_list_words;
-    qq_admin_list;
-    blive_room_id;
-    chat_swich;
-    conn_go_cqhttp;
-    Now_On_Live;
-    web_port;
-    go_cqhttp_service;
-    go_cqhttp_api;
-    topN;
-    reply_probability;
-    fudu_probability;
-    chaos_probability;
-    req_fuliji_list;
-    req_ECY_list;
-    req_no_trap_list;
-    qqimg_to_web;
-    max_mine_count;
-    cos_total_count;
-    xiaoye_ated;
-    private_service_swich;
+    Tiankey = null;
+    sumtkey = null;
+    baidu_app_id = null;
+    baidu_api_key = null;
+    baidu_secret_key = null;
+    last_danmu_timeline = null;
+    bot_qq = null;
+    black_list_words = null;
+    qq_admin_list = null;
+    blive_room_id = null;
+    chat_swich = null;
+    conn_go_cqhttp = null;
+    Now_On_Live = null;
+    web_port = null;
+    go_cqhttp_service = null;
+    go_cqhttp_api = null;
+    topN = null;
+    reply_probability = null;
+    fudu_probability = null;
+    chaos_probability = null;
+    req_fuliji_list = null;
+    req_ECY_list = null;
+    req_no_trap_list = null;
+    qqimg_to_web = null;
+    max_mine_count = null;
+    cos_total_count = null;
+    xiaoye_ated = null;
+    private_service_swich = null;
     c1c_count = 0;
     
     //web端配置
-    help =
-    "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
-    thanks =
-    "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、https://api.lolicon.app/、https://bww.lolicon.app/、https://iw233.cn/main.html、https://blog.csdn.net/jia20003/article/details/7228464、还有我的朋友们，以及倾心分享知识的各位";
+    help = "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
+    thanks = "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、https://api.lolicon.app/、https://bww.lolicon.app/、https://iw233.cn/main.html、https://blog.csdn.net/jia20003/article/details/7228464、还有我的朋友们，以及倾心分享知识的各位";
     update_text = `优化r18与来点xx提示`;
     updatelog = `<h1>${this.version}</h1><br/>${this.update_text}`;
-
+  
     //正则
     rename_reg = new RegExp("^/rename [\u4e00-\u9fa5a-z0-9]{1,10}$"); //允许1-10长度的数英汉昵称
     bv2av_reg = new RegExp("^[a-zA-Z0-9]{10,12}$"); //匹配bv号
@@ -78,7 +76,7 @@ class Global {
     make_qrcode = new RegExp("^qr (.*)"); //匹配生成二维码指令
     come_some = new RegExp("^来点(.*)"); //匹配来点xx指令
     bww_reg = new RegExp("^/黑白图 (.*)"); //匹配黑白图
-
+  
     //声明TTS调用接口
     SpeechClient;
 }

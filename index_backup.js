@@ -53,7 +53,6 @@ if (_cn_reg.test(`${process.cwd()}`)) {
 
 //系统配置和开关，以及固定变量
 const version = `ChatDACS v3.0.20-Dev`; //版本号，会显示在浏览器tab与标题栏
-const html = "/static/index.html"; //前端页面路径，old.html为旧版前端
 var boom_timer; //60s计时器
 let onlineusers = 0, //预定义
   Tiankey,
@@ -132,9 +131,7 @@ const AipSpeech = require("baidu-aip-sdk").speech; //百度语音sdk
 const crypto = require("crypto"); //编码库，用于sha1生成文件名
 const voiceplayer = require("play-sound")((opts = { player: `${process.cwd()}/plugins/cmdmp3win.exe` })); //mp3静默播放工具，用于直播时播放语音
 const { createCanvas, loadImage } = require("canvas"); //用于绘制文字图像，迫害p图
-const { resolve } = require("path");
 const os = require("os"); //用于获取系统工作状态
-const { exit } = require("process");
 require.all = require("require.all"); //插件加载器
 const alphabet = require("alphabetjs");
 
@@ -155,7 +152,6 @@ const rename_reg = new RegExp("^/rename [\u4e00-\u9fa5a-z0-9]{1,10}$"); //允许
 const bv2av_reg = new RegExp("^[a-zA-Z0-9]{10,12}$"); //匹配bv号
 const isImage_reg = new RegExp("\\[CQ:image,file="); //匹配qqBot图片
 const change_reply_probability_reg = new RegExp("^/admin_change_reply_probability [0-9]*"); //匹配修改qqBot小夜回复率
-const change_fudu_probability_reg = new RegExp("^/admin_change_fudu_probability [0-9]*"); //匹配修改qqBot小夜复读率
 const img_url_reg = new RegExp("https(.*term=)"); //匹配图片地址
 const isVideo_reg = new RegExp("^\\[CQ:video,file="); //匹配qqBot图片
 const video_url_reg = new RegExp("http(.*term=unknow)"); //匹配视频地址
@@ -233,264 +229,265 @@ InitConfig();
  */
 
 //web端核心代码，socket事件处理
-io.on("connection", (socket) => {
-  socket.emit("getcookie");
-  let CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
-  if (CID === undefined) {
-    socket.emit("getcookie");
-    return 0;
-  }
-  socket.emit("version", version);
-  io.emit("onlineusers", ++onlineusers);
+//490
+// io.on("connection", (socket) => {
+//   socket.emit("getcookie");
+//   let CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
+//   if (CID === undefined) {
+//     socket.emit("getcookie");
+//     return 0;
+//   }
+//   socket.emit("version", version);
+//   io.emit("onlineusers", ++onlineusers);
 
-  //开始获取用户信息并处理
-  GetUserData(CID)
-    .then(([nickname, logintimes, lastlogintime]) => {
-      console.log(`${Curentyyyymmdd() + CurentTime()}用户 ${nickname}(${CID}) 已连接`.log);
+//   //开始获取用户信息并处理
+//   GetUserData(CID)
+//     .then(([nickname, logintimes, lastlogintime]) => {
+//       console.log(`${Curentyyyymmdd() + CurentTime()}用户 ${nickname}(${CID}) 已连接`.log);
 
-      //更新登录次数
-      db.run(`UPDATE users SET logintimes = logintimes + 1 WHERE CID ='${CID}'`);
+//       //更新登录次数
+//       db.run(`UPDATE users SET logintimes = logintimes + 1 WHERE CID ='${CID}'`);
 
-      //更新最后登陆时间
-      db.run(`UPDATE users SET lastlogintime = '${Curentyyyymmdd()}${CurentTime()}' WHERE CID ='${CID}'`);
+//       //更新最后登陆时间
+//       db.run(`UPDATE users SET lastlogintime = '${Curentyyyymmdd()}${CurentTime()}' WHERE CID ='${CID}'`);
 
-      socket.username = nickname;
+//       socket.username = nickname;
 
-      io.emit("system message", `@欢迎回来，${socket.username}(${CID}) 。这是你第${logintimes}次访问。上次访问时间：${lastlogintime}`);
-    })
-    //若无法获取该用户信息，则应该是其第一次访问，接下来是新增用户操作：
-    .catch((reject) => {
-      let CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
-      console.log(`GetUserData(): rejected, and err:${reject}`.warn);
-      console.log(`${Curentyyyymmdd() + CurentTime()}新用户 ${CID} 已连接`.log);
-      RandomNickname()
-        .then((resolve) => {
-          db.run(`INSERT INTO users VALUES('${resolve}', '${CID}', '2', '${Curentyyyymmdd()}${CurentTime()}')`);
-          socket.username = resolve;
-          io.emit("system message", `@新用户 ${CID} 已连接。小夜帮你取了一个随机昵称：「${socket.username}」，请前往 更多-设置 来更改昵称`);
-          socket.emit("chat message", {
-            CID: "0",
-            msg: help,
-          });
-        })
-        .catch((reject) => {
-          console.log(`随机昵称错误：${reject}`.error);
-          db.run(`INSERT INTO users VALUES('匿名', '${CID}', '2', '${Curentyyyymmdd()}${CurentTime()}')`);
-          socket.username = "匿名";
-          io.emit("system message", `@新用户 ${CID} 已连接。现在你的昵称是 匿名 噢，请前往 更多-设置 来更改昵称`);
-          socket.emit("chat message", {
-            CID: "0",
-            msg: help,
-          });
-        });
-    });
+//       io.emit("system message", `@欢迎回来，${socket.username}(${CID}) 。这是你第${logintimes}次访问。上次访问时间：${lastlogintime}`);
+//     })
+//     //若无法获取该用户信息，则应该是其第一次访问，接下来是新增用户操作：
+//     .catch((reject) => {
+//       let CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
+//       console.log(`GetUserData(): rejected, and err:${reject}`.warn);
+//       console.log(`${Curentyyyymmdd() + CurentTime()}新用户 ${CID} 已连接`.log);
+//       RandomNickname()
+//         .then((resolve) => {
+//           db.run(`INSERT INTO users VALUES('${resolve}', '${CID}', '2', '${Curentyyyymmdd()}${CurentTime()}')`);
+//           socket.username = resolve;
+//           io.emit("system message", `@新用户 ${CID} 已连接。小夜帮你取了一个随机昵称：「${socket.username}」，请前往 更多-设置 来更改昵称`);
+//           socket.emit("chat message", {
+//             CID: "0",
+//             msg: help,
+//           });
+//         })
+//         .catch((reject) => {
+//           console.log(`随机昵称错误：${reject}`.error);
+//           db.run(`INSERT INTO users VALUES('匿名', '${CID}', '2', '${Curentyyyymmdd()}${CurentTime()}')`);
+//           socket.username = "匿名";
+//           io.emit("system message", `@新用户 ${CID} 已连接。现在你的昵称是 匿名 噢，请前往 更多-设置 来更改昵称`);
+//           socket.emit("chat message", {
+//             CID: "0",
+//             msg: help,
+//           });
+//         });
+//     });
 
-  socket.on("disconnect", () => {
-    onlineusers--;
-    io.emit("onlineusers", onlineusers);
-    console.log(`${Curentyyyymmdd()}${CurentTime()} 用户 ${socket.username} 已断开连接`.log);
-    io.emit("system message", "@用户 " + socket.username + " 已断开连接");
-  });
+//   socket.on("disconnect", () => {
+//     onlineusers--;
+//     io.emit("onlineusers", onlineusers);
+//     console.log(`${Curentyyyymmdd()}${CurentTime()} 用户 ${socket.username} 已断开连接`.log);
+//     io.emit("system message", "@用户 " + socket.username + " 已断开连接");
+//   });
 
-  socket.on("typing", () => {
-    io.emit("typing", `${socket.username} 正在输入...`);
-  });
+//   socket.on("typing", () => {
+//     io.emit("typing", `${socket.username} 正在输入...`);
+//   });
 
-  socket.on("typing_over", () => {
-    io.emit("typing", "");
-  });
+//   socket.on("typing_over", () => {
+//     io.emit("typing", "");
+//   });
 
-  //用户设置
-  socket.on("getsettings", () => {
-    let CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
-    socket.emit("settings", { CID: CID, name: socket.username });
-  });
+//   //用户设置
+//   socket.on("getsettings", () => {
+//     let CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
+//     socket.emit("settings", { CID: CID, name: socket.username });
+//   });
 
-  //更新日志
-  socket.on("getupdatelog", () => {
-    socket.emit("updatelog", updatelog);
-  });
+//   //更新日志
+//   socket.on("getupdatelog", () => {
+//     socket.emit("updatelog", updatelog);
+//   });
 
-  //致谢列表
-  socket.on("thanks", () => {
-    socket.emit("thanks", thanks);
-  });
+//   //致谢列表
+//   socket.on("thanks", () => {
+//     socket.emit("thanks", thanks);
+//   });
 
-  //web端最核心代码，聊天处理
-  socket.on("chat message", (msg) => {
-    let CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
-    var msg = msg.msg;
-    msg = msg.replace(/'/g, ""); //防爆
-    msg = msg.replace(/</g, ""); //防爆
-    msg = msg.replace(/>/g, ""); //防爆
-    console.log(`${Curentyyyymmdd() + CurentTime()}收到用户 ${socket.username}(${CID}) 的消息: ${msg}`.warn);
-    db.run(`INSERT INTO messages VALUES('${Curentyyyymmdd()}', '${CurentTime()}', '${CID}', '${msg}')`);
+//   //web端最核心代码，聊天处理
+//   socket.on("chat message", (msg) => {
+//     let CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
+//     var msg = msg.msg;
+//     msg = msg.replace(/'/g, ""); //防爆
+//     msg = msg.replace(/</g, ""); //防爆
+//     msg = msg.replace(/>/g, ""); //防爆
+//     console.log(`${Curentyyyymmdd() + CurentTime()}收到用户 ${socket.username}(${CID}) 的消息: ${msg}`.warn);
+//     db.run(`INSERT INTO messages VALUES('${Curentyyyymmdd()}', '${CurentTime()}', '${CID}', '${msg}')`);
 
-    io.emit("chat message", { CID: CID, name: socket.username, msg: msg }); //用户广播
+//     io.emit("chat message", { CID: CID, name: socket.username, msg: msg }); //用户广播
 
-    //开始if地狱
-    if (rename_reg.test(msg)) {
-      db.run(`UPDATE users SET nickname = '${msg.slice(8)}' WHERE CID ='${CID}'`);
-      io.emit("chat message", {
-        CID: "0",
-        msg: `@昵称重命名完毕，小夜现在会称呼你为 ${msg.slice(8)} 啦`,
-      });
-    } else if (msg === "/log_view") {
-      db.all("SELECT yyyymmdd, COUNT(*) As count FROM messages Group by yyyymmdd", (e, sql) => {
-        var data = [];
-        if (!e) {
-          for (let i = 0; i < sql.length; i++) {
-            data.push([sql[i].yyyymmdd, sql[i].count]);
-          }
-          console.log(data).log;
-          io.emit("chart message", data);
-        } else {
-          console.log(`/log_view错误：${e}`.error);
-          io.emit("chat message", { CID: "0", msg: `@${e}` });
-        }
-      });
-    } else if (bv2av_reg.test(msg)) {
-      msg = msg.replace(" ", "");
-      Bv2Av(msg)
-        .then((resolve) => {
-          io.emit("chat message", { CID: "0", msg: resolve });
-        })
-        .catch((reject) => {
-          console.log(`Bv2Av(): rejected, and err:${reject}`.error);
-          io.emit("system message", `@Bv2Av() err:${reject}`);
-        });
-    } else if (msg === "/reload") {
-      io.emit("reload");
-    } else if (msg === "/帮助") {
-      io.emit("chat message", { CID: "0", msg: `@${help}` });
-    } else if (msg === "/随机cos") {
-      RandomCos()
-        .then((resolve) => {
-          io.emit("pic message", resolve);
-        })
-        .catch((reject) => {
-          console.log(`RandomCos(): rejected, and err:${reject}`.error);
-          io.emit("system message", `@RandomCos() err:${reject}`);
-        });
-    } else if (msg === "/随机买家秀") {
-      RandomTbshow()
-        .then((resolve) => {
-          io.emit("pic message", resolve);
-        })
-        .catch((reject) => {
-          console.log(`RandomTbshow(): rejected, and err:${reject}`.error);
-          io.emit("system message", `@RandomTbshow() err:${reject}`);
-        });
-    } else if (msg === "/随机冷知识") {
-      RandomHomeword()
-        .then((resolve) => {
-          io.emit("chat message", { CID: "0", msg: `@${resolve}` });
-        })
-        .catch((reject) => {
-          console.log(`RandomHomeword(): rejected, and err:${reject}`.error);
-          io.emit("system message", `@RandomHomeword() err:${reject}`);
-        });
-    } else if (msg === "/随机二次元图") {
-      RandomECY()
-        .then((resolve) => {
-          io.emit("pic message", resolve);
-        })
-        .catch((reject) => {
-          console.log(`RandomECY(): rejected, and err:${reject}`.error);
-          io.emit("system message", `@RandomECY() err:${reject}`);
-        });
-    } //吠
-    else if (yap_reg.test(msg)) {
-      msg = msg.replace("/吠 ", "");
-      msg = msg.replace("/吠", "");
-      BetterTTS(msg)
-        .then((resolve) => {
-          io.emit("audio message", resolve);
-        })
-        .catch((reject) => {
-          console.log(`TTS错误：${reject}`.error);
-          io.emit("system message", `@TTS错误：${reject}`);
-        });
-    } //教学系统，抄板于虹原翼版小夜v3
-    else if (teach_reg.test(msg)) {
-      msg = msg.substr(2).split("答：");
-      if (msg.length !== 2) {
-        console.log(`教学指令：分割有误，退出教学`.error);
-        io.emit("system message", `@你教的姿势不对噢qwq`);
-        return 0;
-      }
-      let ask = msg[0].trim(),
-        ans = msg[1].trim();
-      if (ask == "" || ans == "") {
-        console.log(`问/答为空，退出教学`.error);
-        io.emit("system message", `@你教的姿势不对噢qwq`);
-        return 0;
-      }
-      if (ask.indexOf(/\r?\n/g) !== -1) {
-        console.log(`教学指令：关键词换行了，退出教学`.error);
-        io.emit("system message", `@关键词不能换行啦qwq`);
-        return 0;
-      }
-      console.log(`web端 ${socket.username} 想要教给小夜：问：${ask} 答：${ans}，现在开始检测合法性`.log);
-      for (let i in black_list_words) {
-        if (
-          ask.toLowerCase().indexOf(black_list_words[i].toLowerCase()) !== -1 ||
-          ans.toLowerCase().indexOf(black_list_words[i].toLowerCase()) !== -1
-        ) {
-          console.log(`教学指令：检测到不允许的词：${black_list_words[i]}，退出教学`.error);
-          io.emit("system message", `@你教的内容里有主人不允许小夜学习的词qwq`);
-          return 0;
-        }
-      }
-      if (Buffer.from(ask).length < 4) {
-        //关键词最低长度：4个英文或2个汉字
-        console.log(`教学指令：关键词太短，退出教学`.error);
-        io.emit("system message", `@关键词太短了啦qwq，至少要4个字节啦`);
-        return 0;
-      }
-      if (ask.length > 350 || ans.length > 350) {
-        //图片长度差不多是350左右
-        console.log(`教学指令：教的太长了，退出教学`.error);
-        io.emit("system message", `@你教的内容太长了，小夜要坏掉了qwq，不要呀`);
-        return 0;
-      }
-      //到这里都没有出错的话就视为没有问题，可以让小夜学了
-      console.log(`教学指令：没有检测到问题，可以学习`.log);
-      db.run(`INSERT INTO chat VALUES('${ask}', '${ans}')`);
-      console.log(`教学指令：学习成功`.log);
-      io.emit("system message", `@哇！小夜学会啦！对我说：${ask} 试试吧，小夜有可能会回复 ${ans} 噢`);
-      return 0;
-    } else {
-      if (chat_swich) {
-        //交给聊天函数处理
-        ChatProcess(msg)
-          .then((resolve) => {
-            io.emit("chat message", {
-              CID: "0",
-              msg: resolve,
-            });
-          })
-          .catch((reject) => {
-            //如果没有匹配到回复，那就让舔狗来回复
-            console.log(`${reject}，交给舔狗回复`.warn);
-            PrprDoge()
-              .then((resolve) => {
-                console.log(`舔狗回复：${resolve}`.log);
-                io.emit("chat message", {
-                  CID: "0",
-                  msg: resolve,
-                });
-              })
-              .catch((reject) => {
-                console.log(`随机舔狗错误：${reject}`.error);
-              });
-          });
-      } else {
-        return 0;
-      }
-    }
-  });
-});
+//     //开始if地狱
+//     if (rename_reg.test(msg)) {
+//       db.run(`UPDATE users SET nickname = '${msg.slice(8)}' WHERE CID ='${CID}'`);
+//       io.emit("chat message", {
+//         CID: "0",
+//         msg: `@昵称重命名完毕，小夜现在会称呼你为 ${msg.slice(8)} 啦`,
+//       });
+//     } else if (msg === "/log_view") {
+//       db.all("SELECT yyyymmdd, COUNT(*) As count FROM messages Group by yyyymmdd", (e, sql) => {
+//         var data = [];
+//         if (!e) {
+//           for (let i = 0; i < sql.length; i++) {
+//             data.push([sql[i].yyyymmdd, sql[i].count]);
+//           }
+//           console.log(data).log;
+//           io.emit("chart message", data);
+//         } else {
+//           console.log(`/log_view错误：${e}`.error);
+//           io.emit("chat message", { CID: "0", msg: `@${e}` });
+//         }
+//       });
+//     } else if (bv2av_reg.test(msg)) {
+//       msg = msg.replace(" ", "");
+//       Bv2Av(msg)
+//         .then((resolve) => {
+//           io.emit("chat message", { CID: "0", msg: resolve });
+//         })
+//         .catch((reject) => {
+//           console.log(`Bv2Av(): rejected, and err:${reject}`.error);
+//           io.emit("system message", `@Bv2Av() err:${reject}`);
+//         });
+//     } else if (msg === "/reload") {
+//       io.emit("reload");
+//     } else if (msg === "/帮助") {
+//       io.emit("chat message", { CID: "0", msg: `@${help}` });
+//     } else if (msg === "/随机cos") {
+//       RandomCos()
+//         .then((resolve) => {
+//           io.emit("pic message", resolve);
+//         })
+//         .catch((reject) => {
+//           console.log(`RandomCos(): rejected, and err:${reject}`.error);
+//           io.emit("system message", `@RandomCos() err:${reject}`);
+//         });
+//     } else if (msg === "/随机买家秀") {
+//       RandomTbshow()
+//         .then((resolve) => {
+//           io.emit("pic message", resolve);
+//         })
+//         .catch((reject) => {
+//           console.log(`RandomTbshow(): rejected, and err:${reject}`.error);
+//           io.emit("system message", `@RandomTbshow() err:${reject}`);
+//         });
+//     } else if (msg === "/随机冷知识") {
+//       RandomHomeword()
+//         .then((resolve) => {
+//           io.emit("chat message", { CID: "0", msg: `@${resolve}` });
+//         })
+//         .catch((reject) => {
+//           console.log(`RandomHomeword(): rejected, and err:${reject}`.error);
+//           io.emit("system message", `@RandomHomeword() err:${reject}`);
+//         });
+//     } else if (msg === "/随机二次元图") {
+//       RandomECY()
+//         .then((resolve) => {
+//           io.emit("pic message", resolve);
+//         })
+//         .catch((reject) => {
+//           console.log(`RandomECY(): rejected, and err:${reject}`.error);
+//           io.emit("system message", `@RandomECY() err:${reject}`);
+//         });
+//     } //吠
+//     else if (yap_reg.test(msg)) {
+//       msg = msg.replace("/吠 ", "");
+//       msg = msg.replace("/吠", "");
+//       BetterTTS(msg)
+//         .then((resolve) => {
+//           io.emit("audio message", resolve);
+//         })
+//         .catch((reject) => {
+//           console.log(`TTS错误：${reject}`.error);
+//           io.emit("system message", `@TTS错误：${reject}`);
+//         });
+//     } //教学系统，抄板于虹原翼版小夜v3
+//     else if (teach_reg.test(msg)) {
+//       msg = msg.substr(2).split("答：");
+//       if (msg.length !== 2) {
+//         console.log(`教学指令：分割有误，退出教学`.error);
+//         io.emit("system message", `@你教的姿势不对噢qwq`);
+//         return 0;
+//       }
+//       let ask = msg[0].trim(),
+//         ans = msg[1].trim();
+//       if (ask == "" || ans == "") {
+//         console.log(`问/答为空，退出教学`.error);
+//         io.emit("system message", `@你教的姿势不对噢qwq`);
+//         return 0;
+//       }
+//       if (ask.indexOf(/\r?\n/g) !== -1) {
+//         console.log(`教学指令：关键词换行了，退出教学`.error);
+//         io.emit("system message", `@关键词不能换行啦qwq`);
+//         return 0;
+//       }
+//       console.log(`web端 ${socket.username} 想要教给小夜：问：${ask} 答：${ans}，现在开始检测合法性`.log);
+//       for (let i in black_list_words) {
+//         if (
+//           ask.toLowerCase().indexOf(black_list_words[i].toLowerCase()) !== -1 ||
+//           ans.toLowerCase().indexOf(black_list_words[i].toLowerCase()) !== -1
+//         ) {
+//           console.log(`教学指令：检测到不允许的词：${black_list_words[i]}，退出教学`.error);
+//           io.emit("system message", `@你教的内容里有主人不允许小夜学习的词qwq`);
+//           return 0;
+//         }
+//       }
+//       if (Buffer.from(ask).length < 4) {
+//         //关键词最低长度：4个英文或2个汉字
+//         console.log(`教学指令：关键词太短，退出教学`.error);
+//         io.emit("system message", `@关键词太短了啦qwq，至少要4个字节啦`);
+//         return 0;
+//       }
+//       if (ask.length > 350 || ans.length > 350) {
+//         //图片长度差不多是350左右
+//         console.log(`教学指令：教的太长了，退出教学`.error);
+//         io.emit("system message", `@你教的内容太长了，小夜要坏掉了qwq，不要呀`);
+//         return 0;
+//       }
+//       //到这里都没有出错的话就视为没有问题，可以让小夜学了
+//       console.log(`教学指令：没有检测到问题，可以学习`.log);
+//       db.run(`INSERT INTO chat VALUES('${ask}', '${ans}')`);
+//       console.log(`教学指令：学习成功`.log);
+//       io.emit("system message", `@哇！小夜学会啦！对我说：${ask} 试试吧，小夜有可能会回复 ${ans} 噢`);
+//       return 0;
+//     } else {
+//       if (chat_swich) {
+//         //交给聊天函数处理
+//         ChatProcess(msg)
+//           .then((resolve) => {
+//             io.emit("chat message", {
+//               CID: "0",
+//               msg: resolve,
+//             });
+//           })
+//           .catch((reject) => {
+//             //如果没有匹配到回复，那就让舔狗来回复
+//             console.log(`${reject}，交给舔狗回复`.warn);
+//             PrprDoge()
+//               .then((resolve) => {
+//                 console.log(`舔狗回复：${resolve}`.log);
+//                 io.emit("chat message", {
+//                   CID: "0",
+//                   msg: resolve,
+//                 });
+//               })
+//               .catch((reject) => {
+//                 console.log(`随机舔狗错误：${reject}`.error);
+//               });
+//           });
+//       } else {
+//         return 0;
+//       }
+//     }
+//   });
+// });
 
 //qqBot小夜核心代码，对接go-cqhttp
 function start_qqbot() {
@@ -2673,10 +2670,10 @@ function LoopDanmu() {
  */
 
 //更改个人资料接口
-app.get("/profile", (req, res) => {
-  db.run(`UPDATE users SET nickname = '${req.query.name}' WHERE CID ='${req.query.CID}'`);
-  res.sendFile(process.cwd() + html);
-});
+// app.get("/profile", (req, res) => {
+//   db.run(`UPDATE users SET nickname = '${req.query.name}' WHERE CID ='${req.query.CID}'`);
+//   res.sendFile(process.cwd() + html);
+// });
 
 //图片上传接口
 app.post("/upload/image", upload.single("file"), function (req, _res, _next) {
@@ -2747,25 +2744,6 @@ function sha1(buf) {
 }
 
 //新闻
-function Getnews() {
-  return new Promise((resolve, reject) => {
-    request("https://3g.163.com/touch/reconstruct/article/list/BBM54PGAwangning/0-10.html", (err, response, body) => {
-      if (!err && response.statusCode === 200) {
-        body = body.substring(9, body.length - 1);
-        var content_news = "今日要闻：";
-        var main = JSON.parse(body);
-        var news = main.BBM54PGAwangning;
-        for (let id = 0; id < 10; id++) {
-          var print_id = id + 1;
-          content_news += "\r\n" + print_id + "." + news[id].title + "a(" + news[id].url + ")[查看原文]";
-        }
-        resolve(content_news);
-      } else {
-        reject("获取新闻错误，这个问题雨女无瓜，是新闻接口的锅。错误原因：" + JSON.stringify(response.body));
-      }
-    });
-  });
-}
 
 //获取用户信息
 function GetUserData(msg) {
@@ -2784,150 +2762,150 @@ function GetUserData(msg) {
 }
 
 //BV转AV
-function Bv2Av(msg) {
-  return new Promise((resolve, reject) => {
-    request("https://api.bilibili.com/x/web-interface/view?bvid=" + msg, (err, response, body) => {
-      body = JSON.parse(body);
-      if (!err && response.statusCode === 200 && body.code === 0) {
-        var content = "a(https://www.bilibili.com/video/av";
-        var av = body.data;
-        var av_number = av.aid;
-        var av_title = av.title;
-        content += av_number + ")[" + av_title + "，av" + av_number + "]";
-        resolve(content);
-      } else {
-        reject("解析错误，是否输入了不正确的BV号？错误原因：" + JSON.stringify(response.body));
-      }
-    });
-  });
-}
+// function Bv2Av(msg) {
+//   return new Promise((resolve, reject) => {
+//     request("https://api.bilibili.com/x/web-interface/view?bvid=" + msg, (err, response, body) => {
+//       body = JSON.parse(body);
+//       if (!err && response.statusCode === 200 && body.code === 0) {
+//         var content = "a(https://www.bilibili.com/video/av";
+//         var av = body.data;
+//         var av_number = av.aid;
+//         var av_title = av.title;
+//         content += av_number + ")[" + av_title + "，av" + av_number + "]";
+//         resolve(content);
+//       } else {
+//         reject("解析错误，是否输入了不正确的BV号？错误原因：" + JSON.stringify(response.body));
+//       }
+//     });
+//   });
+// }
 
 //随机cos
-function RandomCos() {
-  return new Promise((resolve, reject) => {
-    var rand_page_num = Math.floor(Math.random() * cos_total_count);
-    request(
-      "https://api.vc.bilibili.com/link_draw/v2/Photo/list?category=cos&type=hot&page_num=" + rand_page_num + "&page_size=1",
-      (err, response, body) => {
-        body = JSON.parse(body);
-        if (!err && response.statusCode === 200 && body.code === 0 && body.data.total_count != 0) {
-          cos_total_count = body.data.total_count;
-          try {
-            var obj = body.data.items[0].item.pictures; //经常出现某个item里没有图片的毛病，阿B你在干什么啊
-          } catch (err) {
-            reject("获取随机cos错误，是B站的锅。这个item里又双草没有图片，阿B你在干什么啊。错误原因：" + JSON.stringify(response.body));
-            return 0;
-          }
-          var count = Object.keys(obj).length;
-          var picUrl = obj[Math.floor(Math.random() * count)].img_src;
-          console.log(`cos总数：${cos_total_count}页，当前选择：${rand_page_num}页，发送图片：${picUrl}`.log);
-          request(picUrl).pipe(
-            fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
-              resolve(`/images/${picUrl.split("/").pop()}`);
-            })
-          ); //绕过防盗链，保存为本地图片
-        } else {
-          reject("获取随机cos错误，是B站的锅。错误原因：" + JSON.stringify(response.body));
-        }
-      }
-    );
-  });
-}
+// function RandomCos() {
+//   return new Promise((resolve, reject) => {
+//     var rand_page_num = Math.floor(Math.random() * cos_total_count);
+//     request(
+//       "https://api.vc.bilibili.com/link_draw/v2/Photo/list?category=cos&type=hot&page_num=" + rand_page_num + "&page_size=1",
+//       (err, response, body) => {
+//         body = JSON.parse(body);
+//         if (!err && response.statusCode === 200 && body.code === 0 && body.data.total_count != 0) {
+//           cos_total_count = body.data.total_count;
+//           try {
+//             var obj = body.data.items[0].item.pictures; //经常出现某个item里没有图片的毛病，阿B你在干什么啊
+//           } catch (err) {
+//             reject("获取随机cos错误，是B站的锅。这个item里又双草没有图片，阿B你在干什么啊。错误原因：" + JSON.stringify(response.body));
+//             return 0;
+//           }
+//           var count = Object.keys(obj).length;
+//           var picUrl = obj[Math.floor(Math.random() * count)].img_src;
+//           console.log(`cos总数：${cos_total_count}页，当前选择：${rand_page_num}页，发送图片：${picUrl}`.log);
+//           request(picUrl).pipe(
+//             fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
+//               resolve(`/images/${picUrl.split("/").pop()}`);
+//             })
+//           ); //绕过防盗链，保存为本地图片
+//         } else {
+//           reject("获取随机cos错误，是B站的锅。错误原因：" + JSON.stringify(response.body));
+//         }
+//       }
+//     );
+//   });
+// }
 
 //随机r18
-function RandomR18() {
-  return new Promise((resolve, reject) => {
-    request("https://api.lolicon.app/setu/v2?r18=1&size=regular", (err, response, body) => {
-      body = JSON.parse(body);
-      if (!err) {
-        var picUrl = body.data[0].urls.regular;
-        console.log(`发送r18图片：${picUrl}`.log);
-        request(picUrl, (err) => {
-          if (err) {
-            reject("获取tag错误，错误原因：" + err);
-          }
-        }).pipe(
-          fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
-            if (!err) {
-              resolve(`/images/${picUrl.split("/").pop()}`);
-            } else {
-              reject("这张色图太大了，下不下来");
-            }
-          })
-        ); //绕过防盗链，保存为本地图片
-      } else {
-        reject("获取随机r18错误，错误原因：" + JSON.stringify(response.body));
-      }
-    });
-  });
-}
+// function RandomR18() {
+//   return new Promise((resolve, reject) => {
+//     request("https://api.lolicon.app/setu/v2?r18=1&size=regular", (err, response, body) => {
+//       body = JSON.parse(body);
+//       if (!err) {
+//         var picUrl = body.data[0].urls.regular;
+//         console.log(`发送r18图片：${picUrl}`.log);
+//         request(picUrl, (err) => {
+//           if (err) {
+//             reject("获取tag错误，错误原因：" + err);
+//           }
+//         }).pipe(
+//           fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
+//             if (!err) {
+//               resolve(`/images/${picUrl.split("/").pop()}`);
+//             } else {
+//               reject("这张色图太大了，下不下来");
+//             }
+//           })
+//         ); //绕过防盗链，保存为本地图片
+//       } else {
+//         reject("获取随机r18错误，错误原因：" + JSON.stringify(response.body));
+//       }
+//     });
+//   });
+// }
 
 //搜索tag
-function SearchTag(tag) {
-  return new Promise((resolve, reject) => {
-    request(`https://api.lolicon.app/setu/v2?r18=1&size=regular&tag=${encodeURI(tag)}`, (err, response, body) => {
-      body = JSON.parse(body);
-      if (!err && body.data[0] != null) {
-        var picUrl = body.data[0].urls.regular;
-        console.log(`发送tag图片：${picUrl}`.log);
-        request(picUrl, (err) => {
-          if (err) {
-            reject(`${tag}的色图太大了，下不下来`);
-          }
-        }).pipe(
-          fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (err) => {
-            if (!err) {
-              resolve(`/images/${picUrl.split("/").pop()}`);
-            } else {
-              reject(`${tag}的色图太大了，下不下来`);
-            }
-          })
-        ); //绕过防盗链，保存为本地图片
-      } else {
-        reject(`找不到${tag}的色图`);
-      }
-    });
-  });
-}
+// function SearchTag(tag) {
+//   return new Promise((resolve, reject) => {
+//     request(`https://api.lolicon.app/setu/v2?r18=1&size=regular&tag=${encodeURI(tag)}`, (err, response, body) => {
+//       body = JSON.parse(body);
+//       if (!err && body.data[0] != null) {
+//         var picUrl = body.data[0].urls.regular;
+//         console.log(`发送tag图片：${picUrl}`.log);
+//         request(picUrl, (err) => {
+//           if (err) {
+//             reject(`${tag}的色图太大了，下不下来`);
+//           }
+//         }).pipe(
+//           fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (err) => {
+//             if (!err) {
+//               resolve(`/images/${picUrl.split("/").pop()}`);
+//             } else {
+//               reject(`${tag}的色图太大了，下不下来`);
+//             }
+//           })
+//         ); //绕过防盗链，保存为本地图片
+//       } else {
+//         reject(`找不到${tag}的色图`);
+//       }
+//     });
+//   });
+// }
 
 //随机买家秀
-function RandomTbshow() {
-  return new Promise((resolve, reject) => {
-    request(`https://api.sumt.cn/api/rand.tbimg.php?token=${sumtkey}&format=json`, (err, response, body) => {
-      body = JSON.parse(body);
-      if (!err && body.code === 200) {
-        let picUrl = body.pic_url;
-        request(picUrl).pipe(
-          fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
-            console.log(`保存了珍贵的随机买家秀：${picUrl}，然后再给用户`.log);
-          })
-        ); //来之不易啊，保存为本地图片
-        resolve(body.pic_url); //但是不给本地地址，还是给的源地址，这样节省带宽
-      } else {
-        reject("随机买家秀错误，是卡特实验室接口的锅。错误原因：" + JSON.stringify(response.body));
-      }
-    });
-  });
-}
+// function RandomTbshow() {
+//   return new Promise((resolve, reject) => {
+//     request(`https://api.sumt.cn/api/rand.tbimg.php?token=${sumtkey}&format=json`, (err, response, body) => {
+//       body = JSON.parse(body);
+//       if (!err && body.code === 200) {
+//         let picUrl = body.pic_url;
+//         request(picUrl).pipe(
+//           fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
+//             console.log(`保存了珍贵的随机买家秀：${picUrl}，然后再给用户`.log);
+//           })
+//         ); //来之不易啊，保存为本地图片
+//         resolve(body.pic_url); //但是不给本地地址，还是给的源地址，这样节省带宽
+//       } else {
+//         reject("随机买家秀错误，是卡特实验室接口的锅。错误原因：" + JSON.stringify(response.body));
+//       }
+//     });
+//   });
+// }
 
 //随机二次元图
-function RandomECY() {
-  return new Promise((resolve, reject) => {
-    request(`https://iw233.cn/api/Random.php`, (err, response, _body) => {
-      if (!err) {
-        let picUrl = response.request.uri.href;
-        request(picUrl).pipe(
-          fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
-            console.log(`保存了好康的二次元图：${picUrl}，然后再给用户`.log);
-          })
-        ); //来之不易啊，保存为本地图片
-        resolve(picUrl); //但是不给本地地址，还是给的源地址，这样节省带宽
-      } else {
-        reject("随机二次元图错误，是这个神秘接口的锅。错误原因：图片太鸡儿大了");
-      }
-    });
-  });
-}
+// function RandomECY() {
+//   return new Promise((resolve, reject) => {
+//     request(`https://iw233.cn/api/Random.php`, (err, response, _body) => {
+//       if (!err) {
+//         let picUrl = response.request.uri.href;
+//         request(picUrl).pipe(
+//           fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
+//             console.log(`保存了好康的二次元图：${picUrl}，然后再给用户`.log);
+//           })
+//         ); //来之不易啊，保存为本地图片
+//         resolve(picUrl); //但是不给本地地址，还是给的源地址，这样节省带宽
+//       } else {
+//         reject("随机二次元图错误，是这个神秘接口的锅。错误原因：图片太鸡儿大了");
+//       }
+//     });
+//   });
+// }
 // function RandomECY() {
 //   return new Promise((resolve, reject) => {
 //     request(`https://api.sumt.cn/api/rand.acg.php?token=${sumtkey}&type=%E4%BA%8C%E6%AC%A1%E5%85%83&format=json`, (err, response, body) => {
@@ -2948,75 +2926,72 @@ function RandomECY() {
 // }
 
 //随机冷知识
-function RandomHomeword() {
-  return new Promise((resolve, reject) => {
-    request("https://passport.csdn.net/v1/api/get/homeword", (err, response, body) => {
-      body = JSON.parse(body);
-      if (!err) {
-        var title = "<h2>" + body.data.title + "</h2>";
-        var content = body.data.content;
-        var count = body.data.count;
-        resolve(title + content + "\r\n—— 有" + count + "人陪你一起已读");
-      } else {
-        reject("获取随机冷知识错误，这个问题雨女无瓜，是CSDN接口的锅。错误原因：" + JSON.stringify(response.body));
-      }
-    });
-  });
-}
+// function RandomHomeword() {
+//   return new Promise((resolve, reject) => {
+//     request("https://passport.csdn.net/v1/api/get/homeword", (err, response, body) => {
+//       body = JSON.parse(body);
+//       if (!err) {
+//         var title = "<h2>" + body.data.title + "</h2>";
+//         var content = body.data.content;
+//         var count = body.data.count;
+//         resolve(title + content + "\r\n—— 有" + count + "人陪你一起已读");
+//       } else {
+//         reject("获取随机冷知识错误，这个问题雨女无瓜，是CSDN接口的锅。错误原因：" + JSON.stringify(response.body));
+//       }
+//     });
+//   });
+// }
 
 //自动随机昵称
-function RandomNickname() {
-  return new Promise((resolve, reject) => {
-    request(`http://api.tianapi.com/txapi/cname/index?key=${Tiankey}`, (err, response, body) => {
-      body = JSON.parse(body);
-      if (!err) {
-        try {
-          body.newslist[0].naming;
-        } catch (err) {
-          reject(
-            "获取随机昵称错误，是天行接口的锅，可能是您还没有配置密钥，这条错误可以无视，不影响正常使用。错误原因：" + JSON.stringify(response.body)
-          );
-        }
-        resolve(body.newslist[0].naming);
-      } else {
-        reject("获取随机昵称错误，是天行接口的锅。错误原因：" + JSON.stringify(response.body));
-      }
-    });
-  });
-}
+// function RandomNickname() {
+//   return new Promise((resolve, reject) => {
+//     request(`http://api.tianapi.com/txapi/cname/index?key=${Tiankey}`, (err, response, body) => {
+//       body = JSON.parse(body);
+//       if (!err) {
+//         try {
+//           body.newslist[0].naming;
+//         } catch (err) {
+//           reject(
+//             "获取随机昵称错误，是天行接口的锅，可能是您还没有配置密钥，这条错误可以无视，不影响正常使用。错误原因：" + JSON.stringify(response.body)
+//           );
+//         }
+//         resolve(body.newslist[0].naming);
+//       } else {
+//         reject("获取随机昵称错误，是天行接口的锅。错误原因：" + JSON.stringify(response.body));
+//       }
+//     });
+//   });
+// }
 
 //舔狗回复
-function PrprDoge() {
-  return new Promise((resolve, reject) => {
-    request(`http://api.tianapi.com/txapi/tiangou/index?key=${Tiankey}`, (err, response, body) => {
-      body = JSON.parse(body);
-      if (!err) {
-        resolve(body.newslist[0].content);
-      } else {
-        reject("舔狗错误，是天行接口的锅。错误原因：" + JSON.stringify(response.body));
-      }
-    });
-  });
-}
+// function PrprDoge() {
+//   return new Promise((resolve, reject) => {
+//     request(`http://api.tianapi.com/txapi/tiangou/index?key=${Tiankey}`, (err, response, body) => {
+//       body = JSON.parse(body);
+//       if (!err) {
+//         resolve(body.newslist[0].content);
+//       } else {
+//         reject("舔狗错误，是天行接口的锅。错误原因：" + JSON.stringify(response.body));
+//       }
+//     });
+//   });
+// }
 
 //读取配置文件 config.yml
 function ReadConfig() {
-  return new Promise((resolve, reject) => {
-    console.log(`开始加载……`.log);
-
-    fs.readFile(path.join(`${process.cwd()}`, "config", "config.yml"), "utf-8", function (err, data) {
-      if (!err) {
-        resolve(yaml.parse(data));
-      } else {
-        reject("读取配置文件错误。错误原因：" + err);
-      }
-    });
-  });
-}
+    console.log(`开始加载……`);
+    try {
+      var data = fs.readFileSync(path.join(`${process.cwd()}`, "config", "config.yml"), "utf-8");
+      return yaml.parse(data);
+    } catch (err) {
+      console.log("读取配置文件错误。错误原因：" + err);
+      return false;
+    }
+  }
 
 //初始化配置
-async function InitConfig() {
-  let resolve = await ReadConfig();
+function InitConfig() {
+  let resolve = ReadConfig();
   chat_swich = resolve.System.chat_swich;
   conn_go_cqhttp = resolve.System.conn_go_cqhttp;
   Now_On_Live = resolve.System.Now_On_Live;
@@ -3047,405 +3022,407 @@ async function InitConfig() {
   blive_room_id = resolve.Others.blive_room_id; //哔哩哔哩直播间id
   cos_total_count = resolve.Others.cos_total_count; //哔哩哔哩直播间ID
 
-  SpeechClient = new AipSpeech(baidu_app_id, baidu_api_key, baidu_secret_key); //建立TTS调用接口
+  // SpeechClient = new AipSpeech(baidu_app_id, baidu_api_key, baidu_secret_key); //建立TTS调用接口
 
-  console.log(`_______________________________________\n`);
-  console.log(`\n         ${version}          \n`.alert);
+  // console.log(`_______________________________________\n`);
+  // console.log(`\n         ${version}          \n`.alert);
 
-  if (chat_swich) {
-    console.log("web端自动聊天开启\n".on);
-  } else {
-    console.log("web端自动聊天关闭\n".off);
-  }
+  // if (chat_swich) {
+  //   console.log("web端自动聊天开启\n".on);
+  // } else {
+  //   console.log("web端自动聊天关闭\n".off);
+  // }
 
-  if (conn_go_cqhttp) {
-    console.log(
-      `qqBot小夜开启，配置：\n  ·使用QQ帐号 ${bot_qq}\n  ·对接go-cqhttp接口 ${go_cqhttp_api}\n  ·监听反向post于 127.0.0.1:${web_port}${go_cqhttp_service}\n  ·私聊服务是否开启：${private_service_swich}\n`
-        .on
-    );
-    xiaoye_ated = new RegExp(`\\[CQ:at,qq=${bot_qq}\\]`); //匹配小夜被@
-    start_qqbot();
-  } else {
-    console.log("qqBot小夜关闭\n".off);
-  }
+  // if (conn_go_cqhttp) {
+  //   console.log(
+  //     `qqBot小夜开启，配置：\n  ·使用QQ帐号 ${bot_qq}\n  ·对接go-cqhttp接口 ${go_cqhttp_api}\n  ·监听反向post于 127.0.0.1:${web_port}${go_cqhttp_service}\n  ·私聊服务是否开启：${private_service_swich}\n`
+  //       .on
+  //   );
+  //   xiaoye_ated = new RegExp(`\\[CQ:at,qq=${bot_qq}\\]`); //匹配小夜被@
+  //   start_qqbot();
+  // } else {
+  //   console.log("qqBot小夜关闭\n".off);
+  // }
 
-  if (Now_On_Live) {
-    console.log(`小夜直播对线开启，请确认哔哩哔哩直播间id是否为 ${blive_room_id}\n`.on);
-    start_live();
-  } else {
-    console.log("小夜直播对线关闭\n".off);
-  }
+  // if (Now_On_Live) {
+  //   console.log(`小夜直播对线开启，请确认哔哩哔哩直播间id是否为 ${blive_room_id}\n`.on);
+  //   start_live();
+  // } else {
+  //   console.log("小夜直播对线关闭\n".off);
+  // }
 
-  http.listen(web_port, () => {
-    console.log(`_______________________________________\n`);
-    console.log(`  ${Curentyyyymmdd()}${CurentTime()} 启动完毕，访问 127.0.0.1:${web_port} 即可进入web端  \n`.alert);
-  });
+  // http.listen(web_port, () => {
+  //   console.log(`_______________________________________\n`);
+  //   console.log(`  ${Curentyyyymmdd()}${CurentTime()} 启动完毕，访问 127.0.0.1:${web_port} 即可进入web端  \n`.alert);
+  // });
+
+  http.listen(web_port);
 }
 
 //异步sqliteALL by@ssp97
-const sqliteAll = function (query) {
-  return new Promise(function (resolve, reject) {
-    db.all(query, function (err, rows) {
-      if (err) reject(err.message);
-      else {
-        resolve(rows);
-      }
-    });
-  });
-};
+// const sqliteAll = function (query) {
+//   return new Promise(function (resolve, reject) {
+//     db.all(query, function (err, rows) {
+//       if (err) reject(err.message);
+//       else {
+//         resolve(rows);
+//       }
+//     });
+//   });
+// };
 
 //异步结巴 by@ssp97
-async function ChatJiebaFuzzy(msg) {
-  msg = msg.replace("/", "");
-  msg = jieba.extract(msg, topN); //按权重分词
-  let candidate = [];
-  let candidateNextList = [];
-  let candidateNextGrand = 0;
-  console.log(`分词出关键词：`.log);
-  console.log(msg);
-  //收集数据开始
-  for (const key in msg) {
-    if (Object.hasOwnProperty.call(msg, key)) {
-      const element = msg[key];
-      console.log(element);
-      rows = await sqliteAll("SELECT * FROM chat WHERE ask LIKE '%" + element.word + "%'");
-      console.log(rows);
-      for (const k in rows) {
-        if (Object.hasOwnProperty.call(rows, k)) {
-          const answer = rows[k].answer;
-          if (candidate[answer] == undefined) {
-            candidate[answer] = 1;
-          } else {
-            candidate[answer] = candidate[answer] + 1;
-          }
-        }
-      }
-    }
-  }
-  console.log(candidate);
-  // 筛选次数最多
-  for (const key in candidate) {
-    if (Object.hasOwnProperty.call(candidate, key)) {
-      const element = candidate[key];
-      if (element > candidateNextGrand) {
-        candidateNextList = [];
-        candidateNextGrand = element;
-        candidateNextList.push(key);
-      } else if (element == candidateNextGrand) {
-        candidateNextList.push(key);
-      }
-    }
-  }
-  console.log(candidateNextList);
-  return candidateNextList;
-}
+// async function ChatJiebaFuzzy(msg) {
+//   msg = msg.replace("/", "");
+//   msg = jieba.extract(msg, topN); //按权重分词
+//   let candidate = [];
+//   let candidateNextList = [];
+//   let candidateNextGrand = 0;
+//   console.log(`分词出关键词：`.log);
+//   console.log(msg);
+//   //收集数据开始
+//   for (const key in msg) {
+//     if (Object.hasOwnProperty.call(msg, key)) {
+//       const element = msg[key];
+//       console.log(element);
+//       rows = await sqliteAll("SELECT * FROM chat WHERE ask LIKE '%" + element.word + "%'");
+//       console.log(rows);
+//       for (const k in rows) {
+//         if (Object.hasOwnProperty.call(rows, k)) {
+//           const answer = rows[k].answer;
+//           if (candidate[answer] == undefined) {
+//             candidate[answer] = 1;
+//           } else {
+//             candidate[answer] = candidate[answer] + 1;
+//           }
+//         }
+//       }
+//     }
+//   }
+//   console.log(candidate);
+//   // 筛选次数最多
+//   for (const key in candidate) {
+//     if (Object.hasOwnProperty.call(candidate, key)) {
+//       const element = candidate[key];
+//       if (element > candidateNextGrand) {
+//         candidateNextList = [];
+//         candidateNextGrand = element;
+//         candidateNextList.push(key);
+//       } else if (element == candidateNextGrand) {
+//         candidateNextList.push(key);
+//       }
+//     }
+//   }
+//   console.log(candidateNextList);
+//   return candidateNextList;
+// }
 
 //聊天处理，最核心区块，超智能(智障)的聊天算法：整句搜索，模糊搜索，分词模糊搜索并轮询
-async function ChatProcess(msg) {
-  const full_search = await new Promise((resolve, _reject) => {
-    console.log("开始整句搜索".log);
-    db.all("SELECT * FROM chat WHERE ask = '" + msg + "'", (e, sql) => {
-      if (!e && sql.length > 0) {
-        console.log(`对于整句:  ${msg} ，匹配到 ${sql.length} 条回复`.log);
-        let ans = Math.floor(Math.random() * sql.length);
-        let answer = JSON.stringify(sql[ans].answer);
-        answer = answer.replace(/"/g, "");
-        console.log(`随机选取第${ans + 1}条回复：${answer}`.log);
-        resolve(answer);
-        return 0;
-      } else {
-        console.log(`聊天数据库中没有匹配到整句 ${msg} 的回复`.log);
-        resolve();
-      }
-    });
-  });
+// async function ChatProcess(msg) {
+//   const full_search = await new Promise((resolve, _reject) => {
+//     console.log("开始整句搜索".log);
+//     db.all("SELECT * FROM chat WHERE ask = '" + msg + "'", (e, sql) => {
+//       if (!e && sql.length > 0) {
+//         console.log(`对于整句:  ${msg} ，匹配到 ${sql.length} 条回复`.log);
+//         let ans = Math.floor(Math.random() * sql.length);
+//         let answer = JSON.stringify(sql[ans].answer);
+//         answer = answer.replace(/"/g, "");
+//         console.log(`随机选取第${ans + 1}条回复：${answer}`.log);
+//         resolve(answer);
+//         return 0;
+//       } else {
+//         console.log(`聊天数据库中没有匹配到整句 ${msg} 的回复`.log);
+//         resolve();
+//       }
+//     });
+//   });
 
-  if (full_search) {
-    //优先回复整句匹配
-    console.log(`返回整句匹配`.alert);
-    return full_search;
-  }
+//   if (full_search) {
+//     //优先回复整句匹配
+//     console.log(`返回整句匹配`.alert);
+//     return full_search;
+//   }
 
-  const like_serach = await new Promise((resolve, _reject) => {
-    console.log("开始模糊搜索".log);
-    db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg + "%'", (e, sql) => {
-      if (!e && sql.length > 0) {
-        console.log(`模糊搜索: ${msg} ，匹配到 ${sql.length} 条回复`.log);
-        let ans = Math.floor(Math.random() * sql.length);
-        let answer = JSON.stringify(sql[ans].answer);
-        answer = answer.replace(/"/g, "");
-        console.log(`随机选取第${ans + 1}条回复：${answer}`.log);
-        resolve(answer);
-        return 0;
-      } else {
-        console.log(`聊天数据库中没有匹配到 ${msg} 的模糊回复`.log);
-        resolve();
-      }
-    });
-  });
+//   const like_serach = await new Promise((resolve, _reject) => {
+//     console.log("开始模糊搜索".log);
+//     db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg + "%'", (e, sql) => {
+//       if (!e && sql.length > 0) {
+//         console.log(`模糊搜索: ${msg} ，匹配到 ${sql.length} 条回复`.log);
+//         let ans = Math.floor(Math.random() * sql.length);
+//         let answer = JSON.stringify(sql[ans].answer);
+//         answer = answer.replace(/"/g, "");
+//         console.log(`随机选取第${ans + 1}条回复：${answer}`.log);
+//         resolve(answer);
+//         return 0;
+//       } else {
+//         console.log(`聊天数据库中没有匹配到 ${msg} 的模糊回复`.log);
+//         resolve();
+//       }
+//     });
+//   });
 
-  if (like_serach) {
-    //其次是模糊匹配
-    console.log(`返回模糊匹配`.alert);
-    return like_serach;
-  }
+//   if (like_serach) {
+//     //其次是模糊匹配
+//     console.log(`返回模糊匹配`.alert);
+//     return like_serach;
+//   }
 
-  // 分词模糊搜索
-  let candidateList = await ChatJiebaFuzzy(msg);
-  if (candidateList.length > 0) {
-    return candidateList[Math.floor(Math.random() * candidateList.length)];
-  }
-  // 随机敷衍
-  let result = await sqliteAll("SELECT * FROM balabala ORDER BY RANDOM()"); //有待优化
-  //console.log(result)
-  return result[0].balabala;
-}
+//   // 分词模糊搜索
+//   let candidateList = await ChatJiebaFuzzy(msg);
+//   if (candidateList.length > 0) {
+//     return candidateList[Math.floor(Math.random() * candidateList.length)];
+//   }
+//   // 随机敷衍
+//   let result = await sqliteAll("SELECT * FROM balabala ORDER BY RANDOM()"); //有待优化
+//   //console.log(result)
+//   return result[0].balabala;
+// }
 
 //保存qq侧传来的图
-function SaveQQimg(imgUrl) {
-  return new Promise((resolve, reject) => {
-    request(imgUrl[0]).pipe(
-      fs.createWriteStream(`./static/xiaoye/images/${imgUrl[0].split("/")[imgUrl[0].split("/").length - 2]}.jpg`).on("close", (err) => {
-        if (!err) {
-          resolve(`/xiaoye/images/${imgUrl[0].split("/")[imgUrl[0].split("/").length - 2]}.jpg`);
-        } else {
-          reject("保存qq侧传来的图错误。错误原因：" + err);
-        }
-      })
-    );
-  });
-}
+// function SaveQQimg(imgUrl) {
+//   return new Promise((resolve, reject) => {
+//     request(imgUrl[0]).pipe(
+//       fs.createWriteStream(`./static/xiaoye/images/${imgUrl[0].split("/")[imgUrl[0].split("/").length - 2]}.jpg`).on("close", (err) => {
+//         if (!err) {
+//           resolve(`/xiaoye/images/${imgUrl[0].split("/")[imgUrl[0].split("/").length - 2]}.jpg`);
+//         } else {
+//           reject("保存qq侧传来的图错误。错误原因：" + err);
+//         }
+//       })
+//     );
+//   });
+// }
 
 //随机选取一个群
-function RandomGroupList() {
-  return new Promise((resolve, reject) => {
-    request(`http://${go_cqhttp_api}/get_group_list`, (err, response, body) => {
-      body = JSON.parse(body);
-      if (!err && body.data.length != 0) {
-        var rand_group_num = Math.floor(Math.random() * body.data.length);
-        console.log("随机选取一个群：", body.data[rand_group_num].group_id);
-        resolve(body.data[rand_group_num].group_id);
-      } else {
-        reject("随机选取一个群错误。错误原因：" + JSON.stringify(response.body));
-      }
-    });
-  });
-}
+// function RandomGroupList() {
+//   return new Promise((resolve, reject) => {
+//     request(`http://${go_cqhttp_api}/get_group_list`, (err, response, body) => {
+//       body = JSON.parse(body);
+//       if (!err && body.data.length != 0) {
+//         var rand_group_num = Math.floor(Math.random() * body.data.length);
+//         console.log("随机选取一个群：", body.data[rand_group_num].group_id);
+//         resolve(body.data[rand_group_num].group_id);
+//       } else {
+//         reject("随机选取一个群错误。错误原因：" + JSON.stringify(response.body));
+//       }
+//     });
+//   });
+// }
 
 //获取balabala
-function GetBalabalaList() {
-  return new Promise((resolve, reject) => {
-    db.all("SELECT * FROM balabala;", (err, sql) => {
-      if (!err && sql[0]) {
-        let balabala = sql;
-        resolve(balabala);
-      } else {
-        reject("获取balabala错误。错误原因：" + err + ", sql:" + sql);
-      }
-    });
-  });
-}
+// function GetBalabalaList() {
+//   return new Promise((resolve, reject) => {
+//     db.all("SELECT * FROM balabala;", (err, sql) => {
+//       if (!err && sql[0]) {
+//         let balabala = sql;
+//         resolve(balabala);
+//       } else {
+//         reject("获取balabala错误。错误原因：" + err + ", sql:" + sql);
+//       }
+//     });
+//   });
+// }
 
 //语音合成TTS
-function TTS(tex) {
-  return new Promise((resolve, reject) => {
-    if (!tex) tex = "你好谢谢小笼包再见!";
-    SpeechClient.text2audio(tex, {
-      spd: 5, //1-9  语速,正常语速为5
-      pit: 8, //1-9  语调,正常语调为5
-      per: 4, //1-12 声线,1=2:普通男性,3:有情感的播音男性,4:有情感的萝莉声线-度丫丫;5:普通女性,6:抑扬顿挫有情感的讲故事男性(纪录频道),7:有情感的广东话女性,8:语气平淡的念诗男性(葛平),9:速读普通男性,10:略有情感的刚成年男性,11:刺耳而略有情感的讲故事男性(情感强度比6弱),12:温柔的有情感的讲故事女性,1-12以外的数值会被转为12
-    }).then(
-      function (result) {
-        if (result.data) {
-          console.log(`${tex} 的语音合成成功`.log);
-          fs.writeFileSync(`./static/xiaoye/tts/${sha1(result.data)}.mp3`, result.data);
-          let file = { file: `/xiaoye/tts/${sha1(result.data)}.mp3`, filename: "小夜语音回复" };
-          resolve(file);
-        } else {
-          // 合成服务发生错误
-          console.log(`语音合成失败：${JSON.stringify(result)}`.error);
-          reject("语音合成TTS错误：", JSON.stringify(result));
-        }
-      },
-      function (err) {
-        console.log(err.error);
-        reject("语音合成TTS错误：", err);
-      }
-    );
-  });
-}
+// function TTS(tex) {
+//   return new Promise((resolve, reject) => {
+//     if (!tex) tex = "你好谢谢小笼包再见!";
+//     SpeechClient.text2audio(tex, {
+//       spd: 5, //1-9  语速,正常语速为5
+//       pit: 8, //1-9  语调,正常语调为5
+//       per: 4, //1-12 声线,1=2:普通男性,3:有情感的播音男性,4:有情感的萝莉声线-度丫丫;5:普通女性,6:抑扬顿挫有情感的讲故事男性(纪录频道),7:有情感的广东话女性,8:语气平淡的念诗男性(葛平),9:速读普通男性,10:略有情感的刚成年男性,11:刺耳而略有情感的讲故事男性(情感强度比6弱),12:温柔的有情感的讲故事女性,1-12以外的数值会被转为12
+//     }).then(
+//       function (result) {
+//         if (result.data) {
+//           console.log(`${tex} 的语音合成成功`.log);
+//           fs.writeFileSync(`./static/xiaoye/tts/${sha1(result.data)}.mp3`, result.data);
+//           let file = { file: `/xiaoye/tts/${sha1(result.data)}.mp3`, filename: "小夜语音回复" };
+//           resolve(file);
+//         } else {
+//           // 合成服务发生错误
+//           console.log(`语音合成失败：${JSON.stringify(result)}`.error);
+//           reject("语音合成TTS错误：", JSON.stringify(result));
+//         }
+//       },
+//       function (err) {
+//         console.log(err.error);
+//         reject("语音合成TTS错误：", err);
+//       }
+//     );
+//   });
+// }
 
 //扒的百度臻品音库-度米朵
-function BetterTTS(tex) {
-  return new Promise((resolve, reject) => {
-    if (!tex) tex = "你好谢谢小笼包再见!";
-    request("https://ai.baidu.com/aidemo?type=tns&per=4103&spd=6&pit=10&vol=10&aue=6&tex=" + encodeURI(tex), (err, _response, body) => {
-      body = JSON.parse(body);
-      if (!err && body.data) {
-        console.log(`${tex} 的幼女版语音合成成功`.log);
-        let base64Data = body.data.replace(/^data:audio\/x-mpeg;base64,/, "");
-        let dataBuffer = Buffer.from(base64Data, "base64");
-        fs.writeFileSync(`./static/xiaoye/tts/${sha1(dataBuffer)}.mp3`, dataBuffer);
-        let file = { file: `/xiaoye/tts/${sha1(dataBuffer)}.mp3`, filename: "小夜幼女版语音回复" };
-        resolve(file);
-      } else {
-        //估计被发现扒接口了
-        console.log(`语音合成幼女版失败：${JSON.stringify(body)}`.error);
-        reject("语音合成幼女版TTS错误：", JSON.stringify(body));
-      }
-    });
-  });
-}
+// function BetterTTS(tex) {
+//   return new Promise((resolve, reject) => {
+//     if (!tex) tex = "你好谢谢小笼包再见!";
+//     request("https://ai.baidu.com/aidemo?type=tns&per=4103&spd=6&pit=10&vol=10&aue=6&tex=" + encodeURI(tex), (err, _response, body) => {
+//       body = JSON.parse(body);
+//       if (!err && body.data) {
+//         console.log(`${tex} 的幼女版语音合成成功`.log);
+//         let base64Data = body.data.replace(/^data:audio\/x-mpeg;base64,/, "");
+//         let dataBuffer = Buffer.from(base64Data, "base64");
+//         fs.writeFileSync(`./static/xiaoye/tts/${sha1(dataBuffer)}.mp3`, dataBuffer);
+//         let file = { file: `/xiaoye/tts/${sha1(dataBuffer)}.mp3`, filename: "小夜幼女版语音回复" };
+//         resolve(file);
+//       } else {
+//         //估计被发现扒接口了
+//         console.log(`语音合成幼女版失败：${JSON.stringify(body)}`.error);
+//         reject("语音合成幼女版TTS错误：", JSON.stringify(body));
+//       }
+//     });
+//   });
+// }
 
 //获取最新直播间弹幕
-function GetLaststDanmu() {
-  return new Promise((resolve, reject) => {
-    request(`https://api.live.bilibili.com/xlive/web-room/v1/dM/gethistory?roomid=${blive_room_id}`, (err, response, body) => {
-      if (!err) {
-        body = JSON.parse(body); //居然返回的是字符串而不是json
-        try {
-          body.data.room[0].text;
-        } catch (err) {
-          reject("直播间刚开，还没有弹幕，请再等等吧", err, response);
-          return 0;
-        }
-        resolve({ text: body.data.room[body.data.room.length - 1].text, timeline: body.data.room[body.data.room.length - 1].timeline });
-      } else {
-        reject(err, response);
-      }
-    });
-  });
-}
+// function GetLaststDanmu() {
+//   return new Promise((resolve, reject) => {
+//     request(`https://api.live.bilibili.com/xlive/web-room/v1/dM/gethistory?roomid=${blive_room_id}`, (err, response, body) => {
+//       if (!err) {
+//         body = JSON.parse(body); //居然返回的是字符串而不是json
+//         try {
+//           body.data.room[0].text;
+//         } catch (err) {
+//           reject("直播间刚开，还没有弹幕，请再等等吧", err, response);
+//           return 0;
+//         }
+//         resolve({ text: body.data.room[body.data.room.length - 1].text, timeline: body.data.room[body.data.room.length - 1].timeline });
+//       } else {
+//         reject(err, response);
+//       }
+//     });
+//   });
+// }
 
 //随机延时提醒闭菊的群
-function DelayAlert(service_stoped_list) {
-  let alert_msg = [
-    //提醒文本列表
-    `呜呜呜，把人家冷落了那么久，能不能让小夜张菊了呢...小夜的张菊指令更新了，现在需要发 张菊[CQ:at,qq=${bot_qq}] 才可以了噢`,
-    `闭菊那么久了，朕的菊花痒了！还不快让小夜张菊！小夜的张菊指令更新了，现在需要发 张菊[CQ:at,qq=${bot_qq}] 才可以了噢`,
-    `小夜也想为大家带来快乐，所以让小夜张菊，好吗？小夜的张菊指令更新了，现在需要发 张菊[CQ:at,qq=${bot_qq}] 才可以了噢`,
-    `欧尼酱，不要再无视我了，小夜那里很舒服的，让小夜张菊试试吧~小夜的张菊指令更新了，现在需要发 张菊[CQ:at,qq=${bot_qq}] 才可以了噢`,
-  ];
-  for (let i in service_stoped_list) {
-    let delay_time = Math.floor(Math.random() * 60); //随机延时0到60秒
-    let random_alert_msg = alert_msg[Math.floor(Math.random() * alert_msg.length)];
-    console.log(`qqBot小夜将会延时 ${delay_time} 秒后提醒群 ${service_stoped_list[i]} 张菊，提醒文本为：${random_alert_msg}`.log);
-    setTimeout(function () {
-      request(
-        `http://${go_cqhttp_api}/send_group_msg?group_id=${service_stoped_list[i]}&message=${encodeURI(random_alert_msg)}`,
-        function (error, _response, _body) {
-          if (!error) {
-            console.log(`qqBot小夜提醒了群 ${service_stoped_list[i]} 张菊，提醒文本为：${random_alert_msg}`.log);
-          } else {
-            console.log(`请求${go_cqhttp_api}/send_group_msg错误：${error}`);
-          }
-        }
-      );
-    }, 1000 * delay_time);
-  }
-}
+// function DelayAlert(service_stoped_list) {
+//   let alert_msg = [
+//     //提醒文本列表
+//     `呜呜呜，把人家冷落了那么久，能不能让小夜张菊了呢...小夜的张菊指令更新了，现在需要发 张菊[CQ:at,qq=${bot_qq}] 才可以了噢`,
+//     `闭菊那么久了，朕的菊花痒了！还不快让小夜张菊！小夜的张菊指令更新了，现在需要发 张菊[CQ:at,qq=${bot_qq}] 才可以了噢`,
+//     `小夜也想为大家带来快乐，所以让小夜张菊，好吗？小夜的张菊指令更新了，现在需要发 张菊[CQ:at,qq=${bot_qq}] 才可以了噢`,
+//     `欧尼酱，不要再无视我了，小夜那里很舒服的，让小夜张菊试试吧~小夜的张菊指令更新了，现在需要发 张菊[CQ:at,qq=${bot_qq}] 才可以了噢`,
+//   ];
+//   for (let i in service_stoped_list) {
+//     let delay_time = Math.floor(Math.random() * 60); //随机延时0到60秒
+//     let random_alert_msg = alert_msg[Math.floor(Math.random() * alert_msg.length)];
+//     console.log(`qqBot小夜将会延时 ${delay_time} 秒后提醒群 ${service_stoped_list[i]} 张菊，提醒文本为：${random_alert_msg}`.log);
+//     setTimeout(function () {
+//       request(
+//         `http://${go_cqhttp_api}/send_group_msg?group_id=${service_stoped_list[i]}&message=${encodeURI(random_alert_msg)}`,
+//         function (error, _response, _body) {
+//           if (!error) {
+//             console.log(`qqBot小夜提醒了群 ${service_stoped_list[i]} 张菊，提醒文本为：${random_alert_msg}`.log);
+//           } else {
+//             console.log(`请求${go_cqhttp_api}/send_group_msg错误：${error}`);
+//           }
+//         }
+//       );
+//     }, 1000 * delay_time);
+//   }
+// }
 
 //私聊发送孤寡
-function Gugua(who) {
-  let gugua_pic_list = [
-    //图片列表
-    "1.jpg",
-    "2.jpg",
-    "3.jpg",
-    "4.png",
-    "5.gif",
-  ];
-  for (let i in gugua_pic_list) {
-    let file_online = `http://127.0.0.1:${web_port}/xiaoye/ps/${gugua_pic_list[i]}`;
-    let pic_now = `[CQ:image,file=${file_online},url=${file_online}]`;
-    setTimeout(function () {
-      request(`http://${go_cqhttp_api}/send_private_msg?user_id=${who}&message=${encodeURI(pic_now)}`, function (error, _response, _body) {
-        if (!error) {
-          console.log(`qqBot小夜孤寡了 ${who}，孤寡图为：${pic_now}`.log);
-        } else {
-          console.log(`请求${go_cqhttp_api}/send_private_msg错误：${error}`);
-        }
-      });
-    }, 1000 * 5 * i);
-  }
-}
+// function Gugua(who) {
+//   let gugua_pic_list = [
+//     //图片列表
+//     "1.jpg",
+//     "2.jpg",
+//     "3.jpg",
+//     "4.png",
+//     "5.gif",
+//   ];
+//   for (let i in gugua_pic_list) {
+//     let file_online = `http://127.0.0.1:${web_port}/xiaoye/ps/${gugua_pic_list[i]}`;
+//     let pic_now = `[CQ:image,file=${file_online},url=${file_online}]`;
+//     setTimeout(function () {
+//       request(`http://${go_cqhttp_api}/send_private_msg?user_id=${who}&message=${encodeURI(pic_now)}`, function (error, _response, _body) {
+//         if (!error) {
+//           console.log(`qqBot小夜孤寡了 ${who}，孤寡图为：${pic_now}`.log);
+//         } else {
+//           console.log(`请求${go_cqhttp_api}/send_private_msg错误：${error}`);
+//         }
+//       });
+//     }, 1000 * 5 * i);
+//   }
+// }
 
 //群发送孤寡
-function QunGugua(who) {
-  let gugua_pic_list = [
-    //图片列表
-    "1.jpg",
-    "2.jpg",
-    "3.jpg",
-    "4.png",
-    "5.gif",
-  ];
-  for (let i in gugua_pic_list) {
-    let file_online = `http://127.0.0.1:${web_port}/xiaoye/ps/${gugua_pic_list[i]}`;
-    let pic_now = `[CQ:image,file=${file_online},url=${file_online}]`;
-    setTimeout(function () {
-      request(`http://${go_cqhttp_api}/send_group_msg?group_id=${who}&message=${encodeURI(pic_now)}`, function (error, _response, _body) {
-        if (!error) {
-          console.log(`qqBot小夜孤寡了群 ${who}，孤寡图为：${pic_now}`.log);
-        } else {
-          console.log(`请求${go_cqhttp_api}/send_group_msg错误：${error}`);
-        }
-      });
-    }, 1000 * 5 * i);
-  }
-}
+// function QunGugua(who) {
+//   let gugua_pic_list = [
+//     //图片列表
+//     "1.jpg",
+//     "2.jpg",
+//     "3.jpg",
+//     "4.png",
+//     "5.gif",
+//   ];
+//   for (let i in gugua_pic_list) {
+//     let file_online = `http://127.0.0.1:${web_port}/xiaoye/ps/${gugua_pic_list[i]}`;
+//     let pic_now = `[CQ:image,file=${file_online},url=${file_online}]`;
+//     setTimeout(function () {
+//       request(`http://${go_cqhttp_api}/send_group_msg?group_id=${who}&message=${encodeURI(pic_now)}`, function (error, _response, _body) {
+//         if (!error) {
+//           console.log(`qqBot小夜孤寡了群 ${who}，孤寡图为：${pic_now}`.log);
+//         } else {
+//           console.log(`请求${go_cqhttp_api}/send_group_msg错误：${error}`);
+//         }
+//       });
+//     }, 1000 * 5 * i);
+//   }
+// }
 
 //百科问答题库
-function WenDa() {
-  return new Promise((resolve, reject) => {
-    request(`http://api.tianapi.com/txapi/wenda/index?key=${Tiankey}`, (err, response, body) => {
-      body = JSON.parse(body);
-      if (!err) {
-        resolve({ quest: body.newslist[0].quest, result: body.newslist[0].result });
-      } else {
-        reject("问答错误，是天行接口的锅。错误原因：" + JSON.stringify(response.body));
-      }
-    });
-  });
-}
+// function WenDa() {
+//   return new Promise((resolve, reject) => {
+//     request(`http://api.tianapi.com/txapi/wenda/index?key=${Tiankey}`, (err, response, body) => {
+//       body = JSON.parse(body);
+//       if (!err) {
+//         resolve({ quest: body.newslist[0].quest, result: body.newslist[0].result });
+//       } else {
+//         reject("问答错误，是天行接口的锅。错误原因：" + JSON.stringify(response.body));
+//       }
+//     });
+//   });
+// }
 
 //浓度极高的ACGN圈台词问答题库
-function ECYWenDa() {
-  return new Promise((resolve, _reject) => {
-    request(`https://api.oddfar.com/yl/q.php?c=2001&encode=json`, (err, _response, body) => {
-      body = JSON.parse(body);
-      if (!err) {
-        msg = jieba.extract(body.text, topN); //按权重分词
-        if (msg.length == 0) {
-          //如果分词不了，那就直接夜爹牛逼
-          resolve({ quest: `啊噢，出不出题了，你直接回答 夜爹牛逼 吧`, result: `夜爹牛逼` });
-          return 0;
-        }
-        let rand_word_num = Math.floor(Math.random() * msg.length);
-        let answer = msg[rand_word_num].word;
-        console.log(`原句为：${body.text}，随机切去第 ${rand_word_num + 1} 个关键词 ${answer} 作为答案`.log);
-        let quest = body.text.replace(answer, "________");
-        resolve({ quest: quest, result: answer });
-      } else {
-        resolve({ quest: `啊噢，出不出题了，你直接回答 夜爹牛逼 吧`, result: `夜爹牛逼` });
-      }
-    });
-  });
-}
+// function ECYWenDa() {
+//   return new Promise((resolve, _reject) => {
+//     request(`https://api.oddfar.com/yl/q.php?c=2001&encode=json`, (err, _response, body) => {
+//       body = JSON.parse(body);
+//       if (!err) {
+//         msg = jieba.extract(body.text, topN); //按权重分词
+//         if (msg.length == 0) {
+//           //如果分词不了，那就直接夜爹牛逼
+//           resolve({ quest: `啊噢，出不出题了，你直接回答 夜爹牛逼 吧`, result: `夜爹牛逼` });
+//           return 0;
+//         }
+//         let rand_word_num = Math.floor(Math.random() * msg.length);
+//         let answer = msg[rand_word_num].word;
+//         console.log(`原句为：${body.text}，随机切去第 ${rand_word_num + 1} 个关键词 ${answer} 作为答案`.log);
+//         let quest = body.text.replace(answer, "________");
+//         resolve({ quest: quest, result: answer });
+//       } else {
+//         resolve({ quest: `啊噢，出不出题了，你直接回答 夜爹牛逼 吧`, result: `夜爹牛逼` });
+//       }
+//     });
+//   });
+// }
 
 //彩虹屁回复
-function RainbowPi() {
-  return new Promise((resolve, reject) => {
-    request(`http://api.tianapi.com/txapi/caihongpi/index?key=${Tiankey}`, (err, response, body) => {
-      body = JSON.parse(body);
-      if (!err) {
-        resolve(body.newslist[0].content);
-      } else {
-        reject("彩虹屁错误，是天行接口的锅。错误原因：" + JSON.stringify(response.body));
-      }
-    });
-  });
-}
+// function RainbowPi() {
+//   return new Promise((resolve, reject) => {
+//     request(`http://api.tianapi.com/txapi/caihongpi/index?key=${Tiankey}`, (err, response, body) => {
+//       body = JSON.parse(body);
+//       if (!err) {
+//         resolve(body.newslist[0].content);
+//       } else {
+//         reject("彩虹屁错误，是天行接口的锅。错误原因：" + JSON.stringify(response.body));
+//       }
+//     });
+//   });
+// }
 
 /*I wonder why… —— TVアニメ「凪のあすから」*/
 
