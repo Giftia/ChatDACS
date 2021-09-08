@@ -1,4 +1,6 @@
 "use strict";
+/// <reference path="Core.ts" />
+/// <reference path="Global.ts" />
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -38,13 +40,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 exports.__esModule = true;
 exports.Tools = void 0;
 //模块依赖和底层配置
-var compression = require("compression"); //用于gzip压缩
-var express = require("express"); //轻巧的express框架
 var app = require("express")();
-app.use(compression()); //对express所有路由启用gzip
-app.use(express.static("static")); //静态文件引入
-app.use(express.json()); //解析post
-app.use(express.urlencoded({ extended: false })); //解析post
 var multer = require("multer"); //用于文件上传
 var upload = multer({ dest: "static/uploads/" }); //用户上传目录
 var http = require("http").Server(app);
@@ -66,49 +62,17 @@ var yaml = require("yaml"); //使用yaml解析配置文件
 var AipSpeech = require("baidu-aip-sdk").speech; //百度语音sdk
 var crypto = require("crypto"); //编码库，用于sha1生成文件名
 require.all = require("require.all"); //插件加载器
-/**
- * Curentyyyymmdd 年月日
- * CurentTime 时分秒
- * sha1 生成唯一文件名
- * Getnews 新闻
- * GetUserData 获取用户信息
- * Bv2Av BV转AV
- * RandomCos 随机cos
- * RandomR18 随机r18
- * SearchTag 搜索tag
- * RandomTbshow 随机买家秀
- * RandomECY 随机二次元图
- * RandomHomeword 随机冷知识
- * RandomNickname 自动随机昵称
- * PrprDoge 舔狗回复
- * ReadConfig 读取配置文件 config.yml
- * InitConfig 初始化配置
- * sqliteAll(query) 异步sqliteALL by@ssp97
- * ChatJiebaFuzzy(msg) 异步结巴 by@ssp97
- * ChatProcess(msg) 聊天处理，最核心区块，超智能(智障)的聊天算法：整句搜索，模糊搜索，分词模糊搜索并轮询
- * SaveQQimg(imgUrl) 保存qq侧传来的图
- * RandomGroupList 随机选取一个群
- * GetBalabalaList 获取balabala
- * TTS(tex) 语音合成TTS
- * BetterTTS(tex) 扒的百度臻品音库-度米朵
- * GetLaststDanmu 获取最新直播间弹幕
- * DelayAlert(service_stoped_list) 随机延时提醒闭菊的群
- * Gugua(who) 私聊发送孤寡
- * QunGugua(who) 群发送孤寡
- * WenDa 百科问答题库
- * ECYWenDa 浓度极高的ACGN圈台词问答题库
- * RainbowPi 彩虹屁回复
- * app_start 接口功能和实现
- */
 var Tools = /** @class */ (function () {
-    function Tools(global) {
+    function Tools() {
         this.core = null;
         this.global = null;
-        this.global = global;
-        this.InitConfig();
     }
-    Tools.prototype.init = function (core) {
+    Tools.prototype.init = function (core, global) {
         this.core = core;
+        this.global = global;
+    };
+    Tools.prototype.init_config = function () {
+        this.InitConfig();
     };
     Tools.prototype.getGlobal = function () {
         return this.global;
@@ -377,86 +341,69 @@ var Tools = /** @class */ (function () {
     };
     //读取配置文件 config.yml
     Tools.prototype.ReadConfig = function () {
-        return new Promise(function (resolve, reject) {
-            console.log("\u5F00\u59CB\u52A0\u8F7D\u2026\u2026");
-            fs.readFile(path.join("" + process.cwd(), "config", "config.yml"), "utf-8", function (err, data) {
-                if (!err) {
-                    resolve(yaml.parse(data));
-                }
-                else {
-                    reject("读取配置文件错误。错误原因：" + err);
-                }
-            });
-        });
+        console.log("\u5F00\u59CB\u52A0\u8F7D\u2026\u2026");
+        try {
+            var data = fs.readFileSync(path.join("" + process.cwd(), "config", "config.yml"), "utf-8");
+            return yaml.parse(data);
+        }
+        catch (err) {
+            console.log("读取配置文件错误。错误原因：" + err);
+            return false;
+        }
     };
     //初始化配置
     Tools.prototype.InitConfig = function () {
-        return __awaiter(this, void 0, void 0, function () {
-            var resolve;
-            var _this = this;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, this.ReadConfig()];
-                    case 1:
-                        resolve = _a.sent();
-                        this.global.chat_swich = resolve.System.chat_swich;
-                        this.global.conn_go_cqhttp = resolve.System.conn_go_cqhttp;
-                        this.global.Now_On_Live = resolve.System.Now_On_Live;
-                        this.global.web_port = resolve.System.web_port;
-                        this.global.go_cqhttp_service = resolve.System.go_cqhttp_service;
-                        this.global.go_cqhttp_api = resolve.System.go_cqhttp_api;
-                        this.global.Tiankey = resolve.ApiKey.Tiankey; //天行接口key
-                        this.global.sumtkey = resolve.ApiKey.sumtkey; //卡特实验室接口key
-                        this.global.baidu_app_id = resolve.ApiKey.baidu_app_id; //百度应用id
-                        this.global.baidu_api_key = resolve.ApiKey.baidu_api_key; //百度接口key
-                        this.global.baidu_secret_key = resolve.ApiKey.baidu_secret_key; //百度接口密钥
-                        this.global.bot_qq = resolve.qqBot.bot_qq; //qqBot使用的qq帐号
-                        this.global.qq_admin_list = resolve.qqBot.qq_admin_list; //qqBot小夜的管理员列表
-                        this.global.private_service_swich = resolve.qqBot.private_service_swich; //私聊开关
-                        this.global.topN = resolve.qqBot.topN; //qqBot限制分词数量
-                        this.global.reply_probability = resolve.qqBot.reply_probability; //回复几率
-                        this.global.fudu_probability = resolve.qqBot.fudu_probability; //复读几率
-                        this.global.chaos_probability = resolve.qqBot.chaos_probability; //抽风几率
-                        this.global.req_fuliji_list = resolve.qqBot.req_fuliji_list; //福利姬
-                        this.global.req_ECY_list = resolve.qqBot.req_ECY_list; //二次元图
-                        this.global.req_no_trap_list = resolve.qqBot.req_no_trap_list; //今日不带套
-                        this.global.qqimg_to_web = resolve.qqBot.qqimg_to_web; //保存接收图片开关
-                        this.global.max_mine_count = resolve.qqBot.max_mine_count; //最大共存地雷数
-                        this.global.black_list_words = resolve.qqBot.black_list_words; //教学系统的黑名单
-                        this.global.blive_room_id = resolve.Others.blive_room_id; //哔哩哔哩直播间id
-                        this.global.cos_total_count = resolve.Others.cos_total_count; //哔哩哔哩直播间ID
-                        this.global.SpeechClient = new AipSpeech(this.global.baidu_app_id, this.global.baidu_api_key, this.global.baidu_secret_key); //建立TTS调用接口
-                        console.log("_______________________________________\n");
-                        console.log("\n         " + this.global.version + "          \n");
-                        if (this.global.chat_swich) {
-                            console.log("web端自动聊天开启\n");
-                        }
-                        else {
-                            console.log("web端自动聊天关闭\n");
-                        }
-                        if (this.global.conn_go_cqhttp) {
-                            console.log("qqBot\u5C0F\u591C\u5F00\u542F\uFF0C\u914D\u7F6E\uFF1A\n  \u00B7\u4F7F\u7528QQ\u5E10\u53F7 " + this.global.bot_qq + "\n  \u00B7\u5BF9\u63A5go-cqhttp\u63A5\u53E3 " + this.global.go_cqhttp_api + "\n  \u00B7\u76D1\u542C\u53CD\u5411post\u4E8E 127.0.0.1:" + this.global.web_port + this.global.go_cqhttp_service + "\n  \u00B7\u79C1\u804A\u670D\u52A1\u662F\u5426\u5F00\u542F\uFF1A" + this.global.private_service_swich + "\n");
-                            this.global.xiaoye_ated = new RegExp("\\[CQ:at,qq=" + this.global.bot_qq + "\\]"); //匹配小夜被@
-                            this.core.start_qqbot();
-                        }
-                        else {
-                            console.log("qqBot小夜关闭\n");
-                        }
-                        if (this.global.Now_On_Live) {
-                            console.log("\u5C0F\u591C\u76F4\u64AD\u5BF9\u7EBF\u5F00\u542F\uFF0C\u8BF7\u786E\u8BA4\u54D4\u54E9\u54D4\u54E9\u76F4\u64AD\u95F4id\u662F\u5426\u4E3A " + this.global.blive_room_id + "\n");
-                            this.core.start_live();
-                        }
-                        else {
-                            console.log("小夜直播对线关闭\n");
-                        }
-                        http.listen(this.global.web_port, function () {
-                            console.log("_______________________________________\n");
-                            console.log("  " + _this.Curentyyyymmdd() + _this.CurentTime() + " \u542F\u52A8\u5B8C\u6BD5\uFF0C\u8BBF\u95EE 127.0.0.1:" + _this.global.web_port + " \u5373\u53EF\u8FDB\u5165web\u7AEF  \n");
-                        });
-                        return [2 /*return*/];
-                }
-            });
-        });
+        var resolve = this.ReadConfig();
+        this.global.chat_swich = resolve.System.chat_swich;
+        this.global.conn_go_cqhttp = resolve.System.conn_go_cqhttp;
+        this.global.Now_On_Live = resolve.System.Now_On_Live;
+        this.global.web_port = resolve.System.web_port;
+        this.global.go_cqhttp_service = resolve.System.go_cqhttp_service;
+        this.global.go_cqhttp_api = resolve.System.go_cqhttp_api;
+        this.global.Tiankey = resolve.ApiKey.Tiankey; //天行接口key
+        this.global.sumtkey = resolve.ApiKey.sumtkey; //卡特实验室接口key
+        this.global.baidu_app_id = resolve.ApiKey.baidu_app_id; //百度应用id
+        this.global.baidu_api_key = resolve.ApiKey.baidu_api_key; //百度接口key
+        this.global.baidu_secret_key = resolve.ApiKey.baidu_secret_key; //百度接口密钥
+        this.global.bot_qq = resolve.qqBot.bot_qq; //qqBot使用的qq帐号
+        this.global.qq_admin_list = resolve.qqBot.qq_admin_list; //qqBot小夜的管理员列表
+        this.global.private_service_swich = resolve.qqBot.private_service_swich; //私聊开关
+        this.global.topN = resolve.qqBot.topN; //qqBot限制分词数量
+        this.global.reply_probability = resolve.qqBot.reply_probability; //回复几率
+        this.global.fudu_probability = resolve.qqBot.fudu_probability; //复读几率
+        this.global.chaos_probability = resolve.qqBot.chaos_probability; //抽风几率
+        this.global.req_fuliji_list = resolve.qqBot.req_fuliji_list; //福利姬
+        this.global.req_ECY_list = resolve.qqBot.req_ECY_list; //二次元图
+        this.global.req_no_trap_list = resolve.qqBot.req_no_trap_list; //今日不带套
+        this.global.qqimg_to_web = resolve.qqBot.qqimg_to_web; //保存接收图片开关
+        this.global.max_mine_count = resolve.qqBot.max_mine_count; //最大共存地雷数
+        this.global.black_list_words = resolve.qqBot.black_list_words; //教学系统的黑名单
+        this.global.blive_room_id = resolve.Others.blive_room_id; //哔哩哔哩直播间id
+        this.global.cos_total_count = resolve.Others.cos_total_count; //哔哩哔哩直播间ID
+        this.global.SpeechClient = new AipSpeech(this.global.baidu_app_id, this.global.baidu_api_key, this.global.baidu_secret_key); //建立TTS调用接口
+        console.log("_______________________________________\n");
+        console.log("\n         " + this.global.version + "          \n");
+        if (this.global.chat_swich) {
+            console.log("web端自动聊天开启\n");
+        }
+        else {
+            console.log("web端自动聊天关闭\n");
+        }
+        if (this.global.conn_go_cqhttp) {
+            console.log("qqBot\u5C0F\u591C\u5F00\u542F\uFF0C\u914D\u7F6E\uFF1A\n  \u00B7\u4F7F\u7528QQ\u5E10\u53F7 " + this.global.bot_qq + "\n  \u00B7\u5BF9\u63A5go-cqhttp\u63A5\u53E3 " + this.global.go_cqhttp_api + "\n  \u00B7\u76D1\u542C\u53CD\u5411post\u4E8E 127.0.0.1:" + this.global.web_port + this.global.go_cqhttp_service + "\n  \u00B7\u79C1\u804A\u670D\u52A1\u662F\u5426\u5F00\u542F\uFF1A" + this.global.private_service_swich + "\n");
+            this.global.xiaoye_ated = new RegExp("\\[CQ:at,qq=" + this.global.bot_qq + "\\]"); //匹配小夜被@
+            this.core.start_qqbot();
+        }
+        else {
+            console.log("qqBot小夜关闭\n");
+        }
+        if (this.global.Now_On_Live) {
+            console.log("\u5C0F\u591C\u76F4\u64AD\u5BF9\u7EBF\u5F00\u542F\uFF0C\u8BF7\u786E\u8BA4\u54D4\u54E9\u54D4\u54E9\u76F4\u64AD\u95F4id\u662F\u5426\u4E3A " + this.global.blive_room_id + "\n");
+            this.core.start_live();
+        }
+        else {
+            console.log("小夜直播对线关闭\n");
+        }
     };
     //异步sqliteALL by@ssp97
     Tools.prototype.sqliteAll = function (query) {
@@ -866,13 +813,11 @@ var Tools = /** @class */ (function () {
             });
         });
     };
-    //接口功能和实现
-    Tools.prototype.app_start = function () {
-        var _this = this;
+    Tools.prototype.app_interface = function () {
         //更改个人资料接口
         app.get("/profile", function (req, res) {
             db.run("UPDATE users SET nickname = '" + req.query.name + "' WHERE CID ='" + req.query.CID + "'");
-            res.sendFile(process.cwd() + _this.global.html);
+            res.sendFile(process.cwd() + g.html);
         });
         //图片上传接口
         app.post("/upload/image", upload.single("file"), function (req, _res, _next) {
