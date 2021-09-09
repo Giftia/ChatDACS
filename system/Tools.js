@@ -39,6 +39,8 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 exports.__esModule = true;
 exports.Tools = void 0;
+// 加载全局配置
+var Global = require('./Global');
 //模块依赖和底层配置
 var app = require("express")();
 var multer = require("multer"); //用于文件上传
@@ -52,11 +54,11 @@ var fs = require("fs");
 var path = require("path");
 var jieba = require("nodejieba"); //中文分词器
 jieba.load({
-    dict: path.join("" + process.cwd(), "config", "jieba.dict.utf8"),
-    hmmDict: path.join("" + process.cwd(), "config", "hmm_model.utf8"),
-    userDict: path.join("" + process.cwd(), "config", "userDict.txt"),
-    idfDict: path.join("" + process.cwd(), "config", "idf.utf8"),
-    stopWordDict: path.join("" + process.cwd(), "config", "stopWordDict.txt")
+    dict: Global.jieba_load("jieba.dict.utf8"),
+    hmmDict: Global.jieba_load("hmm_model.utf8"),
+    userDict: Global.jieba_load("userDict.txt"),
+    idfDict: Global.jieba_load("idf.utf8"),
+    stopWordDict: Global.jieba_load("stopWordDict.txt")
 });
 var yaml = require("yaml"); //使用yaml解析配置文件
 var AipSpeech = require("baidu-aip-sdk").speech; //百度语音sdk
@@ -64,15 +66,10 @@ var crypto = require("crypto"); //编码库，用于sha1生成文件名
 require.all = require("require.all"); //插件加载器
 var Tools = /** @class */ (function () {
     function Tools() {
-        this.core = null;
-        this.global = null;
     }
     Tools.prototype.init = function (core, global) {
         this.core = core;
         this.global = global;
-    };
-    Tools.prototype.init_config = function () {
-        this.InitConfig();
     };
     Tools.prototype.getGlobal = function () {
         return this.global;

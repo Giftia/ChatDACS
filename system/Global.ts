@@ -81,4 +81,10 @@ class Global {
     SpeechClient;
 }
 
-export {Global};
+const path = require("path");
+
+function jieba_load(file_name: string) {
+    return path.join(`${process.cwd()}`, "config", file_name);
+}
+
+export {Global, jieba_load};

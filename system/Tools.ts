@@ -1,6 +1,9 @@
 /// <reference path="Core.ts" />
 /// <reference path="Global.ts" />
 
+// 加载全局配置
+const Global = require('./Global');
+
 //模块依赖和底层配置
 const app = require("express")();
 const multer = require("multer"); //用于文件上传
@@ -14,11 +17,11 @@ const fs = require("fs");
 const path = require("path");
 const jieba = require("nodejieba"); //中文分词器
 jieba.load({
-  dict: path.join(`${process.cwd()}`, "config", "jieba.dict.utf8"),
-  hmmDict: path.join(`${process.cwd()}`, "config", "hmm_model.utf8"),
-  userDict: path.join(`${process.cwd()}`, "config", "userDict.txt"), //加载自定义分词库
-  idfDict: path.join(`${process.cwd()}`, "config", "idf.utf8"),
-  stopWordDict: path.join(`${process.cwd()}`, "config", "stopWordDict.txt"), //加载分词库黑名单
+  dict: Global.jieba_load("jieba.dict.utf8"),
+  hmmDict: Global.jieba_load("hmm_model.utf8"),
+  userDict: Global.jieba_load("userDict.txt"), //加载自定义分词库
+  idfDict: Global.jieba_load("idf.utf8"),
+  stopWordDict: Global.jieba_load("stopWordDict.txt"), //加载分词库黑名单
 });
 const yaml = require("yaml"); //使用yaml解析配置文件
 const AipSpeech = require("baidu-aip-sdk").speech; //百度语音sdk
@@ -26,16 +29,12 @@ const crypto = require("crypto"); //编码库，用于sha1生成文件名
 require.all = require("require.all"); //插件加载器
 
 class Tools {
-  core: Core.Core = null;
-  global: Global.Global = null;
+  core: Core.Core;
+  global: Global.Global;
 
   init(core: Core.Core, global: Global.Global) {
     this.core = core;
     this.global = global;
-  }
-
-  init_config() {
-    this.InitConfig();
   }
 
   getGlobal() {

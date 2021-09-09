@@ -1,5 +1,8 @@
 /// <reference path="Global.ts" />
-/// <reference path="this.tools.ts" />
+/// <reference path="Tools.ts" />
+
+// 加载全局配置
+const Global = require('./Global');
 
 //模块依赖和底层配置
 const request = require("request");
@@ -9,11 +12,11 @@ const fs = require("fs");
 const path = require("path");
 const jieba = require("nodejieba"); //中文分词器
 jieba.load({
-  dict: path.join(`${process.cwd()}`, "config", "jieba.dict.utf8"),
-  hmmDict: path.join(`${process.cwd()}`, "config", "hmm_model.utf8"),
-  userDict: path.join(`${process.cwd()}`, "config", "userDict.txt"), //加载自定义分词库
-  idfDict: path.join(`${process.cwd()}`, "config", "idf.utf8"),
-  stopWordDict: path.join(`${process.cwd()}`, "config", "stopWordDict.txt"), //加载分词库黑名单
+  dict: Global.jieba_load("jieba.dict.utf8"),
+  hmmDict: Global.jieba_load("hmm_model.utf8"),
+  userDict: Global.jieba_load("userDict.txt"), //加载自定义分词库
+  idfDict: Global.jieba_load("idf.utf8"),
+  stopWordDict: Global.jieba_load("stopWordDict.txt"), //加载分词库黑名单
 });
 require.all = require("require.all"); //插件加载器
 const voiceplayer = require("play-sound")(({ player: `${process.cwd()}/plugins/cmdmp3win.exe` })); //mp3静默播放工具，用于直播时播放语音
@@ -386,7 +389,7 @@ class Core {
       if (this.global.qqimg_to_web) {
         if (this.global.isImage_reg.test(req.body.message)) {
           let url = this.global.img_url_reg.exec(req.body.message);
-          this.this.tools.SaveQQimg(url)
+          this.tools.SaveQQimg(url)
             .then((resolve) => {
               this.io.emit("qqpic message", resolve);
             })
@@ -710,7 +713,7 @@ class Core {
 
                 //色图
                 if (this.global.setu_reg.test(req.body.message)) {
-                  this.this.tools.RandomCos()
+                  this.tools.RandomCos()
                     .then((resolve) => {
                       let setu_file = `http://127.0.0.1:${this.global.web_port}/${resolve.replace(/\//g, "\\")}`;
                       res.send({
@@ -727,7 +730,7 @@ class Core {
                 //r18色图
                 if (req.body.message == "r18") {
                   res.send({ reply: `你等等，我去找找你要的r18` });
-                  this.this.tools.RandomR18()
+                  this.tools.RandomR18()
                     .then((resolve) => {
                       let setu_file = `http://127.0.0.1:${this.global.web_port}/${resolve.replace(/\//g, "\\")}`;
                       console.log(setu_file);
@@ -760,7 +763,7 @@ class Core {
                 if (this.global.come_some.test(req.body.message)) {
                   let tag = req.body.message.match(this.global.come_some)[1];
                   res.send({ reply: `你等等，我去找找你要的${tag}` });
-                  this.this.tools.SearchTag(tag)
+                  this.tools.SearchTag(tag)
                     .then((resolve) => {
                       let setu_file = `http://127.0.0.1:${this.global.web_port}/${resolve.replace(/\//g, "\\")}`;
                       console.log(setu_file);
@@ -794,7 +797,7 @@ class Core {
                 //福利姬
                 for (let i in this.global.req_fuliji_list) {
                   if (req.body.message === this.global.req_fuliji_list[i]) {
-                    this.this.tools.RandomTbshow()
+                    this.tools.RandomTbshow()
                       .then((resolve) => {
                         res.send({
                           reply: `[CQ:image,file=${resolve},url=${resolve}]`,
@@ -811,7 +814,7 @@ class Core {
                 //来点二次元
                 for (let i in this.global.req_ECY_list) {
                   if (req.body.message === this.global.req_ECY_list[i]) {
-                    this.this.tools.RandomECY()
+                    this.tools.RandomECY()
                       .then((resolve) => {
                         res.send({
                           reply: `[CQ:image,file=${resolve},url=${resolve}]`,
@@ -827,7 +830,7 @@ class Core {
 
                 //舔我
                 if (req.body.message === "/舔我") {
-                  this.this.tools.PrprDoge()
+                  this.tools.PrprDoge()
                     .then((resolve) => {
                       console.log(`舔狗舔了一口：${resolve}`);
                       res.send({ reply: resolve });
@@ -840,7 +843,7 @@ class Core {
 
                 //彩虹屁
                 if (req.body.message === "/彩虹屁") {
-                  this.this.tools.RainbowPi()
+                  this.tools.RainbowPi()
                     .then((resolve) => {
                       console.log(`放了一个彩虹屁：${resolve}`);
                       res.send({ reply: resolve });
@@ -855,7 +858,7 @@ class Core {
                 if (this.global.yap_reg.test(req.body.message)) {
                   let tex = req.body.message.replace("/吠 ", "");
                   tex = tex.replace("/吠", "");
-                  this.this.tools.BetterTTS(tex)
+                  this.tools.BetterTTS(tex)
                     .then((resolve) => {
                       let tts_file = `[CQ:record,file=http://127.0.0.1:${this.global.web_port}${resolve.file},url=http://127.0.0.1:${this.global.web_port}${resolve.file}]`;
                       res.send({ reply: tts_file });
@@ -872,10 +875,10 @@ class Core {
                   message = message.replace("/嘴臭", "");
                   console.log(`有人对线说 ${message}，小夜要嘴臭了`);
                   this.io.emit("sysrem message", `@有人对线说 ${message}，小夜要嘴臭了`);
-                  this.this.tools.ChatProcess(message)
+                  this.tools.ChatProcess(message)
                     .then((resolve) => {
                       let reply = resolve;
-                      this.this.tools.BetterTTS(reply)
+                      this.tools.BetterTTS(reply)
                         .then((resolve) => {
                           let tts_file = `[CQ:record,file=http://127.0.0.1:${this.global.web_port}${resolve.file},url=http://127.0.0.1:${this.global.web_port}${resolve.file}]`;
                           res.send({ reply: tts_file });
@@ -887,7 +890,7 @@ class Core {
                     .catch((reject) => {
                       //如果没有匹配到回复，那就回复一句默认语音
                       console.log(`${reject}，语音没有回复`);
-                      this.this.tools.BetterTTS()
+                      this.tools.BetterTTS()
                         .then((resolve) => {
                           let tts_file = `[CQ:record,file=http://127.0.0.1:${this.global.web_port}${resolve.file},url=http://127.0.0.1:${this.global.web_port}${resolve.file}]`;
                           res.send({ reply: tts_file });
@@ -1529,7 +1532,7 @@ class Core {
                         );
 
                         //给发起人出题，等待ta回答
-                        this.this.tools.ECYWenDa()
+                        this.tools.ECYWenDa()
                           .then((resolve) => {
                             let question = `那么[CQ:at,qq=${req.body.user_id}]请听题：${resolve.quest} 请告诉小夜：击鼓传雷 你的答案，时间剩余59秒`;
                             let answer = resolve.result; //把答案、目标人、开始时间存入数据库
@@ -1712,7 +1715,7 @@ class Core {
                                     //选完之后开始下一轮游戏，先查询剩余时间，然后给随机幸运群友出题，等待ta回答
                                     db.all(`SELECT * FROM qq_group WHERE group_id = '${req.body.group_id}'`, (err, sql) => {
                                       if (!err && sql[0]) {
-                                        this.this.tools.ECYWenDa()
+                                        this.tools.ECYWenDa()
                                           .then((resolve) => {
                                             let diff = 60 - process.hrtime([sql[0].loop_bomb_start_time, 0])[0]; //剩余时间
                                             let question = `抽到了幸运群友[CQ:at,qq=${rand_user}]！请听题：${resolve.quest} 请告诉小夜： 击鼓传雷 你的答案，时间还剩余${diff}秒`;
@@ -1856,7 +1859,7 @@ class Core {
                     ctx.fillStyle = "#716F81";
                     ctx.fillText(`沙雕网友: ${msg}`, 90.5, 55.5);
                     ctx.font = "13px SimHei";
-                    ctx.fillText(this.this.tools.CurentTime(), 280.5, 35.5);
+                    ctx.fillText(this.tools.CurentTime(), 280.5, 35.5);
 
                     ctx.beginPath();
                     ctx.arc(40, 40, 28, 0, 2 * Math.PI);
@@ -1919,7 +1922,7 @@ class Core {
                 if (this.global.gugua.test(req.body.message)) {
                   if (req.body.message == "/孤寡") {
                     res.send({ reply: `小夜收到了你的孤寡订单，现在就开始孤寡你了噢孤寡~` });
-                    this.this.tools.Gugua(req.body.user_id);
+                    this.tools.Gugua(req.body.user_id);
                     return 0;
                   }
                   let who = req.body.message.replace("/孤寡 ", "");
@@ -1946,14 +1949,14 @@ class Core {
                                 }
                               }
                             );
-                            this.this.tools.Gugua(who);
+                            this.tools.Gugua(who);
                             return 0;
                           }
                         }
                         res.send({
                           reply: `小夜没有[CQ:at,qq=${who}]的好友，没有办法孤寡ta呢，请先让ta加小夜为好友吧，小夜就在群里给大家孤寡一下吧`,
                         });
-                        this.this.tools.QunGugua(req.body.group_id);
+                        this.tools.QunGugua(req.body.group_id);
                       } else {
                         reject("随机选取一个群错误。错误原因：" + JSON.stringify(response.body));
                       }
@@ -2136,10 +2139,10 @@ class Core {
                 if (chaos_flag < this.global.chaos_probability) {
                   //随机选一个群抽风
                   let prprmsg;
-                  this.this.tools.PrprDoge()
+                  this.tools.PrprDoge()
                     .then((resolve) => {
                       prprmsg = resolve;
-                      this.this.tools.RandomGroupList()
+                      this.tools.RandomGroupList()
                         .then((resolve) => {
                           request(
                             `http://${this.global.go_cqhttp_api}/send_group_msg?group_id=${resolve}&message=${encodeURI(prprmsg)}`,
@@ -2183,7 +2186,7 @@ class Core {
                 }
                 //骰子命中，那就让小夜来自动回复
                 if (reply_flag < this.global.reply_probability) {
-                  this.this.tools.ChatProcess(at_replaced_msg)
+                  this.tools.ChatProcess(at_replaced_msg)
                     .then((resolve) => {
                       if (resolve.indexOf("[name]") || resolve.indexOf("&#91;name&#93;")) {
                         resolve = resolve.toString().replace("[name]", `[CQ:at,qq=${req.body.user_id}]`); //替换[name]为正确的@
@@ -2196,7 +2199,7 @@ class Core {
                     })
                     .catch((reject) => {
                       //无匹配则随机回复balabala废话
-                      this.this.tools.GetBalabalaList()
+                      this.tools.GetBalabalaList()
                         .then((resolve) => {
                           let random_balabala = resolve[Math.floor(Math.random() * resolve.length)].balabala;
                           res.send({ reply: random_balabala });
@@ -2225,7 +2228,7 @@ class Core {
         }
       } else if (req.body.message_type == "private" && this.global.private_service_swich == true) {
         //私聊回复
-        this.this.tools.ChatProcess(req.body.message)
+        this.tools.ChatProcess(req.body.message)
           .then((resolve) => {
             console.log(`qqBot小夜回复 ${resolve}`);
             this.io.emit("system message", `@qqBot小夜回复：${resolve}`);
@@ -2233,7 +2236,7 @@ class Core {
           })
           .catch((reject) => {
             //无匹配则随机回复balabala废话
-            this.this.tools.GetBalabalaList()
+            this.tools.GetBalabalaList()
               .then((resolve) => {
                 let random_balabala = resolve[Math.floor(Math.random() * resolve.length)].balabala;
                 res.send({ reply: random_balabala });
@@ -2266,7 +2269,7 @@ class Core {
             service_stoped_list.push(sql[i].group_id);
           }
           console.log(`以下群未启用小夜服务：${service_stoped_list} ，现在开始随机延时提醒`);
-          this.this.tools.DelayAlert(service_stoped_list);
+          this.tools.DelayAlert(service_stoped_list);
           resolve(`以下群未启用小夜服务：${service_stoped_list} ，现在开始随机延时提醒`);
         } else {
           console.log(`目前没有群是关闭服务的，挺好`);
@@ -2281,7 +2284,7 @@ class Core {
   }
   //虚拟主播星野夜蝶核心代码，间隔5秒接收最新弹幕，如果弹幕更新了就开始处理，然后随机开嘴臭地图炮
   LoopDanmu() {
-    this.this.tools.GetLaststDanmu()
+    this.tools.GetLaststDanmu()
       .then((resolve) => {
         if (this.global.last_danmu_timeline === resolve.timeline) {
           //弹幕没有更新
@@ -2289,13 +2292,13 @@ class Core {
           //丢一个骰子，如果命中了就开地图炮，1%的几率
           let ditupao_flag = Math.floor(Math.random() * 100);
           if (ditupao_flag < 1) {
-            this.this.tools.ChatProcess("").then((resolve) => {
+            this.tools.ChatProcess("").then((resolve) => {
               let reply = resolve;
               console.log(`小夜开地图炮了：${reply}`);
               //将直播小夜的回复写入txt，以便在直播姬显示
               fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, reply);
               //然后让小夜读出来
-              this.this.tools.BetterTTS(reply)
+              this.tools.BetterTTS(reply)
                 .then((resolve) => {
                   let tts_file = `${process.cwd()}\\static${resolve.file.replace("/", "\\")}`; //这里似乎有问题，ntfs短文件名无法转换
                   voiceplayer.play(tts_file, function (err) {
@@ -2321,7 +2324,7 @@ class Core {
             if (msg.length !== 2) {
               console.log(`教学指令：分割有误，退出教学`);
               fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, `你教的姿势不对噢qwq`);
-              this.this.tools.BetterTTS("你教的姿势不对噢qwq")
+              this.tools.BetterTTS("你教的姿势不对噢qwq")
                 .then((resolve) => {
                   let tts_file = `${process.cwd()}\\static${resolve.file.replace("/", "\\")}`;
                   voiceplayer.play(tts_file, function (err) {
@@ -2338,7 +2341,7 @@ class Core {
             if (ask == "" || ans == "") {
               console.log(`问/答为空，退出教学`);
               fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, `你教的姿势不对噢qwq`);
-              this.this.tools.BetterTTS("你教的姿势不对噢qwq")
+              this.tools.BetterTTS("你教的姿势不对噢qwq")
                 .then((resolve) => {
                   let tts_file = `${process.cwd()}\\static${resolve.file.replace("/", "\\")}`;
                   voiceplayer.play(tts_file, function (err) {
@@ -2353,7 +2356,7 @@ class Core {
             if (ask.indexOf(/\r?\n/g) !== -1) {
               console.log(`教学指令：关键词换行了，退出教学`);
               fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, `关键词不能换行啦qwq`);
-              this.this.tools.BetterTTS("关键词不能换行啦qwq")
+              this.tools.BetterTTS("关键词不能换行啦qwq")
                 .then((resolve) => {
                   let tts_file = `${process.cwd()}\\static${resolve.file.replace("/", "\\")}`;
                   voiceplayer.play(tts_file, function (err) {
@@ -2373,7 +2376,7 @@ class Core {
               ) {
                 console.log(`教学指令：检测到不允许的词：${this.global.black_list_words[i]}，退出教学`);
                 fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, `你教的内容里有主人不允许小夜学习的词：${this.global.black_list_words[i]} qwq`);
-                this.this.tools.BetterTTS(`你教的内容里有主人不允许小夜学习的词：${this.global.black_list_words[i]} qwq`)
+                this.tools.BetterTTS(`你教的内容里有主人不允许小夜学习的词：${this.global.black_list_words[i]} qwq`)
                   .then((resolve) => {
                     let tts_file = `${process.cwd()}\\static${resolve.file.replace("/", "\\")}`;
                     voiceplayer.play(tts_file, function (err) {
@@ -2390,7 +2393,7 @@ class Core {
               //关键词最低长度：4个英文或2个汉字
               console.log(`教学指令：关键词太短，退出教学`);
               fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, `关键词太短了啦qwq，至少要4个字节啦`);
-              this.this.tools.BetterTTS("关键词太短了啦qwq，至少要4个字节啦")
+              this.tools.BetterTTS("关键词太短了啦qwq，至少要4个字节啦")
                 .then((resolve) => {
                   let tts_file = `${process.cwd()}\\static${resolve.file.replace("/", "\\")}`;
                   voiceplayer.play(tts_file, function (err) {
@@ -2405,7 +2408,7 @@ class Core {
             if (ask.length > 100 || ans.length > 100) {
               console.log(`教学指令：教的太长了，退出教学`);
               fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, `你教的内容太长了，小夜要坏掉了qwq，不要呀`);
-              this.this.tools.BetterTTS("你教的内容太长了，小夜要坏掉了qwq，不要呀")
+              this.tools.BetterTTS("你教的内容太长了，小夜要坏掉了qwq，不要呀")
                 .then((resolve) => {
                   let tts_file = `${process.cwd()}\\static${resolve.file.replace("/", "\\")}`;
                   voiceplayer.play(tts_file, function (err) {
@@ -2422,7 +2425,7 @@ class Core {
             db.run(`INSERT INTO chat VALUES('${ask}', '${ans}')`);
             console.log(`教学指令：学习成功`);
             fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, `哇！小夜学会啦！对我说：${ask} 试试吧，小夜有可能会回复 ${ans} 噢`);
-            this.this.tools.BetterTTS(`哇！小夜学会啦！对我说：${ask} 试试吧，小夜有可能会回复 ${ans} 噢`)
+            this.tools.BetterTTS(`哇！小夜学会啦！对我说：${ask} 试试吧，小夜有可能会回复 ${ans} 噢`)
               .then((resolve) => {
                 let tts_file = `${process.cwd()}\\static${resolve.file.replace("/", "\\")}`;
                 voiceplayer.play(tts_file, function (err) {
@@ -2434,12 +2437,12 @@ class Core {
               });
             return 0;
           } else {
-            this.this.tools.ChatProcess(resolve.text)
+            this.tools.ChatProcess(resolve.text)
               .then((resolve) => {
                 let reply = resolve;
                 console.log(`小夜说：${reply}`);
                 fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, `${reply}`);
-                this.this.tools.BetterTTS(reply)
+                this.tools.BetterTTS(reply)
                   .then((resolve) => {
                     let tts_file = `${process.cwd()}\\static${resolve.file.replace("/", "\\")}`;
                     voiceplayer.play(tts_file, function (err) {
@@ -2453,11 +2456,11 @@ class Core {
               .catch((reject) => {
                 //如果没有匹配到回复，那就随机回复balabala废话
                 console.log(`${reject}，弹幕没有匹配`);
-                this.this.tools.GetBalabalaList()
+                this.tools.GetBalabalaList()
                   .then((resolve) => {
                     let random_balabala = resolve[Math.floor(Math.random() * resolve.length)].balabala;
                     fs.writeFileSync(`./static/xiaoye/live_lastst_reply.txt`, random_balabala);
-                    this.this.tools.BetterTTS(random_balabala)
+                    this.tools.BetterTTS(random_balabala)
                       .then((resolve) => {
                         let tts_file = `${process.cwd()}\\static${resolve.file.replace("/", "\\")}`;
                         voiceplayer.play(tts_file, function (err) {
