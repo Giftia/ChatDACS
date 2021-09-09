@@ -1,6 +1,6 @@
 "use strict";
 exports.__esModule = true;
-exports.Global = void 0;
+exports.jieba_load = exports.Global = void 0;
 var Global = /** @class */ (function () {
     function Global() {
         //系统配置和开关，以及固定变量
@@ -81,3 +81,8 @@ var Global = /** @class */ (function () {
     return Global;
 }());
 exports.Global = Global;
+var path = require("path");
+function jieba_load(file_name) {
+    return path.join("" + process.cwd(), "config", file_name);
+}
+exports.jieba_load = jieba_load;

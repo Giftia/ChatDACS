@@ -1,5 +1,10 @@
 /// <reference path="./system/Global.ts" />
 /// <reference path="./system/Core.ts" />
+/// <reference path="./system/Tools.ts" />
+
+// 加载全局配置
+const Global = require('./system/Global');
+var _global = new Global.Global();
 
 //模块依赖和底层配置
 const compression = require("compression"); //用于gzip压缩
@@ -17,18 +22,16 @@ const request = require("request");
 const sqlite3 = require("sqlite3").verbose();
 const db = new sqlite3.Database("db.db"); //数据库位置，默认与index.js同目录
 const fs = require("fs");
-const path = require("path");
 const jieba = require("nodejieba"); //中文分词器
 jieba.load({
-  dict: path.join(`${process.cwd()}`, "config", "jieba.dict.utf8"),
-  hmmDict: path.join(`${process.cwd()}`, "config", "hmm_model.utf8"),
-  userDict: path.join(`${process.cwd()}`, "config", "userDict.txt"), //加载自定义分词库
-  idfDict: path.join(`${process.cwd()}`, "config", "idf.utf8"),
-  stopWordDict: path.join(`${process.cwd()}`, "config", "stopWordDict.txt"), //加载分词库黑名单
+  dict: Global.jieba_load("jieba.dict.utf8"),
+  hmmDict: Global.jieba_load("hmm_model.utf8"),
+  userDict: Global.jieba_load("userDict.txt"), //加载自定义分词库
+  idfDict: Global.jieba_load("idf.utf8"),
+  stopWordDict: Global.jieba_load("stopWordDict.txt"), //加载分词库黑名单
 });
 const yaml = require("yaml"); //使用yaml解析配置文件
 const AipSpeech = require("baidu-aip-sdk").speech; //百度语音sdk
-const crypto = require("crypto"); //编码库，用于sha1生成文件名
 require.all = require("require.all"); //插件加载器
 const voiceplayer = require("play-sound")(({ player: `${process.cwd()}/plugins/cmdmp3win.exe` })); //mp3静默播放工具，用于直播时播放语音
 const { createCanvas, loadImage } = require("canvas"); //用于绘制文字图像，迫害p图
@@ -61,12 +64,10 @@ process.on("unhandledRejection", (err) => {
     console.log(`未捕获的promise异常：${err}`);
 });
 
-const Global = require('./system/Global');
 const Core = require('./system/Core');
 const Tools = require('./system/Tools');
 
 // 初始化类库
-var _global = new Global.Global();
 var tools = new Tools.Tools();
 var core = new Core.Core(app, http, io);
 
@@ -74,9 +75,9 @@ var core = new Core.Core(app, http, io);
 tools.init(core, _global);
 var g = tools.getGlobal();
 core.init(g, tools);
+tools.InitConfig();
 
 // 接入接口
-tools.init_config();
 tools.app_interface();
 
 // 启动服务

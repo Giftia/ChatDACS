@@ -1,5 +1,9 @@
 /// <reference path="./system/Global.ts" />
 /// <reference path="./system/Core.ts" />
+/// <reference path="./system/Tools.ts" />
+// 加载全局配置
+var Global = require('./system/Global');
+var _global = new Global.Global();
 //模块依赖和底层配置
 var compression = require("compression"); //用于gzip压缩
 var express = require("express"); //轻巧的express框架
@@ -16,18 +20,16 @@ var request = require("request");
 var sqlite3 = require("sqlite3").verbose();
 var db = new sqlite3.Database("db.db"); //数据库位置，默认与index.js同目录
 var fs = require("fs");
-var path = require("path");
 var jieba = require("nodejieba"); //中文分词器
 jieba.load({
-    dict: path.join("" + process.cwd(), "config", "jieba.dict.utf8"),
-    hmmDict: path.join("" + process.cwd(), "config", "hmm_model.utf8"),
-    userDict: path.join("" + process.cwd(), "config", "userDict.txt"),
-    idfDict: path.join("" + process.cwd(), "config", "idf.utf8"),
-    stopWordDict: path.join("" + process.cwd(), "config", "stopWordDict.txt")
+    dict: Global.jieba_load("jieba.dict.utf8"),
+    hmmDict: Global.jieba_load("hmm_model.utf8"),
+    userDict: Global.jieba_load("userDict.txt"),
+    idfDict: Global.jieba_load("idf.utf8"),
+    stopWordDict: Global.jieba_load("stopWordDict.txt")
 });
 var yaml = require("yaml"); //使用yaml解析配置文件
 var AipSpeech = require("baidu-aip-sdk").speech; //百度语音sdk
-var crypto = require("crypto"); //编码库，用于sha1生成文件名
 require.all = require("require.all"); //插件加载器
 var voiceplayer = require("play-sound")(({ player: process.cwd() + "/plugins/cmdmp3win.exe" })); //mp3静默播放工具，用于直播时播放语音
 var _a = require("canvas"), createCanvas = _a.createCanvas, loadImage = _a.loadImage; //用于绘制文字图像，迫害p图
@@ -54,19 +56,17 @@ process.on("unhandledRejection", function (err) {
     io.emit("system message", "@\u672A\u6355\u83B7\u7684promise\u5F02\u5E38\uFF1A" + err);
     console.log("\u672A\u6355\u83B7\u7684promise\u5F02\u5E38\uFF1A" + err);
 });
-var Global = require('./system/Global');
 var Core = require('./system/Core');
 var Tools = require('./system/Tools');
 // 初始化类库
-var _global = new Global.Global();
 var tools = new Tools.Tools();
 var core = new Core.Core(app, http, io);
 // 初始化配置
 tools.init(core, _global);
 var g = tools.getGlobal();
 core.init(g, tools);
+tools.InitConfig();
 // 接入接口
-tools.init_config();
 tools.app_interface();
 // 启动服务
 core.start();

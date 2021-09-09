@@ -1,8 +1,10 @@
 "use strict";
 /// <reference path="Global.ts" />
-/// <reference path="this.tools.ts" />
+/// <reference path="Tools.ts" />
 exports.__esModule = true;
 exports.Core = void 0;
+// 加载全局配置
+var Global = require('./Global');
 //模块依赖和底层配置
 var request = require("request");
 var sqlite3 = require("sqlite3").verbose();
@@ -11,11 +13,11 @@ var fs = require("fs");
 var path = require("path");
 var jieba = require("nodejieba"); //中文分词器
 jieba.load({
-    dict: path.join("" + process.cwd(), "config", "jieba.dict.utf8"),
-    hmmDict: path.join("" + process.cwd(), "config", "hmm_model.utf8"),
-    userDict: path.join("" + process.cwd(), "config", "userDict.txt"),
-    idfDict: path.join("" + process.cwd(), "config", "idf.utf8"),
-    stopWordDict: path.join("" + process.cwd(), "config", "stopWordDict.txt")
+    dict: Global.jieba_load("jieba.dict.utf8"),
+    hmmDict: Global.jieba_load("hmm_model.utf8"),
+    userDict: Global.jieba_load("userDict.txt"),
+    idfDict: Global.jieba_load("idf.utf8"),
+    stopWordDict: Global.jieba_load("stopWordDict.txt")
 });
 require.all = require("require.all"); //插件加载器
 var voiceplayer = require("play-sound")(({ player: process.cwd() + "/plugins/cmdmp3win.exe" })); //mp3静默播放工具，用于直播时播放语音
@@ -362,7 +364,7 @@ var Core = /** @class */ (function () {
             if (_this.global.qqimg_to_web) {
                 if (_this.global.isImage_reg.test(req.body.message)) {
                     var url = _this.global.img_url_reg.exec(req.body.message);
-                    _this["this"].tools.SaveQQimg(url)
+                    _this.tools.SaveQQimg(url)
                         .then(function (resolve) {
                         _this.io.emit("qqpic message", resolve);
                     })["catch"](function (reject) {
@@ -660,7 +662,7 @@ var Core = /** @class */ (function () {
                                 }
                                 //色图
                                 if (_this.global.setu_reg.test(req.body.message)) {
-                                    _this["this"].tools.RandomCos()
+                                    _this.tools.RandomCos()
                                         .then(function (resolve) {
                                         var setu_file = "http://127.0.0.1:" + _this.global.web_port + "/" + resolve.replace(/\//g, "\\");
                                         res.send({
@@ -675,7 +677,7 @@ var Core = /** @class */ (function () {
                                 //r18色图
                                 if (req.body.message == "r18") {
                                     res.send({ reply: "\u4F60\u7B49\u7B49\uFF0C\u6211\u53BB\u627E\u627E\u4F60\u8981\u7684r18" });
-                                    _this["this"].tools.RandomR18()
+                                    _this.tools.RandomR18()
                                         .then(function (resolve) {
                                         var setu_file = "http://127.0.0.1:" + _this.global.web_port + "/" + resolve.replace(/\//g, "\\");
                                         console.log(setu_file);
@@ -698,7 +700,7 @@ var Core = /** @class */ (function () {
                                 if (_this.global.come_some.test(req.body.message)) {
                                     var tag_1 = req.body.message.match(_this.global.come_some)[1];
                                     res.send({ reply: "\u4F60\u7B49\u7B49\uFF0C\u6211\u53BB\u627E\u627E\u4F60\u8981\u7684" + tag_1 });
-                                    _this["this"].tools.SearchTag(tag_1)
+                                    _this.tools.SearchTag(tag_1)
                                         .then(function (resolve) {
                                         var setu_file = "http://127.0.0.1:" + _this.global.web_port + "/" + resolve.replace(/\//g, "\\");
                                         console.log(setu_file);
@@ -720,7 +722,7 @@ var Core = /** @class */ (function () {
                                 //福利姬
                                 for (var i_4 in _this.global.req_fuliji_list) {
                                     if (req.body.message === _this.global.req_fuliji_list[i_4]) {
-                                        _this["this"].tools.RandomTbshow()
+                                        _this.tools.RandomTbshow()
                                             .then(function (resolve) {
                                             res.send({
                                                 reply: "[CQ:image,file=" + resolve + ",url=" + resolve + "]"
@@ -735,7 +737,7 @@ var Core = /** @class */ (function () {
                                 //来点二次元
                                 for (var i_5 in _this.global.req_ECY_list) {
                                     if (req.body.message === _this.global.req_ECY_list[i_5]) {
-                                        _this["this"].tools.RandomECY()
+                                        _this.tools.RandomECY()
                                             .then(function (resolve) {
                                             res.send({
                                                 reply: "[CQ:image,file=" + resolve + ",url=" + resolve + "]"
@@ -749,7 +751,7 @@ var Core = /** @class */ (function () {
                                 }
                                 //舔我
                                 if (req.body.message === "/舔我") {
-                                    _this["this"].tools.PrprDoge()
+                                    _this.tools.PrprDoge()
                                         .then(function (resolve) {
                                         console.log("\u8214\u72D7\u8214\u4E86\u4E00\u53E3\uFF1A" + resolve);
                                         res.send({ reply: resolve });
@@ -760,7 +762,7 @@ var Core = /** @class */ (function () {
                                 }
                                 //彩虹屁
                                 if (req.body.message === "/彩虹屁") {
-                                    _this["this"].tools.RainbowPi()
+                                    _this.tools.RainbowPi()
                                         .then(function (resolve) {
                                         console.log("\u653E\u4E86\u4E00\u4E2A\u5F69\u8679\u5C41\uFF1A" + resolve);
                                         res.send({ reply: resolve });
@@ -773,7 +775,7 @@ var Core = /** @class */ (function () {
                                 if (_this.global.yap_reg.test(req.body.message)) {
                                     var tex = req.body.message.replace("/吠 ", "");
                                     tex = tex.replace("/吠", "");
-                                    _this["this"].tools.BetterTTS(tex)
+                                    _this.tools.BetterTTS(tex)
                                         .then(function (resolve) {
                                         var tts_file = "[CQ:record,file=http://127.0.0.1:" + _this.global.web_port + resolve.file + ",url=http://127.0.0.1:" + _this.global.web_port + resolve.file + "]";
                                         res.send({ reply: tts_file });
@@ -788,10 +790,10 @@ var Core = /** @class */ (function () {
                                     message = message.replace("/嘴臭", "");
                                     console.log("\u6709\u4EBA\u5BF9\u7EBF\u8BF4 " + message + "\uFF0C\u5C0F\u591C\u8981\u5634\u81ED\u4E86");
                                     _this.io.emit("sysrem message", "@\u6709\u4EBA\u5BF9\u7EBF\u8BF4 " + message + "\uFF0C\u5C0F\u591C\u8981\u5634\u81ED\u4E86");
-                                    _this["this"].tools.ChatProcess(message)
+                                    _this.tools.ChatProcess(message)
                                         .then(function (resolve) {
                                         var reply = resolve;
-                                        _this["this"].tools.BetterTTS(reply)
+                                        _this.tools.BetterTTS(reply)
                                             .then(function (resolve) {
                                             var tts_file = "[CQ:record,file=http://127.0.0.1:" + _this.global.web_port + resolve.file + ",url=http://127.0.0.1:" + _this.global.web_port + resolve.file + "]";
                                             res.send({ reply: tts_file });
@@ -801,7 +803,7 @@ var Core = /** @class */ (function () {
                                     })["catch"](function (reject) {
                                         //如果没有匹配到回复，那就回复一句默认语音
                                         console.log(reject + "\uFF0C\u8BED\u97F3\u6CA1\u6709\u56DE\u590D");
-                                        _this["this"].tools.BetterTTS()
+                                        _this.tools.BetterTTS()
                                             .then(function (resolve) {
                                             var tts_file = "[CQ:record,file=http://127.0.0.1:" + _this.global.web_port + resolve.file + ",url=http://127.0.0.1:" + _this.global.web_port + resolve.file + "]";
                                             res.send({ reply: tts_file });
@@ -1408,7 +1410,7 @@ var Core = /** @class */ (function () {
                                                     }
                                                 });
                                                 //给发起人出题，等待ta回答
-                                                _this["this"].tools.ECYWenDa()
+                                                _this.tools.ECYWenDa()
                                                     .then(function (resolve) {
                                                     var question = "\u90A3\u4E48[CQ:at,qq=" + req.body.user_id + "]\u8BF7\u542C\u9898\uFF1A" + resolve.quest + " \u8BF7\u544A\u8BC9\u5C0F\u591C\uFF1A\u51FB\u9F13\u4F20\u96F7 \u4F60\u7684\u7B54\u6848\uFF0C\u65F6\u95F4\u5269\u4F5959\u79D2";
                                                     var answer = resolve.result; //把答案、目标人、开始时间存入数据库
@@ -1556,7 +1558,7 @@ var Core = /** @class */ (function () {
                                                                         //选完之后开始下一轮游戏，先查询剩余时间，然后给随机幸运群友出题，等待ta回答
                                                                         db.all("SELECT * FROM qq_group WHERE group_id = '" + req.body.group_id + "'", function (err, sql) {
                                                                             if (!err && sql[0]) {
-                                                                                _this["this"].tools.ECYWenDa()
+                                                                                _this.tools.ECYWenDa()
                                                                                     .then(function (resolve) {
                                                                                     var diff = 60 - process.hrtime([sql[0].loop_bomb_start_time, 0])[0]; //剩余时间
                                                                                     var question = "\u62BD\u5230\u4E86\u5E78\u8FD0\u7FA4\u53CB[CQ:at,qq=" + rand_user_1 + "]\uFF01\u8BF7\u542C\u9898\uFF1A" + resolve.quest + " \u8BF7\u544A\u8BC9\u5C0F\u591C\uFF1A \u51FB\u9F13\u4F20\u96F7 \u4F60\u7684\u7B54\u6848\uFF0C\u65F6\u95F4\u8FD8\u5269\u4F59" + diff + "\u79D2";
@@ -1675,7 +1677,7 @@ var Core = /** @class */ (function () {
                                         ctx.fillStyle = "#716F81";
                                         ctx.fillText("\u6C99\u96D5\u7F51\u53CB: " + msg, 90.5, 55.5);
                                         ctx.font = "13px SimHei";
-                                        ctx.fillText(_this["this"].tools.CurentTime(), 280.5, 35.5);
+                                        ctx.fillText(_this.tools.CurentTime(), 280.5, 35.5);
                                         ctx.beginPath();
                                         ctx.arc(40, 40, 28, 0, 2 * Math.PI);
                                         ctx.fill();
@@ -1726,7 +1728,7 @@ var Core = /** @class */ (function () {
                                 if (_this.global.gugua.test(req.body.message)) {
                                     if (req.body.message == "/孤寡") {
                                         res.send({ reply: "\u5C0F\u591C\u6536\u5230\u4E86\u4F60\u7684\u5B64\u5BE1\u8BA2\u5355\uFF0C\u73B0\u5728\u5C31\u5F00\u59CB\u5B64\u5BE1\u4F60\u4E86\u5662\u5B64\u5BE1~" });
-                                        _this["this"].tools.Gugua(req.body.user_id);
+                                        _this.tools.Gugua(req.body.user_id);
                                         return 0;
                                     }
                                     var who_6 = req.body.message.replace("/孤寡 ", "");
@@ -1749,14 +1751,14 @@ var Core = /** @class */ (function () {
                                                                 console.log("\u8BF7\u6C42" + this.global.go_cqhttp_api + "/send_private_msg\u9519\u8BEF\uFF1A" + error);
                                                             }
                                                         });
-                                                        _this["this"].tools.Gugua(who_6);
+                                                        _this.tools.Gugua(who_6);
                                                         return 0;
                                                     }
                                                 }
                                                 res.send({
                                                     reply: "\u5C0F\u591C\u6CA1\u6709[CQ:at,qq=" + who_6 + "]\u7684\u597D\u53CB\uFF0C\u6CA1\u6709\u529E\u6CD5\u5B64\u5BE1ta\u5462\uFF0C\u8BF7\u5148\u8BA9ta\u52A0\u5C0F\u591C\u4E3A\u597D\u53CB\u5427\uFF0C\u5C0F\u591C\u5C31\u5728\u7FA4\u91CC\u7ED9\u5927\u5BB6\u5B64\u5BE1\u4E00\u4E0B\u5427"
                                                 });
-                                                _this["this"].tools.QunGugua(req.body.group_id);
+                                                _this.tools.QunGugua(req.body.group_id);
                                             }
                                             else {
                                                 reject("随机选取一个群错误。错误原因：" + JSON.stringify(response.body));
@@ -1920,10 +1922,10 @@ var Core = /** @class */ (function () {
                                 if (chaos_flag < _this.global.chaos_probability) {
                                     //随机选一个群抽风
                                     var prprmsg_1;
-                                    _this["this"].tools.PrprDoge()
+                                    _this.tools.PrprDoge()
                                         .then(function (resolve) {
                                         prprmsg_1 = resolve;
-                                        _this["this"].tools.RandomGroupList()
+                                        _this.tools.RandomGroupList()
                                             .then(function (resolve) {
                                             request("http://" + _this.global.go_cqhttp_api + "/send_group_msg?group_id=" + resolve + "&message=" + encodeURI(prprmsg_1), function (error, _response, _body) {
                                                 if (!error) {
@@ -1961,7 +1963,7 @@ var Core = /** @class */ (function () {
                                 }
                                 //骰子命中，那就让小夜来自动回复
                                 if (reply_flag < _this.global.reply_probability) {
-                                    _this["this"].tools.ChatProcess(at_replaced_msg)
+                                    _this.tools.ChatProcess(at_replaced_msg)
                                         .then(function (resolve) {
                                         if (resolve.indexOf("[name]") || resolve.indexOf("&#91;name&#93;")) {
                                             resolve = resolve.toString().replace("[name]", "[CQ:at,qq=" + req.body.user_id + "]"); //替换[name]为正确的@
@@ -1973,7 +1975,7 @@ var Core = /** @class */ (function () {
                                         return 0;
                                     })["catch"](function (reject) {
                                         //无匹配则随机回复balabala废话
-                                        _this["this"].tools.GetBalabalaList()
+                                        _this.tools.GetBalabalaList()
                                             .then(function (resolve) {
                                             var random_balabala = resolve[Math.floor(Math.random() * resolve.length)].balabala;
                                             res.send({ reply: random_balabala });
@@ -2004,14 +2006,14 @@ var Core = /** @class */ (function () {
             }
             else if (req.body.message_type == "private" && _this.global.private_service_swich == true) {
                 //私聊回复
-                _this["this"].tools.ChatProcess(req.body.message)
+                _this.tools.ChatProcess(req.body.message)
                     .then(function (resolve) {
                     console.log("qqBot\u5C0F\u591C\u56DE\u590D " + resolve);
                     _this.io.emit("system message", "@qqBot\u5C0F\u591C\u56DE\u590D\uFF1A" + resolve);
                     res.send({ reply: resolve });
                 })["catch"](function (reject) {
                     //无匹配则随机回复balabala废话
-                    _this["this"].tools.GetBalabalaList()
+                    _this.tools.GetBalabalaList()
                         .then(function (resolve) {
                         var random_balabala = resolve[Math.floor(Math.random() * resolve.length)].balabala;
                         res.send({ reply: random_balabala });
@@ -2043,7 +2045,7 @@ var Core = /** @class */ (function () {
                         service_stoped_list.push(sql[i].group_id);
                     }
                     console.log("\u4EE5\u4E0B\u7FA4\u672A\u542F\u7528\u5C0F\u591C\u670D\u52A1\uFF1A" + service_stoped_list + " \uFF0C\u73B0\u5728\u5F00\u59CB\u968F\u673A\u5EF6\u65F6\u63D0\u9192");
-                    _this["this"].tools.DelayAlert(service_stoped_list);
+                    _this.tools.DelayAlert(service_stoped_list);
                     resolve("\u4EE5\u4E0B\u7FA4\u672A\u542F\u7528\u5C0F\u591C\u670D\u52A1\uFF1A" + service_stoped_list + " \uFF0C\u73B0\u5728\u5F00\u59CB\u968F\u673A\u5EF6\u65F6\u63D0\u9192");
                 }
                 else {
@@ -2059,7 +2061,7 @@ var Core = /** @class */ (function () {
     //虚拟主播星野夜蝶核心代码，间隔5秒接收最新弹幕，如果弹幕更新了就开始处理，然后随机开嘴臭地图炮
     Core.prototype.LoopDanmu = function () {
         var _this = this;
-        this["this"].tools.GetLaststDanmu()
+        this.tools.GetLaststDanmu()
             .then(function (resolve) {
             if (_this.global.last_danmu_timeline === resolve.timeline) {
                 //弹幕没有更新
@@ -2067,13 +2069,13 @@ var Core = /** @class */ (function () {
                 //丢一个骰子，如果命中了就开地图炮，1%的几率
                 var ditupao_flag = Math.floor(Math.random() * 100);
                 if (ditupao_flag < 1) {
-                    _this["this"].tools.ChatProcess("").then(function (resolve) {
+                    _this.tools.ChatProcess("").then(function (resolve) {
                         var reply = resolve;
                         console.log("\u5C0F\u591C\u5F00\u5730\u56FE\u70AE\u4E86\uFF1A" + reply);
                         //将直播小夜的回复写入txt，以便在直播姬显示
                         fs.writeFileSync("./static/xiaoye/live_lastst_reply.txt", reply);
                         //然后让小夜读出来
-                        _this["this"].tools.BetterTTS(reply)
+                        _this.tools.BetterTTS(reply)
                             .then(function (resolve) {
                             var tts_file = process.cwd() + "\\static" + resolve.file.replace("/", "\\"); //这里似乎有问题，ntfs短文件名无法转换
                             voiceplayer.play(tts_file, function (err) {
@@ -2099,7 +2101,7 @@ var Core = /** @class */ (function () {
                     if (msg.length !== 2) {
                         console.log("\u6559\u5B66\u6307\u4EE4\uFF1A\u5206\u5272\u6709\u8BEF\uFF0C\u9000\u51FA\u6559\u5B66");
                         fs.writeFileSync("./static/xiaoye/live_lastst_reply.txt", "\u4F60\u6559\u7684\u59FF\u52BF\u4E0D\u5BF9\u5662qwq");
-                        _this["this"].tools.BetterTTS("你教的姿势不对噢qwq")
+                        _this.tools.BetterTTS("你教的姿势不对噢qwq")
                             .then(function (resolve) {
                             var tts_file = process.cwd() + "\\static" + resolve.file.replace("/", "\\");
                             voiceplayer.play(tts_file, function (err) {
@@ -2115,7 +2117,7 @@ var Core = /** @class */ (function () {
                     if (ask == "" || ans == "") {
                         console.log("\u95EE/\u7B54\u4E3A\u7A7A\uFF0C\u9000\u51FA\u6559\u5B66");
                         fs.writeFileSync("./static/xiaoye/live_lastst_reply.txt", "\u4F60\u6559\u7684\u59FF\u52BF\u4E0D\u5BF9\u5662qwq");
-                        _this["this"].tools.BetterTTS("你教的姿势不对噢qwq")
+                        _this.tools.BetterTTS("你教的姿势不对噢qwq")
                             .then(function (resolve) {
                             var tts_file = process.cwd() + "\\static" + resolve.file.replace("/", "\\");
                             voiceplayer.play(tts_file, function (err) {
@@ -2130,7 +2132,7 @@ var Core = /** @class */ (function () {
                     if (ask.indexOf(/\r?\n/g) !== -1) {
                         console.log("\u6559\u5B66\u6307\u4EE4\uFF1A\u5173\u952E\u8BCD\u6362\u884C\u4E86\uFF0C\u9000\u51FA\u6559\u5B66");
                         fs.writeFileSync("./static/xiaoye/live_lastst_reply.txt", "\u5173\u952E\u8BCD\u4E0D\u80FD\u6362\u884C\u5566qwq");
-                        _this["this"].tools.BetterTTS("关键词不能换行啦qwq")
+                        _this.tools.BetterTTS("关键词不能换行啦qwq")
                             .then(function (resolve) {
                             var tts_file = process.cwd() + "\\static" + resolve.file.replace("/", "\\");
                             voiceplayer.play(tts_file, function (err) {
@@ -2148,7 +2150,7 @@ var Core = /** @class */ (function () {
                             ans.toLowerCase().indexOf(_this.global.black_list_words[i].toLowerCase()) !== -1) {
                             console.log("\u6559\u5B66\u6307\u4EE4\uFF1A\u68C0\u6D4B\u5230\u4E0D\u5141\u8BB8\u7684\u8BCD\uFF1A" + _this.global.black_list_words[i] + "\uFF0C\u9000\u51FA\u6559\u5B66");
                             fs.writeFileSync("./static/xiaoye/live_lastst_reply.txt", "\u4F60\u6559\u7684\u5185\u5BB9\u91CC\u6709\u4E3B\u4EBA\u4E0D\u5141\u8BB8\u5C0F\u591C\u5B66\u4E60\u7684\u8BCD\uFF1A" + _this.global.black_list_words[i] + " qwq");
-                            _this["this"].tools.BetterTTS("\u4F60\u6559\u7684\u5185\u5BB9\u91CC\u6709\u4E3B\u4EBA\u4E0D\u5141\u8BB8\u5C0F\u591C\u5B66\u4E60\u7684\u8BCD\uFF1A" + _this.global.black_list_words[i] + " qwq")
+                            _this.tools.BetterTTS("\u4F60\u6559\u7684\u5185\u5BB9\u91CC\u6709\u4E3B\u4EBA\u4E0D\u5141\u8BB8\u5C0F\u591C\u5B66\u4E60\u7684\u8BCD\uFF1A" + _this.global.black_list_words[i] + " qwq")
                                 .then(function (resolve) {
                                 var tts_file = process.cwd() + "\\static" + resolve.file.replace("/", "\\");
                                 voiceplayer.play(tts_file, function (err) {
@@ -2165,7 +2167,7 @@ var Core = /** @class */ (function () {
                         //关键词最低长度：4个英文或2个汉字
                         console.log("\u6559\u5B66\u6307\u4EE4\uFF1A\u5173\u952E\u8BCD\u592A\u77ED\uFF0C\u9000\u51FA\u6559\u5B66");
                         fs.writeFileSync("./static/xiaoye/live_lastst_reply.txt", "\u5173\u952E\u8BCD\u592A\u77ED\u4E86\u5566qwq\uFF0C\u81F3\u5C11\u89814\u4E2A\u5B57\u8282\u5566");
-                        _this["this"].tools.BetterTTS("关键词太短了啦qwq，至少要4个字节啦")
+                        _this.tools.BetterTTS("关键词太短了啦qwq，至少要4个字节啦")
                             .then(function (resolve) {
                             var tts_file = process.cwd() + "\\static" + resolve.file.replace("/", "\\");
                             voiceplayer.play(tts_file, function (err) {
@@ -2180,7 +2182,7 @@ var Core = /** @class */ (function () {
                     if (ask.length > 100 || ans.length > 100) {
                         console.log("\u6559\u5B66\u6307\u4EE4\uFF1A\u6559\u7684\u592A\u957F\u4E86\uFF0C\u9000\u51FA\u6559\u5B66");
                         fs.writeFileSync("./static/xiaoye/live_lastst_reply.txt", "\u4F60\u6559\u7684\u5185\u5BB9\u592A\u957F\u4E86\uFF0C\u5C0F\u591C\u8981\u574F\u6389\u4E86qwq\uFF0C\u4E0D\u8981\u5440");
-                        _this["this"].tools.BetterTTS("你教的内容太长了，小夜要坏掉了qwq，不要呀")
+                        _this.tools.BetterTTS("你教的内容太长了，小夜要坏掉了qwq，不要呀")
                             .then(function (resolve) {
                             var tts_file = process.cwd() + "\\static" + resolve.file.replace("/", "\\");
                             voiceplayer.play(tts_file, function (err) {
@@ -2197,7 +2199,7 @@ var Core = /** @class */ (function () {
                     db.run("INSERT INTO chat VALUES('" + ask + "', '" + ans + "')");
                     console.log("\u6559\u5B66\u6307\u4EE4\uFF1A\u5B66\u4E60\u6210\u529F");
                     fs.writeFileSync("./static/xiaoye/live_lastst_reply.txt", "\u54C7\uFF01\u5C0F\u591C\u5B66\u4F1A\u5566\uFF01\u5BF9\u6211\u8BF4\uFF1A" + ask + " \u8BD5\u8BD5\u5427\uFF0C\u5C0F\u591C\u6709\u53EF\u80FD\u4F1A\u56DE\u590D " + ans + " \u5662");
-                    _this["this"].tools.BetterTTS("\u54C7\uFF01\u5C0F\u591C\u5B66\u4F1A\u5566\uFF01\u5BF9\u6211\u8BF4\uFF1A" + ask + " \u8BD5\u8BD5\u5427\uFF0C\u5C0F\u591C\u6709\u53EF\u80FD\u4F1A\u56DE\u590D " + ans + " \u5662")
+                    _this.tools.BetterTTS("\u54C7\uFF01\u5C0F\u591C\u5B66\u4F1A\u5566\uFF01\u5BF9\u6211\u8BF4\uFF1A" + ask + " \u8BD5\u8BD5\u5427\uFF0C\u5C0F\u591C\u6709\u53EF\u80FD\u4F1A\u56DE\u590D " + ans + " \u5662")
                         .then(function (resolve) {
                         var tts_file = process.cwd() + "\\static" + resolve.file.replace("/", "\\");
                         voiceplayer.play(tts_file, function (err) {
@@ -2210,12 +2212,12 @@ var Core = /** @class */ (function () {
                     return 0;
                 }
                 else {
-                    _this["this"].tools.ChatProcess(resolve.text)
+                    _this.tools.ChatProcess(resolve.text)
                         .then(function (resolve) {
                         var reply = resolve;
                         console.log("\u5C0F\u591C\u8BF4\uFF1A" + reply);
                         fs.writeFileSync("./static/xiaoye/live_lastst_reply.txt", "" + reply);
-                        _this["this"].tools.BetterTTS(reply)
+                        _this.tools.BetterTTS(reply)
                             .then(function (resolve) {
                             var tts_file = process.cwd() + "\\static" + resolve.file.replace("/", "\\");
                             voiceplayer.play(tts_file, function (err) {
@@ -2228,11 +2230,11 @@ var Core = /** @class */ (function () {
                     })["catch"](function (reject) {
                         //如果没有匹配到回复，那就随机回复balabala废话
                         console.log(reject + "\uFF0C\u5F39\u5E55\u6CA1\u6709\u5339\u914D");
-                        _this["this"].tools.GetBalabalaList()
+                        _this.tools.GetBalabalaList()
                             .then(function (resolve) {
                             var random_balabala = resolve[Math.floor(Math.random() * resolve.length)].balabala;
                             fs.writeFileSync("./static/xiaoye/live_lastst_reply.txt", random_balabala);
-                            _this["this"].tools.BetterTTS(random_balabala)
+                            _this.tools.BetterTTS(random_balabala)
                                 .then(function (resolve) {
                                 var tts_file = process.cwd() + "\\static" + resolve.file.replace("/", "\\");
                                 voiceplayer.play(tts_file, function (err) {
