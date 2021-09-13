@@ -146,7 +146,7 @@
 
 不想要枯燥的部署和配置操作，只想要快速运行一个属于自己的小夜？首先来试试快速启动吧：
 
-进入自动化部署工作流 Actions https://github.com/Giftia/ChatDACS/actions，
+进入自动化部署工作流 Actions https://github.com/Giftia/ChatDACS/actions ，
 
 点击最新成功构建的 Compile ChatDACS for Windows 工作流，
 
