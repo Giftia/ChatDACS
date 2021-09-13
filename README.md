@@ -44,6 +44,22 @@
 
 ---
 
+## 😘 写在最前面 Hi
+
+如有任何疑问、建议或者需要联系我，请加 QQ 群 120243247：点击链接加入群聊【星野夜蝶 粉丝群】：https://jq.qq.com/?_wv=1027&k=ovqyydCe
+
+对于普通用户，推荐您选择使用开放的公共服务官方QQ账号：1648468212
+
+但更推荐您使用私人部署，私人部署的好处都有啥：（好处来源：https://github.com/Sora233/DDBOT ）
+
+- 保护您的隐私，bot完全属于您，我无法得知您bot的任何信息（我甚至无法知道您部署了一个私人bot）
+- 稳定的功能，不会因为公共服务离线而无法运行
+- 可自行定制BOT账号的头像、名字、签名，甚至是自己写功能
+- 减轻我的服务器负担
+- 很cool，很极客
+
+私人部署方式请下滑至下方的 快速启动 章节↓
+
 ## ✔ 功能介绍 Orders
 
 ### v3.0.19-Dev
@@ -113,6 +129,10 @@
     - 让小夜帮你快速生成二维码。
   - [x] `/黑白图 (图片) (第一排文字) (第二排文字)`
     - 让小夜帮你生成一张黑白生草图。
+  - [ ] `人生重开`
+    - 风靡全球的人生重开小游戏，数据来自 https://github.com/VickScarlet/lifeRestart 。
+  - [ ] `/roll`
+    - 随机 roll 出 0 到 1000000 的随机数，可以自行跟随参数。
 
 - 好康的
 
@@ -220,6 +240,7 @@ pkg .
 
 | 用户名           | 金额/人民币 | 留言：                                                                                                                                                                                |
 | ---------------- | :---------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 缤瑶             |     30      | 加油喔                                                                                                                                                                                |
 | 爱发电用户\_ERJy |     30      | 永远滴神 1 1 1                                                                                                                                                                        |
 | 缤瑶             |    0.91     |                                                                                                                                                                                       |
 | Ai-Ding          |      3      |                                                                                                                                                                                       |
@@ -258,7 +279,7 @@ pkg .
 | 余薪             |     10      | 不知道做不做得出 ai 思考性行为...                                                                                                                                                     |
 | 爱发电用户\_qr83 |     10      | xxxx)hhjjiskejeududnn3kssioskwnssj                                                                                                                                                    |
 
-对本项目提供帮助的致谢名单（排名不分先后）：https://niconi.co.ni/ 、 https://www.layui.com/ 、 https://lceda.cn/ 、 https://www.dnspod.cn/ 、 Daisy_Liu 、 http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html 、 https://ihateregex.io/ 、 https://www.maoken.com/ 、 https://www.ngrok.cc/ 、 https://uptimerobot.com/ 、 https://shields.io/ 、 https://ctf.bugku.com/ 、 https://blog.squix.org/ 、 https://hostker.com/ 、 https://www.tianapi.com/ 、 https://api.sumt.cn/ 、 https://github.com/Mrs4s/go-cqhttp 、 https://colorhunt.co/ 、 https://github.com/ 、 https://gitee.com/ 、 https://github.com/windrises/dialogue.moe 、 https://api.oddfar.com/ 、 https://github.com/ssp97 、https://github.com/mxh-mini-apps/mxh-cp-stories、 还有我的朋友们，以及倾心分享知识的各位
+对本项目提供帮助的致谢名单（排名不分先后）：https://niconi.co.ni/ 、 https://www.layui.com/ 、 https://lceda.cn/ 、 https://www.dnspod.cn/ 、 Daisy_Liu 、 http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html 、 https://ihateregex.io/ 、 https://www.maoken.com/ 、 https://www.ngrok.cc/ 、 https://uptimerobot.com/ 、 https://shields.io/ 、 https://ctf.bugku.com/ 、 https://blog.squix.org/ 、 https://hostker.com/ 、 https://www.tianapi.com/ 、 https://api.sumt.cn/ 、 https://github.com/Mrs4s/go-cqhttp 、 https://colorhunt.co/ 、 https://github.com/ 、 https://gitee.com/ 、 https://github.com/windrises/dialogue.moe 、 https://api.oddfar.com/ 、 https://github.com/ssp97 、https://github.com/mxh-mini-apps/mxh-cp-stories 、https://github.com/Sora233/DDBOT 、 还有我的朋友们，以及倾心分享知识的各位
 
 ---
 
