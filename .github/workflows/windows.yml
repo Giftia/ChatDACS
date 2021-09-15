@@ -2,7 +2,7 @@ name: Compile ChatDACS for Windows
 on:
   push:
     branches: 
-      - master
+      - dev
 
 env:
   GITHUB_TOKEN: ${{ github.token }}
