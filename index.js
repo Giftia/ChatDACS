@@ -1,39 +1,12 @@
 /* Giftina：https://giftia.moe
-ChatDACS：一个无需服务器，可私有化部署、可独立运行于内网的H5聊天工具
+  星野夜蝶Offiial：沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)，一个简单的机器人框架，支持接入哔哩哔哩直播，具备完全功能的web网页控制台。
 
-初次使用请看:
-  首先去 https://nodejs.org/zh-cn/ 安装长期支持版Node.js
-  接着启动cmd或powershell,进入代码根目录运行:
-    npm install -g cnpm --registry=https://registry.npm.taobao.org
-  等待进度完成后运行:
-    cnpm install
-  等待进度完成后运行:
-    node index.js
-  也可在Node.js安装完毕后双击目录下的 init.bat 一键部署
-  部署完毕后会自动启动，之后可双击 run.bat 启动
-  或使用pm2守护神启动:
-    pm2 start index.js
-  访问127.0.0.1即可体验,有公网或穿透那更好,尽情使用吧~
-
-  若出现
-    c:\users\travis\build\yanyiwu\nodejieba\deps\cppjieba\dicttrie.hpp:203 FATAL exp: [ifs.is_open()] false. open C:\snapshot\web\node_modules\nodejieba/dict/jieba.dict.utf8 failed.
-  这样的问题，请执行
-    npm install nodejieba --registry=https://registry.npm.taobao.org --nodejieba_binary_host_mirror=https://npm.taobao.org/mirrors/nodejieba
-
-  若使用pm2守护神启动:
-  隐藏界面请按:  Ctrl + C
-  查看监视器请运行:  pm2 monit
-  完全关闭请运行:  pm2 kill
-
-  另外，若想使用更完善的功能，请访问以下申请地址，申请自己的接口密钥后，修改 /config/config.yml文件：
+  开箱即用，若想使用更完善的功能，请访问以下申请地址，申请自己的接口密钥后，修改 /config/config.yml文件：
   -- 天行接口，用于 随机昵称 与 舔狗 功能，申请地址 https://www.tianapi.com/
   -- 卡特实验室接口，用于 随机买家秀 功能，申请地址 https://api.sumt.cn/
 
-  目录下的 userdicy.txt 是自定义分词表，用于提高聊天智能
-  修改时请注意，一个关键词占一行，每一行按顺序分为三部分：词语、词频（省略则交给分词器自动计算）、词性（可省略），以空格隔开
+  /config/userdicy.txt 是自定义分词表，用于提高聊天智能，修改时请注意，一个关键词占一行，每一行按顺序分为三部分：词语、词频（省略则交给分词器自动计算）、词性（可省略），以空格隔开
 
-  每当次版本号迭代,如 1.1.0 --> 1.2.0,意味着需要更新依赖,请运行:  ncu -u  ,等待进度完成后运行:  cnpm install
-  出现任何缺失的依赖包请运行:  cnpm install 缺失的包名
   版本号的改变规律,如 1.2.3-45,形如 A.B.C-D:
     A 大版本号,当整端重构或出现不向后兼容的改变时增加A,更新代码需要更新依赖,且需要重载数据库
     B 次版本号,功能更新,当功能增加、修改或删除时增加B,更新代码需要更新依赖
@@ -52,7 +25,7 @@ if (_cn_reg.test(`${process.cwd()}`)) {
 }
 
 //系统配置和开关，以及固定变量
-const version = `ChatDACS v3.0.20-Dev`; //版本号，会显示在浏览器tab与标题栏
+const version = `ChatDACS v3.0.21-Dev`; //版本号，会显示在浏览器tab与标题栏
 const html = "/static/index.html"; //前端页面路径，old.html为旧版前端
 var boom_timer; //60s计时器
 let onlineusers = 0, //预定义
@@ -91,7 +64,7 @@ const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const thanks =
   "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、https://api.lolicon.app/、https://bww.lolicon.app/、https://iw233.cn/main.html、https://blog.csdn.net/jia20003/article/details/7228464、还有我的朋友们，以及倾心分享知识的各位";
-const update_text = `优化r18与来点xx提示`;
+const update_text = `新增人生重开模拟器，新增roll功能，增加邀群提示，增加被禁言改名，调整status数据显示，修复张菊闭菊错误`;
 const updatelog = `<h1>${version}</h1><br/>${update_text}`;
 
 /*好了！以上就是系统的基本配置，如果没有必要，请不要再往下继续编辑了。请保存本文件。祝使用愉快！
@@ -186,6 +159,12 @@ const approve_group_invite = new RegExp("^/批准 (.*)"); //匹配批准加群�
 const make_qrcode = new RegExp("^qr (.*)"); //匹配生成二维码指令
 const come_some = new RegExp("^来点(.*)"); //匹配来点xx指令
 const bww_reg = new RegExp("^/黑白图 (.*)"); //匹配黑白图
+const roll_reg = new RegExp("^/roll(.*)"); //匹配roll
+const test_reply_reg = new RegExp("\\[CQ:reply,id=.*复读"); //匹配回复测试指令
+const life_restart_reg = new RegExp("^人生重开"); //匹配人生重开指令
+const roll_talents_reg = new RegExp("^选择天赋 (.*)"); //匹配选择天赋指令
+const set_points_reg = new RegExp("^分配属性 (.*)"); //匹配分配属性指令
+const only_0to9_reg = new RegExp("^[0-9]$"); //匹配仅0-9
 
 //日志染色颜色配置
 colors.setTheme({
@@ -496,15 +475,29 @@ io.on("connection", (socket) => {
 function start_qqbot() {
   app.post(go_cqhttp_service, (req, res) => {
     //禁言1小时以上自动退群
-    if (req.body.sub_type == "ban" && req.body.user_id == bot_qq && req.body.duration >= 3599) {
-      request(`http://${go_cqhttp_api}/set_group_leave?group_id=${req.body.group_id}`, function (error, _response, _body) {
-        if (!error) {
-          console.log(`小夜在群 ${req.body.group_id} 被禁言超过1小时，自动退群`.error);
-          io.emit("system message", `@小夜在群 ${req.body.group_id} 被禁言超过1小时，自动退群`);
-        } else {
-          console.log(`请求${go_cqhttp_api}/set_group_leave错误：${error}`);
-        }
-      });
+    if (req.body.sub_type == "ban" && req.body.user_id == bot_qq) {
+      if (req.body.duration >= 3599) {
+        request(`http://${go_cqhttp_api}/set_group_leave?group_id=${req.body.group_id}`, function (error, _response, _body) {
+          if (!error) {
+            console.log(`小夜在群 ${req.body.group_id} 被禁言超过1小时，自动退群`.error);
+            io.emit("system message", `@小夜在群 ${req.body.group_id} 被禁言超过1小时，自动退群`);
+          } else {
+            console.log(`请求${go_cqhttp_api}/set_group_leave错误：${error}`);
+          }
+        });
+      } else {
+        //被禁言改名
+        request(
+          `http://${go_cqhttp_api}/set_group_card?group_id=${req.body.group_id}&user_id=${bot_qq}&card=${encodeURI("你妈的，为什么 禁言我")}`,
+          function (error, _response, _body) {
+            if (!error) {
+              console.log(`被禁言了，你妈的，为什么`.log);
+            } else {
+              console.log(`请求${go_cqhttp_api}/set_group_card错误：${error}`);
+            }
+          }
+        );
+      }
       res.send();
       return 0;
     }
@@ -524,7 +517,7 @@ function start_qqbot() {
           console.log(`请求${go_cqhttp_api}/send_private_msg错误：${error}`);
         }
       });
-      res.send();
+      res.send({ reply: `你好呀，感谢你的使用，邀请小夜加入你的群后，请联系这只小夜的主人 ${qq_admin_list[0]} 来批准入群邀请噢` });
       return 0;
     }
     //管理员批准群邀请
@@ -546,18 +539,19 @@ function start_qqbot() {
     switch (req.body.sub_type) {
       case "friend":
       case "group":
-        notify = `qqBot小夜收到好友 ${req.body.user_id} (${req.body.sender.nickname}) 发来的消息：${req.body.message}`;
+        notify = `小夜收到好友 ${req.body.user_id} (${req.body.sender.nickname}) 发来的消息：${req.body.message}`;
         break;
       case "normal":
-        notify = `qqBot小夜收到群 ${req.body.group_id} 的 ${req.body.user_id} (${req.body.sender.nickname}) 发来的消息：${req.body.message}`;
+        notify = `小夜收到群 ${req.body.group_id} 的 ${req.body.user_id} (${req.body.sender.nickname}) 发来的消息：${req.body.message}`;
         break;
       case "approve":
-        console.log(`${req.body.user_id} 加入了群 ${req.body.group_id}`.log);
+        notify = `${req.body.user_id} 加入了群 ${req.body.group_id}`.log;
         break;
       case "ban":
-        console.log(`qqBot小夜在群 ${req.body.group_id} 被禁言 ${req.body.duration} 秒`.log);
+        notify = `${req.body.user_id} 在群 ${req.body.group_id} 被禁言 ${req.body.duration} 秒`.error;
         break;
       case "poke":
+        notify = `戳了一戳`.log;
         break;
       default:
         res.send();
@@ -616,9 +610,9 @@ function start_qqbot() {
       //服务启用开关
       //指定小夜的话
       if (open_ju.test(req.body.message) && has_qq_reg.test(req.body.message)) {
-        var msg_in = req.body.message.split("菊")[1];
-        var who = msg_in.split("[CQ:at,qq=")[1];
-        var who = who.replace("]", "").trim();
+        let msg_in = req.body.message.split("菊")[1];
+        let who = msg_in.split("[CQ:at,qq=")[1];
+        who = who.replace("]", "").trim();
         if (is_qq_reg.test(who)) {
           //如果是自己要被张菊，那么张菊
           if (bot_qq == who) {
@@ -724,9 +718,9 @@ function start_qqbot() {
               //服务停用开关
               //指定小夜的话
               if (close_ju.test(req.body.message) && has_qq_reg.test(req.body.message)) {
-                var msg_in = req.body.message.split("菊")[1];
-                var who = msg_in.split("[CQ:at,qq=")[1];
-                var who = who.replace("]", "").trim();
+                let msg_in = req.body.message.split("菊")[1];
+                let who = msg_in.split("[CQ:at,qq=")[1];
+                who = who.replace("]", "").trim();
                 if (is_qq_reg.test(who)) {
                   //如果是自己要被闭菊，那么闭菊
                   if (bot_qq == who) {
@@ -960,10 +954,25 @@ function start_qqbot() {
                     );
                   })
                   .catch((reject) => {
+                    //画色图
                     console.log(`SearchTag(): rejected, and err:${reject}`.error);
+
+                    let canvas = createCanvas(500, 500);
+                    let ctx = canvas.getContext("2d");
+                    ctx.fillStyle = "#ffd400";
+                    ctx.fillRect(0, 0, 500, 500);
+                    ctx.font = `40px Sans`;
+                    ctx.textAlign = "center";
+                    ctx.fillStyle = "black";
+                    ctx.fillText(reject, 250, 250);
+
+                    let file_local = path.join(`${process.cwd()}`, `static`, `xiaoye`, `images`, `${sha1(canvas.toBuffer())}.jpg`);
+                    fs.writeFileSync(file_local, canvas.toBuffer());
+                    let file_online = `http://127.0.0.1:${web_port}/xiaoye/images/${sha1(canvas.toBuffer())}.jpg`;
+
                     request(
                       `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(
-                        `你要的${tag}发送失败啦：${reject}`
+                        `[CQ:image,file=${file_online},url=${file_online}]`
                       )}`,
                       function (error, _response, _body) {
                         if (error) {
@@ -971,6 +980,18 @@ function start_qqbot() {
                         }
                       }
                     );
+
+                    // console.log(`SearchTag(): rejected, and err:${reject}`.error);
+                    // request(
+                    //   `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(
+                    //     `你要的${tag}发送失败啦：${reject}`
+                    //   )}`,
+                    //   function (error, _response, _body) {
+                    //     if (error) {
+                    //       console.log(`请求${go_cqhttp_api}/send_group_msg错误：${error}`);
+                    //     }
+                    //   }
+                    // );
                   });
                 return 0;
               }
@@ -1238,6 +1259,136 @@ function start_qqbot() {
                     story_select = story_select.replace(/<受>/g, bottoms);
                     console.log(`发送cp文：${story_select}`.log);
                     res.send({ reply: `${story_select}` });
+                  }
+                });
+                return 0;
+              }
+
+              //人生重开模拟器，数据来自 https://github.com/VickScarlet/lifeRestart
+              if (life_restart_reg.test(req.body.message)) {
+                console.log(`用户 ${req.body.sender.user_id} 开始人生重开`.log);
+                //先抽选天赋
+                fs.readFile(path.join(`${process.cwd()}`, "config", "talents.json"), "utf-8", function (err, data) {
+                  if (!err) {
+                    let talents = JSON.parse(data);
+                    let who = req.body.sender.user_id;
+                    Talents10x(talents).then((resolve) => {
+                      console.log(`用户 ${who} 抽选10个随机天赋：${resolve.roll_talents}`.log);
+                      //天赋列表写入数据库
+                      db.run(
+                        `INSERT INTO qq_users(qq_id,talents_list) VALUES('${who}', '${resolve.talents_list}') ON CONFLICT(qq_id) DO UPDATE SET talents_list = '${resolve.talents_list}';`
+                      );
+                      res.send({
+                        reply: `人生重开模拟器，这垃圾人生一秒也不想待了。
+天赋10连抽，[CQ:at,qq=${who}]抽到了：
+${resolve.roll_talents}
+
+请发送 选择天赋 天赋序号，序号之间以空格隔开
+原作 github.com/VickScarlet/lifeRestart`,
+                      });
+                    });
+                  }
+                });
+                return 0;
+              }
+
+              //选择天赋
+              if (roll_talents_reg.test(req.body.message)) {
+                let talents_id = req.body.message.match(roll_talents_reg)[1];
+                talents_id = talents_id.split(" ");
+
+                //容错，如果有异常值，替换成对应序号
+                for (let i in talents_id) {
+                  if (!only_0to9_reg.test(talents_id[i]) || !talents_id[i]) {
+                    talents_id.splice(i, 1, i);
+                  }
+                }
+
+                db.all(`SELECT * FROM qq_users WHERE qq_id = '${req.body.sender.user_id}'`, (err, sql) => {
+                  if (!err) {
+                    let final_talents_id = [],
+                      final_talents = [];
+                    for (let i in talents_id) {
+                      final_talents_id.push(sql[0].talents_list.split(",")[talents_id[i]]);
+                    }
+                    //选择的天赋存入数据库
+                    db.run(
+                      `INSERT INTO qq_users(qq_id,talents_list) VALUES('${req.body.sender.user_id}', '${final_talents_id}') ON CONFLICT(qq_id) DO UPDATE SET talents_list = '${final_talents_id}';`
+                    );
+                    //挨个去查对应的效果
+                    fs.readFile(path.join(`${process.cwd()}`, "config", "talents.json"), "utf-8", function (err, data) {
+                      if (!err) {
+                        let talents = JSON.parse(data);
+                        for (let i in talents_id) {
+                          final_talents.push(talents[final_talents_id[i]].name);
+                        }
+                        res.send({
+                          reply: `[CQ:at,qq=${req.body.sender.user_id}]已选天赋：
+
+${final_talents}
+
+请发送 分配属性 属性值，属性值之间以空格隔开`,
+                        });
+                      }
+                    });
+                  }
+                });
+                return 0;
+              }
+
+              //分配初始属性
+              if (set_points_reg.test(req.body.message)) {
+                let points = req.body.message.match(set_points_reg)[1];
+                points = points.split(" ");
+
+                for (let i = 0; i < 4; i++) {
+                  if (!points[i]) {
+                    points[i] = 0;
+                  }
+                }
+
+                //写入数据库
+                db.run(
+                  `INSERT INTO qq_users(qq_id,points) VALUES('${req.body.sender.user_id}', '${points}') ON CONFLICT(qq_id) DO UPDATE SET points = '${points}';`
+                );
+
+                res.send({
+                  reply: `[CQ:at,qq=${req.body.sender.user_id}]已分配属性点：
+
+颜值：${points[0]}
+智力：${points[1]}
+体质：${points[2]}
+家境：${points[3]}
+
+你的新人生开始了：
+
+0 岁：体质过低，胎死腹中。
+你死了。
+
+请发送 人生总结
+`,
+                });
+                return 0;
+              }
+
+              //人生总结
+              if (req.body.message == "人生总结") {
+                db.all(`SELECT * FROM qq_users WHERE qq_id = '${req.body.sender.user_id}'`, (err, _sql) => {
+                  if (!err) {
+                    let points = sql[0].points.split(",");
+                    res.send({
+                      reply: `[CQ:at,qq=${req.body.sender.user_id}]人生总结：
+                  
+    颜值：${points[0]} 罕见
+    智力：${points[1]} 罕见
+    体质：${points[2]} 罕见
+    家境：${points[3]} 罕见
+    快乐：0 罕见
+    享年：0 罕见
+    总评：${points[0] + points[1] + points[2] + points[3]} 罕见
+    
+    感谢您的重开，欢迎您下次光临`,
+                    });
                   }
                 });
                 return 0;
@@ -2078,13 +2229,13 @@ function start_qqbot() {
                 }
                 self_id != "1648468212" ? (self_id = self_id) : (self_id = "1648468212(小小夜本家)"); //试着用一下三元运算符，比if稍微绕一些，但是习惯了非常符合直觉，原理是：当?前的条件成立时，执行:前的语句，不成立的话执行:后的语句
                 let stat = `企划：星野夜蝶Official_${version}_${bot_qq}
-宿主内核架构：${os.hostname()} ${os.type()} ${os.arch()}
-正常运行时间：${Math.round(os.uptime() / 60 / 60)}小时
-小夜吃掉了 ${Math.round(process.memoryUsage().rss / 1024 / 1024)}MB/${Math.round(os.totalmem() / 1024 / 1024)}MB 内存
+更新日志：${update_text}
+宿主架构：${os.hostname()} ${os.type()} ${os.arch()}
+当前配置：聊天回复率 ${reply_probability}%，随机复读率 ${fudu_probability}%，突然抽风率 ${chaos_probability}‰
 如果该小夜出现任何故障，请联系该小夜领养员，
 也可以发送 /报错 小夜的错误 来提交bug给开发团队。
-点击加入夜爹开发群：https://jq.qq.com/?_wv=1027&k=bTZSd2iI
-`;
+小夜开源于：https://gitee.com/Giftina/ChatDACS
+夜爹开发群：https://jq.qq.com/?_wv=1027&k=bTZSd2iI`;
                 res.send({
                   reply: stat,
                 });
@@ -2234,11 +2385,43 @@ function start_qqbot() {
                 return 0;
               }
 
+              //测试：将指定的回复进行操作
+              if (test_reply_reg.test(req.body.message)) {
+                //从 [CQ:reply,id=265936982] [CQ:at,qq=38263547] 复读 消息里获取id
+
+                let msg_in = req.body.message.split("id=")[1];
+                let id = msg_in.split("] [")[0].trim();
+                id = msg_in.split("][")[0].trim();
+
+                request(`http://${go_cqhttp_api}/get_msg?message_id=${id}`, function (error, _response, body) {
+                  body = JSON.parse(body);
+                  if (!error) {
+                    console.log(`复读历史消息：${body.data.message}`.log);
+                    res.send({ reply: `${body.data.message}` });
+                  } else {
+                    console.log(`请求${go_cqhttp_api}/get_msg错误：`, error);
+                  }
+                });
+                return 0;
+              }
+
               //生成二维码
               if (make_qrcode.test(req.body.message)) {
                 let content = req.body.message.match(make_qrcode)[1];
                 res.send({
                   reply: `[CQ:image,file=https://api.sumt.cn/api/qr.php?text=${content},url=https://api.sumt.cn/api/qr.php?text=${content}]`,
+                });
+                return 0;
+              }
+
+              //roll
+              if (roll_reg.test(req.body.message)) {
+                let number = req.body.message.match(roll_reg)[1];
+                if (!number) {
+                  number = Math.floor(Math.random() * 1000000);
+                }
+                res.send({
+                  reply: `你roll出了${number}`,
                 });
                 return 0;
               }
@@ -2837,7 +3020,7 @@ function RandomCos() {
 //随机r18
 function RandomR18() {
   return new Promise((resolve, reject) => {
-    request("https://api.lolicon.app/setu/v2?r18=1&size=regular", (err, response, body) => {
+    request("https://api.lolicon.app/setu/v2?r18=0&size=regular", (err, response, body) => {
       body = JSON.parse(body);
       if (!err) {
         var picUrl = body.data[0].urls.regular;
@@ -2865,7 +3048,7 @@ function RandomR18() {
 //搜索tag
 function SearchTag(tag) {
   return new Promise((resolve, reject) => {
-    request(`https://api.lolicon.app/setu/v2?r18=1&size=regular&tag=${encodeURI(tag)}`, (err, response, body) => {
+    request(`https://api.lolicon.app/setu/v2?r18=0&size=regular&tag=${encodeURI(tag)}`, (err, _response, body) => {
       body = JSON.parse(body);
       if (!err && body.data[0] != null) {
         var picUrl = body.data[0].urls.regular;
@@ -3216,21 +3399,6 @@ function SaveQQimg(imgUrl) {
   });
 }
 
-//保存qq侧传来的图
-function SaveQQimg(imgUrl) {
-  return new Promise((resolve, reject) => {
-    request(imgUrl[0]).pipe(
-      fs.createWriteStream(`./static/xiaoye/images/${imgUrl[0].split("/")[imgUrl[0].split("/").length - 2]}.jpg`).on("close", (err) => {
-        if (!err) {
-          resolve(`/xiaoye/images/${imgUrl[0].split("/")[imgUrl[0].split("/").length - 2]}.jpg`);
-        } else {
-          reject("保存qq侧传来的图错误。错误原因：" + err);
-        }
-      })
-    );
-  });
-}
-
 //随机选取一个群
 function RandomGroupList() {
   return new Promise((resolve, reject) => {
@@ -3459,6 +3627,31 @@ function RainbowPi() {
         reject("彩虹屁错误，是天行接口的锅。错误原因：" + JSON.stringify(response.body));
       }
     });
+  });
+}
+
+//获取json串长度
+function getJsonLength(jsonData) {
+  var jsonLength = 0;
+  for (var _item in jsonData) {
+    jsonLength++;
+  }
+  return jsonLength;
+}
+
+//抽10个天赋
+function Talents10x(talents) {
+  return new Promise((resolve, _reject) => {
+    let index = getJsonLength(talents);
+    let roll_talents = "",
+      talents_list = [];
+    for (var i = 0; i < 10; i++) {
+      let talents_index = Math.floor(1001 + Math.random() * index);
+      let talents_content = `\n${i} ${talents[talents_index].name}（${talents[talents_index].description}）`;
+      roll_talents += talents_content;
+      talents_list.push(talents_index);
+    }
+    resolve({ roll_talents: roll_talents, talents_list: talents_list });
   });
 }
 
