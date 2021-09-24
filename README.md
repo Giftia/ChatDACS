@@ -31,11 +31,11 @@
 </table>
 
 <p align="center">
-  <img src="https://img.shields.io/uptimerobot/ratio/m783632550-7da46d24226cb151b978c810?label=%E5%AD%98%E6%B4%BB%E7%8E%87&style=for-the-badge" alt="Uptime(30 days)" />
+  <a href="https://stats.uptimerobot.com/JYr8kI8jqg"><img src="https://img.shields.io/uptimerobot/ratio/m783632550-7da46d24226cb151b978c810?label=%E5%AD%98%E6%B4%BB%E7%8E%87&style=for-the-badge" alt="Uptime(30 days)" /></a>
   &nbsp;
-  <img src="https://img.shields.io/website?label=demo&style=for-the-badge&up_message=online&url=http://chatdacs.giftia.moe/" alt="Demo" />
+  <a href="http://chatdacs.giftia.moe/"><img src="https://img.shields.io/website?label=demo&style=for-the-badge&up_message=online&url=http://chatdacs.giftia.moe/" alt="Demo" /></a>
   &nbsp;
-  <img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/Giftia/ChatDACS/Compile%20ChatDACS%20for%20Windows?label=%E8%87%AA%E5%8A%A8%E6%9E%84%E5%BB%BA&style=for-the-badge">
+  <a href="https://github.com/Giftia/ChatDACS/actions"><img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/Giftia/ChatDACS/Compile%20ChatDACS%20for%20Windows?label=%E8%87%AA%E5%8A%A8%E6%9E%84%E5%BB%BA&style=for-the-badge"></a>
   &nbsp;
   <img src="https://img.shields.io/github/license/Giftia/ChatDACS?label=%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF&style=for-the-badge" alt="License" />
   &nbsp;
@@ -240,6 +240,7 @@ pkg .
 
 | 用户名           | 金额/人民币 | 留言：                                                                                                                                                                                |
 | ---------------- | :---------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 这是一只可爱的蛆呢 |     5      | 很好玩的bot啦                                                                                                                                                                          |
 | 缤瑶             |     30      | 加油喔                                                                                                                                                                                |
 | 爱发电用户\_ERJy |     30      | 永远滴神 1 1 1                                                                                                                                                                        |
 | 缤瑶             |    0.91     |                                                                                                                                                                                       |
