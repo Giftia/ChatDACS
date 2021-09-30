@@ -1,7 +1,7 @@
 const request = require("request");
 
 module.exports = {
-  name: "工具类插件库",
+  name: "工具类",
   version: "1.0",
   details: "各种公用函数和系统底层函数",
 

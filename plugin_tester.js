@@ -23,7 +23,7 @@ colors.setTheme({
 });
 
 //载入插件
-console.log(`插件测试器 v1.0，用于快速验证插件功能`.alert);
+console.log(`插件测试器 v1.1，用于快速验证插件功能`.alert);
 console.log(`开始加载插件……`.log);
 let plugins = require.all({
   dir: path.join(`${process.cwd()}`, "plugins"),
@@ -56,7 +56,7 @@ async function run(ask) {
   }
 }
 
-//插件遍历器，每条消息遍历一遍插件name
+//插件遍历器，每条消息遍历一遍插件
 async function ProcessExecute(msg, qq_num, group_num) {
   var return_result = "";
   for (let i in plugins) {
@@ -65,11 +65,11 @@ async function ProcessExecute(msg, qq_num, group_num) {
       try {
         return_result = await plugins[i].execute(msg, qq_num, group_num);
       } catch (e) {
-        console.log(`插件 ${plugins[i].插件名} 爆炸啦：`.error);
+        console.log(`插件 ${plugins[i].插件名} ${plugins[i].版本} 爆炸啦：`.error);
         console.log(e.stack);
-        return `插件 ${plugins[i].插件名} 爆炸啦：${e.stack}`;
+        return `插件 ${plugins[i].插件名} ${plugins[i].版本} 爆炸啦：${e.stack}`;
       }
-      console.log(`插件 ${plugins[i].插件名} 响应了消息`.log);
+      console.log(`插件 ${plugins[i].插件名} ${plugins[i].版本} 响应了消息`.log);
       return return_result;
     }
   }

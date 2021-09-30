@@ -1,34 +1,32 @@
-/* Giftina：https://giftia.moe
-  星野夜蝶Offiial：沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)，一个简单的机器人框架，支持接入哔哩哔哩直播，具备完全功能的web网页控制台。
+/**
+ * 作者：Giftina：https://giftia.moe
+ *
+ * 沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)，一个简单的机器人框架，支持接入哔哩哔哩直播，具备完全功能的web网页控制台。
+ *
+ * 开箱即用，若想使用更完善的功能，请访问以下申请地址，申请自己的接口密钥后，修改 /config/config.yml文件：
+ *
+ * 天行接口，用于 随机昵称 与 舔狗 功能，申请地址 https://www.tianapi.com/
+ *
+ * 卡特实验室接口，用于 随机买家秀 功能，申请地址 https://api.sumt.cn/
+ */
 
-  开箱即用，若想使用更完善的功能，请访问以下申请地址，申请自己的接口密钥后，修改 /config/config.yml文件：
-  -- 天行接口，用于 随机昵称 与 舔狗 功能，申请地址 https://www.tianapi.com/
-  -- 卡特实验室接口，用于 随机买家秀 功能，申请地址 https://api.sumt.cn/
-
-  /config/userdicy.txt 是自定义分词表，用于提高聊天智能，修改时请注意，一个关键词占一行，每一行按顺序分为三部分：词语、词频（省略则交给分词器自动计算）、词性（可省略），以空格隔开
-
-  版本号的改变规律,如 1.2.3-45,形如 A.B.C-D:
-    A 大版本号,当整端重构或出现不向后兼容的改变时增加A,更新代码需要更新依赖,且需要重载数据库
-    B 次版本号,功能更新,当功能增加、修改或删除时增加B,更新代码需要更新依赖
-    C 尾版本号,表示小修改,如修复一些重要bug时增加C,更新代码可以不更新依赖
-    D 迭代号,表示最小修改版本,用于体现该版本稳定性
-
-*/
-
-//中文路径检查
+//启动时中文路径检查
 const _cn_reg = new RegExp("[\u4e00-\u9fa5]");
 if (_cn_reg.test(`${process.cwd()}`)) {
   console.log(
-    `因为Unicode的兼容性问题，程序所在路劲不能有汉字日语韩语表情包之类的奇奇怪怪的字符噢，最好使用常规的ASCII字符，请检查！如有疑问，请在QQ群 120243247 内咨询。当前路径：${process.cwd()}`
+    `启动遇到严重错误：因为Unicode的兼容性问题，程序所在路劲不能有汉字日语韩语表情包之类的奇奇怪怪的字符，请使用常规的ASCII字符！如有疑问，请加QQ群 120243247 咨询。当前路径含有不对劲的字符：${process.cwd()} 按回车退出`
   );
-  while (1);
+  //用等待输入替代while(1)，避免100%cpu占用
+  rl.on("line", () => {
+    process.exit(0);
+  });
 }
 
 //系统配置和开关，以及固定变量
-const version = `ChatDACS v3.0.22-Fac`; //版本号，会显示在浏览器tab与标题栏
+const version = `ChatDACS v3.1.0-Dev`; //版本号，会显示在浏览器tab与标题栏
 const html = "/static/index.html"; //前端页面路径，old.html为旧版前端
 var boom_timer; //60s计时器
-let onlineusers = 0, //预定义
+var onlineusers = 0, //预定义
   Tiankey,
   sumtkey,
   baidu_app_id,
@@ -64,11 +62,7 @@ const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const thanks =
   "致谢（排名不分先后）：https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、https://api.lolicon.app/、https://bww.lolicon.app/、https://iw233.cn/main.html、https://blog.csdn.net/jia20003/article/details/7228464、还有我的朋友们，以及倾心分享知识的各位";
-const update_text = `张菊提醒由4小时调整至24小时；
-管理员指令调整；
-增加邀群提示；
-web控制台添加vConsole；
-试作插件系统`;
+const update_text = `1、由于之前的面条式代码只图一时之快，牺牲了代码质量，不具有可读性和可维护性，权衡利弊得失之后，痛苦地选择了大幅重构，实现了一套简单的插件系统，现在可以自由加载外部独立插件了；2、/status回显调整；3、各处小细节优化；`;
 const updatelog = `<h1>${version}</h1><br/>${update_text}`;
 
 /*好了！以上就是系统的基本配置，如果没有必要，请不要再往下继续编辑了。请保存本文件。祝使用愉快！
@@ -106,12 +100,16 @@ jieba.load({
 });
 const yaml = require("yaml"); //使用yaml解析配置文件
 const AipSpeech = require("baidu-aip-sdk").speech; //百度语音sdk
-//const crypto = require("crypto"); //编码库，用于modules.utils.sha1生成文件名
-const voiceplayer = require("play-sound")((opts = { player: `${process.cwd()}/plugins/cmdmp3win.exe` })); //mp3静默播放工具，用于直播时播放语音
+const voiceplayer = require("play-sound")((opts = { player: `${process.cwd()}/system/cmdmp3win.exe` })); //mp3静默播放工具，用于直播时播放语音
 const { createCanvas, loadImage } = require("canvas"); //用于绘制文字图像，迫害p图
 const os = require("os"); //用于获取系统工作状态
 require.all = require("require.all"); //插件加载器
 const alphabet = require("alphabetjs");
+const readline = require("readline"); //nodejs中的stdio
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
 
 //错误捕获
 process.on("uncaughtException", (err) => {
@@ -149,7 +147,6 @@ const loop_bomb_reg = new RegExp("^击鼓传雷(.*)"); //匹配击鼓传雷
 const is_qq_reg = new RegExp("^[1-9][0-9]{4,9}$"); //校验是否是合法的qq号
 const has_qq_reg = new RegExp("\\[CQ:at,qq=(.*)\\]"); //匹配是否有@
 const admin_reg = new RegExp("/admin (.*)"); //匹配管理员指令
-const setu_reg = new RegExp(".*图.*来.*|.*来.*图.*|.*[色涩瑟].*图.*"); //匹配色图来指令
 const i_have_a_friend_reg = new RegExp("我有一个朋友说.*|我有个朋友说.*"); //匹配我有个朋友指令
 const open_ju_reg = new RegExp("张菊.*"); //匹配张菊指令
 const close_ju_reg = new RegExp("闭菊.*"); //匹配闭菊指令
@@ -187,20 +184,34 @@ console.log(`当前工作目录：${process.cwd()}`.log);
 //载入配置
 InitConfig();
 
-//载入插件;
-console.log(`开始批量加载插件……`.log);
-let modules = require.all({
-  dir: path.join(`${process.cwd()}`, "plugins"),
+//载入系统通用模块
+console.log(`开始加载系统模块……`.log);
+let system = require.all({
+  dir: path.join(`${process.cwd()}`, "plugins/system"),
   match: /.*\.js/,
-  require: /\.(js|json)$/,
+  require: /\.(js)$/,
   recursive: false,
   encoding: "utf-8",
-  tree: true,
-  resolve: function (modules) {
-    modules.all.load();
+  resolve: function (system) {
+    system.all.load();
   },
 });
-console.log("插件已经加载：", modules.utils);
+console.log(`系统模块加载完毕√`.log);
+
+//载入插件
+console.log(`开始加载插件……`.log);
+let plugins = require.all({
+  dir: path.join(`${process.cwd()}`, "plugins"),
+  match: /.*\.js/,
+  require: /\.(js)$/,
+  recursive: false,
+  encoding: "utf-8",
+  resolve: function (plugins) {
+    plugins.all.load();
+  },
+});
+console.log(plugins);
+console.log(`插件加载完毕√`.log);
 
 /*
  *
@@ -220,15 +231,16 @@ io.on("connection", (socket) => {
   io.emit("onlineusers", ++onlineusers);
 
   //开始获取用户信息并处理
-  GetUserData(CID)
+  system.utils
+    .GetUserData(CID)
     .then(([nickname, logintimes, lastlogintime]) => {
-      console.log(`${modules.utils.Curentyyyymmdd() + modules.utils.CurentTime()}用户 ${nickname}(${CID}) 已连接`.log);
+      console.log(`${system.utils.Curentyyyymmdd() + system.utils.CurentTime()}用户 ${nickname}(${CID}) 已连接`.log);
 
       //更新登录次数
       db.run(`UPDATE users SET logintimes = logintimes + 1 WHERE CID ='${CID}'`);
 
       //更新最后登陆时间
-      db.run(`UPDATE users SET lastlogintime = '${modules.utils.Curentyyyymmdd()}${modules.utils.CurentTime()}' WHERE CID ='${CID}'`);
+      db.run(`UPDATE users SET lastlogintime = '${system.utils.Curentyyyymmdd()}${system.utils.CurentTime()}' WHERE CID ='${CID}'`);
 
       socket.username = nickname;
 
@@ -237,11 +249,11 @@ io.on("connection", (socket) => {
     //若无法获取该用户信息，则应该是其第一次访问，接下来是新增用户操作：
     .catch((reject) => {
       let CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
-      console.log(`GetUserData(): rejected, and err:${reject}`.warn);
-      console.log(`${modules.utils.Curentyyyymmdd() + modules.utils.CurentTime()}新用户 ${CID} 已连接`.log);
+      console.log(`system.utils.GetUserData(): rejected, and err:${reject}`.error);
+      console.log(`${system.utils.Curentyyyymmdd() + system.utils.CurentTime()}新用户 ${CID} 已连接`.log);
       RandomNickname()
         .then((resolve) => {
-          db.run(`INSERT INTO users VALUES('${resolve}', '${CID}', '2', '${modules.utils.Curentyyyymmdd()}${modules.utils.CurentTime()}')`);
+          db.run(`INSERT INTO users VALUES('${resolve}', '${CID}', '2', '${system.utils.Curentyyyymmdd()}${system.utils.CurentTime()}')`);
           socket.username = resolve;
           io.emit("system message", `@新用户 ${CID} 已连接。小夜帮你取了一个随机昵称：「${socket.username}」，请前往 更多-设置 来更改昵称`);
           socket.emit("chat message", {
@@ -251,7 +263,7 @@ io.on("connection", (socket) => {
         })
         .catch((reject) => {
           console.log(`随机昵称错误：${reject}`.error);
-          db.run(`INSERT INTO users VALUES('匿名', '${CID}', '2', '${modules.utils.Curentyyyymmdd()}${modules.utils.CurentTime()}')`);
+          db.run(`INSERT INTO users VALUES('匿名', '${CID}', '2', '${system.utils.Curentyyyymmdd()}${system.utils.CurentTime()}')`);
           socket.username = "匿名";
           io.emit("system message", `@新用户 ${CID} 已连接。现在你的昵称是 匿名 噢，请前往 更多-设置 来更改昵称`);
           socket.emit("chat message", {
@@ -264,7 +276,7 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     onlineusers--;
     io.emit("onlineusers", onlineusers);
-    console.log(`${modules.utils.Curentyyyymmdd()}${modules.utils.CurentTime()} 用户 ${socket.username} 已断开连接`.log);
+    console.log(`${system.utils.Curentyyyymmdd()}${system.utils.CurentTime()} 用户 ${socket.username} 已断开连接`.log);
     io.emit("system message", "@用户 " + socket.username + " 已断开连接");
   });
 
@@ -299,8 +311,8 @@ io.on("connection", (socket) => {
     msg = msg.replace(/'/g, ""); //防爆
     msg = msg.replace(/</g, ""); //防爆
     msg = msg.replace(/>/g, ""); //防爆
-    console.log(`${modules.utils.Curentyyyymmdd() + modules.utils.CurentTime()}收到用户 ${socket.username}(${CID}) 的消息: ${msg}`.warn);
-    db.run(`INSERT INTO messages VALUES('${modules.utils.Curentyyyymmdd()}', '${modules.utils.CurentTime()}', '${CID}', '${msg}')`);
+    console.log(`${system.utils.Curentyyyymmdd() + system.utils.CurentTime()}收到用户 ${socket.username}(${CID}) 的消息: ${msg}`.warn);
+    db.run(`INSERT INTO messages VALUES('${system.utils.Curentyyyymmdd()}', '${system.utils.CurentTime()}', '${CID}', '${msg}')`);
 
     io.emit("chat message", { CID: CID, name: socket.username, msg: msg }); //用户广播
 
@@ -327,35 +339,38 @@ io.on("connection", (socket) => {
       });
     } else if (bv2av_reg.test(msg)) {
       msg = msg.replace(" ", "");
-      Bv2Av(msg)
+      system.utils
+        .Bv2Av(msg)
         .then((resolve) => {
           io.emit("chat message", { CID: "0", msg: resolve });
         })
         .catch((reject) => {
-          console.log(`Bv2Av(): rejected, and err:${reject}`.error);
-          io.emit("system message", `@Bv2Av() err:${reject}`);
+          console.log(`system.utils.Bv2Av(): rejected, and err:${reject}`.error);
+          io.emit("system message", `@system.utils.Bv2Av() err:${reject}`);
         });
     } else if (msg === "/reload") {
       io.emit("reload");
     } else if (msg === "/帮助") {
       io.emit("chat message", { CID: "0", msg: `@${help}` });
     } else if (msg === "/随机cos") {
-      RandomCos()
+      system.setu
+        .RandomCos()
         .then((resolve) => {
           io.emit("pic message", resolve);
         })
         .catch((reject) => {
-          console.log(`RandomCos(): rejected, and err:${reject}`.error);
-          io.emit("system message", `@RandomCos() err:${reject}`);
+          console.log(`system.setu.RandomCos(): rejected, and err:${reject}`.error);
+          io.emit("system message", `@system.setu.RandomCos() err:${reject}`);
         });
     } else if (msg === "/随机买家秀") {
-      RandomTbshow()
+      system.setu
+        .RandomTbshow()
         .then((resolve) => {
           io.emit("pic message", resolve);
         })
         .catch((reject) => {
-          console.log(`RandomTbshow(): rejected, and err:${reject}`.error);
-          io.emit("system message", `@RandomTbshow() err:${reject}`);
+          console.log(`system.setu.RandomTbshow(): rejected, and err:${reject}`.error);
+          io.emit("system message", `@system.setu.RandomTbshow() err:${reject}`);
         });
     } else if (msg === "/随机冷知识") {
       RandomHomeword()
@@ -367,13 +382,14 @@ io.on("connection", (socket) => {
           io.emit("system message", `@RandomHomeword() err:${reject}`);
         });
     } else if (msg === "/随机二次元图") {
-      RandomECY()
+      system.setu
+        .RandomECY()
         .then((resolve) => {
           io.emit("pic message", resolve);
         })
         .catch((reject) => {
-          console.log(`RandomECY(): rejected, and err:${reject}`.error);
-          io.emit("system message", `@RandomECY() err:${reject}`);
+          console.log(`system.setu.RandomECY(): rejected, and err:${reject}`.error);
+          io.emit("system message", `@system.setu.RandomECY() err:${reject}`);
         });
     } //吠
     else if (yap_reg.test(msg)) {
@@ -593,22 +609,6 @@ function start_qqbot() {
       return 0;
     }
 
-    //测试指令
-    if (req.body.message === "/ping") {
-      console.log("Pong!".log);
-      let test = Math.random() * 10000;
-      let runtime = process.hrtime();
-
-      for (i = 1.0; i < 114514.0; i++) {
-        test += i + i / 10.0;
-      }
-
-      runtime = process.hrtime(runtime)[1] / 1000 / 1000;
-
-      res.send({ reply: `Pong! ${test} in ${runtime}ms` });
-      return 0;
-    }
-
     //群服务开关判断
     if (
       req.body.message_type == "group" ||
@@ -751,6 +751,9 @@ function start_qqbot() {
                 res.send({ reply: `小夜的菊花闭上了，小夜在本群的所有服务已经停用，取消请发 张菊[CQ:at,qq=${bot_qq}]` });
                 return 0;
               }
+
+              //强大的插件系统（划掉
+              PluginExecute(req.body.message, req.body.user_id, req.body.group_id);
 
               //报错
               if (feed_back_reg.test(req.body.message)) {
@@ -896,26 +899,11 @@ function start_qqbot() {
                 return 0;
               }
 
-              //色图
-              if (setu_reg.test(req.body.message)) {
-                RandomCos()
-                  .then((resolve) => {
-                    let setu_file = `http://127.0.0.1:${web_port}/${resolve.replace(/\//g, "\\")}`;
-                    res.send({
-                      reply: `[CQ:image,file=${setu_file},url=${setu_file}]`,
-                    });
-                  })
-                  .catch((reject) => {
-                    console.log(`RandomCos(): rejected, and err:${reject}`.error);
-                    res.send({ reply: `你要的色图发送失败啦：${reject}` });
-                  });
-                return 0;
-              }
-
               //r18色图
               if (req.body.message == "r18") {
                 res.send({ reply: `你等等，我去找找你要的r18` });
-                RandomR18()
+                system.setu
+                  .RandomR18()
                   .then((resolve) => {
                     let setu_file = `http://127.0.0.1:${web_port}/${resolve.replace(/\//g, "\\")}`;
                     console.log(setu_file);
@@ -931,7 +919,7 @@ function start_qqbot() {
                     );
                   })
                   .catch((reject) => {
-                    console.log(`RandomR18(): rejected, and err:${reject}`.error);
+                    console.log(`system.setu.RandomR18(): rejected, and err:${reject}`.error);
                     request(
                       `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(`你要的r18发送失败啦：${reject}`)}`,
                       function (error, _response, _body) {
@@ -948,7 +936,8 @@ function start_qqbot() {
               if (come_some_reg.test(req.body.message)) {
                 let tag = req.body.message.match(come_some_reg)[1];
                 res.send({ reply: `你等等，我去找找你要的${tag}` });
-                SearchTag(tag)
+                system.setu
+                  .SearchTag(tag)
                   .then((resolve) => {
                     let setu_file = `http://127.0.0.1:${web_port}/${resolve.replace(/\//g, "\\")}`;
                     console.log(setu_file);
@@ -965,7 +954,7 @@ function start_qqbot() {
                   })
                   .catch((reject) => {
                     //画色图
-                    console.log(`SearchTag(): rejected, and err:${reject}`.error);
+                    console.log(`system.setu.SearchTag(): rejected, and err:${reject}`.error);
 
                     let canvas = createCanvas(500, 500);
                     let ctx = canvas.getContext("2d");
@@ -976,9 +965,9 @@ function start_qqbot() {
                     ctx.fillStyle = "black";
                     ctx.fillText(reject, 250, 250);
 
-                    let file_local = path.join(`${process.cwd()}`, `static`, `xiaoye`, `images`, `${modules.utils.sha1(canvas.toBuffer())}.jpg`);
+                    let file_local = path.join(`${process.cwd()}`, `static`, `xiaoye`, `images`, `${system.utils.sha1(canvas.toBuffer())}.jpg`);
                     fs.writeFileSync(file_local, canvas.toBuffer());
-                    let file_online = `http://127.0.0.1:${web_port}/xiaoye/images/${modules.utils.sha1(canvas.toBuffer())}.jpg`;
+                    let file_online = `http://127.0.0.1:${web_port}/xiaoye/images/${system.utils.sha1(canvas.toBuffer())}.jpg`;
 
                     request(
                       `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(
@@ -991,7 +980,7 @@ function start_qqbot() {
                       }
                     );
 
-                    // console.log(`SearchTag(): rejected, and err:${reject}`.error);
+                    // console.log(`system.setu.SearchTag(): rejected, and err:${reject}`.error);
                     // request(
                     //   `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(
                     //     `你要的${tag}发送失败啦：${reject}`
@@ -1009,14 +998,15 @@ function start_qqbot() {
               //福利姬
               for (let i in req_fuliji_list) {
                 if (req.body.message === req_fuliji_list[i]) {
-                  RandomTbshow()
+                  system.setu
+                    .RandomTbshow()
                     .then((resolve) => {
                       res.send({
                         reply: `[CQ:image,file=${resolve},url=${resolve}]`,
                       });
                     })
                     .catch((reject) => {
-                      console.log(`RandomCos(): rejected, and err:${reject}`.error);
+                      console.log(`system.setu.RandomCos(): rejected, and err:${reject}`.error);
                       res.send({ reply: `你要的福利姬色图发送失败啦：${reject}` });
                     });
                   return 0;
@@ -1026,14 +1016,15 @@ function start_qqbot() {
               //来点二次元
               for (let i in req_ECY_list) {
                 if (req.body.message === req_ECY_list[i]) {
-                  RandomECY()
+                  system.setu
+                    .RandomECY()
                     .then((resolve) => {
                       res.send({
                         reply: `[CQ:image,file=${resolve},url=${resolve}]`,
                       });
                     })
                     .catch((reject) => {
-                      console.log(`RandomCos(): rejected, and err:${reject}`.error);
+                      console.log(`system.setu.RandomCos(): rejected, and err:${reject}`.error);
                       res.send({ reply: `你要的二次元色图发送失败啦：${reject}` });
                     });
                   return 0;
@@ -1614,10 +1605,10 @@ ${final_talents}
                               `static`,
                               `xiaoye`,
                               `images`,
-                              `${modules.utils.sha1(canvas.toBuffer())}.jpg`
+                              `${system.utils.sha1(canvas.toBuffer())}.jpg`
                             );
                             fs.writeFileSync(file_local, canvas.toBuffer());
-                            let file_online = `http://127.0.0.1:${web_port}/xiaoye/images/${modules.utils.sha1(canvas.toBuffer())}.jpg`;
+                            let file_online = `http://127.0.0.1:${web_port}/xiaoye/images/${system.utils.sha1(canvas.toBuffer())}.jpg`;
                             console.log(`迫害成功，图片发送：${file_online}`.log);
                             res.send({
                               reply: `[CQ:image,file=${file_online},url=${file_online}]`,
@@ -1658,9 +1649,9 @@ ${final_talents}
                     console.log(`文字宽度：${tex_width}`.log);
                     ctx.fillText(pohai_tex, tex_config[0], tex_config[1]);
 
-                    let file_local = path.join(`${process.cwd()}`, `static`, `xiaoye`, `images`, `${modules.utils.sha1(canvas.toBuffer())}.jpg`);
+                    let file_local = path.join(`${process.cwd()}`, `static`, `xiaoye`, `images`, `${system.utils.sha1(canvas.toBuffer())}.jpg`);
                     fs.writeFileSync(file_local, canvas.toBuffer());
-                    let file_online = `http://127.0.0.1:${web_port}/xiaoye/images/${modules.utils.sha1(canvas.toBuffer())}.jpg`;
+                    let file_online = `http://127.0.0.1:${web_port}/xiaoye/images/${system.utils.sha1(canvas.toBuffer())}.jpg`;
                     console.log(`迫害成功，图片发送：${file_online}`.log);
                     res.send({
                       reply: `[CQ:image,file=${file_online},url=${file_online}]`,
@@ -2208,7 +2199,7 @@ ${final_talents}
                   ctx.fillStyle = "#716F81";
                   ctx.fillText(`沙雕网友: ${msg}`, 90.5, 55.5);
                   ctx.font = "13px SimHei";
-                  ctx.fillText(modules.utils.CurentTime(), 280.5, 35.5);
+                  ctx.fillText(system.utils.CurentTime(), 280.5, 35.5);
 
                   ctx.beginPath();
                   ctx.arc(40, 40, 28, 0, 2 * Math.PI);
@@ -2217,9 +2208,9 @@ ${final_talents}
                   ctx.drawImage(image, 10, 10, 60, 60);
                   ctx.closePath();
 
-                  let file_local = path.join(`${process.cwd()}`, `static`, `xiaoye`, `images`, `${modules.utils.sha1(canvas.toBuffer())}.jpg`);
+                  let file_local = path.join(`${process.cwd()}`, `static`, `xiaoye`, `images`, `${system.utils.sha1(canvas.toBuffer())}.jpg`);
                   fs.writeFileSync(file_local, canvas.toBuffer());
-                  let file_online = `http://127.0.0.1:${web_port}/xiaoye/images/${modules.utils.sha1(canvas.toBuffer())}.jpg`;
+                  let file_online = `http://127.0.0.1:${web_port}/xiaoye/images/${system.utils.sha1(canvas.toBuffer())}.jpg`;
                   console.log(`我有个朋友合成成功，图片发送：${file_online}`.log);
                   res.send({
                     reply: `[CQ:image,file=${file_online},url=${file_online}]`,
@@ -2234,7 +2225,7 @@ ${final_talents}
                 let self_id = req.body.self_id;
                 if (self_id != bot_qq) {
                   //若配置qq和实际登录qq不匹配，则自动更新qq号
-                  let stat = `配置qq：${bot_qq} 和实际登录qq：${self_id} 不匹配，自动更新了qq号为 ${self_id}`;
+                  let stat = `配置qq：${bot_qq} 和实际登录qq：${self_id} 不匹配，小夜帮小夜自动更新了配置qq为 ${self_id}`;
                   console.log(`${stat}`.error);
                   bot_qq = self_id;
                   res.send({
@@ -2243,14 +2234,12 @@ ${final_talents}
                   return 0;
                 }
                 self_id != "1648468212" ? (self_id = self_id) : (self_id = "1648468212(小小夜本家)"); //试着用一下三元运算符，比if稍微绕一些，但是习惯了非常符合直觉，原理是：当?前的条件成立时，执行:前的语句，不成立的话执行:后的语句
-                let stat = `企划：星野夜蝶Official_${version}_${bot_qq}
-更新日志：${update_text}
+                let stat = `企划：${version}_${self_id}
 宿主架构：${os.hostname()} ${os.type()} ${os.arch()}
-当前配置：聊天回复率 ${reply_probability}%，随机复读率 ${fudu_probability}%，突然抽风率 ${chaos_probability}‰
-如果该小夜出现任何故障，请联系该小夜领养员，
-也可以发送 /报错 小夜的错误 来提交bug给开发团队。
-小夜开源于：https://gitee.com/Giftina/ChatDACS
-夜爹开发群：https://jq.qq.com/?_wv=1027&k=bTZSd2iI`;
+当前配置：回复率 ${reply_probability}%，复读率 ${fudu_probability}%，抽风率 ${chaos_probability}‰
+如果该小夜出现故障，请联系该小夜领养员 ${qq_admin_list[0]}
+或开发群 120243247 报错
+小夜开源于：https://gitee.com/Giftina/ChatDACS`;
                 res.send({
                   reply: stat,
                 });
@@ -2388,9 +2377,9 @@ ${final_talents}
 
                   ctx.putImageData(canvasData, 0, 0);
 
-                  let file_local = path.join(`${process.cwd()}`, `static`, `xiaoye`, `images`, `${modules.utils.sha1(canvas.toBuffer())}.jpg`);
+                  let file_local = path.join(`${process.cwd()}`, `static`, `xiaoye`, `images`, `${system.utils.sha1(canvas.toBuffer())}.jpg`);
                   fs.writeFileSync(file_local, canvas.toBuffer());
-                  let file_online = `http://127.0.0.1:${web_port}/xiaoye/images/${modules.utils.sha1(canvas.toBuffer())}.jpg`;
+                  let file_online = `http://127.0.0.1:${web_port}/xiaoye/images/${system.utils.sha1(canvas.toBuffer())}.jpg`;
                   console.log(`黑白成功，图片发送：${file_online}`.log);
                   res.send({
                     reply: `[CQ:image,file=${file_online},url=${file_online}]`,
@@ -2443,7 +2432,7 @@ ${final_talents}
 
               //群欢迎
               if (req.body.notice_type === "group_increase") {
-                let final = `[CQ:at,qq=${req.body.user_id}] 你好呀，我是本群RBQ担当小夜！小夜的使用说明书在这里 https://blog.giftia.moe/ 噢，请问主人是要先吃饭呢，还是先洗澡呢，还是先*我呢~`;
+                let final = `[CQ:at,qq=${req.body.user_id}] 你好呀，我是本群RBQ担当小夜！小夜的说明书在这里 https://gitee.com/Giftina/ChatDACS 噢，请问主人是要先吃饭呢，还是先洗澡呢，还是先*我呢~`;
                 request(
                   `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(final)}`,
                   function (error, _response, _body) {
@@ -2671,6 +2660,19 @@ ${final_talents}
       res.send();
     }
   });
+
+  //插件应答器
+  async function PluginExecute(ask, qNum, gNum) {
+    let result = await ProcessExecute(ask, qNum, gNum);
+    if (result != "") {
+      request(`http://${go_cqhttp_api}/send_group_msg?group_id=${gNum}&message=${encodeURI(result)}`, function (error, _response, _body) {
+        if (error) {
+          console.log(`请求${go_cqhttp_api}/send_group_msg错误：${error}`);
+        }
+      });
+      console.log(`${result}`.log);
+    }
+  }
 
   //每隔24小时搜索qq_group表，随机延时提醒停用服务的群启用服务
   setInterval(AlertOpen, 1000 * 60 * 60 * 24);
@@ -2945,245 +2947,6 @@ app.post("/upload/file", upload.single("file"), function (req, _res, _next) {
  *
  */
 
-//新闻
-function Getnews() {
-  return new Promise((resolve, reject) => {
-    request("https://3g.163.com/touch/reconstruct/article/list/BBM54PGAwangning/0-10.html", (err, response, body) => {
-      if (!err && response.statusCode === 200) {
-        body = body.substring(9, body.length - 1);
-        var content_news = "今日要闻：";
-        var main = JSON.parse(body);
-        var news = main.BBM54PGAwangning;
-        for (let id = 0; id < 10; id++) {
-          var print_id = id + 1;
-          content_news += "\r\n" + print_id + "." + news[id].title + "a(" + news[id].url + ")[查看原文]";
-        }
-        resolve(content_news);
-      } else {
-        reject("获取新闻错误，这个问题雨女无瓜，是新闻接口的锅。错误原因：" + JSON.stringify(response.body));
-      }
-    });
-  });
-}
-
-//获取用户信息
-function GetUserData(msg) {
-  return new Promise((resolve, reject) => {
-    db.all("SELECT * FROM users WHERE CID = '" + msg + "'", (err, sql) => {
-      if (!err && sql[0]) {
-        let nickname = JSON.stringify(sql[0].nickname);
-        let logintimes = JSON.stringify(sql[0].logintimes);
-        let lastlogintime = JSON.stringify(sql[0].lastlogintime);
-        resolve([nickname, logintimes, lastlogintime]);
-      } else {
-        reject("获取用户信息错误，一般是因为用户第一次登录。错误原因：" + err + ", sql:" + sql[0]);
-      }
-    });
-  });
-}
-
-//BV转AV
-function Bv2Av(msg) {
-  return new Promise((resolve, reject) => {
-    request("https://api.bilibili.com/x/web-interface/view?bvid=" + msg, (err, response, body) => {
-      body = JSON.parse(body);
-      if (!err && response.statusCode === 200 && body.code === 0) {
-        var content = "a(https://www.bilibili.com/video/av";
-        var av = body.data;
-        var av_number = av.aid;
-        var av_title = av.title;
-        content += av_number + ")[" + av_title + "，av" + av_number + "]";
-        resolve(content);
-      } else {
-        reject("解析错误，是否输入了不正确的BV号？错误原因：" + JSON.stringify(response.body));
-      }
-    });
-  });
-}
-
-//随机cos
-function RandomCos() {
-  return new Promise((resolve, reject) => {
-    var rand_page_num = Math.floor(Math.random() * cos_total_count);
-    request(
-      "https://api.vc.bilibili.com/link_draw/v2/Photo/list?category=cos&type=hot&page_num=" + rand_page_num + "&page_size=1",
-      (err, response, body) => {
-        body = JSON.parse(body);
-        if (!err && response.statusCode === 200 && body.code === 0 && body.data.total_count != 0) {
-          cos_total_count = body.data.total_count;
-          try {
-            var obj = body.data.items[0].item.pictures; //经常出现某个item里没有图片的毛病，阿B你在干什么啊
-          } catch (err) {
-            reject("获取随机cos错误，是B站的锅。这个item里又双草没有图片，阿B你在干什么啊。错误原因：" + JSON.stringify(response.body));
-            return 0;
-          }
-          var count = Object.keys(obj).length;
-          var picUrl = obj[Math.floor(Math.random() * count)].img_src;
-          console.log(`cos总数：${cos_total_count}页，当前选择：${rand_page_num}页，发送图片：${picUrl}`.log);
-          request(picUrl).pipe(
-            fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
-              resolve(`/images/${picUrl.split("/").pop()}`);
-            })
-          ); //绕过防盗链，保存为本地图片
-        } else {
-          reject("获取随机cos错误，是B站的锅。错误原因：" + JSON.stringify(response.body));
-        }
-      }
-    );
-  });
-}
-
-//随机r18
-function RandomR18() {
-  return new Promise((resolve, reject) => {
-    request("https://api.lolicon.app/setu/v2?r18=0&size=regular", (err, response, body) => {
-      body = JSON.parse(body);
-      if (!err) {
-        var picUrl = body.data[0].urls.regular;
-        console.log(`发送r18图片：${picUrl}`.log);
-        request(picUrl, (err) => {
-          if (err) {
-            reject("获取tag错误，错误原因：" + err);
-          }
-        }).pipe(
-          fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
-            if (!err) {
-              resolve(`/images/${picUrl.split("/").pop()}`);
-            } else {
-              reject("这张色图太大了，下不下来");
-            }
-          })
-        ); //绕过防盗链，保存为本地图片
-      } else {
-        reject("获取随机r18错误，错误原因：" + JSON.stringify(response.body));
-      }
-    });
-  });
-}
-
-//搜索tag
-function SearchTag(tag) {
-  return new Promise((resolve, reject) => {
-    request(`https://api.lolicon.app/setu/v2?r18=0&size=regular&tag=${encodeURI(tag)}`, (err, _response, body) => {
-      body = JSON.parse(body);
-      if (!err && body.data[0] != null) {
-        var picUrl = body.data[0].urls.regular;
-        console.log(`发送tag图片：${picUrl}`.log);
-        request(picUrl, (err) => {
-          if (err) {
-            reject(`${tag}的色图太大了，下不下来`);
-          }
-        }).pipe(
-          fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (err) => {
-            if (!err) {
-              resolve(`/images/${picUrl.split("/").pop()}`);
-            } else {
-              reject(`${tag}的色图太大了，下不下来`);
-            }
-          })
-        ); //绕过防盗链，保存为本地图片
-      } else {
-        reject(`找不到${tag}的色图`);
-      }
-    });
-  });
-}
-
-//随机买家秀
-function RandomTbshow() {
-  return new Promise((resolve, reject) => {
-    request(`https://api.sumt.cn/api/rand.tbimg.php?token=${sumtkey}&format=json`, (err, response, body) => {
-      body = JSON.parse(body);
-      if (!err && body.code === 200) {
-        let picUrl = body.pic_url;
-        request(picUrl).pipe(
-          fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
-            console.log(`保存了珍贵的随机买家秀：${picUrl}，然后再给用户`.log);
-          })
-        ); //来之不易啊，保存为本地图片
-        resolve(body.pic_url); //但是不给本地地址，还是给的源地址，这样节省带宽
-      } else {
-        reject("随机买家秀错误，是卡特实验室接口的锅。错误原因：" + JSON.stringify(response.body));
-      }
-    });
-  });
-}
-
-//随机二次元图
-function RandomECY() {
-  return new Promise((resolve, reject) => {
-    request(`https://iw233.cn/api/Random.php`, (err, response, _body) => {
-      if (!err) {
-        let picUrl = response.request.uri.href;
-        request(picUrl).pipe(
-          fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
-            console.log(`保存了好康的二次元图：${picUrl}，然后再给用户`.log);
-          })
-        ); //来之不易啊，保存为本地图片
-        resolve(picUrl); //但是不给本地地址，还是给的源地址，这样节省带宽
-      } else {
-        reject("随机二次元图错误，是这个神秘接口的锅。错误原因：图片太鸡儿大了");
-      }
-    });
-  });
-}
-// function RandomECY() {
-//   return new Promise((resolve, reject) => {
-//     request(`https://api.sumt.cn/api/rand.acg.php?token=${sumtkey}&type=%E4%BA%8C%E6%AC%A1%E5%85%83&format=json`, (err, response, body) => {
-//       body = JSON.parse(body);
-//       if (!err && body.code === 200) {
-//         let picUrl = body.pic_url;
-//         request(picUrl).pipe(
-//           fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
-//             console.log(`保存了好康的二次元图：${picUrl}，然后再给用户`.log);
-//           })
-//         ); //来之不易啊，保存为本地图片
-//         resolve(body.pic_url); //但是不给本地地址，还是给的源地址，这样节省带宽
-//       } else {
-//         reject("随机二次元图错误，是卡特实验室接口的锅。错误原因：" + JSON.stringify(response.body));
-//       }
-//     });
-//   });
-// }
-
-//随机冷知识
-function RandomHomeword() {
-  return new Promise((resolve, reject) => {
-    request("https://passport.csdn.net/v1/api/get/homeword", (err, response, body) => {
-      body = JSON.parse(body);
-      if (!err) {
-        var title = "<h2>" + body.data.title + "</h2>";
-        var content = body.data.content;
-        var count = body.data.count;
-        resolve(title + content + "\r\n—— 有" + count + "人陪你一起已读");
-      } else {
-        reject("获取随机冷知识错误，这个问题雨女无瓜，是CSDN接口的锅。错误原因：" + JSON.stringify(response.body));
-      }
-    });
-  });
-}
-
-//自动随机昵称
-function RandomNickname() {
-  return new Promise((resolve, reject) => {
-    request(`http://api.tianapi.com/txapi/cname/index?key=${Tiankey}`, (err, response, body) => {
-      body = JSON.parse(body);
-      if (!err) {
-        try {
-          body.newslist[0].naming;
-        } catch (err) {
-          reject(
-            "获取随机昵称错误，是天行接口的锅，可能是您还没有配置密钥，这条错误可以无视，不影响正常使用。错误原因：" + JSON.stringify(response.body)
-          );
-        }
-        resolve(body.newslist[0].naming);
-      } else {
-        reject("获取随机昵称错误，是天行接口的锅。错误原因：" + JSON.stringify(response.body));
-      }
-    });
-  });
-}
-
 //舔狗回复
 function PrprDoge() {
   return new Promise((resolve, reject) => {
@@ -3201,10 +2964,10 @@ function PrprDoge() {
 //读取配置文件 config.yml
 function ReadConfig() {
   return new Promise((resolve, reject) => {
-    console.log(`开始加载……`.log);
-
+    console.log(`开始加载配置……`.log);
     fs.readFile(path.join(`${process.cwd()}`, "config", "config.yml"), "utf-8", function (err, data) {
       if (!err) {
+        console.log(`配置加载完毕√`.log);
         resolve(yaml.parse(data));
       } else {
         reject("读取配置文件错误。错误原因：" + err);
@@ -3277,7 +3040,7 @@ async function InitConfig() {
 
   http.listen(web_port, () => {
     console.log(`_______________________________________\n`);
-    console.log(`  ${modules.utils.Curentyyyymmdd()}${modules.utils.CurentTime()} 启动完毕，访问 127.0.0.1:${web_port} 即可进入web端  \n`.alert);
+    console.log(`  ${system.utils.Curentyyyymmdd()}${system.utils.CurentTime()} 启动完毕，访问 127.0.0.1:${web_port} 即可进入web端  \n`.alert);
   });
 }
 
@@ -3457,8 +3220,8 @@ function TTS(tex) {
       function (result) {
         if (result.data) {
           console.log(`${tex} 的语音合成成功`.log);
-          fs.writeFileSync(`./static/xiaoye/tts/${modules.utils.sha1(result.data)}.mp3`, result.data);
-          let file = { file: `/xiaoye/tts/${modules.utils.sha1(result.data)}.mp3`, filename: "小夜语音回复" };
+          fs.writeFileSync(`./static/xiaoye/tts/${system.utils.sha1(result.data)}.mp3`, result.data);
+          let file = { file: `/xiaoye/tts/${system.utils.sha1(result.data)}.mp3`, filename: "小夜语音回复" };
           resolve(file);
         } else {
           // 合成服务发生错误
@@ -3484,8 +3247,8 @@ function BetterTTS(tex) {
         console.log(`${tex} 的幼女版语音合成成功`.log);
         let base64Data = body.data.replace(/^data:audio\/x-mpeg;base64,/, "");
         let dataBuffer = Buffer.from(base64Data, "base64");
-        fs.writeFileSync(`./static/xiaoye/tts/${modules.utils.sha1(dataBuffer)}.mp3`, dataBuffer);
-        let file = { file: `/xiaoye/tts/${modules.utils.sha1(dataBuffer)}.mp3`, filename: "小夜幼女版语音回复" };
+        fs.writeFileSync(`./static/xiaoye/tts/${system.utils.sha1(dataBuffer)}.mp3`, dataBuffer);
+        let file = { file: `/xiaoye/tts/${system.utils.sha1(dataBuffer)}.mp3`, filename: "小夜幼女版语音回复" };
         resolve(file);
       } else {
         //估计被发现扒接口了
@@ -3671,12 +3434,26 @@ function Talents10x(talents) {
   });
 }
 
-/*夏日已所剩无几 —— 泠鸢yousa*/
-
-/*
-    示例功能区块
-    let reg = new RegExp("reg(.*)");
-    if (reg.test(req.body.message)) { //指令入口
-      let arg = req.body.message.match(reg)[1]; //取出reg(.*)内容作为arg
+//插件遍历器，每条消息遍历一遍插件
+async function ProcessExecute(msg, qq_num, group_num) {
+  var return_result = "";
+  for (let i in plugins) {
+    let reg = new RegExp(plugins[i].指令);
+    if (reg.test(msg)) {
+      try {
+        return_result = await plugins[i].execute(msg, qq_num, group_num);
+      } catch (e) {
+        console.log(`插件 ${plugins[i].插件名} ${plugins[i].版本} 爆炸啦：`.error);
+        console.log(e.stack);
+        return `插件 ${plugins[i].插件名} ${plugins[i].版本} 爆炸啦：${e.stack}`;
+      }
+      console.log(`插件 ${plugins[i].插件名} ${plugins[i].版本} 响应了消息`.log);
+      return return_result;
     }
-*/
+  }
+  return return_result;
+}
+
+/**
+ * 未来は風のようだ —— Liella!
+ */
