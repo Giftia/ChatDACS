@@ -14,7 +14,7 @@
       技术栈：语言——JavaScript，web框架——Express，前端组件库——layui，qq协议端——go-cqhttp。<br/>
       画师：塘李<br/>
       <br/>
-      示例 DEMO：<a href="http://chatdacs.giftia.moe/" target="_blank">chatdacs.giftia.moe</a><br/>
+      示例 DEMO：<a href="http://110.42.221.72/" target="_blank">http://110.42.221.72/</a><br/>
       简易搭建教程 Tutorials：<a href="https://zhuanlan.zhihu.com/p/67995935" target="_blank">zhuanlan.zhihu.com/p/67995935</a><br/>
       语录来自小夜：<a href="https://github.com/Giftia/Project_Xiaoye" target="_blank">github.com/Giftia/Project_Xiaoye</a>
       <br>
@@ -48,7 +48,7 @@
 
 如有任何疑问、建议或者需要联系我，请加官方 QQ 群 120243247：点击链接加入群聊【星野夜蝶 粉丝群】：https://jq.qq.com/?_wv=1027&k=ovqyydCe
 
-对于普通用户，推荐您直接使用官方免费的公共服务 QQ 账号：1648468212
+对于普通用户，推荐您直接使用官方免费的公共服务 QQ 账号：1648468212（现已暂停服务）
 
 但更推荐您使用私人部署，私人部署的好处都有啥：（好处来源：https://github.com/Sora233/DDBOT ）
 
