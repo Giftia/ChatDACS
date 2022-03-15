@@ -29,9 +29,9 @@ async function Init() {
 module.exports = {
   插件名: "cos图片插件", //插件名，仅在插件加载时展示
   指令: ".*图.*来.*|.*来.*图.*|.*[色涩瑟].*图.*", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.0", //插件版本，仅在插件加载时展示
+  版本: "1.1", //插件版本，仅在插件加载时展示
   作者: "Giftina", //插件作者，仅在插件加载时展示
-  描述: "在普通限度的尺度下让小夜发一张合法的 cos 图，图片来源哔哩哔哩cos专栏", //插件说明，仅在插件加载时展示
+  描述: "在普通限度的尺度下发送一张合法的 cos 图, 图片来源哔哩哔哩cos专栏. 已修复图片无法发送的问题.", //插件说明，仅在插件加载时展示
 
   execute: async function (msg, qNum, gNum) {
     RandomCos()
@@ -51,7 +51,7 @@ function RandomCos() {
   return new Promise((resolve, reject) => {
     var rand_page_num = Math.floor(Math.random() * cos_total_count);
     request(
-      "https://api.vc.bilibili.com/link_draw/v2/Photo/list?category=cos&type=hot&page_num=" + rand_page_num + "&page_size=1",
+      "https://api.vc.bilibili.com/link_draw/v2/Photo/list?category=cos&type=new&page_num=" + rand_page_num + "&page_size=10",
       (err, response, body) => {
         body = JSON.parse(body);
         if (!err && response.statusCode === 200 && body.code === 0 && body.data.total_count != 0) {
@@ -77,3 +77,9 @@ function RandomCos() {
     );
   });
 }
+
+/**
+ * 其他可用备份
+ * https://api.vc.bilibili.com/link_draw/v2/Photo/list?category=sifu&type=new&page_num=0&page_size=10
+ * https://api.vc.bilibili.com/link_draw/v2/Photo/index?type=recommend&page_num=0&page_size=1
+ */
