@@ -20,7 +20,7 @@
     "mp3-duration": "^1.1.0",
     "multer": "^1.4.3",
     "music-metadata": "^7.11.4",
-    "nodejieba": "^2.5.2",
+    "nodejieba": "^2.6.0",
     "play-sound": "^1.1.5",
     "request": "^2.88.2",
     "require.all": "^2.0.5",
