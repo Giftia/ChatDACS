@@ -16,7 +16,7 @@
     "compression": "^1.7.4",
     "cookies": "^0.8.0",
     "diff": ">=3.5.0",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "mp3-duration": "^1.1.0",
     "multer": "^1.4.4",
     "music-metadata": "^7.12.2",
