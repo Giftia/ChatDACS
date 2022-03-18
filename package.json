@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "baidu-aip-sdk": "^4.15.4",
-    "canvas": "^2.8.0",
+    "canvas": "^2.9.0",
     "colors": "^1.4.0",
     "compression": "^1.7.4",
     "cookies": "^0.8.0",
