@@ -2,22 +2,22 @@
 
 #系统配置和开关，根据你的需要改动
 System:
-  #web端自动聊天开关：
-  chat_swich: 1
+  #web端自动聊天开关:
+  chat_swich: true
 
-  #qqBot小夜开关，需要自行配置以接入go-cqhttp，反向 HTTP POST 于 127.0.0.1:80/bot：
-  conn_go_cqhttp: 1
+  #qqBot小夜开关，需要自行配置以接入go-cqhttp，反向 HTTP POST 于 127.0.0.1:80/bot:
+  conn_go_cqhttp: false
 
-  #接入哔哩哔哩直播聊天开关：
-  Now_On_Live: 0
+  #接入哔哩哔哩直播聊天开关:
+  Now_On_Live: false
 
-  #web端使用的本机端口，如果有冲突的话请更换端口：
+  #web端使用的本机端口，如果有冲突的话请尝试更改:
   web_port: 80
 
-  #监听go_cqhttp的反向http post服务，如果有冲突的话请更换监听接口：
+  #监听go_cqhttp的反向http post服务，如果有冲突的话请尝试更改:
   go_cqhttp_service: "/bot"
 
-  #go_cqhttp的http接口地址，如果有冲突的话请更换地址：
+  #go_cqhttp的http接口地址，如果有冲突的话请尝试更改:
   go_cqhttp_api: "127.0.0.1:5700"
 
 #接口密钥配置
@@ -39,44 +39,44 @@ ApiKey:
 
 #qqBot配置
 qqBot:
-  #qqBot使用的qq帐号：
+  #qqBot使用的qq帐号:
   bot_qq: "1648468212"
 
-  #qqBot小夜的管理员列表，管理员有权执行管理员指令，且第一位管理员将会处理用户邀请小夜加群的请求：
+  #qqBot小夜的管理员列表，管理员有权执行管理员指令，且第一位管理员将会处理用户邀请小夜加群的请求:
   qq_admin_list: ["1005056803", "2418754147", "38263547"]
 
-  #私聊开关：
+  #私聊开关:
   private_service_swich: false
 
   #限制分词权重数量，设置得越低，更侧重大意，回复更贴近重点，但容易重复相同的回复，
-  #设置得越高，回复会更随意、更沙雕，但更容易答非所问：
+  #设置得越高，回复会更随意、更沙雕，但更容易答非所问:
   topN: 5
 
-  #qqBot小夜回复几率，单位是%，可通过 /admin_change_reply_probability 指令更改：
+  #qqBot小夜回复几率，单位是%，可通过 /admin_change_reply_probability 指令更改:
   reply_probability: 1
 
-  #qqBot小夜复读几率，单位是%，可通过 /admin_change_fudu_probability 指令更改：
+  #qqBot小夜复读几率，单位是%，可通过 /admin_change_fudu_probability 指令更改:
   fudu_probability: 1
 
-  #qqBot小夜抽风几率，随机抽风舔狗，单位是‰：
+  #qqBot小夜抽风几率，随机抽风舔狗，单位是‰:
   chaos_probability: 0
 
-  #福利姬指令列表：
+  #福利姬指令列表:
   req_fuliji_list: ["福利姬", "买家秀"]
 
-  #二次元图指令列表：
+  #二次元图指令列表:
   req_ECY_list: ["来点二次元", "二次元"]
 
-  #今日不带套指令列表：
+  #今日不带套指令列表:
   req_no_trap_list: ["今日不带套", "今日不戴套", "今天不带套", "今天不戴套"]
 
-  #qq侧接收到的图片保存与转发开关，虽然经常可以收到一些好康的图，但是非常占硬盘空间：
-  qqimg_to_web: 0
+  #qq侧接收到的图片保存与转发开关，虽然经常可以收到一些好康的图，但是非常占硬盘空间:
+  qqimg_to_web: false
 
-  #最大共存地雷数：
+  #最大共存地雷数:
   max_mine_count: 3
 
-  #教学系统的黑名单：
+  #教学系统的黑名单:
   black_list_words:
     [
       "群:",
@@ -186,8 +186,8 @@ qqBot:
 
 #杂项配置
 Others:
-  #哔哩哔哩直播间id：
+  #哔哩哔哩直播间id:
   blive_room_id: "49148"
 
-  #初始化随机cos上限，50个应该比较保守，使用随机cos功能后会自动更新为最新值：
-  cos_total_count: 50
+  #初始化随机cos上限，可以自己调整:
+  cos_total_count: 99999

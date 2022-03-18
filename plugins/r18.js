@@ -28,49 +28,14 @@ async function Init() {
 module.exports = {
   插件名: "r18色图插件", //插件名，仅在插件加载时展示
   指令: "r18", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.0", //插件版本，仅在插件加载时展示
+  版本: "1.1", //插件版本，仅在插件加载时展示
   作者: "Giftina", //插件作者，仅在插件加载时展示
   描述: "在危险限度的尺度下让小夜发一张非法的 r18 色图，图片来源pixivcat", //插件说明，仅在插件加载时展示
 
   execute: async function (msg, qNum, gNum) {
-    res.send({ reply: `你等等，我去找找你要的r18` });
-    system.setu
-      .RandomR18()
-      .then((resolve) => {
-        let setu_file = `http://127.0.0.1:${web_port}/${resolve.replace(/\//g, "\\")}`;
-        console.log(setu_file);
-        request(
-          `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(
-            `[CQ:image,file=${setu_file},url=${setu_file}]`
-          )}`,
-          function (error, _response, _body) {
-            if (error) {
-              console.log(`请求${go_cqhttp_api}/send_group_msg错误：${error}`);
-            }
-          }
-        );
-      })
-      .catch((reject) => {
-        console.log(`system.setu.RandomR18(): rejected, and err:${reject}`.error);
-        request(
-          `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(`你要的r18发送失败啦：${reject}`)}`,
-          function (error, _response, _body) {
-            if (error) {
-              console.log(`请求${go_cqhttp_api}/send_group_msg错误：${error}`);
-            }
-          }
-        );
-      });
-
-    RandomCos()
-      .then((resolve) => {
-        let setu_file = `http://127.0.0.1:${web_port}/${resolve.replace(/\//g, "\\")}`;
-        return `[CQ:image,file=${setu_file},url=${setu_file}]`;
-      })
-      .catch((reject) => {
-        console.log(`system.setu.RandomCos(): rejected, and err:${reject}`.error);
-        return `你要的色图发送失败啦：${reject}`;
-      });
+    const setu_file = await RandomR18();
+    let setu_file_url = `http://127.0.0.1:${web_port}${setu_file}`;
+    return { type: 'picture', content: setu_file_url };
   },
 };
 

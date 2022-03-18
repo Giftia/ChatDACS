@@ -34,15 +34,9 @@ module.exports = {
   描述: "在普通限度的尺度下发送一张合法的 cos 图, 图片来源哔哩哔哩cos专栏. 已修复图片无法发送的问题.", //插件说明，仅在插件加载时展示
 
   execute: async function (msg, qNum, gNum) {
-    RandomCos()
-      .then((resolve) => {
-        let setu_file = `http://127.0.0.1:${web_port}/${resolve.replace(/\//g, "\\")}`;
-        return `[CQ:image,file=${setu_file},url=${setu_file}]`;
-      })
-      .catch((reject) => {
-        console.log(`system.setu.RandomCos(): rejected, and err:${reject}`.error);
-        return `你要的色图发送失败啦：${reject}`;
-      });
+    const setu_file = await RandomCos();
+    let setu_file_url = `http://127.0.0.1:${web_port}${setu_file}`;
+    return { type: 'picture', content: setu_file_url };
   },
 };
 

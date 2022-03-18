@@ -15,7 +15,6 @@
     <title>ChatDACS</title>
     <link rel="stylesheet" href="/style.css" type="text/css" />
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/echarts.min.js"></script>
     <script>
       window.onload = function () {
         var time_now = 0,
@@ -68,54 +67,6 @@
             '"><span style="width: 77%; height: 1000px;"><div id="pic" style="background-image: url(' +
             msg +
             ');" ></div></span></li>';
-          img[liNow].className += "imgleft";
-          span[liNow].className += "spanleft";
-          window.scrollTo(0, document.body.scrollHeight);
-        });
-
-        socket.on("chart message", function (msg) {
-          content.innerHTML +=
-            '<li><img src="' + arrIcon[1] + '"><span style="width: 77%"><div id="chart" style="width:100%; height: 500px;"></div></span></li>';
-          var myChart = echarts.init(document.getElementById("chart"));
-          var option = {
-            title: {
-              top: 30,
-              left: "center",
-              text: "2021数据统计",
-            },
-            tooltip: {},
-            visualMap: {
-              show: false,
-              min: 0,
-              max: 200,
-              type: "piecewise",
-              orient: "horizontal",
-              left: "center",
-              top: 65,
-              textStyle: {
-                color: "#000",
-              },
-            },
-            calendar: {
-              top: 120,
-              left: 30,
-              right: 30,
-              cellSize: ["auto", "auto"],
-              range: "2021",
-              itemStyle: {
-                borderWidth: 0.5,
-              },
-              yearLabel: { show: false },
-            },
-            series: {
-              type: "heatmap",
-              coordinateSystem: "calendar",
-              data: msg,
-            },
-          };
-          myChart.setOption(option);
-          sorc = 0;
-          liNow++;
           img[liNow].className += "imgleft";
           span[liNow].className += "spanleft";
           window.scrollTo(0, document.body.scrollHeight);
@@ -216,7 +167,6 @@
         el: document.querySelector("input"),
         sentences: [
           "/开门 233333",
-          "/log_view",
           "/reload",
           "/rename 昵称",
           "BV1PA411L7op",

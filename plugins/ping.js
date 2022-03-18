@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "连通性与跑分测试插件", //插件名，仅在插件加载时展示
   指令: "^[/!]ping", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.0", //插件版本，仅在插件加载时展示
+  版本: "1.1", //插件版本，仅在插件加载时展示
   作者: "Giftina", //插件作者，仅在插件加载时展示
   描述: "PingPong，最基础的插件，可基于本插件学习插件的开发", //插件说明，仅在插件加载时展示
 
@@ -129,6 +129,6 @@ module.exports = {
 
     runtime = process.hrtime(runtime)[1] / 1000 / 1000;
 
-    return `Pong! 3.${final} in ${runtime}ms`;
+    return { type: "text", content: `Pong! 3.${final} in ${runtime}ms` };
   },
 };
