@@ -10,7 +10,7 @@
     "pkg_win": "pkg ."
   },
   "dependencies": {
-    "baidu-aip-sdk": "^4.15.4",
+    "baidu-aip-sdk": "^4.15.8",
     "canvas": "^2.9.0",
     "colors": "^1.4.0",
     "compression": "^1.7.4",
