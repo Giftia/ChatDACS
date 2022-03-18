@@ -49,7 +49,7 @@ function RandomCos() {
       (err, response, body) => {
         body = JSON.parse(body);
         if (!err && response.statusCode === 200 && body.code === 0 && body.data.total_count != 0) {
-          cos_total_count = body.data.total_count;
+          // cos_total_count = body.data.total_count; //现在阿b的cos图片数量不确定，暂时不更新
           try {
             var obj = body.data.items[0].item.pictures; //经常出现某个item里没有图片的毛病，阿B你在干什么啊
           } catch (err) {

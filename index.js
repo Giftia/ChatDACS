@@ -4,7 +4,7 @@
  *
  * 沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)，一个简单的机器人框架，支持接入哔哩哔哩直播，具备完全功能的web网页控制台。
  *
- * 开箱即用，若想使用更完善的功能，请访问以下申请地址，申请自己的接口密钥后，修改 /config/config.yml文件:
+ * 开箱即用，若想使用更完善的功能，请访问以下申请地址，申请自己的接口密钥后，修改 ./config/config.yml文件:
  *
  * 天行接口，用于 随机昵称 与 舔狗 功能，申请地址 https://www.tianapi.com/
  *
@@ -138,7 +138,7 @@ const Constants = require(path.join(
 ));
 
 //系统配置和开关，以及固定变量
-const version = "ChatDACS v3.1.0-Dev"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS v3.2.0"; //版本号，会显示在浏览器tab与标题栏
 var boom_timer; //60s计时器
 var onlineusers = 0, //预定义
   Tiankey,
@@ -4418,5 +4418,5 @@ async function ProcessExecute(msg, qq_num, group_num) {
 }
 
 /**
- * Somnambulating —— 羽肿
+ * 🎧 ArkLight —— M2U
  */

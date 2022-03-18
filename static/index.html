@@ -286,31 +286,31 @@
 
           //工具栏-cos
           layim.on("tool(cos)", function (insert, send) {
-            insert("/随机cos");
+            insert("来点色图");
             send();
           });
 
           //工具栏-ecy
           layim.on("tool(ecy)", function (insert, send) {
-            insert("/随机二次元图");
+            insert("随机二次元图");
             send();
           });
 
           //工具栏-tbshow
           layim.on("tool(tbshow)", function (insert, send) {
-            insert("/随机买家秀");
+            insert("随机买家秀");
             send();
           });
 
           //工具栏-knowledge
           layim.on("tool(knowledge)", function (insert, send) {
-            insert("/随机冷知识");
+            insert("随机冷知识");
             send();
           });
 
           //工具栏-帮助
           layim.on("tool(help)", function (insert, send) {
-            insert("/帮助");
+            insert("帮助");
             send();
           });
 
@@ -612,15 +612,14 @@
               superplaceholder({
                 el: document.querySelector("input"),
                 sentences: [
-                  "/开门 233333",
                   "/reload",
                   "BV1PA411L7op",
-                  "/随机cos",
-                  "/随机买家秀",
-                  "/随机冷知识",
+                  "来点色图",
+                  "/ping",
+                  "随机冷知识",
                   "小夜",
-                  "/帮助",
-                  "/随机二次元图",
+                  "帮助",
+                  "随机买家秀",
                 ],
                 options: {
                   letterDelay: 100,

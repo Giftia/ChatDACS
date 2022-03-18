@@ -23,45 +23,38 @@ function ReadConfig() {
 async function Init() {
   let resolve = await ReadConfig();
   web_port = resolve.System.web_port;
+  sumtkey = resolve.ApiKey.sumtkey;
 }
 
 module.exports = {
-  插件名: "r18色图插件", //插件名，仅在插件加载时展示
-  指令: "r18", //指令触发关键词，可使用正则表达式匹配
+  插件名: "淘宝买家秀色图插件", //插件名，仅在插件加载时展示
+  指令: ".*(随机)买家秀", //指令触发关键词，可使用正则表达式匹配
   版本: "1.1", //插件版本，仅在插件加载时展示
   作者: "Giftina", //插件作者，仅在插件加载时展示
-  描述: "在危险限度的尺度下发送一张非法的 r18 色图，图片来源pixivcat", //插件说明，仅在插件加载时展示
+  描述: "在危险限度的尺度下发送一张非法的淘宝买家秀色图", //插件说明，仅在插件加载时展示
 
   execute: async function (msg, qNum, gNum) {
-    const setu_file = await RandomR18();
-    let setu_file_url = `http://127.0.0.1:${web_port}${setu_file}`;
+    const setu_file = await RandomTbshow() ?? "";
+    let setu_file_url = `${setu_file}`;
     return { type: 'picture', content: setu_file_url };
   },
 };
 
-//随机r18
-function RandomR18() {
+//随机买家秀
+function RandomTbshow() {
   return new Promise((resolve, reject) => {
-    request("https://api.lolicon.app/setu/v2?r18=0&size=regular", (err, response, body) => {
+    request(`https://api.sumt.cn/api/rand.tbimg.php?token=${sumtkey}&format=json`, (err, response, body) => {
       body = JSON.parse(body);
-      if (!err) {
-        var picUrl = body.data[0].urls.regular;
-        console.log(`发送r18图片：${picUrl}`.log);
-        request(picUrl, (err) => {
-          if (err) {
-            reject("获取tag错误，错误原因：" + err);
-          }
-        }).pipe(
+      if (!err && body.code === 200) {
+        const picUrl = body.pic_url;
+        request(picUrl).pipe(
           fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
-            if (!err) {
-              resolve(`/images/${picUrl.split("/").pop()}`);
-            } else {
-              reject("这张色图太大了，下不下来");
-            }
+            console.log(`保存了珍贵的随机买家秀：${picUrl}，然后再给用户`.log);
           })
-        ); //绕过防盗链，保存为本地图片
+        ); //来之不易啊，保存为本地图片
+        resolve(body.pic_url); //但是不给本地地址，还是给的源地址，这样节省带宽
       } else {
-        reject("获取随机r18错误，错误原因：" + JSON.stringify(response.body));
+        reject("随机买家秀错误，是卡特实验室接口的锅。错误原因：" + JSON.stringify(response.body));
       }
     });
   });

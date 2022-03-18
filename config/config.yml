@@ -22,10 +22,10 @@ System:
 
 #接口密钥配置
 ApiKey:
-  #天行接口key
+  #天行接口key，申请地址 https://www.tianapi.com/
   Tiankey: ""
 
-  #卡特实验室接口key
+  #卡特实验室接口key，申请地址 https://api.sumt.cn/
   sumtkey: ""
 
   #百度应用id
