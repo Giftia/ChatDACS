@@ -30,7 +30,7 @@
     "yaml": "^1.10.2"
   },
   "devDependencies": {
-    "@babel/core": "^7.15.5",
+    "@babel/core": "^7.17.7",
     "@babel/preset-env": "^7.15.6",
     "babel-loader": "^8.0.6",
     "webpack": "^5.60.0",
