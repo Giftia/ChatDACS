@@ -26,7 +26,7 @@
     "require.all": "^2.0.5",
     "socket.io": "^4.4.1",
     "sqlite3": "^5.0.2",
-    "winston": "^3.3.3",
+    "winston": "^3.6.0",
     "yaml": "^1.10.2"
   },
   "devDependencies": {
