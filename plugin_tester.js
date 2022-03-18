@@ -23,7 +23,7 @@ colors.setTheme({
 });
 
 //载入插件
-console.log(`插件测试器 v1.1，用于快速验证插件功能`.alert);
+console.log(`插件测试器 v1.2，用于快速验证插件功能`.alert);
 console.log(`开始加载插件……`.log);
 let plugins = require.all({
   dir: path.join(`${process.cwd()}`, "plugins"),
@@ -48,11 +48,10 @@ rl.on("line", (input) => {
 });
 
 async function run(ask) {
-  let qNum, gNum;
-  let result = await ProcessExecute(ask, qNum, gNum);
+  const qNum = 0, gNum = 0;
+  const result = await ProcessExecute(ask, qNum, gNum);
   if (result != "") {
-    // res.send({ reply: result });
-    console.log(`${result}`.log);
+    console.log(result);
   }
 }
 
@@ -60,7 +59,7 @@ async function run(ask) {
 async function ProcessExecute(msg, qq_num, group_num) {
   var return_result = "";
   for (let i in plugins) {
-    let reg = new RegExp(plugins[i].指令);
+    const reg = new RegExp(plugins[i].指令);
     if (reg.test(msg)) {
       try {
         return_result = await plugins[i].execute(msg, qq_num, group_num);

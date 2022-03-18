@@ -138,7 +138,7 @@ const Constants = require(path.join(
 ));
 
 //系统配置和开关，以及固定变量
-const version = "ChatDACS v3.2.0"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS v3.2.1"; //版本号，会显示在浏览器tab与标题栏
 var boom_timer; //60s计时器
 var onlineusers = 0, //预定义
   Tiankey,
@@ -394,34 +394,6 @@ io.on("connection", (socket) => {
           io.emit("reload");
         } else if (msg === "/帮助") {
           io.emit("text", { CID: "0", msg: `@${help}` });
-        } else if (msg === "/随机cos") {
-          plugins
-            .cos
-            .RandomCos()
-            .then((resolve) => {
-              io.emit("picture", resolve);
-            })
-            .catch((reject) => {
-              console.log(
-                `plugins.cos.RandomCos(): rejected, and err:${reject}`.error,
-              );
-              io.emit("system message", `@plugins.cos.RandomCos() err:${reject}`);
-            });
-        } else if (msg === "/随机买家秀") {
-          plugins.setu
-            .RandomTbshow()
-            .then((resolve) => {
-              io.emit("picture", resolve);
-            })
-            .catch((reject) => {
-              console.log(
-                `plugins.setu.RandomTbshow(): rejected, and err:${reject}`.error,
-              );
-              io.emit(
-                "system message",
-                `@plugins.setu.RandomTbshow() err:${reject}`,
-              );
-            });
         } else if (msg === "/随机冷知识") {
           RandomHomeword()
             .then((resolve) => {
@@ -431,20 +403,7 @@ io.on("connection", (socket) => {
               console.log(`RandomHomeword(): rejected, and err:${reject}`.error);
               io.emit("system message", `@RandomHomeword() err:${reject}`);
             });
-        } else if (msg === "/随机二次元图") {
-          system.setu
-            .RandomECY()
-            .then((resolve) => {
-              io.emit("picture", resolve);
-            })
-            .catch((reject) => {
-              console.log(
-                `system.setu.RandomECY(): rejected, and err:${reject}`.error,
-              );
-              io.emit("system message", `@system.setu.RandomECY() err:${reject}`);
-            });
-        } //吠
-        else if (Constants.yap_reg.test(msg)) {
+        } else if (Constants.yap_reg.test(msg)) { //吠
           const barkMsg = msg.replace("/吠 ", "").replace("/吠", "");
           BetterTTS(barkMsg)
             .then((resolve) => {
