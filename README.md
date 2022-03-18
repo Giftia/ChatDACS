@@ -33,7 +33,7 @@
 <p align="center">
   <a href="https://stats.uptimerobot.com/JYr8kI8jqg"><img src="https://img.shields.io/uptimerobot/ratio/m783632550-7da46d24226cb151b978c810?label=%E5%AD%98%E6%B4%BB%E7%8E%87&style=for-the-badge" alt="Uptime(30 days)" /></a>
   &nbsp;
-  <a href="http://chatdacs.giftia.moe/"><img src="https://img.shields.io/website?label=demo&style=for-the-badge&up_message=online&url=http://chatdacs.giftia.moe/" alt="Demo" /></a>
+  <a href="http://chatdacs.giftia.moe/"><img src="https://img.shields.io/website?label=demo&style=for-the-badge&up_message=online&url=http://110.42.221.72/" alt="Demo" /></a>
   &nbsp;
   <a href="https://github.com/Giftia/ChatDACS/actions"><img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/Giftia/ChatDACS/Compile%20ChatDACS%20for%20Windows?label=%E8%87%AA%E5%8A%A8%E6%9E%84%E5%BB%BA&style=for-the-badge"></a>
   &nbsp;
