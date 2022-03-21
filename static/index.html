@@ -1,6 +1,7 @@
 <!-- Giftina：https://giftia.moe -->
 <!DOCTYPE html>
 <html lang="zh-cn">
+
   <head>
     <meta charset="utf-8" />
     <link rel="preload" href="/socket.io/socket.io.js" as="script" />
@@ -8,10 +9,7 @@
     <link rel="preload" href="/huaji.webp" as="image" />
     <link rel="preload" href="/xiaoye.webp" as="image" />
     <link rel="icon" href="/favicon.jpg" />
-    <meta
-      name="viewport"
-      content="width=device-width, height=device-height, user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"
-    />
+    <meta name="viewport" content="width=device-width, height=device-height, user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0" />
     <meta name="format-detection" content="telephone=no" />
     <title>ChatDACS</title>
 
@@ -49,8 +47,15 @@
           var socket = io();
 
           socket.on("getcookie", function (msg) {
-            if (document.cookie === null || document.cookie === "" || document.cookie === undefined) {
-              document.cookie = "ChatdacsID=" + new Date().getTime() + ";expires=Fri, 1 Apr 2050 17:00:00 GMT";
+            if (
+              document.cookie === null ||
+              document.cookie === "" ||
+              document.cookie === undefined
+            ) {
+              document.cookie =
+                "ChatdacsID=" +
+                new Date().getTime() +
+                ";expires=Fri, 1 Apr 2050 17:00:00 GMT";
               window.location.reload();
             }
             myCID = document.cookie.replace("ChatdacsID=", "");
@@ -59,7 +64,8 @@
           socket.on("version", function (msg) {
             document.title = msg;
             socket.on("onlineusers", function (msg) {
-              var online_status = document.getElementsByClassName("layim-chat-status")[0];
+              var online_status =
+                document.getElementsByClassName("layim-chat-status")[0];
               online_status.innerHTML = `当前在线:${msg}`;
             });
             layim.config({
@@ -114,35 +120,40 @@
                         username: "湊-阿库娅",
                         id: "375504219",
                         status: "online",
-                        avatar: "/images/a7195c09c6ba4722966d745d6f692035d3fe4d95.jpg@128w_128h_1o.webp",
+                        avatar:
+                          "/images/a7195c09c6ba4722966d745d6f692035d3fe4d95.jpg@128w_128h_1o.webp",
                         sign: "虚拟女仆、湊(みなと)あくあ！",
                       },
                       {
                         username: "泠鸢yousa",
                         id: "282994",
                         status: "online",
-                        avatar: "/images/28f95c383f2805dbed32e93007c91ccfda28775f.jpg@128w_128h_1o.webp",
+                        avatar:
+                          "/images/28f95c383f2805dbed32e93007c91ccfda28775f.jpg@128w_128h_1o.webp",
                         sign: "泠鸢yousa不是冷鸢、纸鸟、冰鸽",
                       },
                       {
                         username: "常陆茉子",
                         id: "114514",
                         status: "online",
-                        avatar: "/images/c70fe35d0f06643a57f626e4872831f159e75953.jpg@128w_128h_1o.webp",
+                        avatar:
+                          "/images/c70fe35d0f06643a57f626e4872831f159e75953.jpg@128w_128h_1o.webp",
                         sign: "坐立不安…不知所措…慌慌张张…手忙脚乱…",
                       },
                       {
                         username: "艾拉",
                         id: "602300",
                         status: "offline",
-                        avatar: "/images/524a779495921aaa2746a8191a198ac7c9c2a301.jpg@128w_128h_1o.webp",
+                        avatar:
+                          "/images/524a779495921aaa2746a8191a198ac7c9c2a301.jpg@128w_128h_1o.webp",
                         sign: "愿终有一天，能和你重要的人重逢。",
                       },
                       {
                         username: "墨小菊",
                         id: "5201314",
                         status: "online",
-                        avatar: "/images/fac046e70e003b431c700c730e93f475312183f8.jpg@128w_128h_1o.webp",
+                        avatar:
+                          "/images/fac046e70e003b431c700c730e93f475312183f8.jpg@128w_128h_1o.webp",
                         sign: "那是，至今为止都不曾体会的懵懂。",
                       },
                     ],
@@ -275,31 +286,31 @@
 
           //工具栏-cos
           layim.on("tool(cos)", function (insert, send) {
-            insert("/随机cos");
+            insert("来点色图");
             send();
           });
 
           //工具栏-ecy
           layim.on("tool(ecy)", function (insert, send) {
-            insert("/随机二次元图");
+            insert("随机二次元图");
             send();
           });
 
           //工具栏-tbshow
           layim.on("tool(tbshow)", function (insert, send) {
-            insert("/随机买家秀");
+            insert("随机买家秀");
             send();
           });
 
           //工具栏-knowledge
           layim.on("tool(knowledge)", function (insert, send) {
-            insert("/随机冷知识");
+            insert("随机冷知识");
             send();
           });
 
           //工具栏-帮助
           layim.on("tool(help)", function (insert, send) {
-            insert("/帮助");
+            insert("帮助");
             send();
           });
 
@@ -318,7 +329,8 @@
                 layer.msg("好像有人给你发了一条消息，回消息界面看看吧");
                 layim.getMessage({
                   username: "湊-阿库娅",
-                  avatar: "/images/a7195c09c6ba4722966d745d6f692035d3fe4d95.jpg@128w_128h_1o.webp",
+                  avatar:
+                    "/images/a7195c09c6ba4722966d745d6f692035d3fe4d95.jpg@128w_128h_1o.webp",
                   id: "375504219",
                   type: "friend",
                   content: "老公！",
@@ -326,14 +338,16 @@
                 break;
               case "reload":
                 layer.open({
-                  content: "点击确定重生，你将会被强制删档，抹除所有聊天记录，以新人身份重新进入，确定吗？",
+                  content:
+                    "点击确定重生，你将会被强制删档，抹除所有聊天记录，以新人身份重新进入，确定吗？",
                   btn: ["取消", "确定重生"],
                   skin: "footer",
                   no: function (index) {
                     layer.open({ content: "执行删档操作，用户已被删除" });
                     window.localStorage.clear();
                     window.location.reload();
-                    document.cookie = "ChatdacsID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                    document.cookie =
+                      "ChatdacsID=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
                   },
                 });
                 break;
@@ -383,7 +397,10 @@
                 break;
               case "about":
                 layer.open({
-                  title: ["关于这个项目", "background-color: #FF4351; color:#fff;"],
+                  title: [
+                    "关于这个项目",
+                    "background-color: #FF4351; color:#fff;",
+                  ],
                   content:
                     '<h1 align="center"><img src="https://repository-images.githubusercontent.com/171253757/5f987680-d2ab-11eb-927b-655b4967c9a3"width="300px"/><br/>沙雕Ai聊天系统ChatDACS<br/>(Chatbot:shaDiao Ai Chat System)</h1><p align="center"><br/>一个无需服务器，可私有化部署、可独立运行于内网的H5聊天工具。<br/>技术栈：语言——Node.js，web框架——Express，前端组件库——layui。<br/>与硬件端<a href="https://github.com/Giftia/ChaosNodeMCU/"target="_blank">ChaosNodeMCU</a>联动为一个完整的物联网项目。<br/>开箱即用，非常好用，我的朋友。<br/><br/>简易搭建教程：<a href="https://zhuanlan.zhihu.com/p/67995935"target="_blank">zhuanlan.zhihu.com/p/67995935</a><br/>项目开源于：<a href="//github.com/Giftia/ChatDACS/"target=_black>github.com/Giftia/ChatDACS</a>，欢迎Star。<br/>系统已与小夜联动最新聊天词库，请随意聊天。<br/><br/>如需联系请访问：<a href="//giftia.moe"target=_black>giftia.moe</a></p>',
                 });
@@ -392,7 +409,10 @@
                 socket.emit("getupdatelog");
                 socket.on("updatelog", function (data) {
                   layer.open({
-                    title: ["更新日志", "background-color: #FF96AD; color:#fff;"],
+                    title: [
+                      "更新日志",
+                      "background-color: #FF96AD; color:#fff;",
+                    ],
                     content: data,
                   });
                 });
@@ -411,17 +431,13 @@
             }
           });
 
-          layim.on("back", function () {
-            return 0;
-          });
-
           //监听发送消息
           layim.on("sendMessage", function (data) {
-            socket.emit("chat message", { CID: myCID, msg: data.mine.content });
+            socket.emit("text", { CID: myCID, msg: data.mine.content });
           });
 
           //接收消息
-          socket.on("chat message", function (msg) {
+          socket.on("text", function (msg) {
             switch (msg.CID) {
               case "0":
                 layim.getMessage({
@@ -450,14 +466,14 @@
           });
 
           //接收图片消息
-          socket.on("pic message", function (msg) {
+          socket.on("picture", function (msg) {
             layim.getMessage({
               username: "小夜",
               avatar: "/xiaoye.webp",
               id: "101",
               type: "group",
               mine: 0,
-              content: `img[${msg}]`,
+              content: `img[${msg.msg}]`,
             });
           });
 
@@ -538,7 +554,10 @@
             console.log(data); //获取当前会话对象
             layim.panel({
               title: data.name + " 群信息", //标题
-              tpl: '<div style="padding: 10px;">' + data.cid + "{{d.data.test}}</div>", //模版
+              tpl:
+                '<div style="padding: 10px;">' +
+                data.cid +
+                "{{d.data.test}}</div>", //模版
               data: {
                 //数据
                 test: "?",
@@ -566,7 +585,8 @@
           layim.on("chatChange", function (data) {
             var text = document.getElementsByTagName("input")[0],
               btn = document.getElementsByTagName("button")[0],
-              typing_status = document.getElementsByClassName("layim-chat-status")[1];
+              typing_status =
+                document.getElementsByClassName("layim-chat-status")[1];
 
             text.setAttribute("oninput", "typing()");
 
@@ -592,16 +612,14 @@
               superplaceholder({
                 el: document.querySelector("input"),
                 sentences: [
-                  "/开门 233333",
-                  "/log_view",
                   "/reload",
                   "BV1PA411L7op",
-                  "/随机cos",
-                  "/随机买家秀",
-                  "/随机冷知识",
+                  "来点色图",
+                  "/ping",
+                  "随机冷知识",
                   "小夜",
-                  "/帮助",
-                  "/随机二次元图",
+                  "帮助",
+                  "随机买家秀",
                 ],
                 options: {
                   letterDelay: 100,
@@ -615,9 +633,6 @@
           });
         });
     </script>
-    <script src="https://unpkg.com/vconsole/dist/vconsole.min.js"></script>
-    <script>
-      var vConsole = new window.VConsole();
-    </script>
   </body>
+
 </html>
