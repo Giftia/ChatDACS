@@ -15,7 +15,7 @@ const request = require("request");
 const fs = require("fs");
 const path = require("path");
 const yaml = require("yaml"); //使用yaml解析配置文件
-let cos_total_count = 99999; //初始化随机cos上限，可以自己调整
+const cos_total_count = 2000; //初始化随机cos上限，可以自己调整
 let web_port;
 
 Init();
