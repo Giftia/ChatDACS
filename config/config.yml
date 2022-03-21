@@ -187,7 +187,4 @@ qqBot:
 #杂项配置
 Others:
   #哔哩哔哩直播间id:
-  blive_room_id: "49148"
-
-  #初始化随机cos上限，可以自己调整:
-  cos_total_count: 99999
+  blive_room_id: 49148

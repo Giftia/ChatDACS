@@ -50,7 +50,6 @@ jieba.load({
   stopWordDict: path.join(`${process.cwd()}`, "config", "stopWordDict.txt"), //加载分词库黑名单
 });
 const yaml = require("yaml"); //使用yaml解析配置文件
-const AipSpeech = require("baidu-aip-sdk").speech; //百度语音sdk
 const voiceplayer = require("play-sound")({
   player: path.join(process.cwd(), "plugins", "cmdmp3win.exe"),
 }); //mp3静默播放工具，用于直播时播放语音
@@ -63,6 +62,8 @@ const readLine = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
 });
+
+const { KeepLiveTCP } = require('bilibili-live-ws');
 
 const winston = require("winston");
 const { format, transports } = require("winston");
@@ -138,7 +139,7 @@ const Constants = require(path.join(
 ));
 
 //系统配置和开关，以及固定变量
-const version = "ChatDACS v3.2.1"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS v3.2.2"; //版本号，会显示在浏览器tab与标题栏
 var boom_timer; //60s计时器
 var onlineusers = 0, //预定义
   Tiankey,
@@ -166,7 +167,6 @@ var onlineusers = 0, //预定义
   req_no_trap_list,
   qqimg_to_web,
   max_mine_count,
-  cos_total_count,
   xiaoye_ated,
   private_service_swich,
   c1c_count = 0;
@@ -176,8 +176,12 @@ const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const thanks =
   "致谢（排名不分先后）: https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、https://api.lolicon.app/、https://bww.lolicon.app/、https://iw233.cn/main.html、https://blog.csdn.net/jia20003/article/details/7228464、还有我的朋友们，以及倾心分享知识的各位";
-const update_text = `1、由于之前的面条式代码只图一时之快，牺牲了代码质量，不具有可读性和可维护性，权衡利弊得失之后，痛苦地选择了大幅重构，实现了一套简单的插件系统，现在可以自由加载外部独立插件了；2、/status回显调整；3、各处小细节优化；`;
-const updatelog = `<h1>${version}</h1><br/>${update_text}`;
+const update_text = `update:
+- b站直播间监听使用bilibili-live-ws，感谢作者 @simon300000 ；
+- 搬出tts插件；
+- 更新go-cqhttp_windows_amd64为v1.0.0-rc1；
+- 其他一些强迫症优化；`;
+const updateLog = `<h1>${version}</h1><br/>${update_text}`;
 
 //日志染色颜色配置
 colors.setTheme({
@@ -188,9 +192,6 @@ colors.setTheme({
   error: "brightRed",
   log: "brightBlue",
 });
-
-//声明TTS调用接口
-let SpeechClient;
 
 logger.info(`启动路径: ${process.cwd()}`);
 
@@ -334,7 +335,7 @@ io.on("connection", (socket) => {
 
   //更新日志
   socket.on("getupdatelog", () => {
-    socket.emit("updatelog", updatelog);
+    socket.emit("updatelog", updateLog);
   });
 
   //致谢列表
@@ -3425,290 +3426,148 @@ ${final_talents}
   }
 }
 
-//直播间开关，星野夜蝶上线!
-const defaultDelay = 3;
-let duration = 0;
+//虚拟主播星野夜蝶核心代码，星野夜蝶上线!
 function start_live() {
-  setInterval(LoopDanmu, defaultDelay * 1000);
-}
-//虚拟主播星野夜蝶核心代码，每3秒获取最新弹幕，如果弹幕更新了就开始处理，没有最新弹幕的时候会一直开嘴臭地图炮
-async function LoopDanmu() {
-  console.log(duration);
-  if (duration + defaultDelay <= defaultDelay) {
-    GetLaststDanmu()
-      .then((resolve) => {
-        if (last_danmu_timeline === resolve.timeline) {
-          //弹幕没有更新
-          console.log(`弹幕暂未更新`.log);
-          //丢一个骰子，如果命中了就开地图炮，90%的几率
-          const ditupao_flag = Math.floor(Math.random() * 0.5);
-          if (ditupao_flag < 90) {
-            ChatProcess("").then((resolve) => {
-              const reply = resolve;
-              console.log(`小夜开地图炮了: ${reply}`.log);
-              //将直播小夜的回复写入txt，以便在直播姬显示
-              fs.writeFileSync(Constants.TTS_FILE_RECV_PATH, reply);
-              //然后让小夜读出来
-              BetterTTS(reply)
-                .then((resolve) => {
-                  let tts_file = `${process.cwd()}\\static${resolve.file.replace(
-                    "/",
-                    "\\",
-                  )}`;
-                  voiceplayer.play(tts_file, function (err) {
-                    if (err) throw err;
-                  });
-                })
-                .catch((reject) => {
-                  console.log(`TTS错误: ${reject}`.error);
-                });
+  const live = new KeepLiveTCP(blive_room_id);
+  live.on('open', () => logger.info('直播间连接成功'.log));
+  live.on('live', () => {
+    live.on('heartbeat', (online) => logger.info(`直播间在线人数: ${online}`.log));
+    live.on('msg', (data) => logger.info(`直播间消息: ${data}`.log));
+
+    live.on('DANMU_MSG', (data) => {
+      const danmu = data.info;
+      ChatProcess(danmu)
+        .then((resolve) => {
+          const reply = resolve;
+          console.log(`小夜说: ${reply}`.log);
+          fs.writeFileSync(
+            Constants.TTS_FILE_RECV_PATH,
+            `${danmu}？ ${reply}`,
+          );
+
+          BetterTTS(reply)
+            .then((resolve) => {
+              let tts_file = `${process.cwd()}\\static${resolve.file.replace(
+                "/",
+                "\\",
+              )}`;
+              voiceplayer.play(tts_file, function (err) {
+                if (err) throw err;
+              });
+            })
+            .catch((reject) => {
+              console.log(`TTS错误: ${reject}`.error);
             });
-          }
-        } else {
-          console.log(`获取到最新弹幕: ${resolve.text}`.log);
-          last_danmu_timeline = resolve.timeline;
-          io.emit("sysrem message", `@弹幕传来:  ${resolve.text}`);
+        })
+        .catch((reject) => {
+          //如果没有匹配到回复，那就随机回复balabala废话
+          console.log(`${reject}，弹幕没有匹配`.warn);
+          GetBalabalaList()
+            .then((resolve) => {
+              let random_balabala =
+                resolve[Math.floor(Math.random() * resolve.length)]
+                  .balabala;
+              fs.writeFileSync(
+                Constants.TTS_FILE_RECV_PATH,
+                random_balabala,
+              );
+              BetterTTS(random_balabala)
+                .then((resolve) => {
+                  let tts_file = `${process.cwd()}\\static${resolve.file.replace(
+                    "/",
+                    "\\",
+                  )}`;
+                  voiceplayer.play(tts_file, function (err) {
+                    if (err) throw err;
+                  });
+                })
+                .catch((reject) => {
+                  console.log(`TTS错误: ${reject}`.error);
+                });
+              console.log(
+                `${reject}，qqBot小夜觉得${random_balabala}`.log,
+              );
+            })
+            .catch((reject) => {
+              console.log(`小夜试图balabala但出错了: ${reject}`.error);
+            });
+        });
+    });
 
-          //教学系统，抄板于虹原翼版小夜v3
-          if (Constants.teach_reg.test(resolve.text)) {
-            let msg = resolve.text;
-            msg = msg.replace(/'/g, ""); //防爆
-            msg = msg.substr(2).split("答：");
-            if (msg.length !== 2) {
-              console.log(`教学指令: 分割有误，退出教学`.error);
-              fs.writeFileSync(
-                Constants.TTS_FILE_RECV_PATH,
-                `你教的姿势不对噢qwq`,
-              );
-              BetterTTS("你教的姿势不对噢qwq")
-                .then((resolve) => {
-                  let tts_file = `${process.cwd()}\\static${resolve.file.replace(
-                    "/",
-                    "\\",
-                  )}`;
-                  voiceplayer.play(tts_file, function (err) {
-                    if (err) throw err;
-                  });
-                })
-                .catch((reject) => {
-                  console.log(`TTS错误: ${reject}`.error);
-                });
-              return 0;
-            }
-            let ask = msg[0].trim(),
-              ans = msg[1].trim();
-            if (ask == "" || ans == "") {
-              console.log(`问/答为空，退出教学`.error);
-              fs.writeFileSync(
-                Constants.TTS_FILE_RECV_PATH,
-                `你教的姿势不对噢qwq`,
-              );
-              BetterTTS("你教的姿势不对噢qwq")
-                .then((resolve) => {
-                  let tts_file = `${process.cwd()}\\static${resolve.file.replace(
-                    "/",
-                    "\\",
-                  )}`;
-                  voiceplayer.play(tts_file, function (err) {
-                    if (err) throw err;
-                  });
-                })
-                .catch((reject) => {
-                  console.log(`TTS错误: ${reject}`.error);
-                });
-              return 0;
-            }
-            if (ask.indexOf(/\r?\n/g) !== -1) {
-              console.log(`教学指令: 关键词换行了，退出教学`.error);
-              fs.writeFileSync(
-                Constants.TTS_FILE_RECV_PATH,
-                `关键词不能换行啦qwq`,
-              );
-              BetterTTS("关键词不能换行啦qwq")
-                .then((resolve) => {
-                  let tts_file = `${process.cwd()}\\static${resolve.file.replace(
-                    "/",
-                    "\\",
-                  )}`;
-                  voiceplayer.play(tts_file, function (err) {
-                    if (err) throw err;
-                  });
-                })
-                .catch((reject) => {
-                  console.log(`TTS错误: ${reject}`.error);
-                });
-              return 0;
-            }
-            console.log(
-              `弹幕想要教给小夜: 问: ${ask} 答: ${ans}，现在开始检测合法性`.log,
-            );
-            for (let i in black_list_words) {
-              if (
-                ask.toLowerCase().indexOf(black_list_words[i].toLowerCase()) !==
-                -1 ||
-                ans.toLowerCase().indexOf(black_list_words[i].toLowerCase()) !==
-                -1
-              ) {
-                console.log(
-                  `教学指令: 检测到不允许的词: ${black_list_words[i]}，退出教学`
-                    .error,
-                );
-                fs.writeFileSync(
-                  Constants.TTS_FILE_RECV_PATH,
-                  `你教的内容里有主人不允许小夜学习的词: ${black_list_words[i]} qwq`,
-                );
-                BetterTTS(
-                  `你教的内容里有主人不允许小夜学习的词: ${black_list_words[i]} qwq`,
-                )
-                  .then((resolve) => {
-                    let tts_file = `${process.cwd()}\\static${resolve.file.replace(
-                      "/",
-                      "\\",
-                    )}`;
-                    voiceplayer.play(tts_file, function (err) {
-                      if (err) throw err;
-                    });
-                  })
-                  .catch((reject) => {
-                    console.log(`TTS错误: ${reject}`.error);
-                  });
-                return 0;
-              }
-            }
-            if (Buffer.from(ask).length < 4) {
-              //关键词最低长度: 4个英文或2个汉字
-              console.log(`教学指令: 关键词太短，退出教学`.error);
-              fs.writeFileSync(
-                Constants.TTS_FILE_RECV_PATH,
-                `关键词太短了啦qwq，至少要4个字节啦`,
-              );
-              BetterTTS("关键词太短了啦qwq，至少要4个字节啦")
-                .then((resolve) => {
-                  let tts_file = `${process.cwd()}\\static${resolve.file.replace(
-                    "/",
-                    "\\",
-                  )}`;
-                  voiceplayer.play(tts_file, function (err) {
-                    if (err) throw err;
-                  });
-                })
-                .catch((reject) => {
-                  console.log(`TTS错误: ${reject}`.error);
-                });
-              return 0;
-            }
-            if (ask.length > 100 || ans.length > 100) {
-              console.log(`教学指令: 教的太长了，退出教学`.error);
-              fs.writeFileSync(
-                Constants.TTS_FILE_RECV_PATH,
-                `你教的内容太长了，小夜要坏掉了qwq，不要呀`,
-              );
-              BetterTTS("你教的内容太长了，小夜要坏掉了qwq，不要呀")
-                .then((resolve) => {
-                  let tts_file = `${process.cwd()}\\static${resolve.file.replace(
-                    "/",
-                    "\\",
-                  )}`;
-                  voiceplayer.play(tts_file, function (err) {
-                    if (err) throw err;
-                  });
-                })
-                .catch((reject) => {
-                  console.log(`TTS错误: ${reject}`.error);
-                });
-              return 0;
-            }
-            //到这里都没有出错的话就视为没有问题，可以让小夜学了
-            console.log(`教学指令: 没有检测到问题，可以学习`.log);
-            db.run(`INSERT INTO chat VALUES('${ask}', '${ans}')`);
-            console.log(`教学指令: 学习成功`.log);
-            fs.writeFileSync(
-              Constants.TTS_FILE_RECV_PATH,
-              `哇!小夜学会啦!对我说: ${ask} 试试吧，小夜有可能会回复 ${ans} 噢`,
-            );
-            BetterTTS(
-              `哇!小夜学会啦!对我说: ${ask} 试试吧，小夜有可能会回复 ${ans} 噢`,
-            )
-              .then((resolve) => {
-                let tts_file = `${process.cwd()}\\static${resolve.file.replace(
-                  "/",
-                  "\\",
-                )}`;
-                voiceplayer.play(tts_file, function (err) {
-                  if (err) throw err;
-                });
-              })
-              .catch((reject) => {
-                console.log(`TTS错误: ${reject}`.error);
-              });
-            return 0;
-          } else {
-            const danmu = resolve.text;
-            ChatProcess(resolve.text)
-              .then((resolve) => {
-                const reply = resolve;
-                console.log(`小夜说: ${reply}`.log);
-                fs.writeFileSync(
-                  Constants.TTS_FILE_RECV_PATH,
-                  `${danmu}？ ${reply}`,
-                );
+    live.on('SEND_GIFT', (data) => {
+      const gift = data.data;
+      console.log(`${gift.uname}送了${gift.num}个${gift.giftName}`.log);
+      if (gift.num > 1) {
+        console.log(`${gift.uname}送了${gift.num}个${gift.giftName}`.log);
+        console.log(`${gift.uname}送了${gift.num}个${gift.giftName}`.log);
+      }
+    });
 
-                BetterTTS(reply)
-                  .then((resolve) => {
-                    let tts_file = `${process.cwd()}\\static${resolve.file.replace(
-                      "/",
-                      "\\",
-                    )}`;
-                    voiceplayer.play(tts_file, function (err) {
-                      if (err) throw err;
-                    });
-                  })
-                  .catch((reject) => {
-                    console.log(`TTS错误: ${reject}`.error);
-                  });
-              })
-              .catch((reject) => {
-                //如果没有匹配到回复，那就随机回复balabala废话
-                console.log(`${reject}，弹幕没有匹配`.warn);
-                GetBalabalaList()
-                  .then((resolve) => {
-                    let random_balabala =
-                      resolve[Math.floor(Math.random() * resolve.length)]
-                        .balabala;
-                    fs.writeFileSync(
-                      Constants.TTS_FILE_RECV_PATH,
-                      random_balabala,
-                    );
-                    BetterTTS(random_balabala)
-                      .then((resolve) => {
-                        let tts_file = `${process.cwd()}\\static${resolve.file.replace(
-                          "/",
-                          "\\",
-                        )}`;
-                        voiceplayer.play(tts_file, function (err) {
-                          if (err) throw err;
-                        });
-                      })
-                      .catch((reject) => {
-                        console.log(`TTS错误: ${reject}`.error);
-                      });
-                    console.log(
-                      `${reject}，qqBot小夜觉得${random_balabala}`.log,
-                    );
-                  })
-                  .catch((reject) => {
-                    console.log(`小夜试图balabala但出错了: ${reject}`.error);
-                  });
-              });
-          }
-        }
-      })
-      .catch((reject) => {
-        console.log(reject.error);
-      });
-  } else {
-    duration = duration - defaultDelay;
-  }
+    live.on('GUARD_BUY', (data) => {
+      const guard = data.data;
+      console.log(`${guard.username}购买了${guard.num}个${guard.item}`.log);
+    });
+
+    live.on('WELCOME', (data) => {
+      const welcome = data.data;
+      console.log(`${welcome.uname}进入直播间`.log);
+    });
+
+    live.on('WELCOME_GUARD', (data) => {
+      const welcome = data.data;
+      console.log(`${welcome.uname}进入直播间`.log);
+    });
+
+    live.on('ROOM_BLOCK_MSG', (data) => {
+      const block = data.data;
+      console.log(`${block.uname}禁言了${block.time}秒`.log);
+    });
+
+    live.on('ROOM_UNBLOCK_MSG', (data) => {
+      const block = data.data;
+      console.log(`${block.uname}解除禁言`.log);
+    });
+
+    live.on('ROOM_BLOCK_ALL', (data) => {
+      const block = data.data;
+      console.log(`${block.uname}禁言了`.log);
+    });
+
+    live.on('ROOM_UNBLOCK_ALL', (data) => {
+      const block = data.data;
+      console.log(`${block.uname}解除禁言`.log);
+    });
+
+    live.on('ROOM_BLOCK_USER', (data) => {
+      const block = data.data;
+      console.log(`${block.uname}禁言了`.log);
+    });
+
+    live.on('ROOM_UNBLOCK_USER', (data) => {
+      const block = data.data;
+      console.log(`${block.uname}解除禁言`.log);
+    });
+
+    live.on('SYS_MSG', (data) => {
+      const msg = data.data;
+      console.log(`${msg.msg}`.log);
+    });
+
+    live.on('SYS_GIFT', (data) => {
+      const msg = data.data;
+      console.log(`${msg.msg}`.log);
+    });
+
+    live.on('SYS_MSG_IN', (data) => {
+      const msg = data.data;
+      console.log(`${msg.msg}`.log);
+    });
+
+    live.on('SYS_GIFT_IN', (data) => {
+      const msg = data.data;
+      console.log(`${msg.msg}`.log);
+    });
+  });
 }
 
 /*
@@ -3816,9 +3675,6 @@ async function InitConfig() {
 
   Tiankey = resolve.ApiKey.Tiankey ?? ""; //天行接口key
   sumtkey = resolve.ApiKey.sumtkey ?? ""; //卡特实验室接口key
-  baidu_app_id = resolve.ApiKey.baidu_app_id ?? ""; //百度应用id
-  baidu_api_key = resolve.ApiKey.baidu_api_key ?? ""; //百度接口key
-  baidu_secret_key = resolve.ApiKey.baidu_secret_key ?? ""; //百度接口密钥
 
   bot_qq = resolve.qqBot.bot_qq; //qqBot使用的qq帐号
   qq_admin_list = resolve.qqBot.qq_admin_list; //qqBot小夜的管理员列表
@@ -3835,9 +3691,6 @@ async function InitConfig() {
   black_list_words = resolve.qqBot.black_list_words; //教学系统的黑名单
 
   blive_room_id = resolve.Others.blive_room_id; //哔哩哔哩直播间id
-  cos_total_count = resolve.Others.cos_total_count; //哔哩哔哩直播间ID
-
-  SpeechClient = new AipSpeech(baidu_app_id, baidu_api_key, baidu_secret_key); //建立TTS调用接口
 
   console.log(`_______________________________________\n`);
   console.log(`\n         ${version}          \n`.alert);
@@ -4054,41 +3907,6 @@ function GetBalabalaList() {
   });
 }
 
-//语音合成TTS
-function TTS(tex) {
-  return new Promise((resolve, reject) => {
-    if (!tex) tex = "你好谢谢小笼包再见!";
-    SpeechClient.text2audio(tex, {
-      spd: 5, //1-9  语速,正常语速为5
-      pit: 8, //1-9  语调,正常语调为5
-      per: 4, //1-12 声线,1=2:普通男性,3:有情感的播音男性,4:有情感的萝莉声线-度丫丫;5:普通女性,6:抑扬顿挫有情感的讲故事男性(纪录频道),7:有情感的广东话女性,8:语气平淡的念诗男性(葛平),9:速读普通男性,10:略有情感的刚成年男性,11:刺耳而略有情感的讲故事男性(情感强度比6弱),12:温柔的有情感的讲故事女性,1-12以外的数值会被转为12
-    }).then(
-      function (result) {
-        if (result.data) {
-          console.log(`${tex} 的语音合成成功`.log);
-          fs.writeFileSync(
-            `./static/xiaoye/tts/${system.utils.sha1(result.data)}.mp3`,
-            result.data,
-          );
-          let file = {
-            file: `/xiaoye/tts/${system.utils.sha1(result.data)}.mp3`,
-            filename: "小夜语音回复",
-          };
-          resolve(file);
-        } else {
-          // 合成服务发生错误
-          console.log(`语音合成失败: ${JSON.stringify(result)}`.error);
-          reject("语音合成TTS错误: ", JSON.stringify(result));
-        }
-      },
-      function (err) {
-        console.log(err.error);
-        reject("语音合成TTS错误: ", err);
-      },
-    );
-  });
-}
-
 //扒的百度臻品音库-度米朵
 function BetterTTS(tex) {
   return new Promise((resolve, reject) => {
@@ -4121,32 +3939,6 @@ function BetterTTS(tex) {
           //估计被发现扒接口了
           console.log(`语音合成幼女版失败: ${JSON.stringify(body)}`.error);
           reject("语音合成幼女版TTS错误: ", JSON.stringify(body));
-        }
-      },
-    );
-  });
-}
-
-//获取最新直播间弹幕
-function GetLaststDanmu() {
-  return new Promise((resolve, reject) => {
-    request(
-      `https://api.live.bilibili.com/xlive/web-room/v1/dM/gethistory?roomid=${blive_room_id}`,
-      (err, response, body) => {
-        if (!err) {
-          body = JSON.parse(body); //居然返回的是字符串而不是json
-          try {
-            body.data.room[0].text;
-          } catch (err) {
-            reject("直播间刚开，还没有弹幕，请再等等吧", err, response);
-            return 0;
-          }
-          resolve({
-            text: body.data.room[body.data.room.length - 1].text,
-            timeline: body.data.room[body.data.room.length - 1].timeline,
-          });
-        } else {
-          reject(err, response);
         }
       },
     );

@@ -10,7 +10,10 @@ module.exports = {
      * 插件的功能实现
      * 插件加载器将会传入 消息全文 {msg}、qq号 {qNum}、qq群号 {gNum} 以供下文使用，下文处理完成后需要return结果，若无需回复则 return "";
      * return的数据格式为：{type: "text", content: "返回的内容"} 或 {type: "picture", content: "返回的图片链接"}；
-     * type目前有两种类型：text 和 picture。text为文本回复；picture为图片回复，可以使用图片链接或者base64编码的图片数据；
+     * type目前有3种类型：text, picture, audio：
+     *    - text 为文本回复；
+     *    - picture 为图片回复，可以使用图片链接或者base64编码的图片数据；
+     *    - audio 为音频回复，可以使用音频链接或者base64编码的音频数据；
      */
 
     return { type: "text", content: `Pong!` };

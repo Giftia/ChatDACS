@@ -35,40 +35,6 @@ module.exports = {
     return clock;
   },
 
-  //新闻
-  async Getnews() {
-    return new Promise((resolve, reject) => {
-      request(
-        "https://3g.163.com/touch/reconstruct/article/list/BBM54PGAwangning/0-10.html",
-        (err, response, body) => {
-          if (!err && response.statusCode === 200) {
-            body = body.substring(9, body.length - 1);
-            var content_news = "今日要闻：";
-            var main = JSON.parse(body);
-            var news = main.BBM54PGAwangning;
-            for (let id = 0; id < 10; id++) {
-              var print_id = id + 1;
-              content_news +=
-                "\r\n" +
-                print_id +
-                "." +
-                news[id].title +
-                "a(" +
-                news[id].url +
-                ")[查看原文]";
-            }
-            resolve(content_news);
-          } else {
-            reject(
-              "获取新闻错误，这个问题雨女无瓜，是新闻接口的锅。错误原因：" +
-                JSON.stringify(response.body),
-            );
-          }
-        },
-      );
-    });
-  },
-
   //BV转AV
   async Bv2Av(msg) {
     return new Promise((resolve, reject) => {
@@ -86,7 +52,7 @@ module.exports = {
           } else {
             reject(
               "解析错误，是否输入了不正确的BV号？错误原因：" +
-                JSON.stringify(response.body),
+              JSON.stringify(response.body),
             );
           }
         },
@@ -114,9 +80,9 @@ module.exports = {
         } else {
           reject(
             "获取用户信息错误，一般是因为用户第一次登录。错误原因：" +
-              err +
-              ", sql:" +
-              sql[0],
+            err +
+            ", sql:" +
+            sql[0],
           );
         }
       });
@@ -138,7 +104,7 @@ module.exports = {
           } else {
             reject(
               "获取随机冷知识错误，这个问题雨女无瓜，是CSDN接口的锅。错误原因：" +
-                JSON.stringify(response.body),
+              JSON.stringify(response.body),
             );
           }
         },
@@ -159,14 +125,14 @@ module.exports = {
             } catch (err) {
               reject(
                 "获取随机昵称错误，是天行接口的锅，可能是您还没有配置密钥，这条错误可以无视，不影响正常使用。错误原因：" +
-                  JSON.stringify(response.body),
+                JSON.stringify(response.body),
               );
             }
             resolve(body.newslist[0].naming);
           } else {
             reject(
               "获取随机昵称错误，是天行接口的锅。错误原因：" +
-                JSON.stringify(response.body),
+              JSON.stringify(response.body),
             );
           }
         },

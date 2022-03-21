@@ -35,7 +35,7 @@ function ReadConfig() {
 
 //初始化web_port
 async function Init() {
-  let resolve = await ReadConfig();
+  const resolve = await ReadConfig();
   web_port = resolve.System.web_port;
 }
 
