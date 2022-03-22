@@ -3622,12 +3622,12 @@ function ReadConfig() {
 //初始化配置
 async function InitConfig() {
   let resolve = await ReadConfig();
-  CHAT_SWITCH = resolve.System.CHAT_SWITCH;
-  CONNECT_GO_CQHTTP_SWITCH = resolve.System.CONNECT_GO_CQHTTP_SWITCH;
-  CONNECT_BILIBILI_LIVE_SWITCH = resolve.System.CONNECT_BILIBILI_LIVE_SWITCH;
-  WEB_PORT = resolve.System.WEB_PORT;
-  GO_CQHTTP_SERVICE_ANTI_POST_API = resolve.System.GO_CQHTTP_SERVICE_ANTI_POST_API;
-  GO_CQHTTP_SERVICE_API_URL = resolve.System.GO_CQHTTP_SERVICE_API_URL;
+  CHAT_SWITCH = resolve.System.CHAT_SWITCH ?? true;
+  CONNECT_GO_CQHTTP_SWITCH = resolve.System.CONNECT_GO_CQHTTP_SWITCH ?? false;
+  CONNECT_BILIBILI_LIVE_SWITCH = resolve.System.CONNECT_BILIBILI_LIVE_SWITCH ?? false;
+  WEB_PORT = resolve.System.WEB_PORT ?? 80;
+  GO_CQHTTP_SERVICE_ANTI_POST_API = resolve.System.GO_CQHTTP_SERVICE_ANTI_POST_API ?? "/bot";
+  GO_CQHTTP_SERVICE_API_URL = resolve.System.GO_CQHTTP_SERVICE_API_URL ?? "127.0.0.1:5700";
 
   TIAN_XING_API_KEY = resolve.ApiKey.TIAN_XING_API_KEY ?? ""; //天行接口key
 
@@ -3645,7 +3645,7 @@ async function InitConfig() {
   QQBOT_MAX_MINE_AT_MOST = resolve.qqBot.QQBOT_MAX_MINE_AT_MOST; //最大共存地雷数
   CHAT_BAN_WORDS = resolve.qqBot.CHAT_BAN_WORDS; //教学系统的黑名单
 
-  BILIBILI_LIVE_ROOM_ID = resolve.Others.BILIBILI_LIVE_ROOM_ID; //哔哩哔哩直播间id
+  BILIBILI_LIVE_ROOM_ID = resolve.Others.BILIBILI_LIVE_ROOM_ID ?? 49148; //哔哩哔哩直播间id
 
   console.log(`_______________________________________\n`);
   console.log(`\n         ${version}          \n`.alert);
