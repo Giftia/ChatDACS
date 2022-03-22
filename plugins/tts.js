@@ -7,7 +7,7 @@ module.exports = {
 
   execute: async function (msg, qNum, gNum) {
     const tts_file = await TTS(msg);
-    let tts_file_url = `http://127.0.0.1:${web_port}${tts_file}`;
+    const tts_file_url = `http://127.0.0.1:${WEB_PORT}${tts_file}`;
     return { type: "audio", content: tts_file_url };
   },
 };
@@ -34,11 +34,11 @@ function ReadConfig() {
 
 async function Init() {
   const resolve = await ReadConfig();
-  web_port = resolve.System.web_port;
-  baidu_app_id = resolve.ApiKey.baidu_app_id ?? ""; //百度应用id
-  baidu_api_key = resolve.ApiKey.baidu_api_key ?? ""; //百度接口key
-  baidu_secret_key = resolve.ApiKey.baidu_secret_key ?? ""; //百度接口密钥
-  SpeechClient = new AipSpeech(baidu_app_id, baidu_api_key, baidu_secret_key);
+  WEB_PORT = resolve.System.WEB_PORT;
+  BAIDU_APP_ID = resolve.ApiKey.BAIDU_APP_ID ?? ""; //百度应用id
+  BAIDU_APP_KEY = resolve.ApiKey.BAIDU_APP_KEY ?? ""; //百度接口key
+  BAIDU_APP_SECRET_KEY = resolve.ApiKey.BAIDU_APP_SECRET_KEY ?? ""; //百度接口密钥
+  SpeechClient = new AipSpeech(BAIDU_APP_ID, BAIDU_APP_KEY, BAIDU_APP_SECRET_KEY);
 }
 
 //语音合成TTS

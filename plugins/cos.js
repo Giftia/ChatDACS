@@ -16,11 +16,11 @@ const fs = require("fs");
 const path = require("path");
 const yaml = require("yaml"); //使用yaml解析配置文件
 const cos_total_count = 2000; //初始化随机cos上限，可以自己调整
-let web_port;
+let WEB_PORT;
 
 Init();
 
-//读取web_port
+//读取配置文件
 function ReadConfig() {
   return new Promise((resolve, reject) => {
     fs.readFile(path.join(`${process.cwd()}`, "config", "config.yml"), "utf-8", function (err, data) {
@@ -35,8 +35,8 @@ function ReadConfig() {
 
 //初始化web_port
 async function Init() {
-  let resolve = await ReadConfig();
-  web_port = resolve.System.web_port;
+  const resolve = await ReadConfig();
+  WEB_PORT = resolve.System.WEB_PORT;
 }
 
 //随机cos
