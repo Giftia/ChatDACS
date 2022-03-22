@@ -363,40 +363,9 @@ io.on("connection", (socket) => {
     }
 
     /*
-        //开始if地狱
-        if (Constants.rename_reg.test(msg)) {
-          db.run(
-            `UPDATE users SET nickname = '${msg.slice(8)}' WHERE CID ='${CID}'`,
-          );
-          io.emit("text", {
-            CID: "0",
-            msg: `@昵称重命名完毕，小夜现在会称呼你为 ${msg.slice(8)} 啦`,
-          });
-        } else if (Constants.bv2av_reg.test(msg)) {
-          msg = msg.replace(" ", "");
-          system.utils
-            .Bv2Av(msg)
-            .then((resolve) => {
-              io.emit("text", { CID: "0", msg: resolve });
-            })
-            .catch((reject) => {
-              console.log(
-                `system.utils.Bv2Av(): rejected, and err:${reject}`.error,
-              );
-              io.emit("system", `@system.utils.Bv2Av() err:${reject}`);
-            });
-        } else if (msg === "/reload") {
-          io.emit("reload");
-        } else if (msg === "/随机冷知识") {
-          RandomHomeword()
-            .then((resolve) => {
-              io.emit("text", { CID: "0", msg: `@${resolve}` });
-            })
-            .catch((reject) => {
-              console.log(`RandomHomeword(): rejected, and err:${reject}`.error);
-              io.emit("system", `@RandomHomeword() err:${reject}`);
-            });
-        } else if (Constants.teach_reg.test(msg)) { //教学系统，抄板于虹原翼版小夜v3
+        //待补完功能
+
+        if (Constants.teach_reg.test(msg)) { //教学系统，抄板于虹原翼版小夜v3
           const teachMsg = msg.substr(2).split("答：");
           if (teachMsg.length !== 2) {
             console.log(`教学指令: 分割有误，退出教学`.error);
@@ -453,9 +422,6 @@ io.on("connection", (socket) => {
             `@哇!小夜学会啦!对我说: ${ask} 试试吧，小夜有可能会回复 ${ans} 噢`,
           );
           return 0;
-        } else {
-            return 0;
-          }
         }
         **/
   });
