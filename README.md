@@ -15,7 +15,6 @@
       画师：塘李<br/>
       <br/>
       示例 DEMO：<a href="http://110.42.221.72/" target="_blank">http://110.42.221.72/</a><br/>
-      简易搭建教程 Tutorials：<a href="https://zhuanlan.zhihu.com/p/67995935" target="_blank">zhuanlan.zhihu.com/p/67995935</a><br/>
       语录来自小夜：<a href="https://github.com/Giftia/Project_Xiaoye" target="_blank">github.com/Giftia/Project_Xiaoye</a>
       <br>
     </p>
@@ -59,6 +58,11 @@
 - 很 cool，很极客
 
 私人部署方式请下滑至下方的 快速启动 章节 ↓
+
+开箱即用，若想使用更完善的功能，请访问以下申请地址，申请自己的接口密钥后，修改 ./config/config.yml文件:
+
+- 天行接口，用于 随机昵称 与 舔狗 功能，申请地址 https://www.tianapi.com/
+- 卡特实验室接口，用于 随机买家秀 功能，申请地址 https://api.sumt.cn/
 
 ## ✔ 功能介绍 Orders
 
@@ -150,18 +154,18 @@
 ## ✨ 功能与特性 Features
 
 - [x] web 端完善的聊天界面与各种奇奇怪怪的功能 `Nice UI and funny functions on web end`
-- [x] 无限制的在线聊天 `Unlimit chatroom`
+- [x] 无限制的在线聊天 `Unlimited chatroom`
 - [x] 与经过 2w+用户调教养成的人工智能机器人小夜实时聊天 `Chat with Ai Xiaoye`
 - [x] 令人激动的、实用的在线涩图功能 `Nice pictures`
 - [x] web 端图片、视频与文件分享 `Share your images,videos and files on web end`
 - [x] 与 go-cqhttp 对接，实现了小夜 v3 分支框架 `Connectable with go-cqhttp`
-- [ ] 插件系统 `Plugins System`
+- [x] 插件系统 `Plugins System`
 - [ ] 自定义表情包 `Use your own stickers`
 - [ ] 私聊 `Private chat`
 
 ---
 
-## ⚡️ 快速启动 Quick start
+## ⚡️ 快速启动 Quick start 感谢 @ssp97
 
 不想要枯燥的部署和配置操作，只想要快速运行一个属于自己的小夜？首先来试试快速启动吧：
 
@@ -214,7 +218,7 @@ npm install -g cnpm --registry=https://registry.npm.taobao.org
 等待进度完成后运行：
 
 ```bash
-cnpm install
+cnpm ci
 ```
 
 等待进度完成后运行：
@@ -289,4 +293,4 @@ pkg .
 
 ## 协议 License
 
-本项目使用 GPLv3 开源协议，一经使用则视为同意该协议，意味着你可以原封不动地运行本项目，并向你的用户提供服务。但如果对项目进行了任何修改，则需要 fork 本仓库并开源，至少需要将你修改后的版本对你的用户开源。出现的一切事故情况，请自行处理，与我无瓜。禁止任何形式的倒卖转售。
+本项目使用 GPLv3 开源协议，一经使用则视为同意该协议，意味着你可以原封不动地运行本项目，并向你的用户提供服务。但如果对项目进行了任何修改，则需要 fork 本仓库并开源，至少需要将你修改后的版本对你的用户开源。出现的一切事故意外，请自行处理，与我无关。禁止任何形式的倒卖转售。

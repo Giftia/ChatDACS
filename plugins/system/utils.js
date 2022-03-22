@@ -1,8 +1,6 @@
-const request = require("request");
-
 module.exports = {
   name: "工具类",
-  version: "1.0",
+  version: "1.1",
   details: "各种公用函数和系统底层函数",
 
   //年月日
@@ -116,7 +114,7 @@ module.exports = {
   async RandomNickname() {
     return new Promise((resolve, reject) => {
       request(
-        `http://api.tianapi.com/txapi/cname/index?key=${Tiankey}`,
+        `http://api.tianapi.com/txapi/cname/index?key=${TIAN_XING_API_KEY}`,
         (err, response, body) => {
           body = JSON.parse(body);
           if (!err) {
@@ -153,3 +151,29 @@ module.exports = {
     });
   },
 };
+
+const request = require("request");
+const fs = require("fs");
+const path = require("path");
+const yaml = require("yaml"); //使用yaml解析配置文件
+
+Init();
+
+//读取配置文件
+function ReadConfig() {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path.join(`${process.cwd()}`, "config", "config.yml"), "utf-8", function (err, data) {
+      if (!err) {
+        resolve(yaml.parse(data));
+      } else {
+        reject("读取配置文件错误。错误原因：" + err);
+      }
+    });
+  });
+}
+
+//初始化TIAN_XING_API_KEY
+async function Init() {
+  const resolve = await ReadConfig();
+  TIAN_XING_API_KEY = resolve.ApiKey.TIAN_XING_API_KEY;
+}

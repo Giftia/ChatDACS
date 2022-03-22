@@ -7,7 +7,7 @@ module.exports = {
 
   execute: async function (msg, qNum, gNum) {
     const setu_file = await RandomTbshow() ?? "";
-    let setu_file_url = `${setu_file}`;
+    const setu_file_url = `${setu_file}`;
     return { type: 'picture', content: setu_file_url };
   },
 };
@@ -16,11 +16,11 @@ const request = require("request");
 const fs = require("fs");
 const path = require("path");
 const yaml = require("yaml"); //使用yaml解析配置文件
-let web_port;
+let WEB_PORT;
 
 Init();
 
-//读取web_port
+//读取配置文件
 function ReadConfig() {
   return new Promise((resolve, reject) => {
     fs.readFile(path.join(`${process.cwd()}`, "config", "config.yml"), "utf-8", function (err, data) {
@@ -33,17 +33,17 @@ function ReadConfig() {
   });
 }
 
-//初始化web_port
+//初始化web_port与SUMT_API_KEY
 async function Init() {
   const resolve = await ReadConfig();
-  web_port = resolve.System.web_port;
-  sumtkey = resolve.ApiKey.sumtkey;
+  WEB_PORT = resolve.System.WEB_PORT;
+  SUMT_API_KEY = resolve.ApiKey.SUMT_API_KEY;
 }
 
 //随机买家秀
 function RandomTbshow() {
   return new Promise((resolve, reject) => {
-    request(`https://api.sumt.cn/api/rand.tbimg.php?token=${sumtkey}&format=json`, (err, response, body) => {
+    request(`https://api.sumt.cn/api/rand.tbimg.php?token=${SUMT_API_KEY}&format=json`, (err, response, body) => {
       body = JSON.parse(body);
       if (!err && body.code === 200) {
         const picUrl = body.pic_url;

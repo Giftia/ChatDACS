@@ -46,7 +46,7 @@
 
           var socket = io();
 
-          socket.on("getcookie", function (msg) {
+          socket.on("getCookie", function (msg) {
             if (
               document.cookie === null ||
               document.cookie === "" ||
@@ -63,7 +63,7 @@
 
           socket.on("version", function (msg) {
             document.title = msg;
-            socket.on("onlineusers", function (msg) {
+            socket.on("onlineUsers", function (msg) {
               var online_status =
                 document.getElementsByClassName("layim-chat-status")[0];
               online_status.innerHTML = `当前在线:${msg}`;
@@ -247,7 +247,7 @@
                   iconClass: "",
                 },
                 {
-                  alias: "updatelog",
+                  alias: "updateLog",
                   title: "更新日志",
                   iconUnicode: "&#xe60e;",
                   iconClass: "",
@@ -275,7 +275,7 @@
 
           layim.on("ready", function (options) {
             layim.showNew("More", true);
-            layim.showNew("updatelog", true);
+            layim.showNew("updateLog", true);
           });
 
           //工具栏-召唤小夜
@@ -352,7 +352,7 @@
                 });
                 break;
               case "settings":
-                socket.emit("getsettings");
+                socket.emit("getSettings");
                 socket.on("settings", function (data) {
                   layim.panel({
                     title: "设置",
@@ -405,9 +405,9 @@
                     '<h1 align="center"><img src="https://repository-images.githubusercontent.com/171253757/5f987680-d2ab-11eb-927b-655b4967c9a3"width="300px"/><br/>沙雕Ai聊天系统ChatDACS<br/>(Chatbot:shaDiao Ai Chat System)</h1><p align="center"><br/>一个无需服务器，可私有化部署、可独立运行于内网的H5聊天工具。<br/>技术栈：语言——Node.js，web框架——Express，前端组件库——layui。<br/>与硬件端<a href="https://github.com/Giftia/ChaosNodeMCU/"target="_blank">ChaosNodeMCU</a>联动为一个完整的物联网项目。<br/>开箱即用，非常好用，我的朋友。<br/><br/>简易搭建教程：<a href="https://zhuanlan.zhihu.com/p/67995935"target="_blank">zhuanlan.zhihu.com/p/67995935</a><br/>项目开源于：<a href="//github.com/Giftia/ChatDACS/"target=_black>github.com/Giftia/ChatDACS</a>，欢迎Star。<br/>系统已与小夜联动最新聊天词库，请随意聊天。<br/><br/>如需联系请访问：<a href="//giftia.moe"target=_black>giftia.moe</a></p>',
                 });
                 break;
-              case "updatelog":
-                socket.emit("getupdatelog");
-                socket.on("updatelog", function (data) {
+              case "updateLog":
+                socket.emit("getUpdateLog");
+                socket.on("updateLog", function (data) {
                   layer.open({
                     title: [
                       "更新日志",
@@ -490,7 +490,7 @@
           });
 
           //接收音频消息
-          socket.on("audio message", function (msg) {
+          socket.on("audio", function (msg) {
             layim.getMessage({
               username: "小夜",
               avatar: "/xiaoye.webp",
@@ -502,7 +502,7 @@
           });
 
           //接收文件消息
-          socket.on("file message", function (msg) {
+          socket.on("file", function (msg) {
             layim.getMessage({
               username: "小夜",
               avatar: "/xiaoye.webp",
@@ -514,7 +514,7 @@
           });
 
           //接收系统消息
-          socket.on("system message", function (msg) {
+          socket.on("system", function (msg) {
             layim.getMessage({
               username: "系统消息",
               avatar: "/favicon.jpg",
@@ -526,7 +526,7 @@
           });
 
           //接收qq图片消息
-          socket.on("qqpic message", function (msg) {
+          socket.on("qqImage", function (msg) {
             layim.getMessage({
               username: "系统消息",
               avatar: "/favicon.jpg",
@@ -538,7 +538,7 @@
           });
 
           //接收qq视频消息
-          socket.on("qqvideo message", function (msg) {
+          socket.on("qqVideo", function (msg) {
             layim.getMessage({
               username: "系统消息",
               avatar: "/favicon.jpg",
@@ -566,7 +566,7 @@
           });
 
           //监听查看更多记录
-          layim.on("chatlog", function (data, ul) {
+          layim.on("chatLog", function (data, ul) {
             console.log(data); //得到当前会话对象的基本信息
             console.log(ul); //得到当前聊天列表所在的ul容器，比如可以借助他来实现往上插入更多记录
 
@@ -602,10 +602,10 @@
               socket.emit("typing");
             };
 
-            btn.setAttribute("onclick", "typing_over()");
+            btn.setAttribute("onclick", "typingOver()");
 
-            typing_over = function () {
-              socket.emit("typing_over");
+            typingOver = function () {
+              socket.emit("typingOver");
             };
 
             if (data.data.id == "101") {

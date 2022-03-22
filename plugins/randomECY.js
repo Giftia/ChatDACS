@@ -7,7 +7,7 @@ module.exports = {
 
   execute: async function (msg, qNum, gNum) {
     const setu_file = await RandomECY();
-    let setu_file_url = `${setu_file}`;
+    const setu_file_url = `${setu_file}`;
     return { type: 'picture', content: setu_file_url };
   },
 };
@@ -16,7 +16,7 @@ const request = require("request");
 const fs = require("fs");
 const path = require("path");
 const yaml = require("yaml"); //使用yaml解析配置文件
-let web_port;
+let WEB_PORT;
 
 Init();
 
@@ -36,7 +36,7 @@ function ReadConfig() {
 //初始化web_port
 async function Init() {
   const resolve = await ReadConfig();
-  web_port = resolve.System.web_port;
+  WEB_PORT = resolve.System.WEB_PORT;
 }
 
 //随机二次元图

@@ -1,14 +1,8 @@
 "use strict";
 /**
- * 作者: Giftina: https://giftia.moe
+ * Giftina: https://giftia.moe/
  *
  * 沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)，一个简单的机器人框架，支持接入哔哩哔哩直播，具备完全功能的web网页控制台。
- *
- * 开箱即用，若想使用更完善的功能，请访问以下申请地址，申请自己的接口密钥后，修改 ./config/config.yml文件:
- *
- * 天行接口，用于 随机昵称 与 舔狗 功能，申请地址 https://www.tianapi.com/
- *
- * 卡特实验室接口，用于 随机买家秀 功能，申请地址 https://api.sumt.cn/
  */
 
 //启动时中文路径检查
@@ -50,7 +44,7 @@ jieba.load({
   stopWordDict: path.join(`${process.cwd()}`, "config", "stopWordDict.txt"), //加载分词库黑名单
 });
 const yaml = require("yaml"); //使用yaml解析配置文件
-const voiceplayer = require("play-sound")({
+const voicePlayer = require("play-sound")({
   player: path.join(process.cwd(), "plugins", "cmdmp3win.exe"),
 }); //mp3静默播放工具，用于直播时播放语音
 
@@ -121,13 +115,13 @@ const logger = winston.createLogger({
 
 //错误捕获
 process.on("uncaughtException", (err) => {
-  io.emit("system message", `@未捕获的异常: ${err}`);
+  io.emit("system", `@未捕获的异常: ${err}`);
   logger.error(err, "uncaughtException");
 });
 
 //promise错误捕获
 process.on("unhandledRejection", (err) => {
-  io.emit("system message", `@未捕获的promise异常: ${err}`);
+  io.emit("system", `@未捕获的promise异常: ${err}`);
   logger.error(err, "unhandledRejection");
 });
 
@@ -139,36 +133,31 @@ const Constants = require(path.join(
 ));
 
 //系统配置和开关，以及固定变量
-const version = "ChatDACS v3.2.2"; //版本号，会显示在浏览器tab与标题栏
-var boom_timer; //60s计时器
-var onlineusers = 0, //预定义
-  Tiankey,
-  sumtkey,
-  baidu_app_id,
-  baidu_api_key,
-  baidu_secret_key,
-  last_danmu_timeline,
-  bot_qq,
-  black_list_words,
-  qq_admin_list,
-  blive_room_id,
-  chat_swich,
-  conn_go_cqhttp,
-  Now_On_Live,
-  web_port,
-  go_cqhttp_service,
-  go_cqhttp_api,
-  topN,
-  reply_probability,
-  fudu_probability,
-  chaos_probability,
+const version = "ChatDACS v3.2.3"; //版本号，会显示在浏览器tab与标题栏
+var boomTimer; //60s计时器
+var onlineUsers = 0, //预定义
+  TIAN_XING_API_KEY,
+  QQBOT_QQ,
+  CHAT_BAN_WORDS,
+  QQBOT_ADMIN_LIST,
+  BILIBILI_LIVE_ROOM_ID,
+  CHAT_SWITCH,
+  CONNECT_GO_CQHTTP_SWITCH,
+  CONNECT_BILIBILI_LIVE_SWITCH,
+  WEB_PORT,
+  GO_CQHTTP_SERVICE_ANTI_POST_API,
+  GO_CQHTTP_SERVICE_API_URL,
+  CHAT_JIEBA_LIMIT,
+  QQBOT_REPLY_PROBABILITY,
+  QQBOT_FUDU_PROBABILITY,
+  QQBOT_CHAOS_PROBABILITY,
   req_fuliji_list,
   req_ECY_list,
-  req_no_trap_list,
-  qqimg_to_web,
-  max_mine_count,
+  QQBOT_ORDER_LIST_NO_TRAP,
+  QQBOT_SAVE_ALL_IMAGE_TO_LOCAL_SWITCH,
+  QQBOT_MAX_MINE_AT_MOST,
   xiaoye_ated,
-  private_service_swich,
+  QQBOT_PRIVATE_CHAT_SWITCH,
   c1c_count = 0;
 
 //web端配置
@@ -176,12 +165,11 @@ const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const thanks =
   "致谢（排名不分先后）: https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、https://api.lolicon.app/、https://bww.lolicon.app/、https://iw233.cn/main.html、https://blog.csdn.net/jia20003/article/details/7228464、还有我的朋友们，以及倾心分享知识的各位";
-const update_text = `update:
-- b站直播间监听使用bilibili-live-ws，感谢作者 @simon300000 ；
-- 搬出tts插件；
-- 更新go-cqhttp_windows_amd64为v1.0.0-rc1；
-- 其他一些强迫症优化；`;
-const updateLog = `<h1>${version}</h1><br/>${update_text}`;
+const updateContent = `update: 
+- 一些变量与格式优化；
+- 修复无法正常获取随机昵称的问题；
+- 目前发现：由于插件系统和pkg不兼容，暂时不能通过github action进行自动构建，烦请用户自行按readme的快速部署章节进行启动；`;
+const updateLog = `<h1>${version}</h1><br/>${updateContent}`;
 
 //日志染色颜色配置
 colors.setTheme({
@@ -231,14 +219,14 @@ console.log(`插件加载完毕√`.log);
 
 //web端核心代码，socket事件处理
 io.on("connection", (socket) => {
-  socket.emit("getcookie");
-  let CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
+  socket.emit("getCookie");
+  const CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
   if (CID === undefined) {
-    socket.emit("getcookie");
+    socket.emit("getCookie");
     return 0;
   }
   socket.emit("version", version);
-  io.emit("onlineusers", ++onlineusers);
+  io.emit("onlineUsers", ++onlineUsers);
 
   //开始获取用户信息并处理
   system.utils
@@ -262,13 +250,13 @@ io.on("connection", (socket) => {
       socket.username = nickname;
 
       io.emit(
-        "system message",
+        "system",
         `@欢迎回来，${socket.username}(${CID}) 。这是你第${logintimes}次访问。上次访问时间: ${lastlogintime}`,
       );
     })
     //若无法获取该用户信息，则应该是其第一次访问，接下来是新增用户操作:
     .catch((reject) => {
-      let CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
+      const CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
       console.log(
         `system.utils.GetUserData(): rejected, and err:${reject}`.error,
       );
@@ -284,7 +272,7 @@ io.on("connection", (socket) => {
           );
           socket.username = resolve;
           io.emit(
-            "system message",
+            "system",
             `@新用户 ${CID} 已连接。小夜帮你取了一个随机昵称: 「${socket.username}」，请前往 更多-设置 来更改昵称`,
           );
           socket.emit("text", {
@@ -299,7 +287,7 @@ io.on("connection", (socket) => {
           );
           socket.username = "匿名";
           io.emit(
-            "system message",
+            "system",
             `@新用户 ${CID} 已连接。现在你的昵称是 匿名 噢，请前往 更多-设置 来更改昵称`,
           );
           socket.emit("text", {
@@ -310,32 +298,32 @@ io.on("connection", (socket) => {
     });
 
   socket.on("disconnect", () => {
-    onlineusers--;
-    io.emit("onlineusers", onlineusers);
+    onlineUsers--;
+    io.emit("onlineUsers", onlineUsers);
     console.log(
       `${system.utils.Curentyyyymmdd()}${system.utils.CurentTime()} 用户 ${socket.username
         } 已断开连接`.log,
     );
-    io.emit("system message", "@用户 " + socket.username + " 已断开连接");
+    io.emit("system", "@用户 " + socket.username + " 已断开连接");
   });
 
   socket.on("typing", () => {
     io.emit("typing", `${socket.username} 正在输入...`);
   });
 
-  socket.on("typing_over", () => {
+  socket.on("typingOver", () => {
     io.emit("typing", "");
   });
 
   //用户设置
-  socket.on("getsettings", () => {
+  socket.on("getSettings", () => {
     let CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
     socket.emit("settings", { CID: CID, name: socket.username });
   });
 
   //更新日志
-  socket.on("getupdatelog", () => {
-    socket.emit("updatelog", updateLog);
+  socket.on("getUpdateLog", () => {
+    socket.emit("updateLog", updateLog);
   });
 
   //致谢列表
@@ -360,13 +348,11 @@ io.on("connection", (socket) => {
 
     //web端插件应答器
     const answer = await ProcessExecute(msg, 0, 0) ?? "";
-    console.log(answer);
-    const type = answer.type;
-    const send_message = {
+    const answerMessage = {
       CID: "0",
       msg: answer.content,
     };
-    io.emit(type, send_message);
+    io.emit(answer.type, answerMessage);
 
     /*
         //开始if地狱
@@ -389,12 +375,10 @@ io.on("connection", (socket) => {
               console.log(
                 `system.utils.Bv2Av(): rejected, and err:${reject}`.error,
               );
-              io.emit("system message", `@system.utils.Bv2Av() err:${reject}`);
+              io.emit("system", `@system.utils.Bv2Av() err:${reject}`);
             });
         } else if (msg === "/reload") {
           io.emit("reload");
-        } else if (msg === "/帮助") {
-          io.emit("text", { CID: "0", msg: `@${help}` });
         } else if (msg === "/随机冷知识") {
           RandomHomeword()
             .then((resolve) => {
@@ -402,65 +386,65 @@ io.on("connection", (socket) => {
             })
             .catch((reject) => {
               console.log(`RandomHomeword(): rejected, and err:${reject}`.error);
-              io.emit("system message", `@RandomHomeword() err:${reject}`);
+              io.emit("system", `@RandomHomeword() err:${reject}`);
             });
         } else if (Constants.yap_reg.test(msg)) { //吠
           const barkMsg = msg.replace("/吠 ", "").replace("/吠", "");
           BetterTTS(barkMsg)
             .then((resolve) => {
-              io.emit("audio message", resolve);
+              io.emit("audio", resolve); 
             })
             .catch((reject) => {
               console.log(`TTS错误: ${reject}`.error);
-              io.emit("system message", `@TTS错误: ${reject}`);
+              io.emit("system", `@TTS错误: ${reject}`);
             });
         } //教学系统，抄板于虹原翼版小夜v3
         else if (Constants.teach_reg.test(msg)) {
           const teachMsg = msg.substr(2).split("答：");
           if (teachMsg.length !== 2) {
             console.log(`教学指令: 分割有误，退出教学`.error);
-            io.emit("system message", `@你教的姿势不对噢qwq`);
+            io.emit("system", `@你教的姿势不对噢qwq`);
             return 0;
           }
           const ask = teachMsg[0].trim(),
             ans = teachMsg[1].trim();
           if (ask == "" || ans == "") {
             console.log(`问/答为空，退出教学`.error);
-            io.emit("system message", `@你教的姿势不对噢qwq`);
+            io.emit("system", `@你教的姿势不对噢qwq`);
             return 0;
           }
           if (ask.indexOf(/\r?\n/g) !== -1) {
             console.log(`教学指令: 关键词换行了，退出教学`.error);
-            io.emit("system message", `@关键词不能换行啦qwq`);
+            io.emit("system", `@关键词不能换行啦qwq`);
             return 0;
           }
           console.log(
             `web端 ${socket.username} 想要教给小夜: 问: ${ask} 答: ${ans}，现在开始检测合法性`
               .log,
           );
-          for (let i in black_list_words) {
+          for (let i in CHAT_BAN_WORDS) {
             if (
-              ask.toLowerCase().indexOf(black_list_words[i].toLowerCase()) !== -1 ||
-              ans.toLowerCase().indexOf(black_list_words[i].toLowerCase()) !== -1
+              ask.toLowerCase().indexOf(CHAT_BAN_WORDS[i].toLowerCase()) !== -1 ||
+              ans.toLowerCase().indexOf(CHAT_BAN_WORDS[i].toLowerCase()) !== -1
             ) {
               console.log(
-                `教学指令: 检测到不允许的词: ${black_list_words[i]}，退出教学`
+                `教学指令: 检测到不允许的词: ${CHAT_BAN_WORDS[i]}，退出教学`
                   .error,
               );
-              io.emit("system message", `@你教的内容里有主人不允许小夜学习的词qwq`);
+              io.emit("system", `@你教的内容里有主人不允许小夜学习的词qwq`);
               return 0;
             }
           }
           if (Buffer.from(ask).length < 4) {
             //关键词最低长度: 4个英文或2个汉字
             console.log(`教学指令: 关键词太短，退出教学`.error);
-            io.emit("system message", `@关键词太短了啦qwq，至少要4个字节啦`);
+            io.emit("system", `@关键词太短了啦qwq，至少要4个字节啦`);
             return 0;
           }
           if (ask.length > 350 || ans.length > 350) {
             //图片长度差不多是350左右
             console.log(`教学指令: 教的太长了，退出教学`.error);
-            io.emit("system message", `@你教的内容太长了，小夜要坏掉了qwq，不要呀`);
+            io.emit("system", `@你教的内容太长了，小夜要坏掉了qwq，不要呀`);
             return 0;
           }
           //到这里都没有出错的话就视为没有问题，可以让小夜学了
@@ -468,12 +452,12 @@ io.on("connection", (socket) => {
           db.run(`INSERT INTO chat VALUES('${ask}', '${ans}')`);
           console.log(`教学指令: 学习成功`.log);
           io.emit(
-            "system message",
+            "system",
             `@哇!小夜学会啦!对我说: ${ask} 试试吧，小夜有可能会回复 ${ans} 噢`,
           );
           return 0;
         } else {
-          if (chat_swich) {
+          if (CHAT_SWITCH) {
             //交给聊天函数处理
             ChatProcess(msg)
               .then((resolve) => {
@@ -507,36 +491,36 @@ io.on("connection", (socket) => {
 
 //qqBot小夜核心代码，对接go-cqhttp
 function start_qqbot() {
-  app.post(go_cqhttp_service, (req, res) => {
+  app.post(GO_CQHTTP_SERVICE_ANTI_POST_API, (req, res) => {
     //禁言1小时以上自动退群
-    if (req.body.sub_type == "ban" && req.body.user_id == bot_qq) {
+    if (req.body.sub_type == "ban" && req.body.user_id == QQBOT_QQ) {
       if (req.body.duration >= 3599) {
         request(
-          `http://${go_cqhttp_api}/set_group_leave?group_id=${req.body.group_id}`,
+          `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_leave?group_id=${req.body.group_id}`,
           function (error, _response, _body) {
             if (!error) {
               console.log(
                 `小夜在群 ${req.body.group_id} 被禁言超过1小时，自动退群`.error,
               );
               io.emit(
-                "system message",
+                "system",
                 `@小夜在群 ${req.body.group_id} 被禁言超过1小时，自动退群`,
               );
             } else {
-              console.log(`请求${go_cqhttp_api}/set_group_leave错误: ${error}`);
+              console.log(`请求${GO_CQHTTP_SERVICE_API_URL}/set_group_leave错误: ${error}`);
             }
           },
         );
       } else {
         //被禁言改名
         request(
-          `http://${go_cqhttp_api}/set_group_card?group_id=${req.body.group_id
-          }&user_id=${bot_qq}&card=${encodeURI("你妈的，为什么 禁言我")}`,
+          `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${req.body.group_id
+          }&user_id=${QQBOT_QQ}&card=${encodeURI("你妈的，为什么 禁言我")}`,
           function (error, _response, _body) {
             if (!error) {
               console.log(`被禁言了，你妈的，为什么`.log);
             } else {
-              console.log(`请求${go_cqhttp_api}/set_group_card错误: ${error}`);
+              console.log(`请求${GO_CQHTTP_SERVICE_API_URL}/set_group_card错误: ${error}`);
             }
           },
         );
@@ -558,22 +542,22 @@ function start_qqbot() {
 /批准 ${req.body.flag}`;
       console.log(`${msg}`.log);
       request(
-        `http://${go_cqhttp_api}/send_private_msg?user_id=${qq_admin_list[0]
+        `http://${GO_CQHTTP_SERVICE_API_URL}/send_private_msg?user_id=${QQBOT_ADMIN_LIST[0]
         }&message=${encodeURI(msg)}`,
         function (error, _response, _body) {
           if (error) {
-            console.log(`请求${go_cqhttp_api}/send_private_msg错误: ${error}`);
+            console.log(`请求${GO_CQHTTP_SERVICE_API_URL}/send_private_msg错误: ${error}`);
           }
         },
       );
       //邀群提醒
-      let invite_reply = `你好呀，感谢你的使用，邀请小夜加入你的群后，请联系这只小夜的主人 ${qq_admin_list[0]} 来批准入群邀请噢`;
+      let invite_reply = `你好呀，感谢你的使用，邀请小夜加入你的群后，请联系这只小夜的主人 ${QQBOT_ADMIN_LIST[0]} 来批准入群邀请噢`;
       request(
-        `http://${go_cqhttp_api}/send_private_msg?user_id=${req.body.user_id
+        `http://${GO_CQHTTP_SERVICE_API_URL}/send_private_msg?user_id=${req.body.user_id
         }&message=${encodeURI(invite_reply)}`,
         function (error, _response, _body) {
           if (error) {
-            console.log(`请求${go_cqhttp_api}/send_private_msg错误: ${error}`);
+            console.log(`请求${GO_CQHTTP_SERVICE_API_URL}/send_private_msg错误: ${error}`);
           }
         },
       );
@@ -584,12 +568,12 @@ function start_qqbot() {
     //管理员批准群邀请
     if (
       req.body.message_type == "private" &&
-      req.body.user_id == qq_admin_list[0] &&
+      req.body.user_id == QQBOT_ADMIN_LIST[0] &&
       Constants.approve_group_invite_reg.test(req.body.message)
     ) {
       let flag = req.body.message.match(Constants.approve_group_invite_reg)[1];
       request(
-        `http://${go_cqhttp_api}/set_group_add_request?flag=${encodeURI(
+        `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_add_request?flag=${encodeURI(
           flag,
         )}&type=invite&approve=1`,
         function (error, _response, _body) {
@@ -598,7 +582,7 @@ function start_qqbot() {
             res.send({ reply: `已批准` });
           } else {
             console.log(
-              `请求${go_cqhttp_api}/set_group_add_request错误: ${error}`,
+              `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_add_request错误: ${error}`,
             );
           }
         },
@@ -632,15 +616,15 @@ function start_qqbot() {
         return 0;
     }
     console.log(notify);
-    io.emit("system message", `@${notify}`);
+    io.emit("system", `@${notify}`);
 
     //转发图片到web端，按需启用
-    if (qqimg_to_web) {
+    if (QQBOT_SAVE_ALL_IMAGE_TO_LOCAL_SWITCH) {
       if (Constants.isImage_reg.test(req.body.message)) {
         let url = Constants.img_url_reg.exec(req.body.message);
         SaveQQimg(url)
           .then((resolve) => {
-            io.emit("qqpic message", resolve);
+            io.emit("qqImage", resolve);
           })
           .catch((reject) => {
             console.log(reject.error);
@@ -652,7 +636,7 @@ function start_qqbot() {
     //转发视频到web端
     if (Constants.isVideo_reg.test(req.body.message)) {
       let url = Constants.video_url_reg.exec(req.body.message)[0];
-      io.emit("qqvideo message", { file: url, filename: "qq视频" });
+      io.emit("qqVideo", { file: url, filename: "qq视频" });
       res.send();
       return 0;
     }
@@ -676,9 +660,9 @@ function start_qqbot() {
         who = who.replace("]", "").trim();
         if (Constants.is_qq_reg.test(who)) {
           //如果是自己要被张菊，那么张菊
-          if (bot_qq == who) {
+          if (QQBOT_QQ == who) {
             request(
-              `http://${go_cqhttp_api}/get_group_member_info?group_id=${req.body.group_id}&user_id=${req.body.user_id}`,
+              `http://${GO_CQHTTP_SERVICE_API_URL}/get_group_member_info?group_id=${req.body.group_id}&user_id=${req.body.user_id}`,
               function (_error, _response, body) {
                 body = JSON.parse(body);
                 if (body.data.role === "owner" || body.data.role === "admin") {
@@ -693,8 +677,8 @@ function start_qqbot() {
                   return 0;
                   //不是管理，再看看是不是qqBot管理员
                 } else {
-                  for (let i in qq_admin_list) {
-                    if (req.body.user_id == qq_admin_list[i]) {
+                  for (let i in QQBOT_ADMIN_LIST) {
+                    if (req.body.user_id == QQBOT_ADMIN_LIST[i]) {
                       console.log(`群 ${req.body.group_id} 启用了小夜服务`.log);
                       db.run(
                         `UPDATE qq_group SET talk_enabled = '1' WHERE group_id ='${req.body.group_id}'`,
@@ -771,7 +755,7 @@ function start_qqbot() {
                           if (holly_hand_grenade < 10) {
                             //运营方暗调了出率，10‰几率变成神圣地雷
                             request(
-                              `http://${go_cqhttp_api}/set_group_whole_ban?group_id=${req.body.group_id}&enable=1`,
+                              `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_whole_ban?group_id=${req.body.group_id}&enable=1`,
                               function (error, _response, _body) {
                                 if (!error) {
                                   console.log(
@@ -783,7 +767,7 @@ function start_qqbot() {
                                   });
                                 } else {
                                   console.log(
-                                    `请求${go_cqhttp_api}/set_group_whole_ban错误: ${error}`,
+                                    `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_whole_ban错误: ${error}`,
                                   );
                                   res.send({ reply: `日忒娘，怎么又出错了` });
                                 }
@@ -824,7 +808,7 @@ function start_qqbot() {
                   who = who.replace("]", "").trim();
                   if (Constants.is_qq_reg.test(who)) {
                     //如果是自己要被闭菊，那么闭菊
-                    if (bot_qq == who) {
+                    if (QQBOT_QQ == who) {
                       console.log(
                         `群 ${req.body.group_id} 停止了小夜服务`.error,
                       );
@@ -832,7 +816,7 @@ function start_qqbot() {
                         `UPDATE qq_group SET talk_enabled = '0' WHERE group_id ='${req.body.group_id}'`,
                       );
                       res.send({
-                        reply: `小夜的菊花闭上了，这只小夜在本群的所有服务已经停用，取消请发 张菊[CQ:at,qq=${bot_qq}]`,
+                        reply: `小夜的菊花闭上了，这只小夜在本群的所有服务已经停用，取消请发 张菊[CQ:at,qq=${QQBOT_QQ}]`,
                       });
                       return 0;
                       //不是这只小夜被闭菊的话，嘲讽那只小夜
@@ -848,7 +832,7 @@ function start_qqbot() {
                     `UPDATE qq_group SET talk_enabled = '0' WHERE group_id ='${req.body.group_id}'`,
                   );
                   res.send({
-                    reply: `小夜的菊花闭上了，小夜在本群的所有服务已经停用，取消请发 张菊[CQ:at,qq=${bot_qq}]`,
+                    reply: `小夜的菊花闭上了，小夜在本群的所有服务已经停用，取消请发 张菊[CQ:at,qq=${QQBOT_QQ}]`,
                   });
                   return 0;
                 }
@@ -867,7 +851,7 @@ function start_qqbot() {
                   msg += req.body.message.replace("/报错 ", "");
                   msg = msg.replace("/报错", "");
                   request(
-                    `http://${go_cqhttp_api}/send_group_msg?group_id=120243247&message=${encodeURI(
+                    `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=120243247&message=${encodeURI(
                       msg,
                     )}`,
                     function (error, _response, _body) {
@@ -877,20 +861,20 @@ function start_qqbot() {
                         );
                       } else {
                         console.log(
-                          `请求${go_cqhttp_api}/send_group_msg错误: ${error}`,
+                          `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
                         );
                       }
                     },
                   );
 
                   request(
-                    `http://${go_cqhttp_api}/send_group_msg?group_id=474164508&message=${encodeURI(
+                    `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=474164508&message=${encodeURI(
                       msg,
                     )}`,
                     function (error, _response, _body) {
                       if (error) {
                         console.log(
-                          `请求${go_cqhttp_api}/send_group_msg错误: ${error}`,
+                          `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
                         );
                       }
                     },
@@ -905,14 +889,14 @@ function start_qqbot() {
                 //戳一戳
                 if (
                   req.body.sub_type === "poke" &&
-                  req.body.target_id == bot_qq
+                  req.body.target_id == QQBOT_QQ
                 ) {
                   c1c_count++;
                   if (c1c_count > 2) {
                     c1c_count = 0;
                     let final = "哎呀戳坏了，不理你了 ٩(๑`^`๑)۶";
                     request(
-                      `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id
+                      `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id
                       }&message=${encodeURI(final)}`,
                       function (error, _response, _body) {
                         if (!error) {
@@ -921,7 +905,7 @@ function start_qqbot() {
                               .log,
                           );
                           request(
-                            `http://${go_cqhttp_api}/set_group_ban?group_id=${req.body.group_id}&user_id=${req.body.user_id}&duration=10`,
+                            `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${req.body.group_id}&user_id=${req.body.user_id}&duration=10`,
                             function (error, _response, _body) {
                               if (!error) {
                                 console.log(
@@ -930,7 +914,7 @@ function start_qqbot() {
                                 );
                               } else {
                                 console.log(
-                                  `请求${go_cqhttp_api}/set_group_ban错误: ${error}`,
+                                  `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_ban错误: ${error}`,
                                 );
                                 res.send({ reply: `日忒娘，怎么又出错了` });
                               }
@@ -938,7 +922,7 @@ function start_qqbot() {
                           );
                         } else {
                           console.log(
-                            `请求${go_cqhttp_api}/send_group_msg错误: ${error}`,
+                            `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
                           );
                         }
                       },
@@ -946,7 +930,7 @@ function start_qqbot() {
                   } else {
                     let final = `请不要戳小小夜 >_<`;
                     request(
-                      `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id
+                      `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id
                       }&message=${encodeURI(final)}`,
                       function (error, _response, _body) {
                         if (!error) {
@@ -956,7 +940,7 @@ function start_qqbot() {
                           );
                         } else {
                           console.log(
-                            `请求${go_cqhttp_api}/send_group_msg错误: ${error}`,
+                            `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
                           );
                         }
                       },
@@ -991,21 +975,21 @@ function start_qqbot() {
                     `${req.body.user_id}(${req.body.sender.nickname}) 想要教给小夜: 问: ${ask} 答: ${ans}，现在开始检测合法性`
                       .log,
                   );
-                  for (let i in black_list_words) {
+                  for (let i in CHAT_BAN_WORDS) {
                     if (
                       ask
                         .toLowerCase()
-                        .indexOf(black_list_words[i].toLowerCase()) !== -1 ||
+                        .indexOf(CHAT_BAN_WORDS[i].toLowerCase()) !== -1 ||
                       ans
                         .toLowerCase()
-                        .indexOf(black_list_words[i].toLowerCase()) !== -1
+                        .indexOf(CHAT_BAN_WORDS[i].toLowerCase()) !== -1
                     ) {
                       console.log(
-                        `教学指令: 检测到不允许的词: ${black_list_words[i]}，退出教学`
+                        `教学指令: 检测到不允许的词: ${CHAT_BAN_WORDS[i]}，退出教学`
                           .error,
                       );
                       res.send({
-                        reply: `你教的内容里有主人不允许小夜学习的词: ${black_list_words[i]} qwq`,
+                        reply: `你教的内容里有主人不允许小夜学习的词: ${CHAT_BAN_WORDS[i]} qwq`,
                       });
                       return 0;
                     }
@@ -1044,17 +1028,17 @@ function start_qqbot() {
                     `${req.body.user_id}(${req.body.sender.nickname}) 想要教给小夜balabala: ${msg}，现在开始检测合法性`
                       .log,
                   );
-                  for (let i in black_list_words) {
+                  for (let i in CHAT_BAN_WORDS) {
                     if (
                       msg
                         .toLowerCase()
-                        .indexOf(black_list_words[i].toLowerCase()) !== -1 ||
+                        .indexOf(CHAT_BAN_WORDS[i].toLowerCase()) !== -1 ||
                       msg
                         .toLowerCase()
-                        .indexOf(black_list_words[i].toLowerCase()) !== -1
+                        .indexOf(CHAT_BAN_WORDS[i].toLowerCase()) !== -1
                     ) {
                       console.log(
-                        `balabala教学: 检测到不允许的词: ${black_list_words[i]}，退出教学`
+                        `balabala教学: 检测到不允许的词: ${CHAT_BAN_WORDS[i]}，退出教学`
                           .error,
                       );
                       res.send({
@@ -1078,20 +1062,20 @@ function start_qqbot() {
                   system.setu
                     .RandomR18()
                     .then((resolve) => {
-                      let setu_file = `http://127.0.0.1:${web_port}/${resolve.replace(
+                      let setu_file = `http://127.0.0.1:${WEB_PORT}/${resolve.replace(
                         /\//g,
                         "\\",
                       )}`;
                       console.log(setu_file);
                       request(
-                        `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id
+                        `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id
                         }&message=${encodeURI(
                           `[CQ:image,file=${setu_file},url=${setu_file}]`,
                         )}`,
                         function (error, _response, _body) {
                           if (error) {
                             console.log(
-                              `请求${go_cqhttp_api}/send_group_msg错误: ${error}`,
+                              `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
                             );
                           }
                         },
@@ -1103,14 +1087,14 @@ function start_qqbot() {
                           .error,
                       );
                       request(
-                        `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id
+                        `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id
                         }&message=${encodeURI(
                           `你要的r18发送失败啦: ${reject}`,
                         )}`,
                         function (error, _response, _body) {
                           if (error) {
                             console.log(
-                              `请求${go_cqhttp_api}/send_group_msg错误: ${error}`,
+                              `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
                             );
                           }
                         },
@@ -1126,20 +1110,20 @@ function start_qqbot() {
                   system.setu
                     .SearchTag(tag)
                     .then((resolve) => {
-                      let setu_file = `http://127.0.0.1:${web_port}/${resolve.replace(
+                      let setu_file = `http://127.0.0.1:${WEB_PORT}/${resolve.replace(
                         /\//g,
                         "\\",
                       )}`;
                       console.log(setu_file);
                       request(
-                        `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id
+                        `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id
                         }&message=${encodeURI(
                           `[CQ:image,file=${setu_file},url=${setu_file}]`,
                         )}`,
                         function (error, _response, _body) {
                           if (error) {
                             console.log(
-                              `请求${go_cqhttp_api}/send_group_msg错误: ${error}`,
+                              `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
                             );
                           }
                         },
@@ -1169,19 +1153,19 @@ function start_qqbot() {
                         `${system.utils.sha1(canvas.toBuffer())}.jpg`,
                       );
                       fs.writeFileSync(file_local, canvas.toBuffer());
-                      let file_online = `http://127.0.0.1:${web_port}/xiaoye/images/${system.utils.sha1(
+                      let file_online = `http://127.0.0.1:${WEB_PORT}/xiaoye/images/${system.utils.sha1(
                         canvas.toBuffer(),
                       )}.jpg`;
 
                       request(
-                        `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id
+                        `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id
                         }&message=${encodeURI(
                           `[CQ:image,file=${file_online},url=${file_online}]`,
                         )}`,
                         function (error, _response, _body) {
                           if (error) {
                             console.log(
-                              `请求${go_cqhttp_api}/send_group_msg错误: ${error}`,
+                              `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
                             );
                           }
                         },
@@ -1189,12 +1173,12 @@ function start_qqbot() {
 
                       // console.log(`system.setu.SearchTag(): rejected, and err:${reject}`.error);
                       // request(
-                      //   `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(
+                      //   `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(
                       //     `你要的${tag}发送失败啦: ${reject}`
                       //   )}`,
                       //   function (error, _response, _body) {
                       //     if (error) {
-                      //       console.log(`请求${go_cqhttp_api}/send_group_msg错误: ${error}`);
+                      //       console.log(`请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`);
                       //     }
                       //   }
                       // );
@@ -1280,7 +1264,7 @@ function start_qqbot() {
                   tex = tex.replace("/吠", "");
                   BetterTTS(tex)
                     .then((resolve) => {
-                      let tts_file = `[CQ:record,file=http://127.0.0.1:${web_port}${resolve.file},url=http://127.0.0.1:${web_port}${resolve.file}]`;
+                      let tts_file = `[CQ:record,file=http://127.0.0.1:${WEB_PORT}${resolve.file},url=http://127.0.0.1:${WEB_PORT}${resolve.file}]`;
                       res.send({ reply: tts_file });
                     })
                     .catch((reject) => {
@@ -1303,7 +1287,7 @@ function start_qqbot() {
                       let reply = resolve;
                       BetterTTS(reply)
                         .then((resolve) => {
-                          let tts_file = `[CQ:record,file=http://127.0.0.1:${web_port}${resolve.file},url=http://127.0.0.1:${web_port}${resolve.file}]`;
+                          let tts_file = `[CQ:record,file=http://127.0.0.1:${WEB_PORT}${resolve.file},url=http://127.0.0.1:${WEB_PORT}${resolve.file}]`;
                           res.send({ reply: tts_file });
                         })
                         .catch((reject) => {
@@ -1315,7 +1299,7 @@ function start_qqbot() {
                       console.log(`${reject}，语音没有回复`.warn);
                       BetterTTS()
                         .then((resolve) => {
-                          let tts_file = `[CQ:record,file=http://127.0.0.1:${web_port}${resolve.file},url=http://127.0.0.1:${web_port}${resolve.file}]`;
+                          let tts_file = `[CQ:record,file=http://127.0.0.1:${WEB_PORT}${resolve.file},url=http://127.0.0.1:${WEB_PORT}${resolve.file}]`;
                           res.send({ reply: tts_file });
                         })
                         .catch((reject) => {
@@ -1367,8 +1351,8 @@ function start_qqbot() {
                 }
 
                 //今日不带套
-                for (let i in req_no_trap_list) {
-                  if (req.body.message === req_no_trap_list[i]) {
+                for (let i in QQBOT_ORDER_LIST_NO_TRAP) {
+                  if (req.body.message === QQBOT_ORDER_LIST_NO_TRAP[i]) {
                     let now = new Date();
                     let year = now.getFullYear();
                     let month = now.getMonth() + 1;
@@ -1756,7 +1740,7 @@ ${final_talents}
                   //发送
                   //先获取昵称
                   request(
-                    `http://${go_cqhttp_api}/get_group_member_info?group_id=${req.body.group_id}&user_id=${who}&no_cache=0`,
+                    `http://${GO_CQHTTP_SERVICE_API_URL}/get_group_member_info?group_id=${req.body.group_id}&user_id=${who}&no_cache=0`,
                     function (error, _response, body) {
                       if (!error) {
                         body = JSON.parse(body);
@@ -1782,7 +1766,7 @@ ${final_talents}
 
                         request(
                           {
-                            url: `http://${go_cqhttp_api}/send_group_forward_msg`,
+                            url: `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_forward_msg`,
                             method: "POST",
                             json: true,
                             headers: {
@@ -1817,7 +1801,7 @@ ${final_talents}
 
                         request(
                           {
-                            url: `http://${go_cqhttp_api}/send_group_forward_msg`,
+                            url: `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_forward_msg`,
                             method: "POST",
                             json: true,
                             headers: {
@@ -1904,7 +1888,7 @@ ${final_talents}
                     if (Constants.is_qq_reg.test(qq_id)) {
                       //获取qq号在群内的昵称
                       request(
-                        `http://${go_cqhttp_api}/get_group_member_info?group_id=${req.body.group_id}&user_id=${qq_id}&no_cache=0`,
+                        `http://${GO_CQHTTP_SERVICE_API_URL}/get_group_member_info?group_id=${req.body.group_id}&user_id=${qq_id}&no_cache=0`,
                         function (error, _response, body) {
                           //这一步实在是太慢了啊实在不想异步了
                           if (!error) {
@@ -1957,7 +1941,7 @@ ${final_talents}
                                 `${system.utils.sha1(canvas.toBuffer())}.jpg`,
                               );
                               fs.writeFileSync(file_local, canvas.toBuffer());
-                              let file_online = `http://127.0.0.1:${web_port}/xiaoye/images/${system.utils.sha1(
+                              let file_online = `http://127.0.0.1:${WEB_PORT}/xiaoye/images/${system.utils.sha1(
                                 canvas.toBuffer(),
                               )}.jpg`;
                               console.log(
@@ -1969,7 +1953,7 @@ ${final_talents}
                             });
                           } else {
                             console.log(
-                              `请求${go_cqhttp_api}//get_group_member_info错误: ${error}`,
+                              `请求${GO_CQHTTP_SERVICE_API_URL}//get_group_member_info错误: ${error}`,
                             );
                             res.send({ reply: `日忒娘，怎么又出错了` });
                           }
@@ -2017,7 +2001,7 @@ ${final_talents}
                         `${system.utils.sha1(canvas.toBuffer())}.jpg`,
                       );
                       fs.writeFileSync(file_local, canvas.toBuffer());
-                      let file_online = `http://127.0.0.1:${web_port}/xiaoye/images/${system.utils.sha1(
+                      let file_online = `http://127.0.0.1:${WEB_PORT}/xiaoye/images/${system.utils.sha1(
                         canvas.toBuffer(),
                       )}.jpg`;
                       console.log(`迫害成功，图片发送: ${file_online}`.log);
@@ -2038,7 +2022,7 @@ ${final_talents}
                   if (holly_hand_grenade < 10) {
                     //运营方暗调了出率，10‰几率变成神圣手雷
                     request(
-                      `http://${go_cqhttp_api}/set_group_whole_ban?group_id=${req.body.group_id}&enable=1`,
+                      `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_whole_ban?group_id=${req.body.group_id}&enable=1`,
                       function (error, _response, _body) {
                         if (!error) {
                           console.log(
@@ -2050,7 +2034,7 @@ ${final_talents}
                           });
                         } else {
                           console.log(
-                            `请求${go_cqhttp_api}/set_group_whole_ban错误: ${error}`,
+                            `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_whole_ban错误: ${error}`,
                           );
                           res.send({ reply: `日忒娘，怎么又出错了` });
                         }
@@ -2098,7 +2082,7 @@ ${final_talents}
                     } else {
                       //成功丢出手雷
                       request(
-                        `http://${go_cqhttp_api}/set_group_ban?group_id=${req.body.group_id}&user_id=${who}&duration=${boom_time}`,
+                        `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${req.body.group_id}&user_id=${who}&duration=${boom_time}`,
                         function (error, _response, _body) {
                           if (!error) {
                             console.log(
@@ -2110,7 +2094,7 @@ ${final_talents}
                             });
                           } else {
                             console.log(
-                              `请求${go_cqhttp_api}/set_group_ban错误: ${error}`,
+                              `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_ban错误: ${error}`,
                             );
                             res.send({ reply: `日忒娘，怎么又出错了` });
                           }
@@ -2134,7 +2118,7 @@ ${final_talents}
                         } catch (err) {
                           console.log(`地雷为空`.log);
                         }
-                        if (length < max_mine_count) {
+                        if (length < QQBOT_MAX_MINE_AT_MOST) {
                           //地雷还没满，先获取自增ID最新值sql.seq，随后mine表增加群地雷
                           db.all(
                             `Select seq From sqlite_sequence Where name = 'mine'`,
@@ -2243,7 +2227,7 @@ ${final_talents}
 
                   //先救活目标
                   request(
-                    `http://${go_cqhttp_api}/set_group_ban?group_id=${req.body.group_id}&user_id=${who}&duration=0`,
+                    `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${req.body.group_id}&user_id=${who}&duration=0`,
                     function (error, _response, _body) {
                       if (!error) {
                         console.log(
@@ -2255,7 +2239,7 @@ ${final_talents}
                         });
                       } else {
                         console.log(
-                          `请求${go_cqhttp_api}/set_group_whole_ban错误: ${error}`,
+                          `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_whole_ban错误: ${error}`,
                         );
                         res.send({ reply: `日忒娘，怎么又出错了` });
                       }
@@ -2264,7 +2248,7 @@ ${final_talents}
 
                   //再禁言团长
                   request(
-                    `http://${go_cqhttp_api}/set_group_ban?group_id=${req.body.group_id}&user_id=${req.body.user_id}&duration=${boom_time}`,
+                    `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${req.body.group_id}&user_id=${req.body.user_id}&duration=${boom_time}`,
                     function (error, _response, _body) {
                       if (!error) {
                         console.log(
@@ -2272,7 +2256,7 @@ ${final_talents}
                         );
                       } else {
                         console.log(
-                          `请求${go_cqhttp_api}/set_group_whole_ban错误: ${error}`,
+                          `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_whole_ban错误: ${error}`,
                         );
                         res.send({ reply: `日忒娘，怎么又出错了` });
                       }
@@ -2305,7 +2289,7 @@ ${final_talents}
                           let text =
                             "击鼓传雷游戏开始啦，这是一个只有死亡才能结束的游戏，做好准备了吗";
                           request(
-                            `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id
+                            `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id
                             }&message=${encodeURI(text)}`,
                             function (error, _response, _body) {
                               if (!error) {
@@ -2313,12 +2297,12 @@ ${final_talents}
                                   `群 ${req.body.group_id} 开始了击鼓传雷`.log,
                                 );
                                 io.emit(
-                                  "system message",
+                                  "system",
                                   `@群 ${req.body.group_id} 开始了击鼓传雷`,
                                 );
                               } else {
                                 console.log(
-                                  `请求${go_cqhttp_api}/send_group_msg错误: ${error}`,
+                                  `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
                                 );
                               }
                             },
@@ -2330,14 +2314,14 @@ ${final_talents}
                               let question = `那么[CQ:at,qq=${req.body.user_id}]请听题: ${resolve.quest} 请告诉小夜: 击鼓传雷 你的答案，时间剩余59秒`;
                               let answer = resolve.result; //把答案、目标人、开始时间存入数据库
                               db.run(
-                                `UPDATE qq_group SET loop_bomb_answer = '${answer}', loop_bomb_onwer = '${req.body.user_id
+                                `UPDATE qq_group SET loop_bomb_answer = '${answer}', loop_bomb_owner = '${req.body.user_id
                                 }' , loop_bomb_start_time = '${process.hrtime()[0]
                                 }' WHERE group_id ='${req.body.group_id}'`,
                               );
 
                               //金手指
                               request(
-                                `http://${go_cqhttp_api}/set_group_card?group_id=${req.body.group_id
+                                `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${req.body.group_id
                                 }&user_id=${req.body.user_id}&card=${encodeURI(
                                   answer,
                                 )}`,
@@ -2346,7 +2330,7 @@ ${final_talents}
                                     console.log(`击鼓传雷金手指已启动`.log);
                                   } else {
                                     console.log(
-                                      `请求${go_cqhttp_api}/set_group_card错误: ${error}`,
+                                      `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_card错误: ${error}`,
                                     );
                                   }
                                 },
@@ -2355,13 +2339,13 @@ ${final_talents}
                               //丢出问题
                               setTimeout(function () {
                                 request(
-                                  `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id
+                                  `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id
                                   }&message=${encodeURI(question)}`,
                                   function (error, _response, _body) {
                                     if (!error) {
                                     } else {
                                       console.log(
-                                        `请求${go_cqhttp_api}/send_group_msg错误: ${error}`,
+                                        `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
                                       );
                                     }
                                   },
@@ -2378,7 +2362,7 @@ ${final_talents}
                             });
 
                           //开始倒计时，倒计时结束宣布游戏结束
-                          boom_timer = setTimeout(function () {
+                          boomTimer = setTimeout(function () {
                             console.log(
                               `群 ${req.body.group_id} 的击鼓传雷到达时间，炸了`
                                 .log,
@@ -2391,17 +2375,17 @@ ${final_talents}
                               (err, sql) => {
                                 if (!err && sql[0]) {
                                   request(
-                                    `http://${go_cqhttp_api}/set_group_ban?group_id=${req.body.group_id}&user_id=${sql[0].loop_bomb_onwer}&duration=${boom_time}`,
+                                    `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${req.body.group_id}&user_id=${sql[0].loop_bomb_owner}&duration=${boom_time}`,
                                     function (error, _response, _body) {
                                       if (!error) {
                                         console.log(
-                                          `${sql[0].loop_bomb_onwer} 在群 ${req.body.group_id} 回答超时，被炸伤${boom_time}秒`
+                                          `${sql[0].loop_bomb_owner} 在群 ${req.body.group_id} 回答超时，被炸伤${boom_time}秒`
                                             .log,
                                         );
 
                                         //金手指关闭
                                         request(
-                                          `http://${go_cqhttp_api}/set_group_card?group_id=${req.body.group_id}&user_id=${sql[0].loop_bomb_onwer}&card=`,
+                                          `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${req.body.group_id}&user_id=${sql[0].loop_bomb_owner}&card=`,
                                           function (error, _response, _body) {
                                             if (!error) {
                                               console.log(
@@ -2409,43 +2393,43 @@ ${final_talents}
                                               );
                                             } else {
                                               console.log(
-                                                `请求${go_cqhttp_api}/set_group_card错误: ${error}`,
+                                                `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_card错误: ${error}`,
                                               );
                                             }
                                           },
                                         );
 
-                                        let end = `时间到了，pia，雷在[CQ:at,qq=${sql[0].loop_bomb_onwer}]手上炸了，你被炸成重伤了，休养生息${boom_time}秒!游戏结束!下次加油噢，那么答案公布: ${sql[0].loop_bomb_answer}`;
+                                        let end = `时间到了，pia，雷在[CQ:at,qq=${sql[0].loop_bomb_owner}]手上炸了，你被炸成重伤了，休养生息${boom_time}秒!游戏结束!下次加油噢，那么答案公布: ${sql[0].loop_bomb_answer}`;
                                         request(
-                                          `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id
+                                          `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id
                                           }&message=${encodeURI(end)}`,
                                           function (error, _response, _body) {
                                             if (!error) {
                                               io.emit(
-                                                "system message",
-                                                `@${sql[0].loop_bomb_onwer} 在群 ${req.body.group_id} 回答超时，被炸伤${boom_time}秒`,
+                                                "system",
+                                                `@${sql[0].loop_bomb_owner} 在群 ${req.body.group_id} 回答超时，被炸伤${boom_time}秒`,
                                               );
                                             } else {
                                               console.log(
-                                                `请求${go_cqhttp_api}/send_group_msg错误: ${error}`,
+                                                `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
                                               );
                                             }
                                           },
                                         );
                                         //游戏结束，清空数据
                                         db.run(
-                                          `UPDATE qq_group SET loop_bomb_enabled = '0', loop_bomb_answer = '', loop_bomb_onwer = '' , loop_bomb_start_time = '' WHERE group_id ='${req.body.group_id}'`,
+                                          `UPDATE qq_group SET loop_bomb_enabled = '0', loop_bomb_answer = '', loop_bomb_owner = '' , loop_bomb_start_time = '' WHERE group_id ='${req.body.group_id}'`,
                                         );
                                         return 0;
                                       } else {
                                         console.log(
-                                          `请求${go_cqhttp_api}/set_group_whole_ban错误: ${error}`,
+                                          `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_whole_ban错误: ${error}`,
                                         );
                                       }
                                     },
                                   );
                                   io.emit(
-                                    "system message",
+                                    "system",
                                     `@群 ${req.body.group_id} 的击鼓传雷到达时间，炸了`,
                                   );
                                 }
@@ -2469,23 +2453,23 @@ ${final_talents}
                                   //答对了
                                   //不是本人回答，是来抢答的
                                   if (
-                                    sql[0].loop_bomb_onwer != req.body.user_id
+                                    sql[0].loop_bomb_owner != req.body.user_id
                                   ) {
                                     //无论对错都惩罚
                                     let end = `[CQ:at,qq=${req.body.user_id}] 抢答正确!答案确实是 ${sql[0].loop_bomb_answer}!但因为抢答了所以被惩罚了!`;
                                     request(
-                                      `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id
+                                      `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id
                                       }&message=${encodeURI(end)}`,
                                       function (error, _response, _body) {
                                         if (!error) {
                                           io.emit(
-                                            "system message",
+                                            "system",
                                             `@${req.body.user_id} 在群 ${req.body.group_id} 回答正确`,
                                           );
 
                                           //金手指关闭
                                           request(
-                                            `http://${go_cqhttp_api}/set_group_card?group_id=${req.body.group_id}&user_id=${sql[0].loop_bomb_onwer}&card=`, //req.body.user_id
+                                            `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${req.body.group_id}&user_id=${sql[0].loop_bomb_owner}&card=`, //req.body.user_id
                                             function (error, _response, _body) {
                                               if (!error) {
                                                 console.log(
@@ -2493,7 +2477,7 @@ ${final_talents}
                                                 );
                                               } else {
                                                 console.log(
-                                                  `请求${go_cqhttp_api}/set_group_card错误: ${error}`,
+                                                  `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_card错误: ${error}`,
                                                 );
                                               }
                                             },
@@ -2501,7 +2485,7 @@ ${final_talents}
 
                                           //禁言
                                           request(
-                                            `http://${go_cqhttp_api}/set_group_ban?group_id=${req.body.group_id}&user_id=${req.body.user_id}&duration=60`,
+                                            `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${req.body.group_id}&user_id=${req.body.user_id}&duration=60`,
                                             function (error, _response, _body) {
                                               if (!error) {
                                                 console.log(
@@ -2510,7 +2494,7 @@ ${final_talents}
                                                 );
                                               } else {
                                                 console.log(
-                                                  `请求${go_cqhttp_api}/set_group_ban错误: ${error}`,
+                                                  `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_ban错误: ${error}`,
                                                 );
                                                 res.send({
                                                   reply: `日忒娘，怎么又出错了`,
@@ -2520,7 +2504,7 @@ ${final_talents}
                                           );
                                         } else {
                                           console.log(
-                                            `请求${go_cqhttp_api}/send_group_msg错误: ${error}`,
+                                            `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
                                           );
                                         }
                                       },
@@ -2529,7 +2513,7 @@ ${final_talents}
                                     //回答正确
                                     //金手指关闭
                                     request(
-                                      `http://${go_cqhttp_api}/set_group_card?group_id=${req.body.group_id}&user_id=${req.body.user_id}&card=`,
+                                      `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${req.body.group_id}&user_id=${req.body.user_id}&card=`,
                                       function (error, _response, _body) {
                                         if (!error) {
                                           console.log(
@@ -2537,24 +2521,24 @@ ${final_talents}
                                           );
                                         } else {
                                           console.log(
-                                            `请求${go_cqhttp_api}/set_group_card错误: ${error}`,
+                                            `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_card错误: ${error}`,
                                           );
                                         }
                                       },
                                     );
                                     let end = `[CQ:at,qq=${req.body.user_id}] 回答正确!答案确实是 ${sql[0].loop_bomb_answer}!`;
                                     request(
-                                      `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id
+                                      `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id
                                       }&message=${encodeURI(end)}`,
                                       function (error, _response, _body) {
                                         if (!error) {
                                           io.emit(
-                                            "system message",
-                                            `@${sql[0].loop_bomb_onwer} 在群 ${req.body.group_id} 回答正确`,
+                                            "system",
+                                            `@${sql[0].loop_bomb_owner} 在群 ${req.body.group_id} 回答正确`,
                                           );
                                         } else {
                                           console.log(
-                                            `请求${go_cqhttp_api}/send_group_msg错误: ${error}`,
+                                            `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
                                           );
                                         }
                                       },
@@ -2563,7 +2547,7 @@ ${final_talents}
                                   //答题成功，然后要把雷传给随机幸运群友，进入下一题
                                   setTimeout(function () {
                                     request(
-                                      `http://${go_cqhttp_api}/get_group_member_list?group_id=${req.body.group_id}`,
+                                      `http://${GO_CQHTTP_SERVICE_API_URL}/get_group_member_list?group_id=${req.body.group_id}`,
                                       (err, response, body) => {
                                         body = JSON.parse(body);
                                         if (!err && body.data.length != 0) {
@@ -2594,12 +2578,12 @@ ${final_talents}
                                                     let question = `抽到了幸运群友[CQ:at,qq=${rand_user}]!请听题: ${resolve.quest} 请告诉小夜:  击鼓传雷 你的答案，时间还剩余${diff}秒`;
                                                     let answer = resolve.result; //把答案、目标人存入数据库
                                                     db.run(
-                                                      `UPDATE qq_group SET loop_bomb_answer = '${answer}', loop_bomb_onwer = '${rand_user}' WHERE group_id ='${req.body.group_id}'`,
+                                                      `UPDATE qq_group SET loop_bomb_answer = '${answer}', loop_bomb_owner = '${rand_user}' WHERE group_id ='${req.body.group_id}'`,
                                                     );
 
                                                     //金手指
                                                     request(
-                                                      `http://${go_cqhttp_api}/set_group_card?group_id=${req.body.group_id
+                                                      `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${req.body.group_id
                                                       }&user_id=${rand_user}&card=${encodeURI(
                                                         answer,
                                                       )}`,
@@ -2615,14 +2599,14 @@ ${final_talents}
                                                           );
                                                         } else {
                                                           console.log(
-                                                            `请求${go_cqhttp_api}/set_group_card错误: ${error}`,
+                                                            `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_card错误: ${error}`,
                                                           );
                                                         }
                                                       },
                                                     );
 
                                                     request(
-                                                      `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id
+                                                      `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id
                                                       }&message=${encodeURI(
                                                         question,
                                                       )}`,
@@ -2637,12 +2621,12 @@ ${final_talents}
                                                               .log,
                                                           );
                                                           io.emit(
-                                                            "system message",
+                                                            "system",
                                                             `@群 ${req.body.group_id} 开始了下一轮击鼓传雷`,
                                                           );
                                                         } else {
                                                           console.log(
-                                                            `请求${go_cqhttp_api}/send_group_msg错误: ${error}`,
+                                                            `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
                                                           );
                                                         }
                                                       },
@@ -2680,20 +2664,20 @@ ${final_talents}
                                     `${req.body.user_id} 在群 ${req.body.group_id} 回答错误，被炸伤${boom_time}秒`
                                       .log,
                                   );
-                                  clearTimeout(boom_timer);
+                                  clearTimeout(boomTimer);
 
                                   request(
-                                    `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id
+                                    `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id
                                     }&message=${encodeURI(end)}`,
                                     function (error, _response, _body) {
                                       if (!error) {
                                         io.emit(
-                                          "system message",
-                                          `@${sql[0].loop_bomb_onwer} 在群 ${req.body.group_id} 回答正确`,
+                                          "system",
+                                          `@${sql[0].loop_bomb_owner} 在群 ${req.body.group_id} 回答正确`,
                                         );
                                         //禁言
                                         request(
-                                          `http://${go_cqhttp_api}/set_group_ban?group_id=${req.body.group_id}&user_id=${req.body.user_id}&duration=${boom_time}`,
+                                          `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${req.body.group_id}&user_id=${req.body.user_id}&duration=${boom_time}`,
                                           function (error, _response, _body) {
                                             if (!error) {
                                               console.log(
@@ -2702,7 +2686,7 @@ ${final_talents}
                                               );
                                             } else {
                                               console.log(
-                                                `请求${go_cqhttp_api}/set_group_ban错误: ${error}`,
+                                                `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_ban错误: ${error}`,
                                               );
                                               res.send({
                                                 reply: `日忒娘，怎么又出错了`,
@@ -2712,7 +2696,7 @@ ${final_talents}
                                         );
                                       } else {
                                         console.log(
-                                          `请求${go_cqhttp_api}/send_group_msg错误: ${error}`,
+                                          `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
                                         );
                                       }
                                     },
@@ -2720,31 +2704,31 @@ ${final_talents}
 
                                   //游戏结束，删掉游戏记录
                                   db.run(
-                                    `UPDATE qq_group SET loop_bomb_enabled = '0', loop_bomb_answer = '', loop_bomb_onwer = '' , loop_bomb_start_time = '' WHERE group_id ='${req.body.group_id}'`,
+                                    `UPDATE qq_group SET loop_bomb_enabled = '0', loop_bomb_answer = '', loop_bomb_owner = '' , loop_bomb_start_time = '' WHERE group_id ='${req.body.group_id}'`,
                                   );
 
                                   //金手指关闭
                                   request(
-                                    `http://${go_cqhttp_api}/set_group_card?group_id=${req.body.group_id}&user_id=${sql[0].loop_bomb_onwer}&card=`,
+                                    `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${req.body.group_id}&user_id=${sql[0].loop_bomb_owner}&card=`,
                                     function (error, _response, _body) {
                                       if (!error) {
                                         console.log(`击鼓传雷金手指已启动`.log);
                                       } else {
                                         console.log(
-                                          `请求${go_cqhttp_api}/set_group_card错误: ${error}`,
+                                          `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_card错误: ${error}`,
                                         );
                                       }
                                     },
                                   );
 
                                   request(
-                                    `http://${go_cqhttp_api}/set_group_card?group_id=${req.body.group_id}&user_id=${req.body.user_id}&card=`,
+                                    `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${req.body.group_id}&user_id=${req.body.user_id}&card=`,
                                     function (error, _response, _body) {
                                       if (!error) {
                                         console.log(`击鼓传雷金手指已启动`.log);
                                       } else {
                                         console.log(
-                                          `请求${go_cqhttp_api}/set_group_card错误: ${error}`,
+                                          `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_card错误: ${error}`,
                                         );
                                       }
                                     },
@@ -2808,7 +2792,7 @@ ${final_talents}
                       `${system.utils.sha1(canvas.toBuffer())}.jpg`,
                     );
                     fs.writeFileSync(file_local, canvas.toBuffer());
-                    let file_online = `http://127.0.0.1:${web_port}/xiaoye/images/${system.utils.sha1(
+                    let file_online = `http://127.0.0.1:${WEB_PORT}/xiaoye/images/${system.utils.sha1(
                       canvas.toBuffer(),
                     )}.jpg`;
                     console.log(
@@ -2825,11 +2809,11 @@ ${final_talents}
                 if (req.body.message === "/status") {
                   console.log(`查询运行状态`.log);
                   let self_id = req.body.self_id;
-                  if (self_id != bot_qq) {
+                  if (self_id != QQBOT_QQ) {
                     //若配置qq和实际登录qq不匹配，则自动更新qq号
-                    let stat = `配置qq: ${bot_qq} 和实际登录qq: ${self_id} 不匹配，小夜帮小夜自动更新了配置qq为 ${self_id}`;
+                    let stat = `配置qq: ${QQBOT_QQ} 和实际登录qq: ${self_id} 不匹配，小夜帮小夜自动更新了配置qq为 ${self_id}`;
                     console.log(`${stat}`.error);
-                    bot_qq = self_id;
+                    QQBOT_QQ = self_id;
                     res.send({
                       reply: stat,
                     });
@@ -2840,8 +2824,8 @@ ${final_talents}
                     : (self_id = "1648468212(小小夜本家)"); //试着用一下三元运算符，比if稍微绕一些，但是习惯了非常符合直觉，原理是: 当?前的条件成立时，执行:前的语句，不成立的话执行:后的语句
                   let stat = `企划: ${version}_${self_id}
 宿主架构: ${os.hostname()} ${os.type()} ${os.arch()}
-当前配置: 回复率 ${reply_probability}%，复读率 ${fudu_probability}%，抽风率 ${chaos_probability}‰
-如果该小夜出现故障，请联系该小夜领养员 ${qq_admin_list[0]}
+当前配置: 回复率 ${QQBOT_REPLY_PROBABILITY}%，复读率 ${QQBOT_FUDU_PROBABILITY}%，抽风率 ${QQBOT_CHAOS_PROBABILITY}‰
+如果该小夜出现故障，请联系该小夜领养员 ${QQBOT_ADMIN_LIST[0]}
 或开发群 120243247 报错
 小夜开源于: https://gitee.com/Giftina/ChatDACS`;
                   res.send({
@@ -2866,7 +2850,7 @@ ${final_talents}
                   who = who.trim();
                   if (Constants.is_qq_reg.test(who)) {
                     request(
-                      `http://${go_cqhttp_api}/get_friend_list`,
+                      `http://${GO_CQHTTP_SERVICE_API_URL}/get_friend_list`,
                       (err, response, body) => {
                         body = JSON.parse(body);
                         if (!err && body.data.length != 0) {
@@ -2876,7 +2860,7 @@ ${final_talents}
                                 reply: `小夜收到了你的孤寡订单，现在就开始孤寡[CQ:at,qq=${who}]了噢孤寡~`,
                               });
                               request(
-                                `http://${go_cqhttp_api}/send_private_msg?user_id=${who}&message=${encodeURI(
+                                `http://${GO_CQHTTP_SERVICE_API_URL}/send_private_msg?user_id=${who}&message=${encodeURI(
                                   `您好，我是孤寡小夜，您的好友 ${req.body.user_id} 给您点了一份孤寡套餐，请查收`,
                                 )}`,
                                 function (error, _response, _body) {
@@ -2887,7 +2871,7 @@ ${final_talents}
                                     );
                                   } else {
                                     console.log(
-                                      `请求${go_cqhttp_api}/send_private_msg错误: ${error}`,
+                                      `请求${GO_CQHTTP_SERVICE_API_URL}/send_private_msg错误: ${error}`,
                                     );
                                   }
                                 },
@@ -3022,7 +3006,7 @@ ${final_talents}
                       `${system.utils.sha1(canvas.toBuffer())}.jpg`,
                     );
                     fs.writeFileSync(file_local, canvas.toBuffer());
-                    let file_online = `http://127.0.0.1:${web_port}/xiaoye/images/${system.utils.sha1(
+                    let file_online = `http://127.0.0.1:${WEB_PORT}/xiaoye/images/${system.utils.sha1(
                       canvas.toBuffer(),
                     )}.jpg`;
                     console.log(`黑白成功，图片发送: ${file_online}`.log);
@@ -3043,7 +3027,7 @@ ${final_talents}
                   id = msg_in.split("][")[0].trim();
 
                   request(
-                    `http://${go_cqhttp_api}/get_msg?message_id=${id}`,
+                    `http://${GO_CQHTTP_SERVICE_API_URL}/get_msg?message_id=${id}`,
                     function (error, _response, body) {
                       body = JSON.parse(body);
                       if (!error) {
@@ -3051,7 +3035,7 @@ ${final_talents}
                         res.send({ reply: `${body.data.message}` });
                       } else {
                         console.log(
-                          `请求${go_cqhttp_api}/get_msg错误: `,
+                          `请求${GO_CQHTTP_SERVICE_API_URL}/get_msg错误: `,
                           error,
                         );
                       }
@@ -3061,9 +3045,9 @@ ${final_talents}
                 }
 
                 //生成二维码
-                if (Constants.make_qrcode_reg.test(req.body.message)) {
+                if (Constants.make_QRCode_reg.test(req.body.message)) {
                   let content = req.body.message.match(
-                    Constants.make_qrcode_reg,
+                    Constants.make_QRCode_reg,
                   )[1];
                   res.send({
                     reply: `[CQ:image,file=https://api.sumt.cn/api/qr.php?text=${content},url=https://api.sumt.cn/api/qr.php?text=${content}]`,
@@ -3087,7 +3071,7 @@ ${final_talents}
                 if (req.body.notice_type === "group_increase") {
                   let final = `[CQ:at,qq=${req.body.user_id}] 你好呀，我是本群RBQ担当小夜!小夜的说明书在这里 https://gitee.com/Giftina/ChatDACS 噢，请问主人是要先吃饭呢，还是先洗澡呢，还是先*我呢~`;
                   request(
-                    `http://${go_cqhttp_api}/send_group_msg?group_id=${req.body.group_id
+                    `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id
                     }&message=${encodeURI(final)}`,
                     function (error, _response, _body) {
                       if (!error) {
@@ -3097,7 +3081,7 @@ ${final_talents}
                         );
                       } else {
                         console.log(
-                          `请求${go_cqhttp_api}/send_group_msg错误: ${error}`,
+                          `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
                         );
                       }
                     },
@@ -3107,8 +3091,8 @@ ${final_talents}
 
                 //管理员功能: 提醒停止服务的群启用小夜
                 if (req.body.message === "/admin alert_open") {
-                  for (let i in qq_admin_list) {
-                    if (req.body.user_id == qq_admin_list[i]) {
+                  for (let i in QQBOT_ADMIN_LIST) {
+                    if (req.body.user_id == QQBOT_ADMIN_LIST[i]) {
                       console.log(`管理员启动了提醒任务`.log);
                       AlertOpen().then((resolve) => {
                         res.send({
@@ -3126,8 +3110,8 @@ ${final_talents}
 
                 //管理员功能: 执行sql
                 if (Constants.admin_reg.test(req.body.message)) {
-                  for (let i in qq_admin_list) {
-                    if (req.body.user_id == qq_admin_list[i]) {
+                  for (let i in QQBOT_ADMIN_LIST) {
+                    if (req.body.user_id == QQBOT_ADMIN_LIST[i]) {
                       let admin_code = req.body.message.replace(
                         "/admin sql ",
                         "",
@@ -3150,10 +3134,10 @@ ${final_talents}
                 if (
                   Constants.change_reply_probability_reg.test(req.body.message)
                 ) {
-                  for (let i in qq_admin_list) {
-                    if (req.body.user_id == qq_admin_list[i]) {
+                  for (let i in QQBOT_ADMIN_LIST) {
+                    if (req.body.user_id == QQBOT_ADMIN_LIST[i]) {
                       let msg = req.body.message.replace("/回复率 ", "");
-                      reply_probability = msg;
+                      QQBOT_REPLY_PROBABILITY = msg;
                       res.send({
                         reply: `小夜回复率已修改为${msg}%`,
                       });
@@ -3170,10 +3154,10 @@ ${final_talents}
                 if (
                   Constants.change_fudu_probability_reg.test(req.body.message)
                 ) {
-                  for (let i in qq_admin_list) {
-                    if (req.body.user_id == qq_admin_list[i]) {
+                  for (let i in QQBOT_ADMIN_LIST) {
+                    if (req.body.user_id == QQBOT_ADMIN_LIST[i]) {
                       let msg = req.body.message.replace("/复读率 ", "");
-                      fudu_probability = msg;
+                      QQBOT_FUDU_PROBABILITY = msg;
                       res.send({
                         reply: `小夜复读率已修改为${msg}%`,
                       });
@@ -3190,10 +3174,10 @@ ${final_talents}
                 if (
                   Constants.change_chaos_probability_reg.test(req.body.message)
                 ) {
-                  for (let i in qq_admin_list) {
-                    if (req.body.user_id == qq_admin_list[i]) {
+                  for (let i in QQBOT_ADMIN_LIST) {
+                    if (req.body.user_id == QQBOT_ADMIN_LIST[i]) {
                       let msg = req.body.message.replace("/抽风率 ", "");
-                      chaos_probability = msg;
+                      QQBOT_CHAOS_PROBABILITY = msg;
                       res.send({
                         reply: `小夜抽风率已修改为${msg}%`,
                       });
@@ -3208,9 +3192,9 @@ ${final_talents}
 
                 /*                    要新增指令与功能请在这条分割线的上方添加，在下面添加有可能会导致冲突以及不可预料的异常                    */
 
-                //随机抽风，丢一个骰子，按 chaos_probability 几率抽风
+                //随机抽风，丢一个骰子，按 QQBOT_CHAOS_PROBABILITY 几率抽风
                 let chaos_flag = Math.floor(Math.random() * 1000);
-                if (chaos_flag < chaos_probability) {
+                if (chaos_flag < QQBOT_CHAOS_PROBABILITY) {
                   //随机选一个群抽风
                   let prprmsg;
                   PrprDoge()
@@ -3219,7 +3203,7 @@ ${final_talents}
                       RandomGroupList()
                         .then((resolve) => {
                           request(
-                            `http://${go_cqhttp_api}/send_group_msg?group_id=${resolve}&message=${encodeURI(
+                            `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${resolve}&message=${encodeURI(
                               prprmsg,
                             )}`,
                             function (error, _response, _body) {
@@ -3229,12 +3213,12 @@ ${final_talents}
                                     .log,
                                 );
                                 io.emit(
-                                  "system message",
+                                  "system",
                                   `@qqBot小夜在群 ${resolve} 抽风了，发送了 ${prprmsg}`,
                                 );
                               } else {
                                 console.log(
-                                  `请求${go_cqhttp_api}/send_group_msg错误: ${error}`,
+                                  `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
                                 );
                               }
                             },
@@ -3253,10 +3237,10 @@ ${final_talents}
 
                 //丢一个骰子，按fudu_probability几率复读
                 let fudu_flag = Math.floor(Math.random() * 100);
-                if (fudu_flag < fudu_probability) {
+                if (fudu_flag < QQBOT_FUDU_PROBABILITY) {
                   console.log(`qqBot小夜复读 ${req.body.message}`.log);
                   io.emit(
-                    "system message",
+                    "system",
                     `@qqBot小夜复读 ${req.body.message}`,
                   );
                   res.send({ reply: req.body.message });
@@ -3266,15 +3250,15 @@ ${final_talents}
                 //丢一个骰子，按reply_probability几率回复
                 let reply_flag = Math.floor(Math.random() * 100);
                 //如果被@了，那么回复几率上升80%
-                let at_replaced_msg = req.body.message; //要把[CQ:at,qq=${bot_qq}] 去除掉，否则聊天核心会乱成一锅粥
+                let at_replaced_msg = req.body.message; //要把[CQ:at,qq=${QQBOT_QQ}] 去除掉，否则聊天核心会乱成一锅粥
                 if (xiaoye_ated.test(req.body.message)) {
                   reply_flag -= 80;
                   at_replaced_msg = req.body.message
-                    .replace(`[CQ:at,qq=${bot_qq}]`, "")
+                    .replace(`[CQ:at,qq=${QQBOT_QQ}]`, "")
                     .trim(); //去除@小夜
                 }
                 //骰子命中，那就让小夜来自动回复
-                if (reply_flag < reply_probability) {
+                if (reply_flag < QQBOT_REPLY_PROBABILITY) {
                   ChatProcess(at_replaced_msg)
                     .then((resolve) => {
                       if (
@@ -3292,7 +3276,7 @@ ${final_talents}
                           ); //替换[name]为正确的@
                       }
                       console.log(`qqBot小夜回复 ${resolve}`.log);
-                      io.emit("system message", `@qqBot小夜回复: ${resolve}`);
+                      io.emit("system", `@qqBot小夜回复: ${resolve}`);
                       res.send({ reply: resolve });
                       return 0;
                     })
@@ -3305,7 +3289,7 @@ ${final_talents}
                               .balabala;
                           res.send({ reply: random_balabala });
                           io.emit(
-                            "system message",
+                            "system",
                             `@qqBot小夜觉得${random_balabala}`,
                           );
                           console.log(
@@ -3321,7 +3305,7 @@ ${final_talents}
                             reply: `小夜试图balabala但出错了: ${reject}`,
                           });
                           io.emit(
-                            "system message",
+                            "system",
                             `@qqBot小夜试图balabala但出错了: ${reject}`,
                           );
                           return 0;
@@ -3347,13 +3331,13 @@ ${final_talents}
       }
     } else if (
       req.body.message_type == "private" &&
-      private_service_swich == true
+      QQBOT_PRIVATE_CHAT_SWITCH == true
     ) {
       //私聊回复
       ChatProcess(req.body.message)
         .then((resolve) => {
           console.log(`qqBot小夜回复 ${resolve}`.log);
-          io.emit("system message", `@qqBot小夜回复: ${resolve}`);
+          io.emit("system", `@qqBot小夜回复: ${resolve}`);
           res.send({ reply: resolve });
         })
         .catch((reject) => {
@@ -3363,14 +3347,14 @@ ${final_talents}
               let random_balabala =
                 resolve[Math.floor(Math.random() * resolve.length)].balabala;
               res.send({ reply: random_balabala });
-              io.emit("system message", `@qqBot小夜觉得${random_balabala}`);
+              io.emit("system", `@qqBot小夜觉得${random_balabala}`);
               console.log(`${reject}，qqBot小夜觉得${random_balabala}`.log);
             })
             .catch((reject) => {
               console.log(`小夜试图balabala但出错了: ${reject}`.error);
               res.send({ reply: `小夜试图balabala但出错了: ${reject}` });
               io.emit(
-                "system message",
+                "system",
                 `@qqBot小夜试图balabala但出错了: ${reject}`,
               );
             });
@@ -3386,12 +3370,12 @@ ${final_talents}
     const result = await ProcessExecute(ask, qNum, gNum);
     if (result != "") {
       request(
-        `http://${go_cqhttp_api}/send_group_msg?group_id=${gNum}&message=${encodeURI(
+        `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${gNum}&message=${encodeURI(
           result,
         )}`,
         function (error, _response, _body) {
           if (error) {
-            console.log(`请求${go_cqhttp_api}/send_group_msg错误: ${error}`);
+            console.log(`请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`);
           }
         },
       );
@@ -3406,17 +3390,17 @@ ${final_talents}
     return new Promise((resolve, _reject) => {
       db.all(`SELECT * FROM qq_group WHERE talk_enabled = 0`, (err, sql) => {
         if (!err && sql[0]) {
-          let service_stoped_list = []; //停用服务的群列表
+          let service_stopped_list = []; //停用服务的群列表
           for (let i in sql) {
-            service_stoped_list.push(sql[i].group_id);
+            service_stopped_list.push(sql[i].group_id);
           }
           console.log(
-            `以下群未启用小夜服务: ${service_stoped_list} ，现在开始随机延时提醒`
+            `以下群未启用小夜服务: ${service_stopped_list} ，现在开始随机延时提醒`
               .log,
           );
-          DelayAlert(service_stoped_list);
+          DelayAlert(service_stopped_list);
           resolve(
-            `以下群未启用小夜服务: ${service_stoped_list} ，现在开始随机延时提醒`,
+            `以下群未启用小夜服务: ${service_stopped_list} ，现在开始随机延时提醒`,
           );
         } else {
           console.log(`目前没有群是关闭服务的，挺好`.log);
@@ -3428,7 +3412,7 @@ ${final_talents}
 
 //虚拟主播星野夜蝶核心代码，星野夜蝶上线!
 function start_live() {
-  const live = new KeepLiveTCP(blive_room_id);
+  const live = new KeepLiveTCP(BILIBILI_LIVE_ROOM_ID);
   live.on('open', () => logger.info('直播间连接成功'.log));
   live.on('live', () => {
     live.on('heartbeat', (online) => logger.info(`直播间在线人数: ${online}`.log));
@@ -3451,7 +3435,7 @@ function start_live() {
                 "/",
                 "\\",
               )}`;
-              voiceplayer.play(tts_file, function (err) {
+              voicePlayer.play(tts_file, function (err) {
                 if (err) throw err;
               });
             })
@@ -3477,7 +3461,7 @@ function start_live() {
                     "/",
                     "\\",
                   )}`;
-                  voiceplayer.play(tts_file, function (err) {
+                  voicePlayer.play(tts_file, function (err) {
                     if (err) throw err;
                   });
                 })
@@ -3612,9 +3596,9 @@ app.post("/upload/file", upload.single("file"), function (req, _res, _next) {
   if (isVideo.test(req.file.mimetype)) {
     io.emit("video message", file);
   } else if (isAudio.test(req.file.mimetype)) {
-    io.emit("audio message", file);
+    io.emit("audio", file);
   } else {
-    io.emit("file message", file);
+    io.emit("file", file);
   }
 });
 
@@ -3628,7 +3612,7 @@ app.post("/upload/file", upload.single("file"), function (req, _res, _next) {
 function PrprDoge() {
   return new Promise((resolve, reject) => {
     request(
-      `http://api.tianapi.com/txapi/tiangou/index?key=${Tiankey}`,
+      `http://api.tianapi.com/txapi/tiangou/index?key=${TIAN_XING_API_KEY}`,
       (err, response, body) => {
         body = JSON.parse(body);
         if (!err) {
@@ -3666,65 +3650,64 @@ function ReadConfig() {
 //初始化配置
 async function InitConfig() {
   let resolve = await ReadConfig();
-  chat_swich = resolve.System.chat_swich;
-  conn_go_cqhttp = resolve.System.conn_go_cqhttp;
-  Now_On_Live = resolve.System.Now_On_Live;
-  web_port = resolve.System.web_port;
-  go_cqhttp_service = resolve.System.go_cqhttp_service;
-  go_cqhttp_api = resolve.System.go_cqhttp_api;
+  CHAT_SWITCH = resolve.System.CHAT_SWITCH;
+  CONNECT_GO_CQHTTP_SWITCH = resolve.System.CONNECT_GO_CQHTTP_SWITCH;
+  CONNECT_BILIBILI_LIVE_SWITCH = resolve.System.CONNECT_BILIBILI_LIVE_SWITCH;
+  WEB_PORT = resolve.System.WEB_PORT;
+  GO_CQHTTP_SERVICE_ANTI_POST_API = resolve.System.GO_CQHTTP_SERVICE_ANTI_POST_API;
+  GO_CQHTTP_SERVICE_API_URL = resolve.System.GO_CQHTTP_SERVICE_API_URL;
 
-  Tiankey = resolve.ApiKey.Tiankey ?? ""; //天行接口key
-  sumtkey = resolve.ApiKey.sumtkey ?? ""; //卡特实验室接口key
+  TIAN_XING_API_KEY = resolve.ApiKey.TIAN_XING_API_KEY ?? ""; //天行接口key
 
-  bot_qq = resolve.qqBot.bot_qq; //qqBot使用的qq帐号
-  qq_admin_list = resolve.qqBot.qq_admin_list; //qqBot小夜的管理员列表
-  private_service_swich = resolve.qqBot.private_service_swich; //私聊开关
-  topN = resolve.qqBot.topN; //qqBot限制分词数量
-  reply_probability = resolve.qqBot.reply_probability; //回复几率
-  fudu_probability = resolve.qqBot.fudu_probability; //复读几率
-  chaos_probability = resolve.qqBot.chaos_probability; //抽风几率
+  QQBOT_QQ = resolve.qqBot.QQBOT_QQ; //qqBot使用的qq帐号
+  QQBOT_ADMIN_LIST = resolve.qqBot.QQBOT_ADMIN_LIST; //qqBot小夜的管理员列表
+  QQBOT_PRIVATE_CHAT_SWITCH = resolve.qqBot.QQBOT_PRIVATE_CHAT_SWITCH; //私聊开关
+  CHAT_JIEBA_LIMIT = resolve.qqBot.CHAT_JIEBA_LIMIT; //qqBot限制分词数量
+  QQBOT_REPLY_PROBABILITY = resolve.qqBot.QQBOT_REPLY_PROBABILITY; //回复几率
+  QQBOT_FUDU_PROBABILITY = resolve.qqBot.QQBOT_FUDU_PROBABILITY; //复读几率
+  QQBOT_CHAOS_PROBABILITY = resolve.qqBot.QQBOT_CHAOS_PROBABILITY; //抽风几率
   req_fuliji_list = resolve.qqBot.req_fuliji_list; //福利姬
   req_ECY_list = resolve.qqBot.req_ECY_list; //二次元图
-  req_no_trap_list = resolve.qqBot.req_no_trap_list; //今日不带套
-  qqimg_to_web = resolve.qqBot.qqimg_to_web; //保存接收图片开关
-  max_mine_count = resolve.qqBot.max_mine_count; //最大共存地雷数
-  black_list_words = resolve.qqBot.black_list_words; //教学系统的黑名单
+  QQBOT_ORDER_LIST_NO_TRAP = resolve.qqBot.QQBOT_ORDER_LIST_NO_TRAP; //今日不带套
+  QQBOT_SAVE_ALL_IMAGE_TO_LOCAL_SWITCH = resolve.qqBot.QQBOT_SAVE_ALL_IMAGE_TO_LOCAL_SWITCH; //保存接收图片开关
+  QQBOT_MAX_MINE_AT_MOST = resolve.qqBot.QQBOT_MAX_MINE_AT_MOST; //最大共存地雷数
+  CHAT_BAN_WORDS = resolve.qqBot.CHAT_BAN_WORDS; //教学系统的黑名单
 
-  blive_room_id = resolve.Others.blive_room_id; //哔哩哔哩直播间id
+  BILIBILI_LIVE_ROOM_ID = resolve.Others.BILIBILI_LIVE_ROOM_ID; //哔哩哔哩直播间id
 
   console.log(`_______________________________________\n`);
   console.log(`\n         ${version}          \n`.alert);
 
-  if (chat_swich) {
+  if (CHAT_SWITCH) {
     console.log("web端自动聊天开启\n".on);
   } else {
     console.log("web端自动聊天关闭\n".off);
   }
 
-  if (conn_go_cqhttp) {
+  if (CONNECT_GO_CQHTTP_SWITCH) {
     console.log(
-      `qqBot小夜开启，配置: \n  ·使用QQ帐号 ${bot_qq}\n  ·对接go-cqhttp接口 ${go_cqhttp_api}\n  ·监听反向post于 127.0.0.1:${web_port}${go_cqhttp_service}\n  ·私聊服务是否开启: ${private_service_swich}\n`
+      `qqBot小夜开启，配置: \n  ·使用QQ帐号 ${QQBOT_QQ}\n  ·对接go-cqhttp接口 ${GO_CQHTTP_SERVICE_API_URL}\n  ·监听反向post于 127.0.0.1:${WEB_PORT}${GO_CQHTTP_SERVICE_ANTI_POST_API}\n  ·私聊服务是否开启: ${QQBOT_PRIVATE_CHAT_SWITCH}\n`
         .on,
     );
-    xiaoye_ated = new RegExp(`\\[CQ:at,qq=${bot_qq}\\]`); //匹配小夜被@
+    xiaoye_ated = new RegExp(`\\[CQ:at,qq=${QQBOT_QQ}\\]`); //匹配小夜被@
     start_qqbot();
   } else {
     console.log("qqBot小夜关闭\n".off);
   }
 
-  if (Now_On_Live) {
+  if (CONNECT_BILIBILI_LIVE_SWITCH) {
     console.log(
-      `小夜直播对线开启，请确认哔哩哔哩直播间id是否为 ${blive_room_id}\n`.on,
+      `小夜直播对线开启，请确认哔哩哔哩直播间id是否为 ${BILIBILI_LIVE_ROOM_ID}\n`.on,
     );
     start_live();
   } else {
     console.log("小夜直播对线关闭\n".off);
   }
 
-  http.listen(web_port, () => {
+  http.listen(WEB_PORT, () => {
     console.log(`_______________________________________\n`);
     console.log(
-      `  ${system.utils.Curentyyyymmdd()}${system.utils.CurentTime()} 启动完毕，访问 127.0.0.1:${web_port} 即可进入web端  \n`
+      `  ${system.utils.Curentyyyymmdd()}${system.utils.CurentTime()} 启动完毕，访问 127.0.0.1:${WEB_PORT} 即可进入web端  \n`
         .alert,
     );
   });
@@ -3733,7 +3716,7 @@ async function InitConfig() {
 //异步结巴 by@ssp97
 async function ChatJiebaFuzzy(msg) {
   msg = msg.replace("/", "");
-  msg = jieba.extract(msg, topN); //按权重分词
+  msg = jieba.extract(msg, CHAT_JIEBA_LIMIT); //按权重分词
   let candidate = [];
   let candidateNextList = [];
   let candidateNextGrand = 0;
@@ -3878,7 +3861,7 @@ function SaveQQimg(imgUrl) {
 //随机选取一个群
 function RandomGroupList() {
   return new Promise((resolve, reject) => {
-    request(`http://${go_cqhttp_api}/get_group_list`, (err, response, body) => {
+    request(`http://${GO_CQHTTP_SERVICE_API_URL}/get_group_list`, (err, response, body) => {
       body = JSON.parse(body);
       if (!err && body.data.length != 0) {
         const rand_group_num = Math.floor(Math.random() * body.data.length);
@@ -3946,34 +3929,34 @@ function BetterTTS(tex) {
 }
 
 //随机延时提醒闭菊的群
-function DelayAlert(service_stoped_list) {
+function DelayAlert(service_stopped_list) {
   let alert_msg = [
     //提醒文本列表
-    `呜呜呜，把人家冷落了那么久，能不能让小夜张菊了呢...小夜的张菊指令更新了，现在需要发 张菊[CQ:at,qq=${bot_qq}] 才可以了噢`,
-    `闭菊那么久了，朕的菊花痒了!还不快让小夜张菊!小夜的张菊指令更新了，现在需要发 张菊[CQ:at,qq=${bot_qq}] 才可以了噢`,
-    `小夜也想为大家带来快乐，所以让小夜张菊，好吗？小夜的张菊指令更新了，现在需要发 张菊[CQ:at,qq=${bot_qq}] 才可以了噢`,
-    `欧尼酱，不要再无视我了，小夜那里很舒服的，让小夜张菊试试吧~小夜的张菊指令更新了，现在需要发 张菊[CQ:at,qq=${bot_qq}] 才可以了噢`,
+    `呜呜呜，把人家冷落了那么久，能不能让小夜张菊了呢...小夜的张菊指令更新了，现在需要发 张菊[CQ:at,qq=${QQBOT_QQ}] 才可以了噢`,
+    `闭菊那么久了，朕的菊花痒了!还不快让小夜张菊!小夜的张菊指令更新了，现在需要发 张菊[CQ:at,qq=${QQBOT_QQ}] 才可以了噢`,
+    `小夜也想为大家带来快乐，所以让小夜张菊，好吗？小夜的张菊指令更新了，现在需要发 张菊[CQ:at,qq=${QQBOT_QQ}] 才可以了噢`,
+    `欧尼酱，不要再无视我了，小夜那里很舒服的，让小夜张菊试试吧~小夜的张菊指令更新了，现在需要发 张菊[CQ:at,qq=${QQBOT_QQ}] 才可以了噢`,
   ];
-  for (let i in service_stoped_list) {
+  for (let i in service_stopped_list) {
     let delay_time = Math.floor(Math.random() * 60); //随机延时0到60秒
     let random_alert_msg =
       alert_msg[Math.floor(Math.random() * alert_msg.length)];
     console.log(
-      `qqBot小夜将会延时 ${delay_time} 秒后提醒群 ${service_stoped_list[i]} 张菊，提醒文本为: ${random_alert_msg}`
+      `qqBot小夜将会延时 ${delay_time} 秒后提醒群 ${service_stopped_list[i]} 张菊，提醒文本为: ${random_alert_msg}`
         .log,
     );
     setTimeout(function () {
       request(
-        `http://${go_cqhttp_api}/send_group_msg?group_id=${service_stoped_list[i]
+        `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${service_stopped_list[i]
         }&message=${encodeURI(random_alert_msg)}`,
         function (error, _response, _body) {
           if (!error) {
             console.log(
-              `qqBot小夜提醒了群 ${service_stoped_list[i]} 张菊，提醒文本为: ${random_alert_msg}`
+              `qqBot小夜提醒了群 ${service_stopped_list[i]} 张菊，提醒文本为: ${random_alert_msg}`
                 .log,
             );
           } else {
-            console.log(`请求${go_cqhttp_api}/send_group_msg错误: ${error}`);
+            console.log(`请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`);
           }
         },
       );
@@ -3992,18 +3975,18 @@ function Gugua(who) {
     "5.gif",
   ];
   for (let i in gugua_pic_list) {
-    let file_online = `http://127.0.0.1:${web_port}/xiaoye/ps/${gugua_pic_list[i]}`;
+    let file_online = `http://127.0.0.1:${WEB_PORT}/xiaoye/ps/${gugua_pic_list[i]}`;
     let pic_now = `[CQ:image,file=${file_online},url=${file_online}]`;
     setTimeout(function () {
       request(
-        `http://${go_cqhttp_api}/send_private_msg?user_id=${who}&message=${encodeURI(
+        `http://${GO_CQHTTP_SERVICE_API_URL}/send_private_msg?user_id=${who}&message=${encodeURI(
           pic_now,
         )}`,
         function (error, _response, _body) {
           if (!error) {
             console.log(`qqBot小夜孤寡了 ${who}，孤寡图为: ${pic_now}`.log);
           } else {
-            console.log(`请求${go_cqhttp_api}/send_private_msg错误: ${error}`);
+            console.log(`请求${GO_CQHTTP_SERVICE_API_URL}/send_private_msg错误: ${error}`);
           }
         },
       );
@@ -4022,18 +4005,18 @@ function QunGugua(who) {
     "5.gif",
   ];
   for (let i in gugua_pic_list) {
-    let file_online = `http://127.0.0.1:${web_port}/xiaoye/ps/${gugua_pic_list[i]}`;
+    let file_online = `http://127.0.0.1:${WEB_PORT}/xiaoye/ps/${gugua_pic_list[i]}`;
     let pic_now = `[CQ:image,file=${file_online},url=${file_online}]`;
     setTimeout(function () {
       request(
-        `http://${go_cqhttp_api}/send_group_msg?group_id=${who}&message=${encodeURI(
+        `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${who}&message=${encodeURI(
           pic_now,
         )}`,
         function (error, _response, _body) {
           if (!error) {
             console.log(`qqBot小夜孤寡了群 ${who}，孤寡图为: ${pic_now}`.log);
           } else {
-            console.log(`请求${go_cqhttp_api}/send_group_msg错误: ${error}`);
+            console.log(`请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`);
           }
         },
       );
@@ -4045,7 +4028,7 @@ function QunGugua(who) {
 function WenDa() {
   return new Promise((resolve, reject) => {
     request(
-      `http://api.tianapi.com/txapi/wenda/index?key=${Tiankey}`,
+      `http://api.tianapi.com/txapi/wenda/index?key=${TIAN_XING_API_KEY}`,
       (err, response, body) => {
         body = JSON.parse(body);
         if (!err) {
@@ -4072,7 +4055,7 @@ function ECYWenDa() {
       (err, _response, body) => {
         body = JSON.parse(body);
         if (!err) {
-          msg = jieba.extract(body.text, topN); //按权重分词
+          msg = jieba.extract(body.text, CHAT_JIEBA_LIMIT); //按权重分词
           if (msg.length == 0) {
             //如果分词不了，那就直接夜爹牛逼
             resolve({
@@ -4104,7 +4087,7 @@ function ECYWenDa() {
 function RainbowPi() {
   return new Promise((resolve, reject) => {
     request(
-      `http://api.tianapi.com/txapi/caihongpi/index?key=${Tiankey}`,
+      `http://api.tianapi.com/txapi/caihongpi/index?key=${TIAN_XING_API_KEY}`,
       (err, response, body) => {
         body = JSON.parse(body);
         if (!err) {
