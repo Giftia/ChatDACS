@@ -3276,7 +3276,7 @@ ${final_talents}
 }
 
 //虚拟主播星野夜蝶核心代码，星野夜蝶上线!
-function start_live() {
+function StartLive() {
   const live = new KeepLiveTCP(BILIBILI_LIVE_ROOM_ID);
   live.on('open', () => logger.info('直播间连接成功'.log));
   live.on('live', () => {
@@ -3564,7 +3564,7 @@ async function InitConfig() {
     console.log(
       `小夜直播对线开启，请确认哔哩哔哩直播间id是否为 ${BILIBILI_LIVE_ROOM_ID}\n`.on,
     );
-    start_live();
+    StartLive();
   } else {
     console.log("小夜直播对线关闭\n".off);
   }
