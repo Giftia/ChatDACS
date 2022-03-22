@@ -133,7 +133,7 @@ const Constants = require(path.join(
 ));
 
 //系统配置和开关，以及固定变量
-const version = "ChatDACS v3.2.3"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS v3.2.4"; //版本号，会显示在浏览器tab与标题栏
 var boomTimer; //60s计时器
 var onlineUsers = 0, //预定义
   TIAN_XING_API_KEY,
@@ -354,6 +354,14 @@ io.on("connection", (socket) => {
     };
     io.emit(answer.type, answerMessage);
 
+    if (CHAT_SWITCH) {
+      //交给聊天函数处理
+      const chatReply = await ChatProcess(msg);
+      if (chatReply) {
+        io.emit("text", { CID: "0", msg: chatReply, });
+      }
+    }
+
     /*
         //开始if地狱
         if (Constants.rename_reg.test(msg)) {
@@ -388,18 +396,7 @@ io.on("connection", (socket) => {
               console.log(`RandomHomeword(): rejected, and err:${reject}`.error);
               io.emit("system", `@RandomHomeword() err:${reject}`);
             });
-        } else if (Constants.yap_reg.test(msg)) { //吠
-          const barkMsg = msg.replace("/吠 ", "").replace("/吠", "");
-          BetterTTS(barkMsg)
-            .then((resolve) => {
-              io.emit("audio", resolve); 
-            })
-            .catch((reject) => {
-              console.log(`TTS错误: ${reject}`.error);
-              io.emit("system", `@TTS错误: ${reject}`);
-            });
-        } //教学系统，抄板于虹原翼版小夜v3
-        else if (Constants.teach_reg.test(msg)) {
+        } else if (Constants.teach_reg.test(msg)) { //教学系统，抄板于虹原翼版小夜v3
           const teachMsg = msg.substr(2).split("答：");
           if (teachMsg.length !== 2) {
             console.log(`教学指令: 分割有误，退出教学`.error);
@@ -457,31 +454,6 @@ io.on("connection", (socket) => {
           );
           return 0;
         } else {
-          if (CHAT_SWITCH) {
-            //交给聊天函数处理
-            ChatProcess(msg)
-              .then((resolve) => {
-                io.emit("text", {
-                  CID: "0",
-                  msg: resolve,
-                });
-              })
-              .catch((reject) => {
-                //如果没有匹配到回复，那就让舔狗来回复
-                console.log(`${reject}，交给舔狗回复`.warn);
-                PrprDoge()
-                  .then((resolve) => {
-                    console.log(`舔狗回复: ${resolve}`.log);
-                    io.emit("text", {
-                      CID: "0",
-                      msg: resolve,
-                    });
-                  })
-                  .catch((reject) => {
-                    console.log(`随机舔狗错误: ${reject}`.error);
-                  });
-              });
-          } else {
             return 0;
           }
         }
