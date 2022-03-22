@@ -363,40 +363,9 @@ io.on("connection", (socket) => {
     }
 
     /*
-        //开始if地狱
-        if (Constants.rename_reg.test(msg)) {
-          db.run(
-            `UPDATE users SET nickname = '${msg.slice(8)}' WHERE CID ='${CID}'`,
-          );
-          io.emit("text", {
-            CID: "0",
-            msg: `@昵称重命名完毕，小夜现在会称呼你为 ${msg.slice(8)} 啦`,
-          });
-        } else if (Constants.bv2av_reg.test(msg)) {
-          msg = msg.replace(" ", "");
-          system.utils
-            .Bv2Av(msg)
-            .then((resolve) => {
-              io.emit("text", { CID: "0", msg: resolve });
-            })
-            .catch((reject) => {
-              console.log(
-                `system.utils.Bv2Av(): rejected, and err:${reject}`.error,
-              );
-              io.emit("system", `@system.utils.Bv2Av() err:${reject}`);
-            });
-        } else if (msg === "/reload") {
-          io.emit("reload");
-        } else if (msg === "/随机冷知识") {
-          RandomHomeword()
-            .then((resolve) => {
-              io.emit("text", { CID: "0", msg: `@${resolve}` });
-            })
-            .catch((reject) => {
-              console.log(`RandomHomeword(): rejected, and err:${reject}`.error);
-              io.emit("system", `@RandomHomeword() err:${reject}`);
-            });
-        } else if (Constants.teach_reg.test(msg)) { //教学系统，抄板于虹原翼版小夜v3
+        //待补完功能
+
+        if (Constants.teach_reg.test(msg)) { //教学系统，抄板于虹原翼版小夜v3
           const teachMsg = msg.substr(2).split("答：");
           if (teachMsg.length !== 2) {
             console.log(`教学指令: 分割有误，退出教学`.error);
@@ -453,9 +422,6 @@ io.on("connection", (socket) => {
             `@哇!小夜学会啦!对我说: ${ask} 试试吧，小夜有可能会回复 ${ans} 噢`,
           );
           return 0;
-        } else {
-            return 0;
-          }
         }
         **/
   });
@@ -3622,12 +3588,12 @@ function ReadConfig() {
 //初始化配置
 async function InitConfig() {
   let resolve = await ReadConfig();
-  CHAT_SWITCH = resolve.System.CHAT_SWITCH;
-  CONNECT_GO_CQHTTP_SWITCH = resolve.System.CONNECT_GO_CQHTTP_SWITCH;
-  CONNECT_BILIBILI_LIVE_SWITCH = resolve.System.CONNECT_BILIBILI_LIVE_SWITCH;
-  WEB_PORT = resolve.System.WEB_PORT;
-  GO_CQHTTP_SERVICE_ANTI_POST_API = resolve.System.GO_CQHTTP_SERVICE_ANTI_POST_API;
-  GO_CQHTTP_SERVICE_API_URL = resolve.System.GO_CQHTTP_SERVICE_API_URL;
+  CHAT_SWITCH = resolve.System.CHAT_SWITCH ?? true;
+  CONNECT_GO_CQHTTP_SWITCH = resolve.System.CONNECT_GO_CQHTTP_SWITCH ?? false;
+  CONNECT_BILIBILI_LIVE_SWITCH = resolve.System.CONNECT_BILIBILI_LIVE_SWITCH ?? false;
+  WEB_PORT = resolve.System.WEB_PORT ?? 80;
+  GO_CQHTTP_SERVICE_ANTI_POST_API = resolve.System.GO_CQHTTP_SERVICE_ANTI_POST_API ?? "/bot";
+  GO_CQHTTP_SERVICE_API_URL = resolve.System.GO_CQHTTP_SERVICE_API_URL ?? "127.0.0.1:5700";
 
   TIAN_XING_API_KEY = resolve.ApiKey.TIAN_XING_API_KEY ?? ""; //天行接口key
 
@@ -3645,7 +3611,7 @@ async function InitConfig() {
   QQBOT_MAX_MINE_AT_MOST = resolve.qqBot.QQBOT_MAX_MINE_AT_MOST; //最大共存地雷数
   CHAT_BAN_WORDS = resolve.qqBot.CHAT_BAN_WORDS; //教学系统的黑名单
 
-  BILIBILI_LIVE_ROOM_ID = resolve.Others.BILIBILI_LIVE_ROOM_ID; //哔哩哔哩直播间id
+  BILIBILI_LIVE_ROOM_ID = resolve.Others.BILIBILI_LIVE_ROOM_ID ?? 49148; //哔哩哔哩直播间id
 
   console.log(`_______________________________________\n`);
   console.log(`\n         ${version}          \n`.alert);

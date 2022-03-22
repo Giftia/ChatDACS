@@ -33,31 +33,6 @@ module.exports = {
     return clock;
   },
 
-  //BV转AV
-  async Bv2Av(msg) {
-    return new Promise((resolve, reject) => {
-      request(
-        "https://api.bilibili.com/x/web-interface/view?bvid=" + msg,
-        (err, response, body) => {
-          body = JSON.parse(body);
-          if (!err && response.statusCode === 200 && body.code === 0) {
-            var content = "a(https://www.bilibili.com/video/av";
-            var av = body.data;
-            var av_number = av.aid;
-            var av_title = av.title;
-            content += av_number + ")[" + av_title + "，av" + av_number + "]";
-            resolve(content);
-          } else {
-            reject(
-              "解析错误，是否输入了不正确的BV号？错误原因：" +
-              JSON.stringify(response.body),
-            );
-          }
-        },
-      );
-    });
-  },
-
   //生成唯一文件名
   sha1(buf) {
     const crypto = require("crypto"); //编码库，用于modules.utils.sha1生成文件名
@@ -84,29 +59,6 @@ module.exports = {
           );
         }
       });
-    });
-  },
-
-  //随机冷知识
-  async RandomHomeword() {
-    return new Promise((resolve, reject) => {
-      request(
-        "https://passport.csdn.net/v1/api/get/homeword",
-        (err, response, body) => {
-          body = JSON.parse(body);
-          if (!err) {
-            var title = "<h2>" + body.data.title + "</h2>";
-            var content = body.data.content;
-            var count = body.data.count;
-            resolve(title + content + "\r\n—— 有" + count + "人陪你一起已读");
-          } else {
-            reject(
-              "获取随机冷知识错误，这个问题雨女无瓜，是CSDN接口的锅。错误原因：" +
-              JSON.stringify(response.body),
-            );
-          }
-        },
-      );
     });
   },
 

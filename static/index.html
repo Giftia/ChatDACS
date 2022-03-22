@@ -230,7 +230,7 @@
                 },
                 {
                   alias: "reload",
-                  title: "重生（长按）",
+                  title: "重生",
                   iconUnicode: "&#xe666;",
                   iconClass: "",
                 },
@@ -242,7 +242,7 @@
                 },
                 {
                   alias: "about",
-                  title: "关于（长按）",
+                  title: "关于",
                   iconUnicode: "&#xe60b;",
                   iconClass: "",
                 },
@@ -594,10 +594,6 @@
               if (text != "") typing_status.innerHTML = msg;
             });
 
-            socket.on("reload", function () {
-              window.location.reload();
-            });
-
             typing = function () {
               socket.emit("typing");
             };
@@ -612,7 +608,6 @@
               superplaceholder({
                 el: document.querySelector("input"),
                 sentences: [
-                  "/reload",
                   "BV1PA411L7op",
                   "来点色图",
                   "/ping",

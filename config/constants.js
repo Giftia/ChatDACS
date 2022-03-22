@@ -1,7 +1,6 @@
 module.exports = Object.freeze({
   //正则
   rename_reg: new RegExp("^/rename [\u4e00-\u9fa5a-z0-9]{1,10}$"), //允许1-10长度的数英汉昵称
-  bv2av_reg: new RegExp("^[a-zA-Z0-9]{10,12}$"), //匹配bv号
   isImage_reg: new RegExp("\\[CQ:image,file:"), //匹配qqBot图片
   change_reply_probability_reg: new RegExp("^/回复率 [0-9]*"), //匹配修改qqBot小夜回复率
   change_fudu_probability_reg: new RegExp("^/复读率 [0-9]*"), //匹配修改qqBot小夜复读率
