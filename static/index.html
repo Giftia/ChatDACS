@@ -247,12 +247,6 @@
                   iconClass: "",
                 },
                 {
-                  alias: "updateLog",
-                  title: "更新日志",
-                  iconUnicode: "&#xe60e;",
-                  iconClass: "",
-                },
-                {
                   alias: "thanks",
                   title: "致谢",
                   iconUnicode: "&#xe6c6;",
@@ -275,7 +269,7 @@
 
           layim.on("ready", function (options) {
             layim.showNew("More", true);
-            layim.showNew("updateLog", true);
+            layim.showNew("about", true);
           });
 
           //工具栏-召唤小夜
@@ -401,20 +395,50 @@
                     "关于这个项目",
                     "background-color: #FF4351; color:#fff;",
                   ],
-                  content:
-                    '<h1 align="center"><img src="https://repository-images.githubusercontent.com/171253757/5f987680-d2ab-11eb-927b-655b4967c9a3"width="300px"/><br/>沙雕Ai聊天系统ChatDACS<br/>(Chatbot:shaDiao Ai Chat System)</h1><p align="center"><br/>一个无需服务器，可私有化部署、可独立运行于内网的H5聊天工具。<br/>技术栈：语言——Node.js，web框架——Express，前端组件库——layui。<br/>与硬件端<a href="https://github.com/Giftia/ChaosNodeMCU/"target="_blank">ChaosNodeMCU</a>联动为一个完整的物联网项目。<br/>开箱即用，非常好用，我的朋友。<br/><br/>简易搭建教程：<a href="https://zhuanlan.zhihu.com/p/67995935"target="_blank">zhuanlan.zhihu.com/p/67995935</a><br/>项目开源于：<a href="//github.com/Giftia/ChatDACS/"target=_black>github.com/Giftia/ChatDACS</a>，欢迎Star。<br/>系统已与小夜联动最新聊天词库，请随意聊天。<br/><br/>如需联系请访问：<a href="//giftia.moe"target=_black>giftia.moe</a></p>',
-                });
-                break;
-              case "updateLog":
-                socket.emit("getUpdateLog");
-                socket.on("updateLog", function (data) {
-                  layer.open({
-                    title: [
-                      "更新日志",
-                      "background-color: #FF96AD; color:#fff;",
-                    ],
-                    content: data,
-                  });
+                  content: `
+                  <table width="100%" border="0">
+  <tr>
+  <td style="width:80%;vertical-align:top;">
+    <h1 align="center">
+      <img src="https://repository-images.githubusercontent.com/171253757/27be1b16-8dbb-41ba-90b5-4b28157f3def" width="200" height="200" alt="ChatDACS"/><br/>
+      星野夜蝶<br/>
+      Hoshino Yedie<br/>
+    </h1>
+    <h2 align="center">
+      沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)
+    </h2>
+    <p align="center">
+      一个简单的机器人框架，支持接入哔哩哔哩直播，具备完全功能的web网页控制台。<br/>
+      技术栈：语言——JavaScript，web框架——Express，前端组件库——layui，qq协议端——go-cqhttp。<br/>
+      画师：塘李<br/>
+      <br/>
+      示例 DEMO：<a href="http://110.42.221.72/" target="_blank">http://110.42.221.72/</a><br/>
+      语录来自小夜：<a href="https://github.com/Giftia/Project_Xiaoye" target="_blank">github.com/Giftia/Project_Xiaoye</a>
+      <br>
+    </p>
+  </td>
+
+  <td style="width:20%;vertical-align:top;">
+    <img src="https://i.loli.net/2021/08/25/sILl6XREJMDPAmt.png" width="200" alt="stand" />
+    <p align="center">
+      星野夜蝶 立绘
+    </p>
+  </td>
+  </tr>
+</table>
+
+<p align="center">
+  <a href="https://stats.uptimerobot.com/JYr8kI8jqg"><img src="https://img.shields.io/uptimerobot/ratio/m783632550-7da46d24226cb151b978c810?label=%E5%AD%98%E6%B4%BB%E7%8E%87&style=for-the-badge" alt="Uptime(30 days)" /></a>
+  &nbsp;
+  <a href="http://110.42.221.72/"><img src="https://img.shields.io/website?label=demo&style=for-the-badge&up_message=online&url=http://110.42.221.72/" alt="Demo" /></a>
+  &nbsp;
+  <a href="https://github.com/Giftia/ChatDACS/actions"><img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/Giftia/ChatDACS/Compile%20ChatDACS%20for%20Windows?label=%E8%87%AA%E5%8A%A8%E6%9E%84%E5%BB%BA&style=for-the-badge"></a>
+  &nbsp;
+  <img src="https://img.shields.io/github/license/Giftia/ChatDACS?label=%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF&style=for-the-badge" alt="License" />
+  &nbsp;
+  <img src="https://img.shields.io/github/languages/code-size/Giftia/ChatDACS?label=%E4%BB%A3%E7%A0%81%E5%A4%A7%E5%B0%8F&style=for-the-badge" alt="Code size" />
+</p>
+                  `,
                 });
                 break;
               case "thanks":

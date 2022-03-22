@@ -33,7 +33,7 @@ function ReadConfig() {
   });
 }
 
-//初始化web_port与SUMT_API_KEY
+//初始化WEB_PORT与SUMT_API_KEY
 async function Init() {
   const resolve = await ReadConfig();
   WEB_PORT = resolve.System.WEB_PORT;
