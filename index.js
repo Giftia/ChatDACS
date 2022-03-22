@@ -133,7 +133,7 @@ const Constants = require(path.join(
 ));
 
 //系统配置和开关，以及固定变量
-const version = "ChatDACS v3.2.4"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS v3.2.5"; //版本号，会显示在浏览器tab与标题栏
 var boomTimer; //60s计时器
 var onlineUsers = 0, //预定义
   TIAN_XING_API_KEY,
@@ -165,11 +165,6 @@ const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 const thanks =
   "致谢（排名不分先后）: https://niconi.co.ni/、https://www.layui.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、https://api.lolicon.app/、https://bww.lolicon.app/、https://iw233.cn/main.html、https://blog.csdn.net/jia20003/article/details/7228464、还有我的朋友们，以及倾心分享知识的各位";
-const updateContent = `update: 
-- 一些变量与格式优化；
-- 修复无法正常获取随机昵称的问题；
-- 目前发现：由于插件系统和pkg不兼容，暂时不能通过github action进行自动构建，烦请用户自行按readme的快速部署章节进行启动；`;
-const updateLog = `<h1>${version}</h1><br/>${updateContent}`;
 
 //日志染色颜色配置
 colors.setTheme({
@@ -321,11 +316,6 @@ io.on("connection", (socket) => {
     socket.emit("settings", { CID: CID, name: socket.username });
   });
 
-  //更新日志
-  socket.on("getUpdateLog", () => {
-    socket.emit("updateLog", updateLog);
-  });
-
   //致谢列表
   socket.on("thanks", () => {
     socket.emit("thanks", thanks);
@@ -347,7 +337,7 @@ io.on("connection", (socket) => {
     io.emit("text", { CID: CID, name: socket.username, msg: msg }); //用户广播
 
     //web端插件应答器
-    const answer = await ProcessExecute(msg, 0, 0) ?? "";
+    const answer = await ProcessExecute(msg, socket.username, 0) ?? "";
     const answerMessage = {
       CID: "0",
       msg: answer.content,
@@ -361,69 +351,6 @@ io.on("connection", (socket) => {
         io.emit("text", { CID: "0", msg: chatReply, });
       }
     }
-
-    /*
-        //待补完功能
-
-        if (Constants.teach_reg.test(msg)) { //教学系统，抄板于虹原翼版小夜v3
-          const teachMsg = msg.substr(2).split("答：");
-          if (teachMsg.length !== 2) {
-            console.log(`教学指令: 分割有误，退出教学`.error);
-            io.emit("system", `@你教的姿势不对噢qwq`);
-            return 0;
-          }
-          const ask = teachMsg[0].trim(),
-            ans = teachMsg[1].trim();
-          if (ask == "" || ans == "") {
-            console.log(`问/答为空，退出教学`.error);
-            io.emit("system", `@你教的姿势不对噢qwq`);
-            return 0;
-          }
-          if (ask.indexOf(/\r?\n/g) !== -1) {
-            console.log(`教学指令: 关键词换行了，退出教学`.error);
-            io.emit("system", `@关键词不能换行啦qwq`);
-            return 0;
-          }
-          console.log(
-            `web端 ${socket.username} 想要教给小夜: 问: ${ask} 答: ${ans}，现在开始检测合法性`
-              .log,
-          );
-          for (let i in CHAT_BAN_WORDS) {
-            if (
-              ask.toLowerCase().indexOf(CHAT_BAN_WORDS[i].toLowerCase()) !== -1 ||
-              ans.toLowerCase().indexOf(CHAT_BAN_WORDS[i].toLowerCase()) !== -1
-            ) {
-              console.log(
-                `教学指令: 检测到不允许的词: ${CHAT_BAN_WORDS[i]}，退出教学`
-                  .error,
-              );
-              io.emit("system", `@你教的内容里有主人不允许小夜学习的词qwq`);
-              return 0;
-            }
-          }
-          if (Buffer.from(ask).length < 4) {
-            //关键词最低长度: 4个英文或2个汉字
-            console.log(`教学指令: 关键词太短，退出教学`.error);
-            io.emit("system", `@关键词太短了啦qwq，至少要4个字节啦`);
-            return 0;
-          }
-          if (ask.length > 350 || ans.length > 350) {
-            //图片长度差不多是350左右
-            console.log(`教学指令: 教的太长了，退出教学`.error);
-            io.emit("system", `@你教的内容太长了，小夜要坏掉了qwq，不要呀`);
-            return 0;
-          }
-          //到这里都没有出错的话就视为没有问题，可以让小夜学了
-          console.log(`教学指令: 没有检测到问题，可以学习`.log);
-          db.run(`INSERT INTO chat VALUES('${ask}', '${ans}')`);
-          console.log(`教学指令: 学习成功`.log);
-          io.emit(
-            "system",
-            `@哇!小夜学会啦!对我说: ${ask} 试试吧，小夜有可能会回复 ${ans} 噢`,
-          );
-          return 0;
-        }
-        **/
   });
 });
 
