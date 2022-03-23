@@ -198,8 +198,8 @@
                   iconUnicode: "&#xe66a;",
                 },
                 {
-                  alias: "knowledge",
-                  title: "随机冷知识",
+                  alias: "r18",
+                  title: "r18",
                   iconUnicode: "&#xe649;",
                 },
                 {
@@ -296,9 +296,9 @@
             send();
           });
 
-          //工具栏-knowledge
-          layim.on("tool(knowledge)", function (insert, send) {
-            insert("随机冷知识");
+          //工具栏-r18
+          layim.on("tool(r18)", function (insert, send) {
+            insert("r18");
             send();
           });
 
@@ -497,7 +497,7 @@
               id: "101",
               type: "group",
               mine: 0,
-              content: `img[${msg.msg}]`,
+              content: `img[${msg.content}]`,
             });
           });
 
@@ -509,7 +509,7 @@
               id: "101",
               type: "group",
               mine: 0,
-              content: `video[${msg.file}](${msg.filename})`,
+              content: `video[${msg.content.file}](${msg.content.filename})`,
             });
           });
 
@@ -521,7 +521,7 @@
               id: "101",
               type: "group",
               mine: 0,
-              content: `audio[${msg.file}](${msg.filename})`,
+              content: `audio[${msg.content.file}](${msg.content.filename})`,
             });
           });
 
@@ -533,7 +533,7 @@
               id: "101",
               type: "group",
               mine: 0,
-              content: `file(${msg.file})[${msg.filename}]`,
+              content: `file(${msg.content.file})[${msg.content.filename}]`,
             });
           });
 
@@ -635,10 +635,11 @@
                   "BV1PA411L7op",
                   "来点色图",
                   "/ping",
-                  "随机冷知识",
+                  "r18",
                   "小夜",
                   "帮助",
                   "随机买家秀",
+                  "随机二次元图",
                 ],
                 options: {
                   letterDelay: 100,

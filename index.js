@@ -133,7 +133,7 @@ const Constants = require(path.join(
 ));
 
 //系统配置和开关，以及固定变量
-const version = "ChatDACS v3.2.5"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS v3.2.6"; //版本号，会显示在浏览器tab与标题栏
 var boomTimer; //60s计时器
 var onlineUsers = 0, //预定义
   TIAN_XING_API_KEY,
@@ -3279,68 +3279,60 @@ ${final_talents}
 function StartLive() {
   const live = new KeepLiveTCP(BILIBILI_LIVE_ROOM_ID);
   live.on('open', () => logger.info('直播间连接成功'.log));
+
   live.on('live', () => {
     live.on('heartbeat', (online) => logger.info(`直播间在线人数: ${online}`.log));
-    live.on('msg', (data) => logger.info(`直播间消息: ${data}`.log));
 
-    live.on('DANMU_MSG', (data) => {
+    live.on('DANMU_MSG', async (data) => {
+      console.log(data.info);
       const danmu = data.info;
-      ChatProcess(danmu)
-        .then((resolve) => {
-          const reply = resolve;
-          console.log(`小夜说: ${reply}`.log);
-          fs.writeFileSync(
-            Constants.TTS_FILE_RECV_PATH,
-            `${danmu}？ ${reply}`,
-          );
+      const danmu_content = danmu[2][1];
+      const danmu_user_name = danmu[1][1];
+      const danmu_user_id = danmu[1][0];
+      const danmu_user_level = danmu[1][2];
+      const danmu_user_vip = danmu[1][3];
+      const danmu_user_svip = danmu[1][4];
+      const danmu_user_guard_level = danmu[1][5];
+      const danmu_user_is_admin = danmu[1][6];
+      const danmu_user_is_vip = danmu[1][7];
+      const danmu_user_is_svip = danmu[1][8];
+      const danmu_user_is_guard = danmu[1][9];
+      const danmu_user_is_robot = danmu[1][10];
+      const danmu_user_is_admin_for_group = danmu[1][11];
+      const danmu_user_is_vip_for_group = danmu[1][12];
+      const danmu_user_is_svip_for_group = danmu[1][13];
+      const danmu_user_is_guard_for_group = danmu[1][14];
+      const danmu_user_is_member = danmu[1][15];
+      const danmu_user_is_owner = danmu[1][16];
+      const danmu_user_is_blocked = danmu[1][17];
+      const danmu_user_is_blocked_for_group = danmu[1][18];
+      const danmu_user_is_in_blacklist = danmu[1][19];
+      const danmu_user_is_in_blacklist_for_group = danmu[1][20];
+      const danmu_user_is_in_whitelist = danmu[1][21];
+      const danmu_user_is_in_whitelist_for_group = danmu[1][22];
 
-          BetterTTS(reply)
-            .then((resolve) => {
-              let tts_file = `${process.cwd()}\\static${resolve.file.replace(
-                "/",
-                "\\",
-              )}`;
-              voicePlayer.play(tts_file, function (err) {
-                if (err) throw err;
-              });
-            })
-            .catch((reject) => {
-              console.log(`TTS错误: ${reject}`.error);
-            });
-        })
-        .catch((reject) => {
-          //如果没有匹配到回复，那就随机回复balabala废话
-          console.log(`${reject}，弹幕没有匹配`.warn);
-          GetBalabalaList()
-            .then((resolve) => {
-              let random_balabala =
-                resolve[Math.floor(Math.random() * resolve.length)]
-                  .balabala;
-              fs.writeFileSync(
-                Constants.TTS_FILE_RECV_PATH,
-                random_balabala,
-              );
-              BetterTTS(random_balabala)
-                .then((resolve) => {
-                  let tts_file = `${process.cwd()}\\static${resolve.file.replace(
-                    "/",
-                    "\\",
-                  )}`;
-                  voicePlayer.play(tts_file, function (err) {
-                    if (err) throw err;
-                  });
-                })
-                .catch((reject) => {
-                  console.log(`TTS错误: ${reject}`.error);
-                });
-              console.log(
-                `${reject}，qqBot小夜觉得${random_balabala}`.log,
-              );
-            })
-            .catch((reject) => {
-              console.log(`小夜试图balabala但出错了: ${reject}`.error);
-            });
-        });
+      //交给聊天函数处理
+      const chatReply = await ChatProcess(danmu_content);
+      if (chatReply) {
+        console.log(`小夜说: ${reply}`.log);
+        // fs.writeFileSync(Constants.TTS_FILE_RECV_PATH, `${danmu}？ ${reply}`);
+        // const chatReplyToTTS = await BetterTTS(reply);
+        // const ttsFile = `${process.cwd()}\\static${chatReplyToTTS.file.replace("/", "\\")}`;
+        // voicePlayer.play(ttsFile, function (err) {
+        //   if (err) throw err;
+        // });
+      } else {
+        //如果没有匹配到回复，那就随机回复balabala废话
+        console.log(`弹幕没有匹配，随机回复balabala废话`.log);
+        // const balaBalaList = await GetBalabalaList();
+        // const randBalaBala = balaBalaList[Math.floor(Math.random() * balaBalaList.length)].balabala;
+        // fs.writeFileSync(Constants.TTS_FILE_RECV_PATH, randBalaBala);
+        // const balabalaReplyToTTS = await BetterTTS(randBalaBala);
+        // const ttsFile = `${process.cwd()}\\static${balabalaReplyToTTS.file.replace("/", "\\")}`;
+        // voicePlayer.play(ttsFile, function (err) {
+        //   if (err) throw err;
+        // });
+      }
     });
 
     live.on('SEND_GIFT', (data) => {
@@ -3435,35 +3427,37 @@ app.get("/profile", (req, res) => {
 
 //图片上传接口
 app.post("/upload/image", upload.single("file"), function (req, _res, _next) {
-  console.log(`用户上传图片: ${req.file}`.log);
-  let oldname = req.file.path;
-  let newname = req.file.path + path.parse(req.file.originalname).ext;
+  console.log(`用户上传图片`.log);
+  console.log(req.file);
+  const oldname = req.file.path;
+  const newname = req.file.path + path.parse(req.file.originalname).ext;
   fs.renameSync(oldname, newname);
   io.emit(
     "picture",
-    `/uploads/${req.file.filename}${path.parse(req.file.originalname).ext}`,
+    { type: 'picture', content: `/uploads/${req.file.filename}${path.parse(req.file.originalname).ext}` },
   );
 });
 
 //文件/视频上传接口
 app.post("/upload/file", upload.single("file"), function (req, _res, _next) {
-  console.log(`用户上传文件: ${req.file}`.log);
-  let oldname = req.file.path;
-  let newname = req.file.path + path.parse(req.file.originalname).ext;
+  console.log(`用户上传文件`.log);
+  console.log(req.file);
+  const oldname = req.file.path;
+  const newname = req.file.path + path.parse(req.file.originalname).ext;
   fs.renameSync(oldname, newname);
-  let isVideo = new RegExp("^video*");
-  let isAudio = new RegExp("^audio*");
-  let file = {
+  const isVideo = new RegExp("^video*");
+  const isAudio = new RegExp("^audio*");
+  const file = {
     file: `/uploads/${req.file.filename}${path.parse(req.file.originalname).ext
       }`,
     filename: req.file.originalname,
   };
   if (isVideo.test(req.file.mimetype)) {
-    io.emit("video message", file);
+    io.emit("video", { type: 'video', content: file });
   } else if (isAudio.test(req.file.mimetype)) {
-    io.emit("audio", file);
+    io.emit("audio", { type: 'audio', content: file });
   } else {
-    io.emit("file", file);
+    io.emit("file", { type: 'file', content: file });
   }
 });
 
