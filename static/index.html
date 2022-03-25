@@ -356,14 +356,14 @@
     <div class="layui-form-item">
       <label class="layui-form-label">CID</label>
       <div class="layui-input-block">
-        <input type="text" name="CID" required placeholder={{d.data.CID}} class="layui-input" value={{d.data.CID}} />
+        <input type="message" name="CID" required placeholder={{d.data.CID}} class="layui-input" value={{d.data.CID}} />
         <div class="layui-form-mid layui-word-aux">用户唯一标识，不要乱改啊</div>
       </div>
     </div>
     <div class="layui-form-item">
       <label class="layui-form-label">昵称</label>
       <div class="layui-input-block">
-        <input type="text" name="name" required placeholder="请输入昵称" class="layui-input" value={{d.data.name}} />
+        <input type="message" name="name" required placeholder="请输入昵称" class="layui-input" value={{d.data.name}} />
         <div class="layui-form-mid layui-word-aux">1-10长度的数英汉昵称</div>
       </div>
     </div>
@@ -457,119 +457,119 @@
 
           //监听发送消息
           layim.on("sendMessage", function (data) {
-            socket.emit("text", { CID: myCID, msg: data.mine.content });
+            socket.emit("message", { CID: myCID, msg: data.mine.content });
           });
 
           //接收消息
-          socket.on("text", function (msg) {
-            switch (msg.CID) {
-              case "0":
+          socket.on("message", function (message) {
+            switch (message.CID) {
+              case "0": //小夜回复的消息
                 layim.getMessage({
                   username: "小夜",
                   avatar: "/xiaoye.webp",
                   id: "101",
                   type: "group",
                   mine: 0,
-                  content: msg.msg,
+                  content: message.msg,
                 });
                 break;
-              case myCID:
+              case myCID: //自己发送的消息
                 break;
-              default:
-                username = msg.name;
+              default:  //其他人发送的消息
+                username = message.name;
                 layim.getMessage({
                   username: username,
                   avatar: "/xiaoye.webp",
                   id: "101",
                   type: "group",
                   mine: 0,
-                  content: msg.msg,
+                  content: message.msg,
                 });
                 break;
             }
           });
 
           //接收图片消息
-          socket.on("picture", function (msg) {
+          socket.on("picture", function (message) {
             layim.getMessage({
               username: "小夜",
               avatar: "/xiaoye.webp",
               id: "101",
               type: "group",
               mine: 0,
-              content: `img[${msg.content}]`,
+              content: `img[${message.content}]`,
             });
           });
 
           //接收视频消息
-          socket.on("video message", function (msg) {
+          socket.on("video", function (message) {
             layim.getMessage({
               username: "小夜",
               avatar: "/xiaoye.webp",
               id: "101",
               type: "group",
               mine: 0,
-              content: `video[${msg.content.file}](${msg.content.filename})`,
+              content: `video[${message.content.file}](${message.content.filename})`,
             });
           });
 
           //接收音频消息
-          socket.on("audio", function (msg) {
+          socket.on("audio", function (message) {
             layim.getMessage({
               username: "小夜",
               avatar: "/xiaoye.webp",
               id: "101",
               type: "group",
               mine: 0,
-              content: `audio[${msg.content.file}](${msg.content.filename})`,
+              content: `audio[${message.content.file}](${message.content.filename})`,
             });
           });
 
           //接收文件消息
-          socket.on("file", function (msg) {
+          socket.on("file", function (message) {
             layim.getMessage({
               username: "小夜",
               avatar: "/xiaoye.webp",
               id: "101",
               type: "group",
               mine: 0,
-              content: `file(${msg.content.file})[${msg.content.filename}]`,
+              content: `file(${message.content.file})[${message.content.filename}]`,
             });
           });
 
           //接收系统消息
-          socket.on("system", function (msg) {
+          socket.on("system", function (message) {
             layim.getMessage({
               username: "系统消息",
               avatar: "/favicon.jpg",
               id: "0",
               type: "kefu",
               mine: 0,
-              content: msg,
+              content: message,
             });
           });
 
           //接收qq图片消息
-          socket.on("qqImage", function (msg) {
+          socket.on("qqImage", function (message) {
             layim.getMessage({
               username: "系统消息",
               avatar: "/favicon.jpg",
               id: "0",
               type: "kefu",
               mine: 0,
-              content: `img[${msg}]`,
+              content: `img[${message}]`,
             });
           });
 
           //接收qq视频消息
-          socket.on("qqVideo", function (msg) {
+          socket.on("qqVideo", function (message) {
             layim.getMessage({
               username: "系统消息",
               avatar: "/favicon.jpg",
               id: "0",
               type: "kefu",
               mine: 0,
-              content: `video[${msg.file}](${msg.filename})`,
+              content: `video[${message.file}](${message.filename})`,
             });
           });
 

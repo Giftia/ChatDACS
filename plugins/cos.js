@@ -6,8 +6,8 @@ module.exports = {
   描述: "在普通限度的尺度下发送一张合法的 cos 图, 图片来源哔哩哔哩cos专栏. 已修复图片无法发送的问题", //插件说明，仅在插件加载时展示
 
   execute: async function (msg, qNum, gNum) {
-    const setu_file = await RandomCos();
-    return { type: 'picture', content: setu_file };
+    const cosFile = await RandomCos();
+    return { type: 'picture', content: cosFile };
   },
 };
 
