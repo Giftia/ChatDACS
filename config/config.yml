@@ -37,6 +37,9 @@ ApiKey:
   #百度接口密钥
   BAIDU_APP_SECRET_KEY: ""
 
+  #息知频道key，申请地址 https://xz.qqoq.net/
+  XIZHI_CHANNEL_KEY: ""
+
 #qqBot配置
 qqBot:
   #qqBot使用的qq帐号:

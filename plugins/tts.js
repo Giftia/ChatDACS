@@ -1,14 +1,13 @@
 module.exports = {
   插件名: "语音合成插件", //插件名，仅在插件加载时展示
   指令: "^/吠.*", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.0", //插件版本，仅在插件加载时展示
+  版本: "1.1", //插件版本，仅在插件加载时展示
   作者: "Giftina", //插件作者，仅在插件加载时展示
   描述: "通过百度语音库进行语音合成，语速、语调、声线可调，自由度比较好", //插件说明，仅在插件加载时展示
 
   execute: async function (msg, qNum, gNum) {
     const tts_file = await TTS(msg);
-    const tts_file_url = `http://127.0.0.1:${WEB_PORT}${tts_file}`;
-    return { type: "audio", content: tts_file_url };
+    return { type: "audio", content: tts_file };
   },
 };
 
@@ -16,7 +15,8 @@ const AipSpeech = require("baidu-aip-sdk").speech; //百度语音sdk
 const fs = require("fs");
 const path = require("path");
 const yaml = require("yaml"); //使用yaml解析配置文件
-let SpeechClient;
+const utils = require("./system/utils.js");
+let SpeechClient, BAIDU_APP_ID, BAIDU_APP_KEY, BAIDU_APP_SECRET_KEY;
 
 Init();
 
@@ -34,7 +34,6 @@ function ReadConfig() {
 
 async function Init() {
   const resolve = await ReadConfig();
-  WEB_PORT = resolve.System.WEB_PORT;
   BAIDU_APP_ID = resolve.ApiKey.BAIDU_APP_ID ?? ""; //百度应用id
   BAIDU_APP_KEY = resolve.ApiKey.BAIDU_APP_KEY ?? ""; //百度接口key
   BAIDU_APP_SECRET_KEY = resolve.ApiKey.BAIDU_APP_SECRET_KEY ?? ""; //百度接口密钥
@@ -54,11 +53,11 @@ function TTS(tex) {
         if (result.data) {
           console.log(`${tex} 的语音合成成功`.log);
           fs.writeFileSync(
-            `./static/xiaoye/tts/${system.utils.sha1(result.data)}.mp3`,
+            `./static/xiaoye/tts/${utils.sha1(result.data)}.mp3`,
             result.data,
           );
           let file = {
-            file: `/xiaoye/tts/${system.utils.sha1(result.data)}.mp3`,
+            file: `/xiaoye/tts/${utils.sha1(result.data)}.mp3`,
             filename: "小夜语音回复",
           };
           resolve(file);

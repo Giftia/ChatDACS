@@ -1,43 +1,20 @@
 module.exports = {
   插件名: "cos图片插件", //插件名，仅在插件加载时展示
   指令: ".*图.*来.*|.*来.*图.*|.*[色涩瑟].*图.*", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.3", //插件版本，仅在插件加载时展示
+  版本: "1.4", //插件版本，仅在插件加载时展示
   作者: "Giftina", //插件作者，仅在插件加载时展示
   描述: "在普通限度的尺度下发送一张合法的 cos 图, 图片来源哔哩哔哩cos专栏. 已修复图片无法发送的问题", //插件说明，仅在插件加载时展示
 
   execute: async function (msg, qNum, gNum) {
     const cosFile = await RandomCos();
-    return { type: 'picture', content: cosFile };
+    return { type: "picture", content: cosFile };
   },
 };
 
 const request = require("request");
 const fs = require("fs");
 const path = require("path");
-const yaml = require("yaml"); //使用yaml解析配置文件
 const cos_total_count = 2000; //初始化随机cos上限，可以自己调整
-let WEB_PORT;
-
-Init();
-
-//读取配置文件
-function ReadConfig() {
-  return new Promise((resolve, reject) => {
-    fs.readFile(path.join(`${process.cwd()}`, "config", "config.yml"), "utf-8", function (err, data) {
-      if (!err) {
-        resolve(yaml.parse(data));
-      } else {
-        reject("读取配置文件错误。错误原因：" + err);
-      }
-    });
-  });
-}
-
-//初始化WEB_PORT
-async function Init() {
-  const resolve = await ReadConfig();
-  WEB_PORT = resolve.System.WEB_PORT;
-}
 
 //随机cos
 function RandomCos() {

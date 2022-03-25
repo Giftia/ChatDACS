@@ -17,6 +17,8 @@ if (_cn_reg.test(`${process.cwd()}`)) {
   });
 }
 
+const version = "ChatDACS v3.2.8"; //版本号，会显示在浏览器tab与标题栏
+const utils = require("./plugins/system/utils.js"); //载入系统通用模块
 const compression = require("compression"); //用于gzip压缩
 const express = require("express"); //轻巧的express框架
 const app = require("express")();
@@ -133,7 +135,6 @@ const Constants = require(path.join(
 ));
 
 //系统配置和开关，以及固定变量
-const version = "ChatDACS v3.2.7"; //版本号，会显示在浏览器tab与标题栏
 var boomTimer; //60s计时器
 var onlineUsers = 0, //预定义
   TIAN_XING_API_KEY,
@@ -181,23 +182,9 @@ logger.info(`启动路径: ${process.cwd()}`);
 //载入配置
 InitConfig();
 
-//载入系统通用模块
-logger.info("开始加载系统模块……");
-let system = require.all({
-  dir: path.join(`${process.cwd()}`, "plugins/system"),
-  match: /.*\.js/,
-  require: /\.(js)$/,
-  recursive: false,
-  encoding: "utf-8",
-  resolve: function (system) {
-    system.all.load();
-  },
-});
-logger.info("系统模块加载完毕√".log);
-
 //载入插件
 console.log("开始加载插件……".log);
-let plugins = require.all({
+const plugins = require.all({
   dir: path.join(`${process.cwd()}`, "plugins"),
   match: /.*\.js/,
   require: /\.(js)$/,
@@ -224,11 +211,11 @@ io.on("connection", (socket) => {
   io.emit("onlineUsers", ++onlineUsers);
 
   //开始获取用户信息并处理
-  system.utils
+  utils
     .GetUserData(CID)
     .then(([nickname, logintimes, lastlogintime]) => {
       console.log(
-        `${system.utils.Curentyyyymmdd() + system.utils.CurentTime()
+        `${utils.Curentyyyymmdd() + utils.CurentTime()
           }用户 ${nickname}(${CID}) 已连接`.log,
       );
 
@@ -239,7 +226,7 @@ io.on("connection", (socket) => {
 
       //更新最后登陆时间
       db.run(
-        `UPDATE users SET lastlogintime = '${system.utils.Curentyyyymmdd()}${system.utils.CurentTime()}' WHERE CID ='${CID}'`,
+        `UPDATE users SET lastlogintime = '${utils.Curentyyyymmdd()}${utils.CurentTime()}' WHERE CID ='${CID}'`,
       );
 
       socket.username = nickname;
@@ -253,17 +240,17 @@ io.on("connection", (socket) => {
     .catch((reject) => {
       const CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
       console.log(
-        `system.utils.GetUserData(): rejected, and err:${reject}`.error,
+        `utils.GetUserData(): rejected, and err:${reject}`.error,
       );
       console.log(
-        `${system.utils.Curentyyyymmdd() + system.utils.CurentTime()
+        `${utils.Curentyyyymmdd() + utils.CurentTime()
           }新用户 ${CID} 已连接`.log,
       );
-      system.utils
+      utils
         .RandomNickname()
         .then((resolve) => {
           db.run(
-            `INSERT INTO users VALUES('${resolve}', '${CID}', '2', '${system.utils.Curentyyyymmdd()}${system.utils.CurentTime()}')`,
+            `INSERT INTO users VALUES('${resolve}', '${CID}', '2', '${utils.Curentyyyymmdd()}${utils.CurentTime()}')`,
           );
           socket.username = resolve;
           io.emit(
@@ -278,7 +265,7 @@ io.on("connection", (socket) => {
         .catch((reject) => {
           console.log(`随机昵称错误: ${reject}`.error);
           db.run(
-            `INSERT INTO users VALUES('匿名', '${CID}', '2', '${system.utils.Curentyyyymmdd()}${system.utils.CurentTime()}')`,
+            `INSERT INTO users VALUES('匿名', '${CID}', '2', '${utils.Curentyyyymmdd()}${utils.CurentTime()}')`,
           );
           socket.username = "匿名";
           io.emit(
@@ -296,7 +283,7 @@ io.on("connection", (socket) => {
     onlineUsers--;
     io.emit("onlineUsers", onlineUsers);
     console.log(
-      `${system.utils.Curentyyyymmdd()}${system.utils.CurentTime()} 用户 ${socket.username
+      `${utils.Curentyyyymmdd()}${utils.CurentTime()} 用户 ${socket.username
         } 已断开连接`.log,
     );
     io.emit("system", "@用户 " + socket.username + " 已断开连接");
@@ -327,30 +314,19 @@ io.on("connection", (socket) => {
       cookie.parse(socket.request.headers.cookie || "").ChatdacsID ?? 0;
     const msg = msgIn.msg.replace(/['<>]/g, ""); //防爆
     console.log(
-      `${system.utils.Curentyyyymmdd() + system.utils.CurentTime()}收到用户 ${socket.username
+      `${utils.Curentyyyymmdd() + utils.CurentTime()}收到用户 ${socket.username
         }(${CID}) 的消息: ${msg}`.warn,
     );
     db.run(
-      `INSERT INTO messages VALUES('${system.utils.Curentyyyymmdd()}', '${system.utils.CurentTime()}', '${CID}', '${msg}')`,
+      `INSERT INTO messages VALUES('${utils.Curentyyyymmdd()}', '${utils.CurentTime()}', '${CID}', '${msg}')`,
     );
 
     io.emit("message", { CID: CID, name: socket.username, msg: msg }); //用户广播
 
-    //推送微信息知
-    request(
-      `https://xizhi.qqoq.net/XZa3ccbc83e9f532eb58cfdc55478865f0.send?title=${encodeURI("小夜收到 ")}${encodeURI(socket.username)}${encodeURI(" 的消息：")}${encodeURI(msg)}`,
-      (error, _response, body) => {
-        if (error) {
-          console.log(`推送微信消息错误: ${error}`.error);
-        } else {
-          console.log(`推送微信消息成功: ${body}`.log);
-        }
-      });
-
     //web端插件应答器
     const answer = await ProcessExecute(msg, socket.username, 0) ?? "";
     if (answer) {
-      const replyToWeb = system.utils.PluginAnswerToWebStyle(answer);
+      const replyToWeb = utils.PluginAnswerToWebStyle(answer);
       const answerMessage = {
         CID: "0",
         msg: replyToWeb,
@@ -1029,10 +1005,10 @@ function start_qqbot() {
                         "static",
                         "xiaoye",
                         "images",
-                        `${system.utils.sha1(canvas.toBuffer())}.jpg`,
+                        `${utils.sha1(canvas.toBuffer())}.jpg`,
                       );
                       fs.writeFileSync(file_local, canvas.toBuffer());
-                      let file_online = `http://127.0.0.1:${WEB_PORT}/xiaoye/images/${system.utils.sha1(
+                      let file_online = `http://127.0.0.1:${WEB_PORT}/xiaoye/images/${utils.sha1(
                         canvas.toBuffer(),
                       )}.jpg`;
 
@@ -1817,10 +1793,10 @@ ${final_talents}
                                 "static",
                                 "xiaoye",
                                 "images",
-                                `${system.utils.sha1(canvas.toBuffer())}.jpg`,
+                                `${utils.sha1(canvas.toBuffer())}.jpg`,
                               );
                               fs.writeFileSync(file_local, canvas.toBuffer());
-                              let file_online = `http://127.0.0.1:${WEB_PORT}/xiaoye/images/${system.utils.sha1(
+                              let file_online = `http://127.0.0.1:${WEB_PORT}/xiaoye/images/${utils.sha1(
                                 canvas.toBuffer(),
                               )}.jpg`;
                               console.log(
@@ -1877,10 +1853,10 @@ ${final_talents}
                         "static",
                         "xiaoye",
                         "images",
-                        `${system.utils.sha1(canvas.toBuffer())}.jpg`,
+                        `${utils.sha1(canvas.toBuffer())}.jpg`,
                       );
                       fs.writeFileSync(file_local, canvas.toBuffer());
-                      let file_online = `http://127.0.0.1:${WEB_PORT}/xiaoye/images/${system.utils.sha1(
+                      let file_online = `http://127.0.0.1:${WEB_PORT}/xiaoye/images/${utils.sha1(
                         canvas.toBuffer(),
                       )}.jpg`;
                       console.log(`迫害成功，图片发送: ${file_online}`.log);
@@ -2654,7 +2630,7 @@ ${final_talents}
                     ctx.fillStyle = "#716F81";
                     ctx.fillText(`沙雕网友: ${msg}`, 90.5, 55.5);
                     ctx.font = "13px SimHei";
-                    ctx.fillText(system.utils.CurentTime(), 280.5, 35.5);
+                    ctx.fillText(utils.CurentTime(), 280.5, 35.5);
 
                     ctx.beginPath();
                     ctx.arc(40, 40, 28, 0, 2 * Math.PI);
@@ -2668,10 +2644,10 @@ ${final_talents}
                       "static",
                       "xiaoye",
                       "images",
-                      `${system.utils.sha1(canvas.toBuffer())}.jpg`,
+                      `${utils.sha1(canvas.toBuffer())}.jpg`,
                     );
                     fs.writeFileSync(file_local, canvas.toBuffer());
-                    let file_online = `http://127.0.0.1:${WEB_PORT}/xiaoye/images/${system.utils.sha1(
+                    let file_online = `http://127.0.0.1:${WEB_PORT}/xiaoye/images/${utils.sha1(
                       canvas.toBuffer(),
                     )}.jpg`;
                     console.log(
@@ -2882,10 +2858,10 @@ ${final_talents}
                       "static",
                       "xiaoye",
                       "images",
-                      `${system.utils.sha1(canvas.toBuffer())}.jpg`,
+                      `${utils.sha1(canvas.toBuffer())}.jpg`,
                     );
                     fs.writeFileSync(file_local, canvas.toBuffer());
-                    let file_online = `http://127.0.0.1:${WEB_PORT}/xiaoye/images/${system.utils.sha1(
+                    let file_online = `http://127.0.0.1:${WEB_PORT}/xiaoye/images/${utils.sha1(
                       canvas.toBuffer(),
                     )}.jpg`;
                     console.log(`黑白成功，图片发送: ${file_online}`.log);
@@ -3575,7 +3551,7 @@ async function InitConfig() {
   http.listen(WEB_PORT, () => {
     console.log("_______________________________________\n");
     console.log(
-      `  ${system.utils.Curentyyyymmdd()}${system.utils.CurentTime()} 启动完毕，访问 127.0.0.1:${WEB_PORT} 即可进入web端  \n`
+      `  ${utils.Curentyyyymmdd()}${utils.CurentTime()} 启动完毕，访问 127.0.0.1:${WEB_PORT} 即可进入web端  \n`
         .alert,
     );
   });
@@ -3775,9 +3751,9 @@ function BetterTTS(tex) {
           );
           const dataBuffer = Buffer.from(base64Data, "base64");
 
-          const MP3Duration = await system.utils.getMP3Duration(dataBuffer);
+          const MP3Duration = await utils.getMP3Duration(dataBuffer);
 
-          const ttsFile = `/xiaoye/tts/${system.utils.sha1(dataBuffer)}.mp3`;
+          const ttsFile = `/xiaoye/tts/${utils.sha1(dataBuffer)}.mp3`;
           fs.writeFileSync(`./static${ttsFile}`, dataBuffer);
           const file = {
             file: ttsFile,
@@ -3889,29 +3865,6 @@ function QunGugua(who) {
       );
     }, 1000 * 5 * i);
   }
-}
-
-//百科问答题库
-function WenDa() {
-  return new Promise((resolve, reject) => {
-    request(
-      `http://api.tianapi.com/txapi/wenda/index?key=${TIAN_XING_API_KEY}`,
-      (err, response, body) => {
-        body = JSON.parse(body);
-        if (!err) {
-          resolve({
-            quest: body.newslist[0].quest,
-            result: body.newslist[0].result,
-          });
-        } else {
-          reject(
-            "问答错误，是天行接口的锅。错误原因: " +
-            JSON.stringify(response.body),
-          );
-        }
-      },
-    );
-  });
 }
 
 //浓度极高的ACGN圈台词问答题库

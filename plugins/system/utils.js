@@ -1,6 +1,6 @@
 module.exports = {
   name: "工具类",
-  version: "1.2",
+  version: "1.3",
   details: "各种公用函数和系统底层函数",
 
   //年月日
@@ -108,9 +108,9 @@ module.exports = {
     const styleMap = {
       text: answer.content,
       picture: `img[${answer.content}]`,
-      audio: `audio[${answer.content.file}](${answer.content.filename})`,
-      video: `video[${answer.content.file}](${answer.content.filename})`,
-      file: `file(${answer.content.file})[${answer.content.filename}]`,
+      audio: `audio[${answer.content?.file}](${answer.content?.filename})`,
+      video: `video[${answer.content?.file}](${answer.content?.filename})`,
+      file: `file(${answer.content?.file})[${answer.content?.filename}]`,
     };
     return styleMap[answer.type];
   },
