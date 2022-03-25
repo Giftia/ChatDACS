@@ -1,14 +1,14 @@
 module.exports = {
   name: "工具类",
-  version: "1.1",
+  version: "1.3",
   details: "各种公用函数和系统底层函数",
 
   //年月日
   Curentyyyymmdd() {
-    let now = new Date();
-    let year = now.getFullYear();
-    let month = now.getMonth() + 1;
-    let day = now.getDate();
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    const day = now.getDate();
     let yyyymmdd = year + "-";
     if (month < 10) yyyymmdd += "0";
     yyyymmdd += month + "-";
@@ -19,10 +19,10 @@ module.exports = {
 
   //时分秒
   CurentTime() {
-    let now = new Date();
-    let hh = now.getHours();
-    let mm = now.getMinutes();
-    let ss = now.getSeconds();
+    const now = new Date();
+    const hh = now.getHours();
+    const mm = now.getMinutes();
+    const ss = now.getSeconds();
     let clock = " ";
     if (hh < 10) clock += "0";
     clock += hh + ":";
@@ -102,12 +102,26 @@ module.exports = {
       });
     });
   },
+
+  //将插件回复转为前端能解析的格式
+  PluginAnswerToWebStyle(answer) {
+    const styleMap = {
+      text: answer.content,
+      picture: `img[${answer.content}]`,
+      audio: `audio[${answer.content?.file}](${answer.content?.filename})`,
+      video: `video[${answer.content?.file}](${answer.content?.filename})`,
+      file: `file(${answer.content?.file})[${answer.content?.filename}]`,
+    };
+    return styleMap[answer.type];
+  },
+
 };
 
 const request = require("request");
 const fs = require("fs");
 const path = require("path");
 const yaml = require("yaml"); //使用yaml解析配置文件
+let TIAN_XING_API_KEY;
 
 Init();
 
