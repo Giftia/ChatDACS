@@ -50,7 +50,6 @@
       "node_modules/socket.io/client-dist/*",
       "static"
     ],
-    "scripts": "plugins",
     "targets": [
       "node14-win-x64"
     ],
