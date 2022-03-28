@@ -30,11 +30,7 @@ jobs:
         run: pkg .
 
       - name: UPX
-        run: |
-          sudo apt-get -y -o APT::Immediate-Configure=false install -y wget
-          wget https://github.com/upx/upx/releases/download/v3.96/upx-3.96-amd64_linux.tar.xz
-          tar -xvf upx-3.96-amd64_linux.tar.xz
-          upx-3.96-amd64_linux/upx chatdacs.exe
+        run: ./upx chatdacs.exe
 
       - name: Reinstall Modules For Plugins
         run: |
