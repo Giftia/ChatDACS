@@ -4,10 +4,8 @@
   "decription": "Chatbot : shaDiao Ai Chat System",
   "license": "GPL-3.0",
   "scripts": {
-    "dev": "node index.js",
-    "build": "webpack",
-    "run": "node onServer.js",
-    "pkg_win": "pkg ."
+    "run": "node index.js",
+    "pkg": "pkg ."
   },
   "dependencies": {
     "baidu-aip-sdk": "^4.15.8",
@@ -31,11 +29,7 @@
     "yaml": "^1.10.2"
   },
   "devDependencies": {
-    "eslint": "^8.11.0",
-    "@babel/preset-env": "^7.16.11",
-    "babel-loader": "^8.2.3",
-    "webpack": "^5.70.0",
-    "webpack-cli": "^4.9.2"
+    "eslint": "^8.11.0"
   },
   "repository": {
     "type": "git",
