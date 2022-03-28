@@ -29,9 +29,6 @@ jobs:
       - name: Package
         run: pkg .
 
-      - name: UPX
-        run: ./upx.exe chatdacs.exe
-
       - name: Reinstall Modules For Plugins
         run: |
           npm i request
