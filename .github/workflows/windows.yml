@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Clean Install Modules
-        run: npm ci
+        run: npm ci --prod
 
       - name: Install PKG Tool
         run: npm install pkg -g
@@ -29,8 +29,19 @@ jobs:
       - name: Package
         run: pkg .
 
+      - name: UPX
+        run: |
+          wget https://github.com/upx/upx/releases/download/v3.96/upx-3.96-amd64_linux.tar.xz
+          tar -xvf upx-3.96-amd64_linux.tar.xz
+          upx-3.96-amd64_linux/upx chatdacs.exe
+
       - name: Reinstall Modules For Plugins
-        run: npm i request && npm i yaml && npm i sqlite3 && npm i require.all && npm i baidu-aip-sdk
+        run: |
+          npm i request
+          npm i yaml
+          npm i sqlite3
+          npm i require.all
+          npm i baidu-aip-sdk
 
       - name: Process data dir
         run: |
