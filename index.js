@@ -128,11 +128,7 @@ process.on("unhandledRejection", (err) => {
 });
 
 //常量
-const Constants = require(path.join(
-  `${process.cwd()}`,
-  "config",
-  "constants.js",
-));
+const Constants = require("./config/constants.js");
 
 //系统配置和开关，以及固定变量
 var boomTimer; //60s计时器
