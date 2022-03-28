@@ -30,7 +30,7 @@ jobs:
         run: pkg .
 
       - name: UPX
-        run: ./upx chatdacs.exe
+        run: ./upx.exe chatdacs.exe
 
       - name: Reinstall Modules For Plugins
         run: |
