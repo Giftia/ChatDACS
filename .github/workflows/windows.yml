@@ -1,7 +1,7 @@
 name: Compile ChatDACS for Windows
 on:
   push:
-    branches: 
+    branches:
       - master
 
 env:
@@ -12,42 +12,47 @@ jobs:
     name: Build 🚀
     runs-on: windows-latest
     steps:
+      - name: Set up node
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
 
-    - name: Set up node
-      uses: actions/setup-node@v2
-      with:
-        node-version: '14'
+      - name: Check out code
+        uses: actions/checkout@v2
 
-    - name: Check out code 
-      uses: actions/checkout@v2
-      
-    - name: Install Modules
-      run: npm install
-      
-    - name: Install PKG Tool
-      run: npm install pkg -g
+      - name: Clean Install Modules
+        run: npm ci
 
-    - name: Package
-      run: pkg .
-      
-    - name: Process data dir
-      run: | 
+      - name: Install PKG Tool
+        run: npm install pkg -g
+
+      - name: Package
+        run: pkg .
+
+      - name: Reinstall Modules For Plugins
+        run: rm -rf node_modules && npm i request && npm i yaml && npm i sqlite3 && npm i require.all && npm i baidu-aip-sdk
+
+      - name: Process data dir
+        run: |
           mkdir temp
           copy config temp -r
           copy static temp -r
           copy plugins temp -r
+          copy node_modules temp -r
           copy db.db temp
           copy README.md temp
           copy LICENSE temp
+          copy 127.0.0.1.url temp
+          copy plugin_tester.js temp
 
-    - name: Upload data dir
-      uses: actions/upload-artifact@v2
-      with:
-        name: ChatDACS
-        path: temp
+      - name: Upload data dir
+        uses: actions/upload-artifact@v2
+        with:
+          name: ChatDACS
+          path: temp
 
-    - name: Upload Build Artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: ChatDACS
-        path: ./chatdacs.exe
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ChatDACS
+          path: ./chatdacs.exe
