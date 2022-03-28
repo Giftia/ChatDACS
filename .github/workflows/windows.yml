@@ -30,7 +30,7 @@ jobs:
         run: pkg .
 
       - name: Reinstall Modules For Plugins
-        run: rm -rf node_modules && npm i request && npm i yaml && npm i sqlite3 && npm i require.all && npm i baidu-aip-sdk
+        run: npm i request && npm i yaml && npm i sqlite3 && npm i require.all && npm i baidu-aip-sdk
 
       - name: Process data dir
         run: |
