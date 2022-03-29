@@ -50,5 +50,4 @@ jobs:
             ./README.md
             ./LICENSE
             ./chatdacs.exe
-            ./文件路径不得存在非英文字符
           if-no-files-found: error
