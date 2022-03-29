@@ -37,27 +37,18 @@ jobs:
           npm i require.all
           npm i baidu-aip-sdk
 
-      - name: Process data dir
-        run: |
-          mkdir temp
-          copy config temp -r
-          copy static temp -r
-          copy plugins temp -r
-          copy node_modules temp -r
-          copy db.db temp
-          copy README.md temp
-          copy LICENSE temp
-          copy 127.0.0.1.url temp
-          copy plugin_tester.js temp
-
-      - name: Upload data dir
-        uses: actions/upload-artifact@v2
-        with:
-          name: ChatDACS
-          path: temp
-
       - name: Upload Build Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ChatDACS
-          path: ./chatdacs.exe
+          path: |
+            ./node_modules/
+            ./config/
+            ./static/
+            ./plugins/
+            ./db.db
+            ./README.md
+            ./LICENSE
+            ./chatdacs.exe
+            ./文件路径不得存在非英文字符
+          if-no-files-found: error

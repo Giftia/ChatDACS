@@ -12,6 +12,11 @@ if (_cn_reg.test(`${process.cwd()}`)) {
     `启动遇到严重错误: 因为Unicode的兼容性问题，程序所在路劲不能有汉字日语韩语表情包之类的奇奇怪怪的字符，请使用常规的ASCII字符!如有疑问，请加QQ群 120243247 咨询。当前路径含有不对劲的字符: ${process.cwd()} 按回车退出`,
   );
   //挂起进程，用等待输入替代while(1)，避免100%cpu占用
+  const readline = require("readline"); //nodejs中的stdio
+  const readLine = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
   readLine.on("line", () => {
     process.exit(0);
   });
@@ -53,11 +58,6 @@ const voicePlayer = require("play-sound")({
 const { createCanvas, loadImage } = require("canvas"); //用于绘制文字图像，迫害p图
 const os = require("os"); //用于获取系统工作状态
 require.all = require("require.all"); //插件加载器
-const readline = require("readline"); //nodejs中的stdio
-const readLine = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
 
 const { KeepLiveTCP } = require("bilibili-live-ws");
 
