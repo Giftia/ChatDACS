@@ -8,18 +8,10 @@
 //启动时中文路径检查
 const _cn_reg = new RegExp("[\u4e00-\u9fa5]");
 if (_cn_reg.test(`${process.cwd()}`)) {
-  console.log(
-    `启动遇到严重错误: 因为Unicode的兼容性问题，程序所在路劲不能有汉字日语韩语表情包之类的奇奇怪怪的字符，请使用常规的ASCII字符!如有疑问，请加QQ群 120243247 咨询。当前路径含有不对劲的字符: ${process.cwd()} 按回车退出`,
-  );
-  //挂起进程，用等待输入替代while(1)，避免100%cpu占用
-  const readline = require("readline"); //nodejs中的stdio
-  const readLine = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-  readLine.on("line", () => {
-    process.exit(0);
-  });
+  const warnMessage = `因为Unicode的兼容性问题，程序所在路劲不能有汉字日语韩语表情包之类的奇奇怪怪的字符，请使用常规的ASCII字符!如有疑问，请加QQ群 120243247 咨询。当前路径含有不对劲的字符: ${process.cwd()}`;
+  console.log(warnMessage);
+  const cp = require("child_process");
+  cp.exec(`msg %username% ${warnMessage}`);
 }
 
 const version = "ChatDACS v3.2.8"; //版本号，会显示在浏览器tab与标题栏
