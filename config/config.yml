@@ -28,15 +28,6 @@ ApiKey:
   #卡特实验室接口key，申请地址 https://api.sumt.cn/
   SUMT_API_KEY: ""
 
-  #百度应用id
-  BAIDU_APP_ID: ""
-
-  #百度接口key
-  BAIDU_APP_KEY: ""
-
-  #百度接口密钥
-  BAIDU_APP_SECRET_KEY: ""
-
   #息知频道key，申请地址 https://xz.qqoq.net/
   XIZHI_CHANNEL_KEY: ""
 

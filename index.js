@@ -14,7 +14,7 @@ if (_cn_reg.test(`${process.cwd()}`)) {
   cp.exec(`msg %username% ${warnMessage}`);
 }
 
-const version = "ChatDACS v3.2.8"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS v3.3.0"; //版本号，会显示在浏览器tab与标题栏
 const utils = require("./plugins/system/utils.js"); //载入系统通用模块
 const compression = require("compression"); //用于gzip压缩
 const express = require("express"); //轻巧的express框架
@@ -24,13 +24,13 @@ app.use(express.static("static")); //静态文件引入
 app.use(express.json()); //解析post
 app.use(express.urlencoded({ extended: false })); //解析post
 const multer = require("multer"); //用于文件上传
-const upload = multer({ dest: "static/uploads/" }); //用户上传目录
+const upload = multer({ dest: "./static/uploads/" }); //用户上传目录
 const cookie = require("cookie");
 const http = require("http").Server(app);
 const io = require("socket.io")(http);
 const request = require("request");
 const sqlite3 = require("sqlite3").verbose();
-const db = new sqlite3.Database("db.db"); //数据库位置，默认与index.js同目录
+const db = new sqlite3.Database("./db.db"); //数据库位置，默认与index.js同目录
 const colors = require("colors");
 const fs = require("fs");
 const path = require("path");
@@ -52,6 +52,12 @@ const os = require("os"); //用于获取系统工作状态
 require.all = require("require.all"); //插件加载器
 
 const { KeepLiveTCP } = require("bilibili-live-ws");
+
+const readline = require("readline"); //nodejs中的stdio
+const readLine = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
 
 const winston = require("winston");
 const { format, transports } = require("winston");
@@ -121,6 +127,7 @@ process.on("unhandledRejection", (err) => {
 
 //常量
 const Constants = require("./config/constants.js");
+const { response } = require("express");
 
 //系统配置和开关，以及固定变量
 var boomTimer; //60s计时器
@@ -165,7 +172,7 @@ colors.setTheme({
   log: "brightBlue",
 });
 
-logger.info(`启动路径: ${process.cwd()}`);
+logger.info("world.execute(me);".alert);
 
 //载入配置
 InitConfig();
@@ -302,8 +309,7 @@ io.on("connection", (socket) => {
       cookie.parse(socket.request.headers.cookie || "").ChatdacsID ?? 0;
     const msg = msgIn.msg.replace(/['<>]/g, ""); //防爆
     console.log(
-      `${utils.Curentyyyymmdd() + utils.CurentTime()}收到用户 ${socket.username
-        }(${CID}) 的消息: ${msg}`.warn,
+      `${utils.Curentyyyymmdd() + utils.CurentTime()}收到用户 ${socket.username}(${CID}) 的消息: ${msg}`.warn,
     );
     db.run(
       `INSERT INTO messages VALUES('${utils.Curentyyyymmdd()}', '${utils.CurentTime()}', '${CID}', '${msg}')`,
@@ -312,7 +318,7 @@ io.on("connection", (socket) => {
     io.emit("message", { CID: CID, name: socket.username, msg: msg }); //用户广播
 
     //web端插件应答器
-    const answer = await ProcessExecute(msg, socket.username, 0) ?? "";
+    const answer = await ProcessExecute(msg, socket.username) ?? "";
     if (answer) {
       const replyToWeb = utils.PluginAnswerToWebStyle(answer);
       const answerMessage = {
@@ -681,11 +687,7 @@ function start_qqbot() {
                 }
 
                 //强大的插件系统（划掉
-                QQPluginExecute(
-                  req.body.message,
-                  req.body.user_id,
-                  req.body.group_id,
-                );
+                QQPluginExecute(req.body.message, req.body.user_id, req.body.group_id);
 
                 //报错
                 if (Constants.feed_back_reg.test(req.body.message)) {
@@ -3209,8 +3211,8 @@ ${final_talents}
   });
 
   //qq端插件应答器
-  async function QQPluginExecute(ask, qNum, gNum) {
-    const result = await ProcessExecute(ask, qNum, gNum);
+  async function QQPluginExecute(msg, userId, userName, groupId, groupName) {
+    const result = await ProcessExecute(msg, userId, userName, groupId, groupName);
     if (result != "") {
       request(
         `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${gNum}&message=${encodeURI(
@@ -3259,58 +3261,40 @@ function StartLive() {
   live.on("open", () => logger.info("直播间连接成功".log));
 
   live.on("live", () => {
-    live.on("heartbeat", (online) => logger.info(`直播间在线人数: ${online}`.log));
+    live.on("heartbeat", (online) => logger.info(`心跳包成功，直播间在线人数: ${online}`.log));
 
     live.on("DANMU_MSG", async (data) => {
-      console.log(data.info);
-      const danmu = data.info;
-      const danmu_content = danmu[2][1];
-      const danmu_user_name = danmu[1][1];
-      const danmu_user_id = danmu[1][0];
-      const danmu_user_level = danmu[1][2];
-      const danmu_user_vip = danmu[1][3];
-      const danmu_user_svip = danmu[1][4];
-      const danmu_user_guard_level = danmu[1][5];
-      const danmu_user_is_admin = danmu[1][6];
-      const danmu_user_is_vip = danmu[1][7];
-      const danmu_user_is_svip = danmu[1][8];
-      const danmu_user_is_guard = danmu[1][9];
-      const danmu_user_is_robot = danmu[1][10];
-      const danmu_user_is_admin_for_group = danmu[1][11];
-      const danmu_user_is_vip_for_group = danmu[1][12];
-      const danmu_user_is_svip_for_group = danmu[1][13];
-      const danmu_user_is_guard_for_group = danmu[1][14];
-      const danmu_user_is_member = danmu[1][15];
-      const danmu_user_is_owner = danmu[1][16];
-      const danmu_user_is_blocked = danmu[1][17];
-      const danmu_user_is_blocked_for_group = danmu[1][18];
-      const danmu_user_is_in_blacklist = danmu[1][19];
-      const danmu_user_is_in_blacklist_for_group = danmu[1][20];
-      const danmu_user_is_in_whitelist = danmu[1][21];
-      const danmu_user_is_in_whitelist_for_group = danmu[1][22];
+      const danmu = {
+        content: data.info[1],
+        userId: data.info[2][0],
+        userName: data.info[2][1]
+      };
 
-      //交给聊天函数处理
-      const chatReply = await ChatProcess(danmu_content);
-      if (chatReply) {
-        console.log(`小夜说: ${chatReply}`.log);
-        fs.writeFileSync(Constants.TTS_FILE_RECV_PATH, `${danmu}？ ${chatReply}`);
-        const chatReplyToTTS = await BetterTTS(chatReply);
-        const ttsFile = `${process.cwd()}\\static${chatReplyToTTS.file.replace("/", "\\")}`;
-        voicePlayer.play(ttsFile, function (err) {
-          if (err) throw err;
-        });
+      //哔哩哔哩端插件应答器
+      const answer = await ProcessExecute(danmu.content, danmu.userId, danmu.userName) ?? "";
+      let replyToBiliBili = "";
+      if (answer) {
+        //插件响应弹幕
+        replyToBiliBili = answer;
       } else {
-        //如果没有匹配到回复，那就随机回复balabala废话
-        console.log("弹幕没有匹配，随机回复balabala废话".log);
-        const balaBalaList = await GetBalabalaList();
-        const randBalaBala = balaBalaList[Math.floor(Math.random() * balaBalaList.length)].balabala;
-        fs.writeFileSync(Constants.TTS_FILE_RECV_PATH, randBalaBala);
-        const balabalaReplyToTTS = await BetterTTS(randBalaBala);
-        const ttsFile = `${process.cwd()}\\static${balabalaReplyToTTS.file.replace("/", "\\")}`;
-        voicePlayer.play(ttsFile, function (err) {
-          if (err) throw err;
-        });
+        //交给聊天函数处理
+        const chatReply = await ChatProcess(danmu.content);
+        if (chatReply) {
+          replyToBiliBili = chatReply;
+        } else {
+          //如果没有匹配到回复，那就随机回复balabala废话
+          const balaBalaList = await GetBalabalaList();
+          const randBalaBala = balaBalaList[Math.floor(Math.random() * balaBalaList.length)].balabala;
+          replyToBiliBili = randBalaBala;
+        }
       }
+
+      fs.writeFileSync(Constants.TTS_FILE_RECV_PATH, `@${danmu.userName} ${replyToBiliBili}`);
+      const chatReplyToTTS = await BetterTTS(replyToBiliBili);
+      const ttsFile = `${process.cwd()}/static${chatReplyToTTS.file}`;
+      voicePlayer.play(ttsFile, function (err) {
+        if (err) throw err;
+      });
     });
 
     live.on("SEND_GIFT", (data) => {
@@ -3481,7 +3465,7 @@ function ReadConfig() {
 
 //初始化配置
 async function InitConfig() {
-  let resolve = await ReadConfig();
+  const resolve = await ReadConfig();
   CHAT_SWITCH = resolve.System.CHAT_SWITCH ?? true;
   CONNECT_GO_CQHTTP_SWITCH = resolve.System.CONNECT_GO_CQHTTP_SWITCH ?? false;
   CONNECT_BILIBILI_LIVE_SWITCH = resolve.System.CONNECT_BILIBILI_LIVE_SWITCH ?? false;
@@ -3517,6 +3501,14 @@ async function InitConfig() {
   }
 
   if (CONNECT_GO_CQHTTP_SWITCH) {
+    //先看配置里有没有配置好bot的qq号，没配置就请求输入
+    if (!QQBOT_QQ) {
+      readLine.question("配置文件中尚未配置qqBot小夜的QQ帐号，请输入想使用的机器人账号，按回车提交", (answer) => {
+        QQBOT_QQ = answer;
+        readLine.close();
+      });
+    }
+
     console.log(
       `qqBot小夜开启，配置: \n  ·使用QQ帐号 ${QQBOT_QQ}\n  ·对接go-cqhttp接口 ${GO_CQHTTP_SERVICE_API_URL}\n  ·监听反向post于 127.0.0.1:${WEB_PORT}${GO_CQHTTP_SERVICE_ANTI_POST_API}\n  ·私聊服务是否开启: ${QQBOT_PRIVATE_CHAT_SWITCH}\n`
         .on,
@@ -3722,43 +3714,6 @@ function GetBalabalaList() {
   });
 }
 
-//扒的百度臻品音库-度米朵
-function BetterTTS(tex) {
-  return new Promise((resolve, reject) => {
-    if (!tex) tex = "你好谢谢小笼包再见!";
-    request(
-      "https://ai.baidu.com/aidemo?type=tns&per=4103&spd=7&pit=10&vol=10&aue=6&tex=" +
-      encodeURI(tex),
-      async (err, _response, body) => {
-        body = JSON.parse(body);
-        if (!err && body.data) {
-          console.log(`${tex} 的幼女版语音合成成功`.log);
-          const base64Data = body.data.replace(
-            /^data:audio\/x-mpeg;base64,/,
-            "",
-          );
-          const dataBuffer = Buffer.from(base64Data, "base64");
-
-          const MP3Duration = await utils.getMP3Duration(dataBuffer);
-
-          const ttsFile = `/xiaoye/tts/${utils.sha1(dataBuffer)}.mp3`;
-          fs.writeFileSync(`./static${ttsFile}`, dataBuffer);
-          const file = {
-            file: ttsFile,
-            filename: "小夜幼女版语音回复",
-            duration: MP3Duration,
-          };
-          resolve(file);
-        } else {
-          //估计被发现扒接口了
-          console.log(`语音合成幼女版失败: ${JSON.stringify(body)}`.error);
-          reject("语音合成幼女版TTS错误: ", JSON.stringify(body));
-        }
-      },
-    );
-  });
-}
-
 //随机延时提醒闭菊的群
 function DelayAlert(service_stopped_list) {
   let alert_msg = [
@@ -3937,13 +3892,13 @@ function Talents10x(talents) {
 }
 
 //插件系统核心
-async function ProcessExecute(msg, qq_num, group_num) {
+async function ProcessExecute(msg, userId, userName, groupId, groupName) {
   let returnResult = "";
   for (let i in plugins) {
     const reg = new RegExp(plugins[i].指令);
     if (reg.test(msg)) {
       try {
-        returnResult = await plugins[i].execute(msg, qq_num, group_num);
+        returnResult = await plugins[i].execute(msg, userId, userName, groupId, groupName);
       } catch (e) {
         logger.error(
           `插件 ${plugins[i].插件名} ${plugins[i].版本} 爆炸啦: ${e.stack}`.error,

@@ -2,7 +2,7 @@ name: Compile ChatDACS for Windows
 on:
   push:
     branches:
-      - master
+      - dev
 
 env:
   GITHUB_TOKEN: ${{ github.token }}
@@ -27,7 +27,7 @@ jobs:
         run: npm install pkg -g
 
       - name: Package
-        run: pkg .
+        run: pkg . --compress Brotli --debug
 
       - name: Reinstall Modules For Plugins
         run: |
@@ -35,7 +35,6 @@ jobs:
           npm i yaml
           npm i sqlite3
           npm i require.all
-          npm i baidu-aip-sdk
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3
