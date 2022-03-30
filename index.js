@@ -127,7 +127,6 @@ process.on("unhandledRejection", (err) => {
 
 //常量
 const Constants = require("./config/constants.js");
-const { response } = require("express");
 
 //系统配置和开关，以及固定变量
 var boomTimer; //60s计时器
@@ -3544,17 +3543,17 @@ async function ChatJiebaFuzzy(msg) {
   let candidate = [];
   let candidateNextList = [];
   let candidateNextGrand = 0;
-  console.log("分词出关键词: ".log);
-  console.log(msg);
+  // console.log("分词出关键词: ".log);
+  // console.log(msg);
   //收集数据开始
   for (const key in msg) {
     if (Object.hasOwnProperty.call(msg, key)) {
       const element = msg[key];
-      console.log(element);
+      // console.log(element);
       const rows = await sqliteAll(
         "SELECT * FROM chat WHERE ask LIKE '%" + element.word + "%'",
       );
-      console.log(rows);
+      // console.log(rows);
       for (const k in rows) {
         if (Object.hasOwnProperty.call(rows, k)) {
           const answer = rows[k].answer;
@@ -3567,7 +3566,7 @@ async function ChatJiebaFuzzy(msg) {
       }
     }
   }
-  console.log(candidate);
+  // console.log(candidate);
   // 筛选次数最多
   for (const key in candidate) {
     if (Object.hasOwnProperty.call(candidate, key)) {
@@ -3581,7 +3580,7 @@ async function ChatJiebaFuzzy(msg) {
       }
     }
   }
-  console.log(candidateNextList);
+  // console.log(candidateNextList);
   return candidateNextList;
 }
 
@@ -3600,7 +3599,7 @@ const sqliteAll = function (query) {
 
 //聊天处理，最核心区块，超智能(智障)的聊天算法: 整句搜索，模糊搜索，分词模糊搜索并轮询
 async function ChatProcess(msg) {
-  const full_search = await new Promise((resolve, _reject) => {
+  const fullContentSearchAnswer = await new Promise((resolve, _reject) => {
     console.log("开始整句搜索".log);
     db.all("SELECT * FROM chat WHERE ask = '" + msg + "'", (e, sql) => {
       if (!e && sql.length > 0) {
@@ -3618,13 +3617,13 @@ async function ChatProcess(msg) {
     });
   });
 
-  if (full_search) {
+  if (fullContentSearchAnswer) {
     //优先回复整句匹配
-    console.log("返回整句匹配".alert);
-    return full_search;
+    console.log(`返回整句匹配：${fullContentSearchAnswer}`.alert);
+    return fullContentSearchAnswer;
   }
 
-  const like_serach = await new Promise((resolve, _reject) => {
+  const likeContentSearchAnswer = await new Promise((resolve, _reject) => {
     console.log("开始模糊搜索".log);
     db.all("SELECT * FROM chat WHERE ask LIKE '%" + msg + "%'", (e, sql) => {
       if (!e && sql.length > 0) {
@@ -3642,21 +3641,27 @@ async function ChatProcess(msg) {
     });
   });
 
-  if (like_serach) {
+  if (likeContentSearchAnswer) {
     //其次是模糊匹配
-    console.log("返回模糊匹配".alert);
-    return like_serach;
+    console.log(`返回模糊匹配：${likeContentSearchAnswer}`.alert);
+    return likeContentSearchAnswer;
   }
 
-  // 分词模糊搜索
-  let candidateList = await ChatJiebaFuzzy(msg);
-  if (candidateList.length > 0) {
-    return candidateList[Math.floor(Math.random() * candidateList.length)];
+  //最后是分词模糊搜索
+  console.log("开始分词模糊搜索".log);
+  const jiebaCandidateList = await ChatJiebaFuzzy(msg);
+  if (jiebaCandidateList.length > 0) {
+    const candidateListAnswer = jiebaCandidateList[
+      Math.floor(Math.random() * jiebaCandidateList.length)
+    ];
+    console.log(`返回分词模糊匹配：${candidateListAnswer}`.alert);
+    return candidateListAnswer;
   }
-  // 随机敷衍
-  let result = await sqliteAll("SELECT * FROM balabala ORDER BY RANDOM()"); //有待优化
-  //console.log(result)
-  return result[0].balabala;
+
+  //如果什么回复都没有匹配到，那么随机敷衍
+  const randomBalaBala = await sqliteAll("SELECT * FROM balabala ORDER BY RANDOM()")[0].balabala; //有待优化
+  console.log(`返回随机敷衍：${randomBalaBala}`.alert);
+  return randomBalaBala;
 }
 
 //保存qq侧传来的图
@@ -3894,7 +3899,7 @@ function Talents10x(talents) {
 //插件系统核心
 async function ProcessExecute(msg, userId, userName, groupId, groupName) {
   let returnResult = "";
-  for (let i in plugins) {
+  for (const i in plugins) {
     const reg = new RegExp(plugins[i].指令);
     if (reg.test(msg)) {
       try {
@@ -3906,7 +3911,7 @@ async function ProcessExecute(msg, userId, userName, groupId, groupName) {
         return `插件 ${plugins[i].插件名} ${plugins[i].版本} 爆炸啦: ${e.stack}`;
       }
       logger.info(
-        `插件 ${plugins[i].插件名} ${plugins[i].版本} 响应了消息`.log,
+        `插件 ${plugins[i].插件名} ${plugins[i].版本} 响应了消息：${returnResult}`.log,
       );
       return returnResult;
     }

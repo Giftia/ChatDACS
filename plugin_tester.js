@@ -23,8 +23,8 @@ colors.setTheme({
 });
 
 //载入插件
-console.log(`插件测试器 v1.2，用于快速验证插件功能`.alert);
-console.log(`开始加载插件……`.log);
+console.log("插件测试器 v1.3，用于快速验证插件功能".alert);
+console.log("开始加载插件……".log);
 let plugins = require.all({
   dir: path.join(`${process.cwd()}`, "plugins"),
   match: /.*\.js/,
@@ -36,7 +36,7 @@ let plugins = require.all({
   },
 });
 console.log(plugins);
-console.log(`插件加载完毕√`.log);
+console.log("插件加载完毕√".log);
 console.log(
   `
 现在可以在命令行中输入指令来验证插件功能，按回车提交
@@ -56,13 +56,13 @@ async function run(ask) {
 }
 
 //插件遍历器，每条消息遍历一遍插件
-async function ProcessExecute(msg, qq_num, group_num) {
-  var return_result = "";
-  for (let i in plugins) {
+async function ProcessExecute(msg, _userId, _userName, _groupId, _groupName) {
+  let return_result = "";
+  for (const i in plugins) {
     const reg = new RegExp(plugins[i].指令);
     if (reg.test(msg)) {
       try {
-        return_result = await plugins[i].execute(msg, qq_num, group_num);
+        return_result = await plugins[i].execute(msg);
       } catch (e) {
         console.log(`插件 ${plugins[i].插件名} ${plugins[i].版本} 爆炸啦：`.error);
         console.log(e.stack);
