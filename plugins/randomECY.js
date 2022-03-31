@@ -1,11 +1,11 @@
 module.exports = {
   插件名: "随机二次元图插件", //插件名，仅在插件加载时展示
-  指令: ".*(随机)二次元(图)", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.1", //插件版本，仅在插件加载时展示
+  指令: ".*(随机)二次元(图)|来点二次元", //指令触发关键词，可使用正则表达式匹配
+  版本: "1.2", //插件版本，仅在插件加载时展示
   作者: "Giftina", //插件作者，仅在插件加载时展示
   描述: "发送一张正常尺度的二次元图", //插件说明，仅在插件加载时展示
 
-  execute: async function (msg, qNum, gNum) {
+  execute: async function (msg, userId, userName, groupId, groupName, options) {
     const setu_file = await RandomECY();
     return { type: "picture", content: setu_file };
   },
@@ -13,7 +13,6 @@ module.exports = {
 
 const request = require("request");
 const fs = require("fs");
-const path = require("path");
 
 //随机二次元图
 function RandomECY() {

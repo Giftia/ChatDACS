@@ -25,12 +25,11 @@ module.exports = Object.freeze({
   i_have_a_friend_reg: new RegExp("我有一个朋友说.*|我有个朋友说.*"), //匹配我有个朋友指令
   open_ju_reg: new RegExp("张菊.*"), //匹配张菊指令
   close_ju_reg: new RegExp("闭菊.*"), //匹配闭菊指令
-  feed_back_reg: new RegExp("^/报错.*"), //匹配报错指令
   gugua_reg: new RegExp("^/孤寡.*"), //匹配孤寡指令
   cp_story_reg: new RegExp("^/cp.*|^cp.*"), //匹配cp文指令
   fake_forward_reg: new RegExp("^/强制迫害.*"), //匹配伪造转发指令
   approve_group_invite_reg: new RegExp("^/批准 (.*)"), //匹配批准加群指令
-  make_qrcode_reg: new RegExp("^qr (.*)"), //匹配生成二维码指令
+  make_QRCode_reg: new RegExp("^qr (.*)"), //匹配生成二维码指令
   come_some_reg: new RegExp("^来点(.*)"), //匹配来点xx指令
   bww_reg: new RegExp("^/黑白图 (.*)"), //匹配黑白图
   roll_reg: new RegExp("^/roll(.*)"), //匹配roll

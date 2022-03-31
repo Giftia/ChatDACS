@@ -27,7 +27,7 @@ jobs:
         run: npm install pkg -g
 
       - name: Package
-        run: pkg .
+        run: pkg . --compress Brotli
 
       - name: Reinstall Modules For Plugins
         run: |
@@ -35,7 +35,7 @@ jobs:
           npm i yaml
           npm i sqlite3
           npm i require.all
-          npm i baidu-aip-sdk
+          npm i axios
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3

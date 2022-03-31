@@ -10,11 +10,11 @@ module.exports = {
   },
   "rules": {
     "indent": [
-      "error",
+      "warn",
       2
     ],
     "linebreak-style": [
-      "error",
+      "warn",
       "windows"
     ],
     "quotes": [
@@ -24,6 +24,7 @@ module.exports = {
     "semi": [
       "error",
       "always"
-    ]
+    ],
+    "no-unused-vars": "warn",
   }
 };

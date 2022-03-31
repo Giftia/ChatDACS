@@ -1,11 +1,11 @@
 module.exports = {
   插件名: "cos图片插件", //插件名，仅在插件加载时展示
   指令: ".*图.*来.*|.*来.*图.*|.*[色涩瑟].*图.*", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.4", //插件版本，仅在插件加载时展示
+  版本: "1.5", //插件版本，仅在插件加载时展示
   作者: "Giftina", //插件作者，仅在插件加载时展示
   描述: "在普通限度的尺度下发送一张合法的 cos 图, 图片来源哔哩哔哩cos专栏. 已修复图片无法发送的问题", //插件说明，仅在插件加载时展示
 
-  execute: async function (msg, qNum, gNum) {
+  execute: async function (msg, userId, userName, groupId, groupName, options) {
     const cosFile = await RandomCos();
     return { type: "picture", content: cosFile };
   },
@@ -13,13 +13,12 @@ module.exports = {
 
 const request = require("request");
 const fs = require("fs");
-const path = require("path");
 const cos_total_count = 2000; //初始化随机cos上限，可以自己调整
 
 //随机cos
 function RandomCos() {
   return new Promise((resolve, reject) => {
-    var rand_page_num = Math.floor(Math.random() * cos_total_count);
+    const rand_page_num = Math.floor(Math.random() * cos_total_count);
     request(
       "https://api.vc.bilibili.com/link_draw/v2/Photo/list?category=cos&type=new&page_num=" + rand_page_num + "&page_size=10",
       (err, response, body) => {
@@ -49,7 +48,7 @@ function RandomCos() {
 }
 
 /**
- * 其他可用备份
+ * 其他可用图源
  * https://api.vc.bilibili.com/link_draw/v2/Photo/list?category=sifu&type=new&page_num=0&page_size=10
  * https://api.vc.bilibili.com/link_draw/v2/Photo/index?type=recommend&page_num=0&page_size=1
  */

@@ -1,6 +1,6 @@
 module.exports = {
   name: "工具类",
-  version: "1.3",
+  version: "1.4",
   details: "各种公用函数和系统底层函数",
 
   //年月日
@@ -115,13 +115,24 @@ module.exports = {
     return styleMap[answer.type];
   },
 
+  //将插件回复转为go-cqhttp能解析的格式
+  PluginAnswerToGoCqhttpStyle(answer) {
+    const styleMap = {
+      text: answer.content,
+      picture: `[CQ:image,file=http://127.0.0.1:${WEB_PORT}${answer.content}]`,
+      audio: `[CQ:record,file=http://127.0.0.1:${WEB_PORT}${answer.content?.file}]`,
+      video: `[CQ:video,file=http://127.0.0.1:${WEB_PORT}${answer.content?.file}]`,
+    };
+    return styleMap[answer.type];
+  },
+
 };
 
 const request = require("request");
 const fs = require("fs");
 const path = require("path");
 const yaml = require("yaml"); //使用yaml解析配置文件
-let TIAN_XING_API_KEY;
+let WEB_PORT, TIAN_XING_API_KEY;
 
 Init();
 
@@ -138,8 +149,9 @@ function ReadConfig() {
   });
 }
 
-//初始化TIAN_XING_API_KEY
+//初始化WEB_PORT和TIAN_XING_API_KEY
 async function Init() {
   const resolve = await ReadConfig();
+  WEB_PORT = resolve.System.WEB_PORT;
   TIAN_XING_API_KEY = resolve.ApiKey.TIAN_XING_API_KEY;
 }

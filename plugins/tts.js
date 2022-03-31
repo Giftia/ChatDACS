@@ -1,76 +1,68 @@
 module.exports = {
   插件名: "语音合成插件", //插件名，仅在插件加载时展示
-  指令: "^/吠.*", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.1", //插件版本，仅在插件加载时展示
+  指令: "^/吠(.*)", //指令触发关键词，可使用正则表达式匹配
+  版本: "1.4", //插件版本，仅在插件加载时展示
   作者: "Giftina", //插件作者，仅在插件加载时展示
   描述: "通过百度语音库进行语音合成，语速、语调、声线可调，自由度比较好", //插件说明，仅在插件加载时展示
 
-  execute: async function (msg, qNum, gNum) {
-    const tts_file = await TTS(msg);
-    return { type: "audio", content: tts_file };
+  execute: async function (msg, userId, userName, groupId, groupName, options) {
+    const ttsFile = await TTS(msg);
+    return { type: "audio", content: ttsFile };
   },
 };
 
-const AipSpeech = require("baidu-aip-sdk").speech; //百度语音sdk
+const axios = require("axios").default;
 const fs = require("fs");
-const path = require("path");
-const yaml = require("yaml"); //使用yaml解析配置文件
 const utils = require("./system/utils.js");
-let SpeechClient, BAIDU_APP_ID, BAIDU_APP_KEY, BAIDU_APP_SECRET_KEY;
 
-Init();
-
-function ReadConfig() {
-  return new Promise((resolve, reject) => {
-    fs.readFile(path.join(`${process.cwd()}`, "config", "config.yml"), "utf-8", function (err, data) {
-      if (!err) {
-        resolve(yaml.parse(data));
-      } else {
-        reject("读取配置文件错误。错误原因：" + err);
+//扒的百度臻品音库-度米朵
+async function TTS(msg) {
+  const ttsContextFromIncomingMessage = new RegExp(module.exports.指令).exec(msg)[1];
+  const ttsContent = ttsContextFromIncomingMessage ? msg.split("/吠")[1] : "你好谢谢小笼包再见!";
+  const ttsResult = await axios({
+    url: "https://ai.baidu.com/aidemo",
+    method: "POST",
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+      "Referer": "https://ai.baidu.com/tech/speech/tts_online"
+    },
+    params: {
+      type: "tns",
+      lan: "zh",
+      per: "4103",
+      /**
+       * 声线选择, 基础音库：0为度小美，1为度小宇，3为度逍遥，4为度丫丫，
+       * 精品音库：5为度小娇，103为度米朵，106为度博文，110为度小童，111为度小萌，默认为度小美
+       * 1=2:普通男性,3:有情感的播音男性,4:有情感的萝莉声线-度丫丫;5:普通女性,6:抑扬顿挫有情感的讲故事男性(纪录频道),7:有情感的广东话女性,8:语气平淡的念诗男性(葛平),9:速读普通男性,10:略有情感的刚成年男性,11:刺耳而略有情感的讲故事男性(情感强度比6弱),12:温柔的有情感的讲故事女性
+       */
+      spd: "7",  //语速，取值0-15，默认为5中语速
+      pit: "10", //音调，取值0-15，默认为5中语调
+      vol: "9", //音量，取值0-9，默认为5中音量
+      aue: "3",  //格式, 3：mp3(default) 4： pcm-16k 5： pcm-8k 6. wav
+      tex: encodeURI(ttsContent)
+    },
+  })
+    .then(async function (response) {
+      const data = response.data.data;
+      if (data) {
+        console.log(`${ttsContent} 的小夜语音合成成功`.log);
+        const base64Data = data.replace("data:audio/x-mpeg;base64,", "");
+        const dataBuffer = Buffer.from(base64Data, "base64");
+        const MP3Duration = await utils.getMP3Duration(dataBuffer);
+        const ttsFile = `/xiaoye/tts/${utils.sha1(dataBuffer)}.mp3`;
+        fs.writeFileSync(`./static${ttsFile}`, dataBuffer);
+        const file = {
+          file: ttsFile,
+          filename: "小夜语音回复",
+          duration: MP3Duration,
+        };
+        return file;
       }
+    })
+    .catch(function (error) {
+      //看来加请求头也不能白嫖了
+      console.log(`语音合成小夜TTS失败: ${error}`.error);
+      return "语音合成小夜TTS错误: ", error;
     });
-  });
-}
-
-async function Init() {
-  const resolve = await ReadConfig();
-  BAIDU_APP_ID = resolve.ApiKey.BAIDU_APP_ID ?? ""; //百度应用id
-  BAIDU_APP_KEY = resolve.ApiKey.BAIDU_APP_KEY ?? ""; //百度接口key
-  BAIDU_APP_SECRET_KEY = resolve.ApiKey.BAIDU_APP_SECRET_KEY ?? ""; //百度接口密钥
-  SpeechClient = new AipSpeech(BAIDU_APP_ID, BAIDU_APP_KEY, BAIDU_APP_SECRET_KEY);
-}
-
-//语音合成TTS
-function TTS(tex) {
-  return new Promise((resolve, reject) => {
-    if (!tex) tex = "你好谢谢小笼包再见!";
-    SpeechClient.text2audio(tex, {
-      spd: 5, //1-9  语速,正常语速为5
-      pit: 8, //1-9  语调,正常语调为5
-      per: 4, //1-12 声线,1=2:普通男性,3:有情感的播音男性,4:有情感的萝莉声线-度丫丫;5:普通女性,6:抑扬顿挫有情感的讲故事男性(纪录频道),7:有情感的广东话女性,8:语气平淡的念诗男性(葛平),9:速读普通男性,10:略有情感的刚成年男性,11:刺耳而略有情感的讲故事男性(情感强度比6弱),12:温柔的有情感的讲故事女性,1-12以外的数值会被转为12
-    }).then(
-      function (result) {
-        if (result.data) {
-          console.log(`${tex} 的语音合成成功`.log);
-          fs.writeFileSync(
-            `./static/xiaoye/tts/${utils.sha1(result.data)}.mp3`,
-            result.data,
-          );
-          let file = {
-            file: `/xiaoye/tts/${utils.sha1(result.data)}.mp3`,
-            filename: "小夜语音回复",
-          };
-          resolve(file);
-        } else {
-          // 合成服务发生错误
-          console.log(`语音合成失败: ${JSON.stringify(result)}`.error);
-          reject("语音合成TTS错误: ", JSON.stringify(result));
-        }
-      },
-      function (err) {
-        console.log(err.error);
-        reject("语音合成TTS错误: ", err);
-      },
-    );
-  });
+  return ttsResult;
 }

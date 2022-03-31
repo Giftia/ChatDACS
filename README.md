@@ -173,13 +173,13 @@
 
 点击最新成功构建的 Compile ChatDACS for Windows 工作流，
 
-在页面下方的 Artifacts 里点击下载自动构建好的 ChatDACS 包，解压出来，
+在页面下方的 Artifacts 里点击下载自动构建好的 ChatDACS 压缩包，解压出来，
 
 用记事本打开 plugins\go-cqhttp 文件夹里的 config.yml 文件，修改并保存第 4、5 行的 qq 和密码为 bot 使用的 qq 帐号密码，
 
 然后运行 go-cqhttp_windows_amd64.exe，看看 qq 有没有正常登陆上，
 
-之后打开 config 文件夹里的 config.yml 文件，修改并保存第 43 行 bot_qq 的配置项为 bot 使用的 qq 帐号，
+之后打开 config 文件夹里的 config.yml 文件，修改并保存第 46 行 bot_qq 的配置项为 bot 使用的 qq 帐号，
 
 最后直接运行 chatdacs.exe 就可以辣。
 
@@ -231,10 +231,11 @@ node index.js
 
 如果还是有问题的话，请进群来问问题吧，有问必答噢。
 
-如果想要手动生成适合您的系统的绿色免安装运行 exe 文件，可以使用手动打包指令：
+如果想要手动生成适合您的系统的绿色免安装运行文件，可以使用手动打包指令：
 
 ```bash
-pkg .
+npm install pkg -g
+npm pkg
 ```
 
 ---
