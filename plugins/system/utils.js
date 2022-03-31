@@ -1,6 +1,6 @@
 module.exports = {
   name: "工具类",
-  version: "1.4",
+  version: "1.5",
   details: "各种公用函数和系统底层函数",
 
   //年月日
@@ -117,9 +117,12 @@ module.exports = {
 
   //将插件回复转为go-cqhttp能解析的格式
   PluginAnswerToGoCqhttpStyle(answer) {
+    const pictureHrefFix = answer.content.indexOf("http") === 0 ?
+      `http://127.0.0.1:${WEB_PORT}${answer.content}` :
+      answer.content;
     const styleMap = {
       text: answer.content,
-      picture: `[CQ:image,file=http://127.0.0.1:${WEB_PORT}${answer.content}]`,
+      picture: `[CQ:image,file=${pictureHrefFix}]`,
       audio: `[CQ:record,file=http://127.0.0.1:${WEB_PORT}${answer.content?.file}]`,
       video: `[CQ:video,file=http://127.0.0.1:${WEB_PORT}${answer.content?.file}]`,
     };
