@@ -39,10 +39,16 @@ message:
   remove-reply-at: false
   # 为Reply附加更多信息
   extra-reply-data: false
+  # 跳过 Mime 扫描, 忽略错误数据
+  skip-mime-scan: false
 
 output:
   # 日志等级 trace,debug,info,warn,error
-  log-level: warn
+  log-level: error
+  # 日志时效 单位天. 超过这个时间之前的日志将会被自动删除. 设置为 0 表示永久保留.
+  log-aging: 3
+  # 是否在每次启动时强制创建全新的文件储存日志. 为 false 的情况下将会在上次启动时创建的日志文件续写
+  log-force-new: true
   # 是否启用 DEBUG
   debug: false # 开启调试模式
 
@@ -89,4 +95,6 @@ servers:
       # 反向HTTP POST地址列表
       post:
         - url: http://127.0.0.1:80/bot # 地址
-      # secret: "" # 密钥
+          max-retries: 0 # 0 表示禁用重试
+          retries-interval: 0 # 单位毫秒，0 表示立即重连
+          # secret: "" # 密钥

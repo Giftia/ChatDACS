@@ -1,11 +1,11 @@
 module.exports = {
   插件名: "语音合成插件", //插件名，仅在插件加载时展示
   指令: "^/吠(.*)", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.3", //插件版本，仅在插件加载时展示
+  版本: "1.4", //插件版本，仅在插件加载时展示
   作者: "Giftina", //插件作者，仅在插件加载时展示
   描述: "通过百度语音库进行语音合成，语速、语调、声线可调，自由度比较好", //插件说明，仅在插件加载时展示
 
-  execute: async function (msg, qNum, gNum) {
+  execute: async function (msg, userId, userName, groupId, groupName, options) {
     const ttsFile = await TTS(msg);
     return { type: "audio", content: ttsFile };
   },

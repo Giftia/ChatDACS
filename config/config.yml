@@ -6,7 +6,7 @@ System:
   CHAT_SWITCH: true
 
   #qqBot小夜开关，需要自行配置以接入go-cqhttp，反向 HTTP POST 于 127.0.0.1:80/bot:
-  CONNECT_GO_CQHTTP_SWITCH: false
+  CONNECT_GO_CQHTTP_SWITCH: true
 
   #接入哔哩哔哩直播聊天开关:
   CONNECT_BILIBILI_LIVE_SWITCH: false
@@ -54,12 +54,6 @@ qqBot:
 
   #qqBot小夜抽风几率，随机抽风舔狗，单位是‰:
   QQBOT_CHAOS_PROBABILITY: 0
-
-  #福利姬指令列表:
-  req_fuliji_list: ["福利姬", "买家秀"]
-
-  #二次元图指令列表:
-  req_ECY_list: ["来点二次元", "二次元"]
 
   #今日不带套指令列表:
   QQBOT_ORDER_LIST_NO_TRAP:

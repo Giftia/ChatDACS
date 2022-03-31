@@ -1,12 +1,12 @@
 module.exports = {
   插件名: "淘宝买家秀色图插件", //插件名，仅在插件加载时展示
-  指令: ".*(随机)买家秀", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.2", //插件版本，仅在插件加载时展示
+  指令: ".*(随机)买家秀|福利姬", //指令触发关键词，可使用正则表达式匹配
+  版本: "1.3", //插件版本，仅在插件加载时展示
   作者: "Giftina", //插件作者，仅在插件加载时展示
   描述: "在危险限度的尺度下发送一张非法的淘宝买家秀色图", //插件说明，仅在插件加载时展示
 
-  execute: async function (msg, qNum, gNum) {
-    const setu_file = await RandomTbshow() ?? "";
+  execute: async function (msg, userId, userName, groupId, groupName, options) {
+    const setu_file = await RandomTbShow() ?? "";
     const setu_file_url = `${setu_file}`;
     return { type: "picture", content: setu_file_url };
   },
@@ -40,7 +40,7 @@ async function Init() {
 }
 
 //随机买家秀
-function RandomTbshow() {
+function RandomTbShow() {
   return new Promise((resolve, reject) => {
     request(`https://api.sumt.cn/api/rand.tbimg.php?token=${SUMT_API_KEY}&format=json`, (err, response, body) => {
       body = JSON.parse(body);

@@ -1,11 +1,11 @@
 module.exports = {
   插件名: "赛博百科问答插件", //插件名，仅在插件加载时展示
   指令: "^赛博朋克(.*)", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.0", //插件版本，仅在插件加载时展示
+  版本: "1.1", //插件版本，仅在插件加载时展示
   作者: "Giftina", //插件作者，仅在插件加载时展示
   描述: "非常赛博朋克的百科知识问答题", //插件说明，仅在插件加载时展示
 
-  execute: async function (msg, qNum, gNum) {
+  execute: async function (msg, userId, userName, groupId, groupName, options) {
     if (msg.split(" ").length > 1) {
       if (`赛博朋克 ${answer}` == msg) {
         return { type: "text", content: `回答正确！答案是${answer}` };
