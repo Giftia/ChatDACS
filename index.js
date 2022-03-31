@@ -809,87 +809,87 @@ function start_qqbot() {
                 }
 
                 //来点xx
-                if (Constants.come_some_reg.test(req.body.message)) {
-                  let tag = req.body.message.match(Constants.come_some_reg)[1];
-                  res.send({ reply: `你等等，我去找找你要的${tag}` });
-                  system.setu
-                    .SearchTag(tag)
-                    .then((resolve) => {
-                      let setu_file = `http://127.0.0.1:${WEB_PORT}/${resolve.replace(
-                        /\//g,
-                        "\\",
-                      )}`;
-                      console.log(setu_file);
-                      request(
-                        `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id
-                        }&message=${encodeURI(
-                          `[CQ:image,file=${setu_file},url=${setu_file}]`,
-                        )}`,
-                        function (error, _response, _body) {
-                          if (error) {
-                            console.log(
-                              `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
-                            );
-                          }
-                        },
-                      );
-                    })
-                    .catch((reject) => {
-                      //画色图
-                      console.log(
-                        `system.setu.SearchTag(): rejected, and err:${reject}`
-                          .error,
-                      );
+                // if (Constants.come_some_reg.test(req.body.message)) {
+                //   let tag = req.body.message.match(Constants.come_some_reg)[1];
+                //   res.send({ reply: `你等等，我去找找你要的${tag}` });
+                //   system.setu
+                //     .SearchTag(tag)
+                //     .then((resolve) => {
+                //       let setu_file = `http://127.0.0.1:${WEB_PORT}/${resolve.replace(
+                //         /\//g,
+                //         "\\",
+                //       )}`;
+                //       console.log(setu_file);
+                //       request(
+                //         `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id
+                //         }&message=${encodeURI(
+                //           `[CQ:image,file=${setu_file},url=${setu_file}]`,
+                //         )}`,
+                //         function (error, _response, _body) {
+                //           if (error) {
+                //             console.log(
+                //               `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
+                //             );
+                //           }
+                //         },
+                //       );
+                //     })
+                //     .catch((reject) => {
+                //       //画色图
+                //       console.log(
+                //         `system.setu.SearchTag(): rejected, and err:${reject}`
+                //           .error,
+                //       );
 
-                      let canvas = createCanvas(500, 500);
-                      let ctx = canvas.getContext("2d");
-                      ctx.fillStyle = "#ffd400";
-                      ctx.fillRect(0, 0, 500, 500);
-                      ctx.font = "40px Sans";
-                      ctx.textAlign = "center";
-                      ctx.fillStyle = "black";
-                      ctx.fillText(reject, 250, 250);
+                //       let canvas = createCanvas(500, 500);
+                //       let ctx = canvas.getContext("2d");
+                //       ctx.fillStyle = "#ffd400";
+                //       ctx.fillRect(0, 0, 500, 500);
+                //       ctx.font = "40px Sans";
+                //       ctx.textAlign = "center";
+                //       ctx.fillStyle = "black";
+                //       ctx.fillText(reject, 250, 250);
 
-                      let file_local = path.join(
-                        `${process.cwd()}`,
-                        "static",
-                        "xiaoye",
-                        "images",
-                        `${utils.sha1(canvas.toBuffer())}.jpg`,
-                      );
-                      fs.writeFileSync(file_local, canvas.toBuffer());
-                      let file_online = `http://127.0.0.1:${WEB_PORT}/xiaoye/images/${utils.sha1(
-                        canvas.toBuffer(),
-                      )}.jpg`;
+                //       let file_local = path.join(
+                //         `${process.cwd()}`,
+                //         "static",
+                //         "xiaoye",
+                //         "images",
+                //         `${utils.sha1(canvas.toBuffer())}.jpg`,
+                //       );
+                //       fs.writeFileSync(file_local, canvas.toBuffer());
+                //       let file_online = `http://127.0.0.1:${WEB_PORT}/xiaoye/images/${utils.sha1(
+                //         canvas.toBuffer(),
+                //       )}.jpg`;
 
-                      request(
-                        `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id
-                        }&message=${encodeURI(
-                          `[CQ:image,file=${file_online},url=${file_online}]`,
-                        )}`,
-                        function (error, _response, _body) {
-                          if (error) {
-                            console.log(
-                              `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
-                            );
-                          }
-                        },
-                      );
+                //       request(
+                //         `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id
+                //         }&message=${encodeURI(
+                //           `[CQ:image,file=${file_online},url=${file_online}]`,
+                //         )}`,
+                //         function (error, _response, _body) {
+                //           if (error) {
+                //             console.log(
+                //               `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
+                //             );
+                //           }
+                //         },
+                //       );
 
-                      // console.log(`system.setu.SearchTag(): rejected, and err:${reject}`.error);
-                      // request(
-                      //   `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(
-                      //     `你要的${tag}发送失败啦: ${reject}`
-                      //   )}`,
-                      //   function (error, _response, _body) {
-                      //     if (error) {
-                      //       console.log(`请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`);
-                      //     }
-                      //   }
-                      // );
-                    });
-                  return 0;
-                }
+                //       // console.log(`system.setu.SearchTag(): rejected, and err:${reject}`.error);
+                //       // request(
+                //       //   `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(
+                //       //     `你要的${tag}发送失败啦: ${reject}`
+                //       //   )}`,
+                //       //   function (error, _response, _body) {
+                //       //     if (error) {
+                //       //       console.log(`请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`);
+                //       //     }
+                //       //   }
+                //       // );
+                //     });
+                //   return 0;
+                // }
 
                 //舔我
                 if (req.body.message === "/舔我") {
