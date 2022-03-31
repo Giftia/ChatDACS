@@ -694,7 +694,7 @@ function start_qqbot() {
                   "",
                   req.body.message?.self_id);
                 if (pluginsReply != "") {
-                  const replyToQQ = utils.PluginAnswerToWebStyle(pluginsReply);
+                  const replyToQQ = utils.PluginAnswerToGoCqhttpStyle(pluginsReply);
                   request(
                     `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(
                       replyToQQ,
