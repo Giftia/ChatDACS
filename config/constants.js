@@ -30,7 +30,6 @@ module.exports = Object.freeze({
   fake_forward_reg: new RegExp("^/强制迫害.*"), //匹配伪造转发指令
   approve_group_invite_reg: new RegExp("^/批准 (.*)"), //匹配批准加群指令
   make_QRCode_reg: new RegExp("^qr (.*)"), //匹配生成二维码指令
-  come_some_reg: new RegExp("^来点(.*)"), //匹配来点xx指令
   bww_reg: new RegExp("^/黑白图 (.*)"), //匹配黑白图
   roll_reg: new RegExp("^/roll(.*)"), //匹配roll
   test_reply_reg: new RegExp("\\[CQ:reply,id:.*复读"), //匹配回复测试指令
