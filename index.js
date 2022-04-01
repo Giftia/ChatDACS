@@ -14,7 +14,7 @@ if (_cn_reg.test(`${process.cwd()}`)) {
   cp.exec(`msg %username% ${warnMessage}`);
 }
 
-const version = "ChatDACS v3.3.0"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS v3.3.3"; //版本号，会显示在浏览器tab与标题栏
 const utils = require("./plugins/system/utils.js"); //载入系统通用模块
 const compression = require("compression"); //用于gzip压缩
 const express = require("express"); //轻巧的express框架
@@ -146,8 +146,6 @@ var onlineUsers = 0, //预定义
   QQBOT_REPLY_PROBABILITY,
   QQBOT_FUDU_PROBABILITY,
   QQBOT_CHAOS_PROBABILITY,
-  req_fuliji_list,
-  req_ECY_list,
   QQBOT_ORDER_LIST_NO_TRAP,
   QQBOT_SAVE_ALL_IMAGE_TO_LOCAL_SWITCH,
   QQBOT_MAX_MINE_AT_MOST,
@@ -929,7 +927,7 @@ function start_qqbot() {
                   ChatProcess(message)
                     .then((resolve) => {
                       let reply = resolve;
-                      BetterTTS(reply)
+                      plugins.tts(reply)
                         .then((resolve) => {
                           let tts_file = `[CQ:record,file=http://127.0.0.1:${WEB_PORT}${resolve.file},url=http://127.0.0.1:${WEB_PORT}${resolve.file}]`;
                           res.send({ reply: tts_file });
@@ -941,7 +939,7 @@ function start_qqbot() {
                     .catch((reject) => {
                       //如果没有匹配到回复，那就回复一句默认语音
                       console.log(`${reject}，语音没有回复`.warn);
-                      BetterTTS()
+                      plugins.tts()
                         .then((resolve) => {
                           let tts_file = `[CQ:record,file=http://127.0.0.1:${WEB_PORT}${resolve.file},url=http://127.0.0.1:${WEB_PORT}${resolve.file}]`;
                           res.send({ reply: tts_file });
@@ -981,7 +979,7 @@ function start_qqbot() {
                   let msg = req.body.message;
                   let who = req.body.sender.nickname;
                   if (!who) who = "小夜";
-                  prpr_who = msg.replace("/prpr ", "");
+                  let prpr_who = msg.replace("/prpr ", "");
                   if (!prpr_who || prpr_who === "/prpr") {
                     prpr_who = prpr_who.replace("/prpr", "");
                     prpr_who = "自己";
@@ -1143,7 +1141,7 @@ function start_qqbot() {
                     "utf-8",
                     function (err, data) {
                       if (!err) {
-                        story = JSON.parse(data);
+                        let story = JSON.parse(data);
                         if (!tops) tops = req.body.sender.nickname;
                         if (!bottoms) bottoms = req.body.sender.nickname;
                         // for (let i in story) {
@@ -1986,8 +1984,7 @@ ${final_talents}
                                   `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id
                                   }&message=${encodeURI(question)}`,
                                   function (error, _response, _body) {
-                                    if (!error) {
-                                    } else {
+                                    if (error) {
                                       console.log(
                                         `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
                                       );
@@ -2083,7 +2080,7 @@ ${final_talents}
 
                           //已经开始游戏了，判断答案对不对
                         } else {
-                          your_answer = req.body.message;
+                          let your_answer = req.body.message;
                           your_answer = your_answer.replace("击鼓传雷 ", "");
                           your_answer = your_answer.replace("击鼓传雷", "");
                           your_answer = your_answer.trim();
@@ -2396,7 +2393,7 @@ ${final_talents}
                     var msg_in = req.body.message.split("说")[1];
                     var msg = msg_in.split("[CQ:at,qq=")[0].trim();
                     var who = msg_in.split("[CQ:at,qq=")[1];
-                    var who = who.replace("]", "").trim();
+                    who = who.replace("]", "").trim();
                     if (Constants.is_qq_reg.test(who)) {
                       var sources = `https://api.sumt.cn/api/qq.logo.php?qq=${who}`; //载入头像
                     }
@@ -2499,11 +2496,6 @@ ${final_talents}
                             reply: `小夜没有[CQ:at,qq=${who}]的好友，没有办法孤寡ta呢，请先让ta加小夜为好友吧，小夜就在群里给大家孤寡一下吧`,
                           });
                           QunGugua(req.body.group_id);
-                        } else {
-                          reject(
-                            "随机选取一个群错误。错误原因: " +
-                            JSON.stringify(response.body),
-                          );
                         }
                       },
                     );
@@ -3042,7 +3034,7 @@ function StartLive() {
       }
 
       fs.writeFileSync(Constants.TTS_FILE_RECV_PATH, `@${danmu.userName} ${replyToBiliBili}`);
-      const chatReplyToTTS = await BetterTTS(replyToBiliBili);
+      const chatReplyToTTS = await plugins.tts(replyToBiliBili);
       const ttsFile = `${process.cwd()}/static${chatReplyToTTS.file}`;
       voicePlayer.play(ttsFile, function (err) {
         if (err) throw err;
