@@ -20,7 +20,7 @@ module.exports = Object.freeze({
   hope_flower_reg: new RegExp("^希望的花(.*)"), //匹配希望的花
   loop_bomb_reg: new RegExp("^击鼓传雷(.*)"), //匹配击鼓传雷
   is_qq_reg: new RegExp("^[1-9][0-9]{4,9}$"), //校验是否是合法的qq号
-  has_qq_reg: new RegExp("\\[CQ:at,qq:(.*)\\]"), //匹配是否有@
+  has_qq_reg: new RegExp("\\[CQ:at,qq=(.*)\\]"), //匹配是否有@
   admin_reg: new RegExp("/admin (.*)"), //匹配管理员指令
   i_have_a_friend_reg: new RegExp("我有一个朋友说.*|我有个朋友说.*"), //匹配我有个朋友指令
   open_ju_reg: new RegExp("张菊.*"), //匹配张菊指令
