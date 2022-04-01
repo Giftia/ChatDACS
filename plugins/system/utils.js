@@ -1,6 +1,6 @@
 module.exports = {
   name: "工具类",
-  version: "1.6",
+  version: "1.7",
   details: "各种公用函数和系统底层函数",
 
   //年月日
@@ -105,8 +105,10 @@ module.exports = {
 
   //将插件回复转为前端能解析的格式
   PluginAnswerToWebStyle(answer) {
+    if (!answer.content?.file) {
+      return answer.content;
+    }
     const styleMap = {
-      text: answer.content,
       picture: `img[${answer.content?.file}]`,
       audio: `audio[${answer.content?.file}](${answer.content?.filename})`,
       video: `video[${answer.content?.file}](${answer.content?.filename})`,
@@ -117,8 +119,10 @@ module.exports = {
 
   //将插件回复转为go-cqhttp能解析的格式
   PluginAnswerToGoCqhttpStyle(answer) {
+    if (!answer.content?.file) {
+      return answer.content;
+    }
     const styleMap = {
-      text: answer.content,
       picture: `[CQ:image,file=${answer.content?.file.indexOf("http") === -1 ? `http://127.0.0.1:${WEB_PORT}${answer.content?.file}` : answer.content?.file}]`,
       audio: `[CQ:record,file=http://127.0.0.1:${WEB_PORT}${answer.content?.file}]`,
       video: `[CQ:video,file=http://127.0.0.1:${WEB_PORT}${answer.content?.file}]`,
