@@ -1,17 +1,19 @@
 module.exports = {
   插件名: "搜图插件", //插件名，仅在插件加载时展示
-  指令: "来点(好.*的.*|坏的.*)", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.1", //插件版本，仅在插件加载时展示
+  指令: ".*来点(好.*的.*|坏的.*)", //指令触发关键词，可使用正则表达式匹配
+  版本: "1.3", //插件版本，仅在插件加载时展示
   作者: "Giftina", //插件作者，仅在插件加载时展示
   描述: "搜索指定的tag图片，图片来源api.lolicon.app", //插件说明，仅在插件加载时展示
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
     const tag = new RegExp(module.exports.指令).exec(msg)[1];
 
-    axios(
-      `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=120243247&message=${encodeURI(
-        `你等等，我去找找你要的${tag}`,
-      )}`);
+    if (CONNECT_GO_CQHTTP_SWITCH) {
+      axios(
+        `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=120243247&message=${encodeURI(
+          `你等等，我去找找你要的${tag}`,
+        )}`);
+    }
 
     const searchTag = tag.match("的") ? tag.match("的")[1] : tag;
     const searchType = !!tag.match("坏的");
@@ -29,7 +31,7 @@ const axios = require("axios").default;
 const fs = require("fs");
 const path = require("path");
 const yaml = require("yaml"); //使用yaml解析配置文件
-let GO_CQHTTP_SERVICE_API_URL;
+let GO_CQHTTP_SERVICE_API_URL, CONNECT_GO_CQHTTP_SWITCH;
 
 //搜索tag
 function SearchTag(tag, type) {
@@ -78,4 +80,5 @@ function ReadConfig() {
 async function Init() {
   const resolve = await ReadConfig();
   GO_CQHTTP_SERVICE_API_URL = resolve.System.GO_CQHTTP_SERVICE_API_URL;
+  CONNECT_GO_CQHTTP_SWITCH = resolve.System.CONNECT_GO_CQHTTP_SWITCH;
 }
