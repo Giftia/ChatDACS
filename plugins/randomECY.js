@@ -19,7 +19,7 @@ function RandomECY() {
   return new Promise((resolve, reject) => {
     request("https://iw233.cn/api/Random.php", (err, response, _body) => {
       if (!err) {
-        let picUrl = response.request.uri.href;
+        const picUrl = response.request.uri.href;
         request(picUrl).pipe(
           fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
             console.log(`保存了好康的二次元图：${picUrl}，然后再给用户`.log);

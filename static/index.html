@@ -8,50 +8,42 @@
     <link rel="preload" href="/superplaceholder.min.js" as="script" />
     <link rel="preload" href="/huaji.webp" as="image" />
     <link rel="preload" href="/xiaoye.webp" as="image" />
-    <link rel="icon" href="/favicon.jpg" />
+    <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, height=device-height, user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0" />
     <meta name="format-detection" content="telephone=no" />
     <title>ChatDACS</title>
-
     <link rel="stylesheet" href="/layim/css/layui.mobile.css" />
     <link rel="stylesheet" href="/layim/css/layui.css" />
-    <script src="/socket.io/socket.io.js"></script>
+    <script async src="/socket.io/socket.io.js"></script>
     <script src="/layim/layui.js"></script>
-
-    <style>
-      .addbtn {
-        position: absolute;
-        right: 10px;
-        bottom: 5px;
-        padding: 0 5px;
-      }
-    </style>
   </head>
 
   <body>
-    <script src="/superplaceholder.min.js"></script>
+    <canvas id="live2d" width="225" height="300" class="live2d" style="position: fixed; bottom: 2.5rem; right: -6rem; opacity: 1; z-index: 23333333; pointer-events: none;"></canvas>
+    <script async src="/superplaceholder.min.js"></script>
     <script>
       layui
         .config({
           version: false,
+          base: '/layim/plugin/'
         })
-        .use(["mobile", "form"], function () {
+        .use(["mobile", "form", 'live2dbundle', 'live2dcore'], function () {
           var mobile = layui.mobile,
             layim = mobile.layim,
             $ = mobile.jquery,
             form = mobile.form,
-            laytpl = mobile.laytpl,
             layer = mobile.layer,
-            myCID = "";
+            myCID = "",
+            resourcesPath = '/live2d/assets/', // 指定资源文件（模型）保存的路径
+            backImageName = '', // 指定背景图片 ,默认为空
+            modelDir = ['xiaoye']; // 指定需要加载的模型
 
-          var socket = io();
+          initDefine(resourcesPath, backImageName, modelDir); // 初始化模型
+
+          const socket = io();
 
           socket.on("getCookie", function (msg) {
-            if (
-              document.cookie === null ||
-              document.cookie === "" ||
-              document.cookie === undefined
-            ) {
+            if (!document.cookie) {
               document.cookie =
                 "ChatdacsID=" +
                 new Date().getTime() +
@@ -63,11 +55,13 @@
 
           socket.on("version", function (msg) {
             document.title = msg;
+
             socket.on("onlineUsers", function (msg) {
-              var online_status =
+              const online_status =
                 document.getElementsByClassName("layim-chat-status")[0];
               online_status.innerHTML = `当前在线:${msg}`;
             });
+
             layim.config({
               uploadImage: {
                 //上传图片接口
@@ -100,7 +94,7 @@
                         username: "系统消息",
                         id: "0",
                         status: "online",
-                        avatar: "/favicon.jpg",
+                        avatar: "/favicon.ico",
                         sign: "喂!三点几嚟!做撚啊做,饮茶先啦!",
                       },
                       {
@@ -178,6 +172,11 @@
               //扩展聊天面板工具栏
               tool: [
                 {
+                  alias: "help",
+                  title: "帮助",
+                  iconUnicode: "&#xe607;",
+                },
+                {
                   alias: "xiaoye",
                   title: "召唤小夜",
                   iconUnicode: "&#xe606;",
@@ -200,26 +199,21 @@
                 {
                   alias: "r18",
                   title: "r18",
-                  iconUnicode: "&#xe649;",
-                },
-                {
-                  alias: "help",
-                  title: "帮助",
-                  iconUnicode: "&#xe607;",
+                  iconUnicode: "&#xe756;",
                 },
                 {
                   alias: "link",
                   title: "发送链接",
-                  iconUnicode: "&#xe64e;",
+                  iconUnicode: "&#xe64c;",
                 },
               ],
 
               //扩展更多列表
               moreList: [
                 {
-                  alias: "backtofuture",
-                  title: "回到未来（点击标题返回）",
-                  iconUnicode: "&#xe65c;", //图标字体的unicode，可不填
+                  alias: "mineWar",
+                  title: "地 雷 战（开发中）",
+                  iconUnicode: "&#xe66c;", //图标字体的unicode，可不填
                   iconClass: "", //图标字体的class类名
                 },
                 {
@@ -231,7 +225,7 @@
                 {
                   alias: "reload",
                   title: "重生",
-                  iconUnicode: "&#xe666;",
+                  iconUnicode: "&#xe682;",
                   iconClass: "",
                 },
                 {
@@ -249,21 +243,21 @@
                 {
                   alias: "thanks",
                   title: "致谢",
-                  iconUnicode: "&#xe6c6;",
+                  iconUnicode: "&#xe68c;",
                   iconClass: "",
                 },
               ],
 
-              //voice: "/dingding.mp3", //声音提醒文件位置
-              isVoice: 0, //是否播放声音
-              notice: 0, //是否开启桌面消息提醒，即在浏览器之外的提醒
+              voice: "/ding.mp3", //声音提醒文件位置
+              isVoice: 1, //是否播放声音
+              notice: 1, //是否开启桌面消息提醒，即在浏览器之外的提醒
               maxLength: 3000, //可允许的消息最大字符长度
               tabIndex: 0, //用户设定初始打开的Tab项下标
               isNewFriend: 0, //是否开启“新的朋友”
               isgroup: 1, //是否开启“群聊”
               chatTitleColor: "#edbc28", //顶部Bar颜色
               title: msg, //标题
-              copyright: 1, //侵权立刻改为0
+              copyright: 1, //layui已不限制授权使用
             });
           });
 
@@ -316,8 +310,8 @@
           //更多菜单
           layim.on("moreList", function (obj) {
             switch (obj.alias) {
-              case "backtofuture":
-                window.location.href = "/old.html";
+              case "mineWar":
+                window.location.href = "/mineWar.html";
                 break;
               case "bonus":
                 layer.msg("好像有人给你发了一条消息，回消息界面看看吧");
@@ -396,6 +390,7 @@
                     "background-color: #FF4351; color:#fff;",
                   ],
                   content: `
+                  <canvas id="live2d" width="200" height="200" class="live2d" style="position: fixed;     top: 25%;right: 50%; opacity: 1; z-index: 99999; pointer-events: none;"></canvas>
                   <table width="100%" border="0">
   <tr>
   <td style="width:80%;vertical-align:top;">
@@ -541,7 +536,7 @@
           socket.on("system", function (message) {
             layim.getMessage({
               username: "系统消息",
-              avatar: "/favicon.jpg",
+              avatar: "/favicon.ico",
               id: "0",
               type: "kefu",
               mine: 0,
@@ -553,7 +548,7 @@
           socket.on("qqImage", function (message) {
             layim.getMessage({
               username: "系统消息",
-              avatar: "/favicon.jpg",
+              avatar: "/favicon.ico",
               id: "0",
               type: "kefu",
               mine: 0,
@@ -565,7 +560,7 @@
           socket.on("qqVideo", function (message) {
             layim.getMessage({
               username: "系统消息",
-              avatar: "/favicon.jpg",
+              avatar: "/favicon.ico",
               id: "0",
               type: "kefu",
               mine: 0,
@@ -607,7 +602,7 @@
 
           //监听聊天窗口的切换，仅在小夜聊天轮播placeholder
           layim.on("chatChange", function (data) {
-            var text = document.getElementsByTagName("input")[0],
+            const text = document.getElementsByTagName("input")[0],
               btn = document.getElementsByTagName("button")[0],
               typing_status =
                 document.getElementsByClassName("layim-chat-status")[1];
