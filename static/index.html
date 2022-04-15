@@ -18,8 +18,8 @@
     <script src="/layim/layui.js"></script>
   </head>
 
-  <body>
-    <canvas id="live2d" width="225" height="300" class="live2d" style="position: fixed; bottom: 2.5rem; right: -6rem; opacity: 1; z-index: 23333333; pointer-events: none;"></canvas>
+  <body onmousedown="switchLive2DVisible();">
+    <canvas id="live2d" width="225" height="300" class="live2d" style="position: fixed; bottom: 2.5rem; right: -6rem; opacity: 1; z-index: 2147483647; pointer-events: none; visibility: visible;"></canvas>
     <script async src="/superplaceholder.min.js"></script>
     <script>
       layui
@@ -249,7 +249,6 @@
               ],
 
               voice: "/ding.mp3", //声音提醒文件位置
-              isVoice: 1, //是否播放声音
               notice: 1, //是否开启桌面消息提醒，即在浏览器之外的提醒
               maxLength: 3000, //可允许的消息最大字符长度
               tabIndex: 0, //用户设定初始打开的Tab项下标
@@ -344,8 +343,7 @@
                 socket.on("settings", function (data) {
                   layim.panel({
                     title: "设置",
-                    tpl: `
-                    <div style="padding: 10px">
+                    tpl: `<div style="padding: 10px">
   <form class="layui-form" action="/profile">
     <div class="layui-form-item">
       <label class="layui-form-label">CID</label>
@@ -373,9 +371,7 @@
       </div>
     </div>
   </form>
-</div>
-
-                    `,
+</div>`,
                     data: {
                       name: data.name,
                       CID: data.CID,
@@ -389,9 +385,7 @@
                     "关于这个项目",
                     "background-color: #FF4351; color:#fff;",
                   ],
-                  content: `
-                  <canvas id="live2d" width="200" height="200" class="live2d" style="position: fixed;     top: 25%;right: 50%; opacity: 1; z-index: 99999; pointer-events: none;"></canvas>
-                  <table width="100%" border="0">
+                  content: `<table width="100%" border="0">
   <tr>
   <td style="width:80%;vertical-align:top;">
     <h1 align="center">
@@ -432,8 +426,7 @@
   <img src="https://img.shields.io/github/license/Giftia/ChatDACS?label=%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF&style=for-the-badge" alt="License" />
   &nbsp;
   <img src="https://img.shields.io/github/languages/code-size/Giftia/ChatDACS?label=%E4%BB%A3%E7%A0%81%E5%A4%A7%E5%B0%8F&style=for-the-badge" alt="Code size" />
-</p>
-                  `,
+</p>`,
                 });
                 break;
               case "thanks":
@@ -600,7 +593,7 @@
             });
           });
 
-          //监听聊天窗口的切换，仅在小夜聊天轮播placeholder
+          //监听聊天窗口的切换
           layim.on("chatChange", function (data) {
             const text = document.getElementsByTagName("input")[0],
               btn = document.getElementsByTagName("button")[0],
@@ -623,6 +616,7 @@
               socket.emit("typingOver");
             };
 
+            //仅在小夜聊天轮播placeholder
             if (data.data.id == "101") {
               superplaceholder({
                 el: document.querySelector("input"),
@@ -647,6 +641,11 @@
             }
           });
         });
+
+      function switchLive2DVisible() {
+        const live2d = document.getElementById("live2d");
+        live2d.style.visibility = live2d.style.visibility == "hidden" ? "visible" : "hidden";
+      };
     </script>
   </body>
 
