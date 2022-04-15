@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "搜图插件", //插件名，仅在插件加载时展示
-  指令: ".*来点(好.*的.*|坏的.*)", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.3", //插件版本，仅在插件加载时展示
+  指令: "来点(好.*的.*|坏的.*)", //指令触发关键词，可使用正则表达式匹配
+  版本: "1.4", //插件版本，仅在插件加载时展示
   作者: "Giftina", //插件作者，仅在插件加载时展示
   描述: "搜索指定的tag图片，图片来源api.lolicon.app", //插件说明，仅在插件加载时展示
 
@@ -10,13 +10,15 @@ module.exports = {
 
     if (CONNECT_GO_CQHTTP_SWITCH) {
       axios(
-        `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=120243247&message=${encodeURI(
+        `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI(
           `你等等，我去找找你要的${tag}`,
         )}`);
     }
 
     const searchTag = tag.match("的") ? tag.match("的")[1] : tag;
     const searchType = !!tag.match("坏的");
+
+    console.log(`搜索 r18 ${searchType} tag：${tag}`.log);
 
     const tagPictureFile = await SearchTag(searchTag, searchType);
     if (!tagPictureFile) {
@@ -39,23 +41,23 @@ function SearchTag(tag, type) {
     request(`https://api.lolicon.app/setu/v2?r18=${type}&size=regular&tag=${encodeURI(tag)}`, (err, _response, body) => {
       body = JSON.parse(body);
       if (!err && body.data[0] != null) {
-        var picUrl = body.data[0].urls.regular;
+        const picUrl = body.data[0].urls.regular.replace("pixiv.cat", "pixiv.re");
         console.log(`发送tag图片：${picUrl}`.log);
         request(picUrl, (err) => {
           if (err) {
-            reject(`${tag}的色图太大了，下不下来`);
+            reject(`${tag}太大了，下不下来`);
           }
         }).pipe(
           fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (err) => {
             if (!err) {
               resolve(`/images/${picUrl.split("/").pop()}`);
             } else {
-              reject(`${tag}的色图太大了，下不下来`);
+              reject(`${tag}太大了，下不下来`);
             }
           })
         ); //绕过防盗链，保存为本地图片
       } else {
-        reject(`找不到${tag}的色图`);
+        reject(`找不到${tag}`);
       }
     });
   });
