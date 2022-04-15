@@ -14,7 +14,7 @@ if (_cn_reg.test(`${process.cwd()}`)) {
   cp.exec(`msg %username% ${warnMessage}`);
 }
 
-const version = "ChatDACS v3.3.3"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS v3.3.4"; //版本号，会显示在浏览器tab与标题栏
 const utils = require("./plugins/system/utils.js"); //载入系统通用模块
 const compression = require("compression"); //用于gzip压缩
 const express = require("express"); //轻巧的express框架
@@ -29,7 +29,6 @@ const cookie = require("cookie");
 const http = require("http").Server(app);
 const io = require("socket.io")(http);
 const request = require("request");
-const axios = require("axios").default;
 const sqlite3 = require("sqlite3").verbose();
 const db = new sqlite3.Database("./db.db"); //数据库位置，默认与index.js同目录
 const colors = require("colors");
@@ -207,8 +206,7 @@ io.on("connection", (socket) => {
     .GetUserData(CID)
     .then(([nickname, logintimes, lastlogintime]) => {
       console.log(
-        `${utils.Curentyyyymmdd() + utils.CurentTime()
-          }用户 ${nickname}(${CID}) 已连接`.log,
+        `${utils.Curentyyyymmdd() + utils.CurentTime()}用户 ${nickname}(${CID}) 已连接`.log,
       );
 
       //更新登录次数
@@ -235,8 +233,7 @@ io.on("connection", (socket) => {
         `utils.GetUserData(): rejected, and err:${reject}`.error,
       );
       console.log(
-        `${utils.Curentyyyymmdd() + utils.CurentTime()
-          }新用户 ${CID} 已连接`.log,
+        `${utils.Curentyyyymmdd() + utils.CurentTime()}新用户 ${CID} 已连接`.log,
       );
       utils
         .RandomNickname()
@@ -275,8 +272,7 @@ io.on("connection", (socket) => {
     onlineUsers--;
     io.emit("onlineUsers", onlineUsers);
     console.log(
-      `${utils.Curentyyyymmdd()}${utils.CurentTime()} 用户 ${socket.username
-        } 已断开连接`.log,
+      `${utils.Curentyyyymmdd()}${utils.CurentTime()} 用户 ${socket.username} 已断开连接`.log,
     );
     io.emit("system", "@用户 " + socket.username + " 已断开连接");
   });
@@ -3066,8 +3062,7 @@ app.post("/upload/file", upload.single("file"), function (req, _res, _next) {
   const isVideo = new RegExp("^video*");
   const isAudio = new RegExp("^audio*");
   const file = {
-    file: `/uploads/${req.file.filename}${path.parse(req.file.originalname).ext
-      }`,
+    file: `/uploads/${req.file.filename}${path.parse(req.file.originalname).ext}`,
     filename: req.file.originalname,
   };
   if (isVideo.test(req.file.mimetype)) {
@@ -3495,8 +3490,7 @@ function ECYWenDa() {
           let rand_word_num = Math.floor(Math.random() * msg.length);
           let answer = msg[rand_word_num].word;
           console.log(
-            `原句为: ${body.text}，随机切去第 ${rand_word_num + 1
-              } 个关键词 ${answer} 作为答案`.log,
+            `原句为: ${body.text}，随机切去第 ${rand_word_num + 1} 个关键词 ${answer} 作为答案`.log,
           );
           let quest = body.text.replace(answer, "________");
           resolve({ quest: quest, result: answer });
