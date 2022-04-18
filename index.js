@@ -14,7 +14,7 @@ if (_cn_reg.test(`${process.cwd()}`)) {
   cp.exec(`msg %username% ${warnMessage}`);
 }
 
-const version = "ChatDACS v3.3.4"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS v3.3.5"; //版本号，会显示在浏览器tab与标题栏
 const utils = require("./plugins/system/utils.js"); //载入系统通用模块
 const compression = require("compression"); //用于gzip压缩
 const express = require("express"); //轻巧的express框架
@@ -150,6 +150,7 @@ var onlineUsers = 0, //预定义
   QQBOT_MAX_MINE_AT_MOST,
   xiaoye_ated,
   QQBOT_PRIVATE_CHAT_SWITCH,
+  AUTO_APPROVE_QQ_FRIEND_REQUEST_SWITCH,
   c1c_count = 0;
 
 //web端配置
@@ -371,10 +372,10 @@ function start_qqbot() {
       return 0;
     }
 
-    //自动同意好友请求
+    //添加好友请求
     if (req.body.request_type == "friend") {
-      console.log(`自动同意了 ${req.body.user_id} 好友请求`.log);
-      res.send({ approve: 1 });
+      console.log(`${req.body.user_id} 请求添加好友，按配置自动处理`.log);
+      res.send({ approve: AUTO_APPROVE_QQ_FRIEND_REQUEST_SWITCH });
       return 0;
     }
 
@@ -3133,6 +3134,7 @@ async function InitConfig() {
 
   QQBOT_QQ = resolve.qqBot.QQBOT_QQ; //qqBot使用的qq帐号
   QQBOT_ADMIN_LIST = resolve.qqBot.QQBOT_ADMIN_LIST; //qqBot小夜的管理员列表
+  AUTO_APPROVE_QQ_FRIEND_REQUEST_SWITCH = resolve.qqBot.AUTO_APPROVE_QQ_FRIEND_REQUEST_SWITCH ?? false; //自动批准好友请求开关
   QQBOT_PRIVATE_CHAT_SWITCH = resolve.qqBot.QQBOT_PRIVATE_CHAT_SWITCH; //私聊开关
   CHAT_JIEBA_LIMIT = resolve.qqBot.CHAT_JIEBA_LIMIT; //qqBot限制分词数量
   QQBOT_REPLY_PROBABILITY = resolve.qqBot.QQBOT_REPLY_PROBABILITY; //回复几率
