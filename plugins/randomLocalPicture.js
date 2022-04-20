@@ -1,17 +1,17 @@
 module.exports = {
   插件名: "本地随机图插件", //插件名，仅在插件加载时展示
   指令: "[让给]我[看康]{1,3}", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.0", //插件版本，仅在插件加载时展示
+  版本: "1.1", //插件版本，仅在插件加载时展示
   作者: "Giftina", //插件作者，仅在插件加载时展示
   描述: "从本地图片文件夹随机发送图片，默认使用其他插件自动下载保存的图库文件夹", //插件说明，仅在插件加载时展示
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
-    const url = `/images/${await RandomLocalPicture()}`;
-    return { type: "picture", content: { file: url } };
+    const url = `${图片文件夹}${await RandomLocalPicture()}`;
+    return { type: "directPicture", content: { file: url } };
   },
 };
 
-const 图片文件夹 = "./static/images"; //修改为自己的图库文件夹，绝对路径和相对路径都可以，绝对路径类似 D:\\色图\\贫乳\\ ，记得要像这样 \\ 多加一个反斜杠
+const 图片文件夹 = "./static/images/"; //修改为自己的图库文件夹，绝对路径和相对路径都可以，绝对路径类似 D:\\色图\\贫乳\\ ，记得要像这样 \\ 多加一个反斜杠
 const path = require("path");
 const fs = require("fs");
 
