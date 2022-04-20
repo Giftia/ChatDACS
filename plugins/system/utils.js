@@ -1,6 +1,6 @@
 module.exports = {
   name: "工具类",
-  version: "1.7",
+  version: "1.8",
   details: "各种公用函数和系统底层函数",
 
   //年月日
@@ -110,6 +110,7 @@ module.exports = {
     }
     const styleMap = {
       picture: `img[${answer.content?.file}]`,
+      directPicture: `img[${answer.content?.file}]`,
       audio: `audio[${answer.content?.file}](${answer.content?.filename})`,
       video: `video[${answer.content?.file}](${answer.content?.filename})`,
       file: `file(${answer.content?.file})[${answer.content?.filename}]`,
@@ -124,6 +125,7 @@ module.exports = {
     }
     const styleMap = {
       picture: `[CQ:image,file=${answer.content?.file.indexOf("http") === -1 ? `http://127.0.0.1:${WEB_PORT}${answer.content?.file}` : answer.content?.file}]`,
+      directPicture: `[CQ:image,file=${url.pathToFileURL(path.resolve(answer.content?.file))}]`,
       audio: `[CQ:record,file=http://127.0.0.1:${WEB_PORT}${answer.content?.file}]`,
       video: `[CQ:video,file=http://127.0.0.1:${WEB_PORT}${answer.content?.file}]`,
     };
@@ -136,6 +138,7 @@ const request = require("request");
 const fs = require("fs");
 const path = require("path");
 const yaml = require("yaml"); //使用yaml解析配置文件
+const url = require("url");
 let WEB_PORT, TIAN_XING_API_KEY;
 
 Init();
@@ -143,7 +146,7 @@ Init();
 //读取配置文件
 function ReadConfig() {
   return new Promise((resolve, reject) => {
-    fs.readFile(path.join(`${process.cwd()}`, "config", "config.yml"), "utf-8", function (err, data) {
+    fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", function (err, data) {
       if (!err) {
         resolve(yaml.parse(data));
       } else {
