@@ -7,7 +7,7 @@ module.exports = {
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
     const plugins = require.all({
-      dir: path.join(`${process.cwd()}`, "plugins"),
+      dir: path.join(process.cwd(), "plugins"),
       match: /.*\.js/,
       require: /\.(js)$/,
       recursive: false,

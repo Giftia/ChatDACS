@@ -1,11 +1,14 @@
 module.exports = {
   插件名: "淘宝买家秀色图插件", //插件名，仅在插件加载时展示
   指令: "买家秀|福利姬", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.6", //插件版本，仅在插件加载时展示
+  版本: "1.7", //插件版本，仅在插件加载时展示
   作者: "Giftina", //插件作者，仅在插件加载时展示
   描述: "在危险限度的尺度下发送一张非法的淘宝买家秀色图", //插件说明，仅在插件加载时展示
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
+    if (!SUMT_API_KEY) {
+      return { type: "text", content: "SUMT_API_KEY未配置，请在 config/config.yml 中配置SUMT_API_KEY" };
+    }
     const setu_file = await RandomTbShow() ?? "";
     const setu_file_url = `${setu_file}`;
     return { type: "picture", content: { file: setu_file_url } };
@@ -23,7 +26,7 @@ Init();
 //读取配置文件
 function ReadConfig() {
   return new Promise((resolve, reject) => {
-    fs.readFile(path.join(`${process.cwd()}`, "config", "config.yml"), "utf-8", function (err, data) {
+    fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", function (err, data) {
       if (!err) {
         resolve(yaml.parse(data));
       } else {

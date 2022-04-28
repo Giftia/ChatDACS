@@ -1,12 +1,12 @@
 module.exports = {
   插件名: "搜图插件", //插件名，仅在插件加载时展示
-  指令: "来点(好.*的.*|坏的.*)", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.4", //插件版本，仅在插件加载时展示
+  指令: "来点(好.*的.*|坏的.*)|来点.*", //指令触发关键词，可使用正则表达式匹配
+  版本: "1.5", //插件版本，仅在插件加载时展示
   作者: "Giftina", //插件作者，仅在插件加载时展示
   描述: "搜索指定的tag图片，图片来源api.lolicon.app", //插件说明，仅在插件加载时展示
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
-    const tag = new RegExp(module.exports.指令).exec(msg)[1];
+    const tag = new RegExp(module.exports.指令).exec(msg)[1] ?? msg.split("来点")[1] ?? "";
 
     if (CONNECT_GO_CQHTTP_SWITCH) {
       axios(
@@ -15,16 +15,17 @@ module.exports = {
         )}`);
     }
 
-    const searchTag = tag.match("的") ? tag.match("的")[1] : tag;
+    const searchTag = tag.split("的")[1] ?? tag;
     const searchType = !!tag.match("坏的");
 
-    console.log(`搜索 r18 ${searchType} tag：${tag}`.log);
+    console.log(`搜索 ${searchType ? "r18" : "正常"} tag：${searchTag}`.log);
 
-    const tagPictureFile = await SearchTag(searchTag, searchType);
-    if (!tagPictureFile) {
-      return { type: "text", content: `你要的${tag}发送失败啦` };
+    try {
+      const tagPictureFile = await SearchTag(searchTag, searchType);
+      return { type: "picture", content: { file: tagPictureFile } };
+    } catch (error) {
+      return { type: "text", content: `你要的${tag}发送失败啦：${error}` };
     }
-    return { type: "picture", content: { file: tagPictureFile } };
   },
 };
 
@@ -38,11 +39,11 @@ let GO_CQHTTP_SERVICE_API_URL, CONNECT_GO_CQHTTP_SWITCH;
 //搜索tag
 function SearchTag(tag, type) {
   return new Promise((resolve, reject) => {
-    request(`https://api.lolicon.app/setu/v2?r18=${type}&size=regular&tag=${encodeURI(tag)}`, (err, _response, body) => {
+    request(`https://api.lolicon.app/setu/v2?r18=${type}&size=original&tag=${encodeURI(tag)}`, (err, _response, body) => {
       body = JSON.parse(body);
       if (!err && body.data[0] != null) {
-        const picUrl = body.data[0].urls.regular.replace("pixiv.cat", "pixiv.re");
-        console.log(`发送tag图片：${picUrl}`.log);
+        const picUrl = body.data[0].urls.original.replace("pixiv.cat", "pixiv.re");
+        console.log(`发送 ${tag} 图片：${picUrl}`.log);
         request(picUrl, (err) => {
           if (err) {
             reject(`${tag}太大了，下不下来`);
@@ -68,7 +69,7 @@ Init();
 //读取配置文件
 function ReadConfig() {
   return new Promise((resolve, reject) => {
-    fs.readFile(path.join(`${process.cwd()}`, "config", "config.yml"), "utf-8", function (err, data) {
+    fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", function (err, data) {
       if (!err) {
         resolve(yaml.parse(data));
       } else {

@@ -1,6 +1,6 @@
 module.exports = {
   name: "工具类",
-  version: "1.8",
+  version: "1.9",
   details: "各种公用函数和系统底层函数",
 
   //年月日
@@ -130,6 +130,26 @@ module.exports = {
       video: `[CQ:video,file=http://127.0.0.1:${WEB_PORT}${answer.content?.file}]`,
     };
     return styleMap[answer.type];
+  },
+
+  //保存qq侧传来的图
+  SaveQQimg(imgUrl) {
+    return new Promise((resolve, reject) => {
+      request(imgUrl[0]).pipe(
+        fs.createWriteStream(
+          `./static/xiaoye/images/${imgUrl[0].split("/")[imgUrl[0].split("/").length - 2]
+          }.jpg`,
+        ).on("close", (err) => {
+          if (!err) {
+            resolve(
+              `/xiaoye/images/${imgUrl[0].split("/")[imgUrl[0].split("/").length - 2]}.jpg`,
+            );
+          } else {
+            reject("保存qq侧传来的图错误。错误原因: " + err);
+          }
+        }),
+      );
+    });
   },
 
 };

@@ -66,9 +66,9 @@
 
 ## ✔ 功能介绍 Orders
 
-- 基础功能（默认设定 聊天回复率 1%，随机复读率 1%，突然抽风率 0‰）
+- 基础功能（默认设定 聊天回复率 1%，随机复读率 1%）
 
-  - [x] 在群里随便聊天吧~小夜会随时准备好嘴臭的！还有概率会随机复读和抽风噢。在@小夜的时候回复几率会提高。
+  - [x] 在群里随便聊天吧~小夜会随时准备好嘴臭的！还有概率会随机复读噢。在@小夜的时候回复几率会提高。
   - [x] `戳一戳`
     - 戳一戳小夜有利于身心健康。
   - [x] `/ping`
@@ -103,10 +103,6 @@
       - 使用例：`/吠 太好听了吧啊，你唱歌真的好嗷好听啊，简直就是天岸籁，我刚才听到你唱歌了，我们以后一起唱好不好，一起唱昂，一起做学园偶像昂`
   - [x] `/嘴臭 对话`
     - 小夜会通过语音来回应你的对话噢，还是要注意指令和对话之间要有个空格。
-  - [x] `/舔我`
-    - 让小夜化身舔狗，舔你一口
-  - [x] `/彩虹屁`
-    - 让小夜放个彩虹屁
   - [x] `/prpr 想pr的人`
     - 让小夜帮你舔 ta 吧
   - [x] `/今日不带套`
@@ -244,6 +240,7 @@ npm pkg
 
 | 用户名             |      金额/人民币      | 留言：                                                                                                                                                                                |
 | ------------------ | :-------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 爱发电用户_8AP6    |          30           |                                                                                                                                                                                       |
 | 可莉               |   15 请我喝3杯奶茶    |                                                                                                                                                                                       |
 | 缤瑶               | 170 小夜挂件立牌 * 10 | 加油喔！                                                                                                                                                                              |
 | 卖萌傲娇萝莉赛高   |          50           | 夜爹真心对不住，我有个群友手贱举报了，把夜爹封了，已经踢出群了，赞助一下就当赎罪券了                                                                                                  |
@@ -288,7 +285,7 @@ npm pkg
 | 余薪               |          10           | 不知道做不做得出 ai 思考性行为...                                                                                                                                                     |
 | 爱发电用户\_qr83   |          10           | xxxx)hhjjiskejeududnn3kssioskwnssj                                                                                                                                                    |
 
-对本项目提供帮助的致谢名单（排名不分先后）：https://niconi.co.ni/ 、 https://www.layui.com/ 、 https://lceda.cn/ 、 https://www.dnspod.cn/ 、 Daisy_Liu 、 http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html 、 https://ihateregex.io/ 、 https://www.maoken.com/ 、 https://www.ngrok.cc/ 、 https://uptimerobot.com/ 、 https://shields.io/ 、 https://ctf.bugku.com/ 、 https://blog.squix.org/ 、 https://hostker.com/ 、 https://www.tianapi.com/ 、 https://api.sumt.cn/ 、 https://github.com/Mrs4s/go-cqhttp 、 https://colorhunt.co/ 、 https://github.com/ 、 https://gitee.com/ 、 https://github.com/windrises/dialogue.moe 、 https://api.oddfar.com/ 、 https://github.com/ssp97 、https://github.com/mxh-mini-apps/mxh-cp-stories 、https://github.com/Sora233/DDBOT 、 还有我的朋友们，以及倾心分享知识的各位
+对本项目提供帮助的致谢名单（排名不分先后）：https://niconi.co.ni/ 、 https://www.layuion.com/ 、 https://lceda.cn/ 、 https://www.dnspod.cn/ 、 Daisy_Liu 、 http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html 、 https://ihateregex.io/ 、 https://www.maoken.com/ 、 https://www.ngrok.cc/ 、 https://uptimerobot.com/ 、 https://shields.io/ 、 https://ctf.bugku.com/ 、 https://blog.squix.org/ 、 https://hostker.com/ 、 https://www.tianapi.com/ 、 https://api.sumt.cn/ 、 https://github.com/Mrs4s/go-cqhttp 、 https://colorhunt.co/ 、 https://github.com/ 、 https://gitee.com/ 、 https://github.com/windrises/dialogue.moe 、 https://api.oddfar.com/ 、 https://github.com/ssp97 、https://github.com/mxh-mini-apps/mxh-cp-stories 、https://github.com/Sora233/DDBOT 、 还有我的朋友们，以及倾心分享知识的各位
 
 ---
 
