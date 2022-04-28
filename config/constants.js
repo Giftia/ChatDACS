@@ -4,7 +4,7 @@ module.exports = Object.freeze({
   isImage_reg: new RegExp("\\[CQ:image,file:"), //匹配qqBot图片
   change_reply_probability_reg: new RegExp("^/回复率 [0-9]*"), //匹配修改qqBot小夜回复率
   change_fudu_probability_reg: new RegExp("^/复读率 [0-9]*"), //匹配修改qqBot小夜复读率
-  img_url_reg: new RegExp("https(.*term:)"), //匹配图片地址
+  img_url_reg: new RegExp("https(.*term=3)"), //匹配图片地址
   isVideo_reg: new RegExp("^\\[CQ:video,file:"), //匹配qqBot图片
   video_url_reg: new RegExp("http(.*term:unknow)"), //匹配视频地址
   come_yap_reg: new RegExp("^/嘴臭(.*)"), //匹配对话语音
