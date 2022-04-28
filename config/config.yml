@@ -55,13 +55,6 @@ qqBot:
   #qqBot小夜复读几率，单位是%，可通过 /admin_change_fudu_probability 指令更改:
   QQBOT_FUDU_PROBABILITY: 1
 
-  #qqBot小夜抽风几率，随机抽风舔狗，单位是‰:
-  QQBOT_CHAOS_PROBABILITY: 0
-
-  #今日不带套指令列表:
-  QQBOT_ORDER_LIST_NO_TRAP:
-    ["今日不带套", "今日不戴套", "今天不带套", "今天不戴套"]
-
   #qq侧接收到的图片保存与转发开关，虽然经常可以收到一些好康的图，但是非常占硬盘空间:
   QQBOT_SAVE_ALL_IMAGE_TO_LOCAL_SWITCH: false
 
@@ -179,4 +172,4 @@ qqBot:
 #杂项配置
 Others:
   #哔哩哔哩直播间id:
-  BILIBILI_LIVE_ROOM_ID: 49148
+  BILIBILI_LIVE_ROOM_ID: 24230873

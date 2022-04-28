@@ -36,6 +36,8 @@ jobs:
           npm i sqlite3
           npm i require.all
           npm i axios
+          npm i trayicon
+          npm i canvas
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3

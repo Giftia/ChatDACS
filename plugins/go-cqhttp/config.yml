@@ -1,8 +1,8 @@
-# go-cqhttp 配置文件，适配ChatDACS，只需修改第4、5行的qq和密码即可，开箱即用
+# go-cqhttp 配置文件，适配ChatDACS,默认扫码登陆，若想持久化使用只需修改第4、5行的qq和密码即可，开箱即用
 
 account: # 账号相关
   uin: 1648468212 # QQ账号
-  password: "请在这里输入qq密码" # 密码为空时使用扫码登录
+  password: "" # 密码为空时使用扫码登录
   encrypt: false # 是否开启密码加密
   status: 0 # 在线状态 请参考 https://docs.go-cqhttp.org/guide/config.html#在线状态
   relogin: # 重连设置

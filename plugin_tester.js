@@ -26,7 +26,7 @@ colors.setTheme({
 console.log("插件测试器 v1.3，用于快速验证插件功能".alert);
 console.log("开始加载插件……".log);
 let plugins = require.all({
-  dir: path.join(`${process.cwd()}`, "plugins"),
+  dir: path.join(process.cwd(), "plugins"),
   match: /.*\.js/,
   require: /\.(js)$/,
   recursive: false,
