@@ -18,7 +18,7 @@ if (_cn_reg.test(process.cwd())) {
 /**
  * 声明依赖与配置
  */
-const version = "ChatDACS v3.4.0"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS v3.4.1"; //版本号，会显示在浏览器tab与标题栏
 const utils = require("./plugins/system/utils.js"); //载入系统通用模块
 const compression = require("compression"); //用于gzip压缩
 const express = require("express"); //轻巧的express框架
@@ -2995,26 +2995,28 @@ function Talents10x(talents) {
 
 //插件系统核心
 async function ProcessExecute(msg, userId, userName, groupId, groupName, option) {
-  let returnResult = "";
+  let pluginReturn = "";
   for (const i in plugins) {
     const reg = new RegExp(plugins[i].指令);
     if (reg.test(msg)) {
       try {
-        returnResult = await plugins[i].execute(msg, userId, userName, groupId, groupName, option);
+        pluginReturn = await plugins[i].execute(msg, userId, userName, groupId, groupName, option);
       } catch (e) {
         logger.error(
           `插件 ${plugins[i].插件名} ${plugins[i].版本} 爆炸啦: ${e.stack}`.error,
         );
         return `插件 ${plugins[i].插件名} ${plugins[i].版本} 爆炸啦: ${e.stack}`;
       }
-      logger.info(
-        `插件 ${plugins[i].插件名} ${plugins[i].版本} 响应了消息：`.log,
-      );
-      logger.info(JSON.stringify(returnResult).log);
-      return returnResult;
+      if (pluginReturn) {
+        logger.info(
+          `插件 ${plugins[i].插件名} ${plugins[i].版本} 响应了消息：`.log,
+        );
+        logger.info(JSON.stringify(pluginReturn).log);
+        return pluginReturn;
+      }
     }
   }
-  return returnResult;
+  return pluginReturn;
 }
 
 /**
