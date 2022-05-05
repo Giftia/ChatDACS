@@ -1,9 +1,9 @@
 module.exports = {
   插件名: "状态栏提示插件", //插件名，仅在插件加载时展示
   指令: "^/notify (.*)", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.0", //插件版本，仅在插件加载时展示
+  版本: "1.1", //插件版本，仅在插件加载时展示
   作者: "Giftina", //插件作者，仅在插件加载时展示
-  描述: "自动在任务栏显示一个托盘，可用于消息通知", //插件说明，仅在插件加载时展示
+  描述: "自动在任务栏显示一个常驻托盘，可用于弹出消息通知", //插件说明，仅在插件加载时展示
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
     if (process.platform === "win32") {
@@ -18,6 +18,7 @@ module.exports = {
 const trayicon = require("trayicon");
 const path = require("path");
 const fs = require("fs");
+const ChildProcess = require("child_process");
 
 const icon = path.resolve(__dirname, "..", "static", "favicon.ico");
 let tray;
@@ -32,9 +33,12 @@ async function runTray() {
   });
 
   const openConfigFile = newTray.item("打开配置文件", async () => {
-    const configFile = path.join(`${process.cwd()}`, "config", "config.ylm");
+    const configFile = path.join(`${process.cwd()}`, "config", "config.yml");
     if (fs.existsSync(configFile)) {
       console.log(`打开配置文件：${configFile}`);
+      ChildProcess.exec(`notepad ${configFile}`, {
+        cwd: path.join(process.cwd(), "config")
+      });
     } else {
       newTray.notify("配置文件不存在", "是不是哪里出问题了, 建议重开");
     }

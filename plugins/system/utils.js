@@ -1,6 +1,6 @@
 module.exports = {
   name: "工具类",
-  version: "1.9",
+  version: "1.10",
   details: "各种公用函数和系统底层函数",
 
   //年月日
@@ -62,28 +62,17 @@ module.exports = {
     });
   },
 
-  //自动随机昵称
+  //自动随机昵称，若没有成功随机到昵称则默认昵称为 匿名
   async RandomNickname() {
     return new Promise((resolve, reject) => {
       request(
         `http://api.tianapi.com/txapi/cname/index?key=${TIAN_XING_API_KEY}`,
         (err, response, body) => {
           body = JSON.parse(body);
-          if (!err) {
-            try {
-              body.newslist[0].naming;
-            } catch (err) {
-              reject(
-                "获取随机昵称错误，是天行接口的锅，可能是您还没有配置密钥，这条错误可以无视，不影响正常使用。错误原因：" +
-                JSON.stringify(response.body),
-              );
-            }
+          if (!err && body.code == 200) {
             resolve(body.newslist[0].naming);
           } else {
-            reject(
-              "获取随机昵称错误，是天行接口的锅。错误原因：" +
-              JSON.stringify(response.body),
-            );
+            resolve("匿名");
           }
         },
       );
