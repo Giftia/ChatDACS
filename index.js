@@ -18,7 +18,7 @@ if (_cn_reg.test(process.cwd())) {
 /**
  * 声明依赖与配置
  */
-const version = "ChatDACS v3.4.1"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS v3.4.2"; //版本号，会显示在浏览器tab与标题栏
 const utils = require("./plugins/system/utils.js"); //载入系统通用模块
 const compression = require("compression"); //用于gzip压缩
 const express = require("express"); //轻巧的express框架
@@ -53,6 +53,7 @@ const yaml = require("yaml"); //使用yaml解析配置文件
 const voicePlayer = require("play-sound")({
   player: path.join(process.cwd(), "plugins", "cmdmp3win.exe"),
 }); //mp3静默播放工具，用于直播时播放语音
+const ipTranslator = require("lib-qqwry")(true); //lib-qqwry是一个高效纯真IP库(qqwry.dat)引擎，传参 true 是将IP库文件读入内存中以提升效率
 
 /**
  * 中文分词器
@@ -149,13 +150,11 @@ process.on("unhandledRejection", (err) => {
  * 系统配置和开关，以及固定变量
  */
 const Constants = require("./config/constants.js");
-const { YAMLError } = require("yaml/util");
 const help =
   "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏往右拖动还有更多功能。";
 var boomTimer; //60s计时器
 var onlineUsers = 0, //预定义
   QQBOT_QQ,
-  CHAT_BAN_WORDS,
   QQBOT_ADMIN_LIST,
   BILIBILI_LIVE_ROOM_ID,
   CHAT_SWITCH,
@@ -207,15 +206,22 @@ io.on("connection", (socket) => {
     socket.emit("getCookie");
     return 0;
   }
+
+  //获取地理位置
+  const ip = socket.handshake.headers["x-forwarded-for"] ? socket.handshake.headers["x-forwarded-for"]?.split("::ffff:")[1] : socket.handshake.address.split("::ffff:")[1];
+  const location = ipTranslator.searchIP(ip).Country;
+
   socket.emit("version", version);
   io.emit("onlineUsers", ++onlineUsers);
 
   //开始获取用户信息并处理
   utils
     .GetUserData(CID)
-    .then(([nickname, logintimes, lastlogintime]) => {
+    .then(([nickname, loginTimes, lastLoginTime]) => {
+      socket.username = `${nickname}[来自${location}]`;
+
       logger.info(
-        `web端用户 ${nickname}(${CID}) 已经连接，登录次数 ${logintimes}，上次登录时间 ${lastlogintime}`.log,
+        `web端用户 ${nickname}(${CID}) 已经连接，登录次数 ${loginTimes}，上次登录时间 ${lastLoginTime}`.log,
       );
 
       //更新登录次数
@@ -228,53 +234,33 @@ io.on("connection", (socket) => {
         `UPDATE users SET lastlogintime = '${utils.Curentyyyymmdd()}${utils.CurentTime()}' WHERE CID ='${CID}'`,
       );
 
-      socket.username = nickname;
-
       io.emit(
         "system",
-        `@欢迎回来，${socket.username}(${CID}) 。这是你第${logintimes}次访问。上次访问时间: ${lastlogintime}`,
+        `@欢迎回来，${socket.username}(${CID}) 。这是你第${loginTimes}次访问。上次访问时间: ${lastLoginTime}`,
       );
     })
     //若无法获取该用户信息，则应该是其第一次访问，接下来是新增用户操作:
-    .catch((_reject) => {
+    .catch(async (_reject) => {
       const CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
-      logger.error(
-        `web端用户 ${CID} 第一次访问，正在新增用户……`.log,
-      );
+      const randomNickname = await utils.RandomNickname();
+      socket.username = `${randomNickname}[来自${location}]`;
+
       logger.info(
-        `web端新用户 ${CID} 已经连接`.log,
+        `web端用户 ${socket.username}(${CID}) 第一次访问，新增该用户`.log,
       );
-      utils
-        .RandomNickname()
-        .then((resolve) => {
-          db.run(
-            `INSERT INTO users VALUES('${resolve}', '${CID}', '2', '${utils.Curentyyyymmdd()}${utils.CurentTime()}')`,
-          );
-          socket.username = resolve;
-          io.emit(
-            "system",
-            `@新用户 ${CID} 已连接。小夜帮你取了一个随机昵称: 「${socket.username}」，请前往 更多-设置 来更改昵称`,
-          );
-          socket.emit("message", {
-            CID: "0",
-            msg: help,
-          });
-        })
-        .catch((reject) => {
-          logger.error(`随机昵称错误: ${reject}`.error);
-          db.run(
-            `INSERT INTO users VALUES('匿名', '${CID}', '2', '${utils.Curentyyyymmdd()}${utils.CurentTime()}')`,
-          );
-          socket.username = "匿名";
-          io.emit(
-            "system",
-            `@新用户 ${CID} 已连接。现在你的昵称是 匿名 噢，请前往 更多-设置 来更改昵称`,
-          );
-          socket.emit("message", {
-            CID: "0",
-            msg: help,
-          });
-        });
+
+      db.run(
+        `INSERT INTO users VALUES('${randomNickname}', '${CID}', '2', '${utils.Curentyyyymmdd()}${utils.CurentTime()}')`,
+      );
+
+      io.emit(
+        "system",
+        `@新用户 ${socket.username}(${CID}) 已连接。小夜帮你取了一个随机昵称: ${socket.username}，请前往 更多-设置 来更改昵称`,
+      );
+      socket.emit("message", {
+        CID: "0",
+        msg: help,
+      });
     });
 
   socket.on("disconnect", () => {
@@ -683,15 +669,7 @@ function start_qqbot() {
                   request(
                     `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id}&message=${encodeURI(
                       replyToQQ,
-                    )}`,
-                    function (error, _response, _body) {
-                      if (error) {
-                        logger.error(
-                          `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`
-                        );
-                      }
-                    },
-                  );
+                    )}`);
                 }
 
                 //戳一戳
@@ -1204,11 +1182,6 @@ ${final_talents}
                                 reply: `[CQ:image,file=${file_online},url=${file_online}]`,
                               });
                             });
-                          } else {
-                            console.log(
-                              `请求${GO_CQHTTP_SERVICE_API_URL}//get_group_member_info错误: ${error}`,
-                            );
-                            res.send({ reply: "日忒娘，怎么又出错了" });
                           }
                         },
                       );
@@ -1285,11 +1258,6 @@ ${final_talents}
                           res.send({
                             reply: "噢，该死，我的上帝啊，真是不敢相信，瞧瞧我发现了什么，我发誓我没有看错，这竟然是一颗出现率为千分之一的神圣手雷!我是说，这是一颗毁天灭地的神圣手雷啊!哈利路亚!麻烦管理员解除一下",
                           });
-                        } else {
-                          console.log(
-                            `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_whole_ban错误: ${error}`,
-                          );
-                          res.send({ reply: "日忒娘，怎么又出错了" });
                         }
                       },
                     );
@@ -1345,11 +1313,6 @@ ${final_talents}
                             res.send({
                               reply: `恭喜[CQ:at,qq=${who}]被[CQ:at,qq=${req.body.user_id}]丢出的手雷炸伤，造成了${boom_time}秒的伤害，祝你下次好运`,
                             });
-                          } else {
-                            console.log(
-                              `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_ban错误: ${error}`,
-                            );
-                            res.send({ reply: "日忒娘，怎么又出错了" });
                           }
                         },
                       );
@@ -1490,11 +1453,6 @@ ${final_talents}
                         res.send({
                           reply: `团长，团长你在做什么啊团长，团长!为什么要救他啊，哼，呃，啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊!!!团长救下了[CQ:at,qq=${who}]，但自己被炸飞了，休养生息${boom_time}秒!不要停下来啊!`,
                         });
-                      } else {
-                        console.log(
-                          `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_whole_ban错误: ${error}`,
-                        );
-                        res.send({ reply: "日忒娘，怎么又出错了" });
                       }
                     },
                   );
@@ -1507,11 +1465,6 @@ ${final_talents}
                         console.log(
                           `${req.body.user_id} 自己被炸伤${boom_time}秒`.log,
                         );
-                      } else {
-                        console.log(
-                          `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_whole_ban错误: ${error}`,
-                        );
-                        res.send({ reply: "日忒娘，怎么又出错了" });
                       }
                     },
                   );
@@ -1553,10 +1506,6 @@ ${final_talents}
                                   "system",
                                   `@群 ${req.body.group_id} 开始了击鼓传雷`,
                                 );
-                              } else {
-                                console.log(
-                                  `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
-                                );
                               }
                             },
                           );
@@ -1581,10 +1530,6 @@ ${final_talents}
                                 function (error, _response, _body) {
                                   if (!error) {
                                     console.log("击鼓传雷金手指已启动".log);
-                                  } else {
-                                    console.log(
-                                      `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_card错误: ${error}`,
-                                    );
                                   }
                                 },
                               );
@@ -1593,15 +1538,7 @@ ${final_talents}
                               setTimeout(function () {
                                 request(
                                   `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id
-                                  }&message=${encodeURI(question)}`,
-                                  function (error, _response, _body) {
-                                    if (error) {
-                                      console.log(
-                                        `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
-                                      );
-                                    }
-                                  },
-                                );
+                                  }&message=${encodeURI(question)}`);
                               }, 1000);
                             })
                             .catch((reject) => {
@@ -1643,10 +1580,6 @@ ${final_talents}
                                               console.log(
                                                 "击鼓传雷金手指已恢复".log,
                                               );
-                                            } else {
-                                              console.log(
-                                                `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_card错误: ${error}`,
-                                              );
                                             }
                                           },
                                         );
@@ -1661,10 +1594,6 @@ ${final_talents}
                                                 "system",
                                                 `@${sql[0].loop_bomb_owner} 在群 ${req.body.group_id} 回答超时，被炸伤${boom_time}秒`,
                                               );
-                                            } else {
-                                              console.log(
-                                                `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
-                                              );
                                             }
                                           },
                                         );
@@ -1673,10 +1602,6 @@ ${final_talents}
                                           `UPDATE qq_group SET loop_bomb_enabled = '0', loop_bomb_answer = '', loop_bomb_owner = '' , loop_bomb_start_time = '' WHERE group_id ='${req.body.group_id}'`,
                                         );
                                         return 0;
-                                      } else {
-                                        console.log(
-                                          `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_whole_ban错误: ${error}`,
-                                        );
                                       }
                                     },
                                   );
@@ -1727,10 +1652,6 @@ ${final_talents}
                                                 console.log(
                                                   "击鼓传雷金手指已恢复".log,
                                                 );
-                                              } else {
-                                                console.log(
-                                                  `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_card错误: ${error}`,
-                                                );
                                               }
                                             },
                                           );
@@ -1744,19 +1665,8 @@ ${final_talents}
                                                   `抢答了，${req.body.user_id} 被禁言`
                                                     .error,
                                                 );
-                                              } else {
-                                                console.log(
-                                                  `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_ban错误: ${error}`,
-                                                );
-                                                res.send({
-                                                  reply: "日忒娘，怎么又出错了",
-                                                });
                                               }
                                             },
-                                          );
-                                        } else {
-                                          console.log(
-                                            `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
                                           );
                                         }
                                       },
@@ -1771,10 +1681,6 @@ ${final_talents}
                                           console.log(
                                             "击鼓传雷金手指已启动".log,
                                           );
-                                        } else {
-                                          console.log(
-                                            `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_card错误: ${error}`,
-                                          );
                                         }
                                       },
                                     );
@@ -1787,10 +1693,6 @@ ${final_talents}
                                           io.emit(
                                             "system",
                                             `@${sql[0].loop_bomb_owner} 在群 ${req.body.group_id} 回答正确`,
-                                          );
-                                        } else {
-                                          console.log(
-                                            `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
                                           );
                                         }
                                       },
@@ -1849,10 +1751,6 @@ ${final_talents}
                                                             "击鼓传雷金手指已启动"
                                                               .log,
                                                           );
-                                                        } else {
-                                                          console.log(
-                                                            `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_card错误: ${error}`,
-                                                          );
                                                         }
                                                       },
                                                     );
@@ -1875,10 +1773,6 @@ ${final_talents}
                                                           io.emit(
                                                             "system",
                                                             `@群 ${req.body.group_id} 开始了下一轮击鼓传雷`,
-                                                          );
-                                                        } else {
-                                                          console.log(
-                                                            `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
                                                           );
                                                         }
                                                       },
@@ -1936,19 +1830,8 @@ ${final_talents}
                                                 `抢答了，${req.body.user_id} 被禁言`
                                                   .error,
                                               );
-                                            } else {
-                                              console.log(
-                                                `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_ban错误: ${error}`,
-                                              );
-                                              res.send({
-                                                reply: "日忒娘，怎么又出错了",
-                                              });
                                             }
                                           },
-                                        );
-                                      } else {
-                                        console.log(
-                                          `请求${GO_CQHTTP_SERVICE_API_URL}/send_group_msg错误: ${error}`,
                                         );
                                       }
                                     },
@@ -1965,10 +1848,6 @@ ${final_talents}
                                     function (error, _response, _body) {
                                       if (!error) {
                                         console.log("击鼓传雷金手指已启动".log);
-                                      } else {
-                                        console.log(
-                                          `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_card错误: ${error}`,
-                                        );
                                       }
                                     },
                                   );
@@ -1978,10 +1857,6 @@ ${final_talents}
                                     function (error, _response, _body) {
                                       if (!error) {
                                         console.log("击鼓传雷金手指已启动".log);
-                                      } else {
-                                        console.log(
-                                          `请求${GO_CQHTTP_SERVICE_API_URL}/set_group_card错误: ${error}`,
-                                        );
                                       }
                                     },
                                   );
@@ -2092,10 +1967,6 @@ ${final_talents}
                                       `群 ${req.body.group_id} 的 群员 ${req.body.user_id} 孤寡了 ${who}`
                                         .log,
                                     );
-                                  } else {
-                                    console.log(
-                                      `请求${GO_CQHTTP_SERVICE_API_URL}/send_private_msg错误: ${error}`,
-                                    );
                                   }
                                 },
                               );
@@ -2167,28 +2038,6 @@ ${final_talents}
                         res.send({
                           reply: `管理员启动了提醒任务，开始提醒停止服务的群启用小夜……${resolve}`,
                         });
-                      });
-                      return 0;
-                    }
-                  }
-                  res.send({
-                    reply: "你不是狗管理噢，不能让小夜这样那样的",
-                  });
-                  return 0;
-                }
-
-                //管理员功能: 执行sql
-                if (Constants.admin_reg.test(req.body.message)) {
-                  for (let i in QQBOT_ADMIN_LIST) {
-                    if (req.body.user_id == QQBOT_ADMIN_LIST[i]) {
-                      let admin_code = req.body.message.replace(
-                        "/admin sql ",
-                        "",
-                      );
-                      logger.info("管理员sql指令".log);
-                      db.run(admin_code);
-                      res.send({
-                        reply: "管理员sql指令执行完毕",
                       });
                       return 0;
                     }
@@ -2519,10 +2368,6 @@ function StartLive() {
 }
 
 /**
- * 接口功能和实现
- */
-
-/**
  * 更改web端个人资料接口
  */
 app.get("/profile", (req, res) => {
@@ -2612,7 +2457,6 @@ async function InitConfig() {
   QQBOT_FUDU_PROBABILITY = config.qqBot.QQBOT_FUDU_PROBABILITY; //复读几率
   QQBOT_SAVE_ALL_IMAGE_TO_LOCAL_SWITCH = config.qqBot.QQBOT_SAVE_ALL_IMAGE_TO_LOCAL_SWITCH; //保存接收图片开关
   QQBOT_MAX_MINE_AT_MOST = config.qqBot.QQBOT_MAX_MINE_AT_MOST; //最大共存地雷数
-  CHAT_BAN_WORDS = config.qqBot.CHAT_BAN_WORDS; //教学系统的黑名单
 
   BILIBILI_LIVE_ROOM_ID = config.Others.BILIBILI_LIVE_ROOM_ID ?? 49148; //哔哩哔哩直播间id
 
