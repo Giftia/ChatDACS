@@ -1,25 +1,23 @@
 module.exports = {
   name: "工具类",
-  version: "1.10",
+  version: "1.11",
   details: "各种公用函数和系统底层函数",
 
-  //年月日
-  Curentyyyymmdd() {
+  /**
+   * 年月日时分秒
+   * @returns {object} { YearMonthDay: "yyyy-mm-dd", Clock: "hh:mm:ss" }
+   */
+  GetTimes() {
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth() + 1;
     const day = now.getDate();
-    let yyyymmdd = year + "-";
-    if (month < 10) yyyymmdd += "0";
-    yyyymmdd += month + "-";
-    if (day < 10) yyyymmdd += "0";
-    yyyymmdd += day;
-    return yyyymmdd;
-  },
+    let yearMonthDay = year + "-";
+    if (month < 10) yearMonthDay += "0";
+    yearMonthDay += month + "-";
+    if (day < 10) yearMonthDay += "0";
+    yearMonthDay += day;
 
-  //时分秒
-  CurentTime() {
-    const now = new Date();
     const hh = now.getHours();
     const mm = now.getMinutes();
     const ss = now.getSeconds();
@@ -30,25 +28,31 @@ module.exports = {
     clock += mm + ":";
     if (ss < 10) clock += "0";
     clock += ss + " ";
-    return clock;
+
+    return { YearMonthDay: yearMonthDay, Clock: clock };
   },
 
-  //生成唯一文件名
+  /**
+   * 通过sha1生成唯一文件名
+   * @param {any} buf 
+   * @returns {string} "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   */
   sha1(buf) {
-    const crypto = require("crypto"); //编码库，用于modules.utils.sha1生成文件名
     return crypto.createHash("sha1").update(buf).digest("hex");
   },
 
-  //获取用户信息
+  /**
+   * 获取用户信息
+   * @param {string} CID 
+   * @returns {string[]} [ "nickname", "logintimes", "lastlogintime" ]
+   */
   async GetUserData(CID) {
-    const sqlite3 = require("sqlite3").verbose();
-    const db = new sqlite3.Database("db.db"); //数据库位置，默认与index.js同目录
     return new Promise((resolve, reject) => {
       db.all("SELECT * FROM users WHERE CID = '" + CID + "'", (err, sql) => {
         if (!err && sql[0]) {
-          let nickname = JSON.stringify(sql[0].nickname);
-          let logintimes = JSON.stringify(sql[0].logintimes);
-          let lastlogintime = JSON.stringify(sql[0].lastlogintime);
+          const nickname = JSON.stringify(sql[0].nickname);
+          const logintimes = JSON.stringify(sql[0].logintimes);
+          const lastlogintime = JSON.stringify(sql[0].lastlogintime);
           resolve([nickname, logintimes, lastlogintime]);
         } else {
           reject(
@@ -62,7 +66,10 @@ module.exports = {
     });
   },
 
-  //自动随机昵称，若没有成功随机到昵称则默认昵称为 匿名
+  /**
+   * 自动随机昵称，若没有成功随机到昵称则默认昵称为 匿名
+   * @returns {string} "昵称" ?? "匿名"
+   */
   async RandomNickname() {
     return new Promise((resolve, reject) => {
       request(
@@ -79,9 +86,12 @@ module.exports = {
     });
   },
 
-  //获取tts语音时长
+  /**
+   * 获取tts语音时长
+   * @param {buffer} dataBuffer 
+   * @returns {number} "xxx"(单位为毫秒)
+   */
   getMP3Duration(dataBuffer) {
-    const mp3Duration = require("mp3-duration");
     return new Promise((resolve, reject) => {
       mp3Duration(dataBuffer, function (err, duration) {
         if (err) {
@@ -92,7 +102,11 @@ module.exports = {
     });
   },
 
-  //将插件回复转为前端能解析的格式
+  /**
+   * 将插件回复转为web前端能解析的格式
+   * @param {string} answer 
+   * @returns {object} { type: "picture | directPicture | audio | video | file", content: "内容" }
+   */
   PluginAnswerToWebStyle(answer) {
     if (!answer.content?.file) {
       return answer.content;
@@ -107,7 +121,11 @@ module.exports = {
     return styleMap[answer.type];
   },
 
-  //将插件回复转为go-cqhttp能解析的格式
+  /**
+   * 将插件回复转为go-cqhttp能解析的格式
+   * @param {string} answer 
+   * @returns {object} { type: "picture | directPicture | audio | video | file", content: "内容" }
+   */
   PluginAnswerToGoCqhttpStyle(answer) {
     if (!answer.content?.file) {
       return answer.content;
@@ -121,17 +139,22 @@ module.exports = {
     return styleMap[answer.type];
   },
 
-  //保存qq侧传来的图
+  /**
+   * 保存qq侧传来的图
+   * @param {string} imgUrl 
+   * @returns {string} "/xiaoye/images/xxx.jpg"
+   */
   SaveQQimg(imgUrl) {
     return new Promise((resolve, reject) => {
+      const filePath = "/xiaoye/images/";
+      const fileName = `${imgUrl[0].split("/")[imgUrl[0].split("/").length - 2]}.jpg`;
       request(imgUrl[0]).pipe(
         fs.createWriteStream(
-          `./static/xiaoye/images/${imgUrl[0].split("/")[imgUrl[0].split("/").length - 2]
-          }.jpg`,
+          `./static${filePath}${fileName}`,
         ).on("close", (err) => {
           if (!err) {
             resolve(
-              `/xiaoye/images/${imgUrl[0].split("/")[imgUrl[0].split("/").length - 2]}.jpg`,
+              `${filePath}${fileName}`,
             );
           } else {
             reject("保存qq侧传来的图错误。错误原因: " + err);
@@ -148,6 +171,10 @@ const fs = require("fs");
 const path = require("path");
 const yaml = require("yaml"); //使用yaml解析配置文件
 const url = require("url");
+const crypto = require("crypto");
+const sqlite3 = require("sqlite3").verbose();
+const db = new sqlite3.Database("db.db"); //数据库位置，默认与index.js同目录
+const mp3Duration = require("mp3-duration");
 let WEB_PORT, TIAN_XING_API_KEY;
 
 Init();

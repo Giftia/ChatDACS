@@ -273,7 +273,7 @@
 
           //工具栏-cos
           layim.on("tool(cos)", function (insert, send) {
-            insert("来点色图");
+            insert("cos图");
             send();
           });
 
@@ -285,13 +285,13 @@
 
           //工具栏-tbshow
           layim.on("tool(tbshow)", function (insert, send) {
-            insert("随机买家秀");
+            insert("买家秀");
             send();
           });
 
           //工具栏-r18
           layim.on("tool(r18)", function (insert, send) {
-            insert("r18");
+            insert("可以色色");
             send();
           });
 
@@ -582,19 +582,32 @@
               socket.emit("typingOver");
             };
 
-            //仅在小夜聊天轮播placeholder
+            //仅在小夜聊天轮播placeholder，展示可用命令
             if (data.data.id == "101") {
               superplaceholder({
                 el: document.querySelector("input"),
                 sentences: [
-                  "BV1PA411L7op",
-                  "来点色图",
-                  "/ping",
-                  "r18",
                   "小夜",
                   "帮助",
-                  "随机买家秀",
+                  "画师算命",
+                  "BV1PA411L7op",
+                  "cos图",
+                  "/cp 小夜 小雫",
+                  "赛博朋克",
+                  "/黑白图 草",
+                  "今天不带套",
+                  "/ping",
+                  "/prpr 楼上",
+                  "qr https://giftia.moe",
+                  "可以色色",
                   "随机二次元图",
+                  "让我康康",
+                  "随机图",
+                  "/roll",
+                  "来点好的白丝",
+                  "/状态",
+                  "买家秀",
+                  "/吠 加班到醒不来",
                 ],
                 options: {
                   letterDelay: 100,
