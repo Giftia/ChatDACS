@@ -39,7 +39,7 @@ const colors = require("colors"); //Console日志染色颜色配置
 colors.setTheme({
   alert: "inverse",
   on: "brightMagenta",
-  off: "brightGreen",
+  off: "gray",
   warn: "brightYellow",
   error: "brightRed",
   log: "brightBlue",
@@ -231,7 +231,7 @@ io.on("connection", (socket) => {
 
       //更新最后登陆时间
       db.run(
-        `UPDATE users SET lastlogintime = '${utils.Curentyyyymmdd()}${utils.CurentTime()}' WHERE CID ='${CID}'`,
+        `UPDATE users SET lastlogintime = '${utils.GetTimes().YearMonthDay}${utils.GetTimes().Clock}' WHERE CID ='${CID}'`,
       );
 
       io.emit(
@@ -250,7 +250,7 @@ io.on("connection", (socket) => {
       );
 
       db.run(
-        `INSERT INTO users VALUES('${randomNickname}', '${CID}', '2', '${utils.Curentyyyymmdd()}${utils.CurentTime()}')`,
+        `INSERT INTO users VALUES('${randomNickname}', '${CID}', '2', '${utils.GetTimes().YearMonthDay}${utils.GetTimes().Clock}')`,
       );
 
       io.emit(
@@ -295,9 +295,8 @@ io.on("connection", (socket) => {
       `web端用户 ${socket.username}(${CID}) 发送了消息: ${msg}`.warn,
     );
     db.run(
-      `INSERT INTO messages VALUES('${utils.Curentyyyymmdd()}', '${utils.CurentTime()}', '${CID}', '${msg}')`,
+      `INSERT INTO messages VALUES('${utils.GetTimes().YearMonthDay}', '${utils.GetTimes().Clock}}', '${CID}', '${msg}')`,
     );
-
     io.emit("message", { CID: CID, name: socket.username, msg: msg }); //用户广播
 
     //web端插件应答器
@@ -1902,7 +1901,7 @@ ${final_talents}
                     ctx.fillStyle = "#716F81";
                     ctx.fillText(`沙雕网友: ${msg}`, 90.5, 55.5);
                     ctx.font = "13px SimHei";
-                    ctx.fillText(utils.CurentTime(), 280.5, 35.5);
+                    ctx.fillText(utils.GetTimes().Clock, 280.5, 35.5);
 
                     ctx.beginPath();
                     ctx.arc(40, 40, 28, 0, 2 * Math.PI);
@@ -2518,10 +2517,9 @@ async function InitConfig() {
   }
 
   http.listen(WEB_PORT, () => {
-    console.log("_______________________________________\n");
+    console.log("_______________________________________\n".rainbow);
     logger.info(
-      `  ${utils.Curentyyyymmdd()}${utils.CurentTime()} 启动完毕，访问 127.0.0.1:${WEB_PORT} 即可进入web端  \n`
-        .alert,
+      `服务启动完毕，访问 127.0.0.1:${WEB_PORT} 即可查看本地web端\n`,
     );
     logger.info("world.execute(me);".alert);
   });
