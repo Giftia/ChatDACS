@@ -1,9 +1,9 @@
 module.exports = {
   插件名: "cp文生成插件", //插件名，仅在插件加载时展示
   指令: "^/cp(.*)", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.0", //插件版本，仅在插件加载时展示
+  版本: "1.1", //插件版本，仅在插件加载时展示
   作者: "Giftina", //插件作者，仅在插件加载时展示
-  描述: "cp文生成器，语料来自 https://github.com/mxh-mini-apps/mxh-cp-stories/blob/master/src/assets/story.json", //插件说明，仅在插件加载时展示
+  描述: "cp文生成器，语料来自 https://github.com/mxhcpstories/mxh-cp-stories/blob/master/src/assets/story.json", //插件说明，仅在插件加载时展示
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
     const CP = new RegExp(module.exports.指令).exec(msg)[1]?.split(" ");
@@ -32,14 +32,13 @@ async function getOriginalRandomCPStory(story, tops, bottoms) {
       return story[i].stories[storyIndex];
     }
   }
-  //如果没有完全匹配的cp文，则发送位于数组最后的随机cp文
-  const lastIndex = story.length - 1;
-  const storyLenth = story[lastIndex].stories.length - 1;
+  //如果没有完全匹配的cp文，则发送位于cp文数组最后的随机cp文
+  const storyLenth = story.at(-1).stories.length - 1;
   const storyIndex = Math.round(
     Math.random() * storyLenth,
   );
   //选择一条cp文
-  return story[lastIndex].stories[storyIndex];
+  return story.at(-1).stories[storyIndex];
 }
 
 async function getReplacedCPStory(tops, bottoms) {
