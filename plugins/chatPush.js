@@ -1,13 +1,13 @@
 module.exports = {
   插件名: "微信息知频道消息推送插件", //插件名，仅在插件加载时展示
-  指令: ".*@小夜.*", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.3", //插件版本，仅在插件加载时展示
+  指令: "提醒", //指令触发关键词，可使用正则表达式匹配
+  版本: "1.4", //插件版本，仅在插件加载时展示
   作者: "Giftina", //插件作者，仅在插件加载时展示
   描述: "将指定格式的消息推送至微信息知指定频道，适合传送消息至微信", //插件说明，仅在插件加载时展示
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
     if (!XIZHI_CHANNEL_KEY) {
-      return { type: "text", content: "XIZHI_CHANNEL_KEY未配置，请在 config/config.yml 中配置XIZHI_CHANNEL_KEY" };
+      return { type: "text", content: `${this.插件名} 的接口密钥未配置，请通知小夜主人及时配置接口密钥。方法：在状态栏右键小夜头像，点击 打开配置文件，按接口密钥配置说明进行操作` };
     }
     axios(
       `https://xizhi.qqoq.net/${XIZHI_CHANNEL_KEY}.channel?title=${encodeURI("来自 " + userName + " 的消息：" + msg)}`,
