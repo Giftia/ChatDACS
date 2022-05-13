@@ -3,7 +3,7 @@ module.exports = {
   指令: "[/!]help|帮助|菜单|插件列表|说明", //指令触发关键词，可使用正则表达式匹配
   版本: "1.5", //插件版本，仅在插件加载时展示
   作者: "Giftina", //插件作者，仅在插件加载时展示
-  描述: "会回复系统当前可用插件列表，描述插件版本和对应的触发正则表达式", //插件说明，仅在插件加载时展示
+  描述: "会回复系统当前可用插件列表，描述插件版本和对应的触发指令正则表达式", //插件说明，仅在插件加载时展示
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
     const plugins = require.all({
