@@ -8,7 +8,6 @@ module.exports = Object.freeze({
   isVideo_reg: new RegExp("^\\[CQ:video,file:"), //匹配qqBot图片
   video_url_reg: new RegExp("http(.*term:unknow)"), //匹配视频地址
   come_yap_reg: new RegExp("^/嘴臭(.*)"), //匹配对话语音
-  pohai_reg: new RegExp("^/迫害 (.*)"), //匹配迫害p图
   hand_grenade_reg: new RegExp("^一个手雷(.*)"), //匹配一个手雷
   mine_reg: new RegExp("^埋地雷"), //匹配埋地雷
   fuck_mine_reg: new RegExp("^踩地雷"), //匹配踩地雷
