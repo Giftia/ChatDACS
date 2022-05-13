@@ -61,7 +61,7 @@
 - 减轻我的服务器负担，让公共小夜活得更久，可循环利用
 - 通过搭建流程体验，学习一门先进的技术，很 cool，很极客
 
-私人部署教程请点击跳转至下方的 [快速启动](#QuickStart) 章节 ↓
+私人部署教程请点击跳转至下方的 [快速启动](#%EF%B8%8F-快速启动-quick-start) 章节 ↓
 
 ## ✔ 功能介绍 Orders
 
@@ -206,8 +206,7 @@
 
 ---
 
-<span id = "QuickStart"></span>
-## ⚡️ 快速启动 Quick start
+## ⚡️ 快速启动 Quick Start
 
 来试试快速启动吧，`一`键运行，`一`分钟运行`一`个属于自己的小夜：
 
@@ -241,7 +240,7 @@
 
 ## 🛠 手动编译 Manual Compile
 
-### 该流程需要一定的编码和debug基础，不建议新手操作，适合新手去了解小夜背后的 nodejs 是如何构建出小夜的
+**该流程需要一定的编码和debug基础，不建议新手操作**
 
 如果自动化部署工作流 `Actions` 年久失修，没有更新，
 
@@ -249,25 +248,27 @@
 
 或者是在快速启动、部署过程出现了错误，
 
-亦或者是需要给小夜更新依赖，请按如下操作进行常规的手动部署：
+亦或者是想要了解小夜背后的 nodejs 是如何构建出小夜的，
 
-首先去 https://nodejs.org/zh-cn/ 下载安装 LTS(长期支持版) Node.js，
+请按如下操作进行手动编译：
 
-然后下载最新代码压缩包 https://github.com/Giftia/ChatDACS/archive/refs/heads/master.zip ，解压之，
+1. 首先去 https://nodejs.org/zh-cn/ 下载安装 LTS(长期支持版) Node.js，
 
-打开系统的 `shell` ，如 `Bash`、`CMD`、`PowerShell` 等，用 `cd` 命令进入代码根目录运行：
+2. 然后下载最新代码压缩包 https://github.com/Giftia/ChatDACS/archive/refs/heads/master.zip ，解压之，
+
+3. 打开系统的 `shell` ，如 `Bash`、`CMD`、`PowerShell` 等，用 `cd` 命令进入代码根目录运行：
 
 ```bash
 npm install -g cnpm --registry=https://registry.npm.taobao.org
 ```
 
-等待进度完成后运行：
+4. 等待进度完成后运行：
 
 ```bash
 cnpm ci
 ```
 
-等待进度完成后运行：
+5. 等待进度完成后运行：
 
 ```bash
 node index.js
