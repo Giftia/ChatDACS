@@ -5,8 +5,8 @@ System:
   #web端自动聊天开关:
   CHAT_SWITCH: true
 
-  #qqBot小夜开关，需要自行配置以接入go-cqhttp，反向 HTTP POST 于 127.0.0.1:80/bot:
-  CONNECT_GO_CQHTTP_SWITCH: false
+  #qqBot小夜开关，为方便用户使用，默认为开启，如果只想要使用web端或哔哩哔哩直播间，请关闭此开关:
+  CONNECT_GO_CQHTTP_SWITCH: true
 
   #接入哔哩哔哩直播聊天开关:
   CONNECT_BILIBILI_LIVE_SWITCH: false
