@@ -1,13 +1,13 @@
 module.exports = {
   插件名: "赛博百科问答插件", //插件名，仅在插件加载时展示
   指令: "^.*赛博朋克(.*)", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.2", //插件版本，仅在插件加载时展示
+  版本: "1.3", //插件版本，仅在插件加载时展示
   作者: "Giftina", //插件作者，仅在插件加载时展示
   描述: "非常赛博朋克的百科知识问答题", //插件说明，仅在插件加载时展示
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
     if (!TIAN_XING_API_KEY) {
-      return { type: "text", content: "TIAN_XING_API_KEY未配置，请在 config/config.yml 中配置TIAN_XING_API_KEY" };
+      return { type: "text", content: `${this.插件名} 的接口密钥未配置，请通知小夜主人及时配置接口密钥。方法：在状态栏右键小夜头像，点击 打开配置文件，按接口密钥配置说明进行操作` };
     }
     if (msg.split(" ").length > 1) {
       if (`赛博朋克 ${answer}` == msg) {

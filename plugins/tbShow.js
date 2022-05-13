@@ -1,13 +1,13 @@
 module.exports = {
   插件名: "淘宝买家秀色图插件", //插件名，仅在插件加载时展示
   指令: "买家秀|福利姬", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.7", //插件版本，仅在插件加载时展示
+  版本: "1.8", //插件版本，仅在插件加载时展示
   作者: "Giftina", //插件作者，仅在插件加载时展示
   描述: "在危险限度的尺度下发送一张非法的淘宝买家秀色图", //插件说明，仅在插件加载时展示
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
     if (!SUMT_API_KEY) {
-      return { type: "text", content: "SUMT_API_KEY未配置，请在 config/config.yml 中配置SUMT_API_KEY" };
+      return { type: "text", content: `${this.插件名} 的接口密钥未配置，请通知小夜主人及时配置接口密钥。方法：在状态栏右键小夜头像，点击 打开配置文件，按接口密钥配置说明进行操作` };
     }
     const setu_file = await RandomTbShow() ?? "";
     const setu_file_url = `${setu_file}`;
