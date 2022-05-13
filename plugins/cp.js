@@ -33,12 +33,13 @@ async function getOriginalRandomCPStory(story, tops, bottoms) {
     }
   }
   //如果没有完全匹配的cp文，则发送位于cp文数组最后的随机cp文
-  const storyLenth = story.at(-1).stories.length - 1;
+  const lastIndex = story.length - 1;
+  const storyLenth = story[lastIndex].stories.length - 1;
   const storyIndex = Math.round(
     Math.random() * storyLenth,
   );
   //选择一条cp文
-  return story.at(-1).stories[storyIndex];
+  return story[lastIndex].stories[storyIndex];
 }
 
 async function getReplacedCPStory(tops, bottoms) {
