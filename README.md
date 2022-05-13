@@ -206,7 +206,8 @@
 
 ---
 
-## ⚡️ 快速启动 Quick start <span id = "QuickDeploy"></span>
+<span id = "QuickDeploy"></span>
+## ⚡️ 快速启动 Quick start
 
 来试试快速启动吧，`一`键运行，`一`分钟运行`一`个属于自己的小夜：
 
