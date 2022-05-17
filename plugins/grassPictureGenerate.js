@@ -9,7 +9,7 @@ module.exports = {
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
     //获取第一行字符串
-    const mainContent = msg.split("[")[0].replace("/黑白图 ", "") ?? "当你凝望神圣手雷的时候，神圣手雷也在凝望你";
+    const mainContent = msg.split("[")[0].replace(/^[/!]?黑白图 /g, "") ?? "当你凝望神圣手雷的时候，神圣手雷也在凝望你";
     const pictureSources = Constants.img_url_reg.exec(msg)[0] ?? "https://gchat.qpic.cn/gchatpic_new/1005056803/2063243247-2847024251-657109635D3492BDB455DEFA8936AD96/0?term=3"; //取图片链接
 
     const firstContent = mainContent?.split(" ")[0]?.trim() ?? "当你凝望神圣手雷的时候，神圣手雷也在凝望你"; //第一行内容
@@ -108,7 +108,7 @@ async function generatePicture(pictureSources, firstContent, secondContent) {
       );
       fs.writeFileSync(fileLocalPath, canvas.toBuffer());
 
-      const fileURL = `/images/${utils.sha1(
+      const fileURL = `/xiaoye/images/${utils.sha1(
         canvas.toBuffer(),
       )}.jpg`;
       console.log(`黑白成功，图片发送: ${fileURL}`.log);
