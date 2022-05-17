@@ -1,15 +1,17 @@
 module.exports = {
-  插件名: "cp文生成插件", //插件名，仅在插件加载时展示
-  指令: "^/cp(.*)", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.1", //插件版本，仅在插件加载时展示
-  作者: "Giftina", //插件作者，仅在插件加载时展示
-  描述: "cp文生成器，语料来自 https://github.com/mxhcpstories/mxh-cp-stories/blob/master/src/assets/story.json", //插件说明，仅在插件加载时展示
+  插件名: "cp文生成插件",
+  指令: "^[/!]?cp(.*)",
+  版本: "2.0",
+  作者: "Giftina",
+  描述: "cp文生成器，语料来自 https://github.com/mxhcpstories/mxh-cp-stories/blob/master/src/assets/story.json",
+  使用示例: "cp 小夜 小雫",
+  预期返回: "小夜，小雫，你们的爱情是什么样子？",
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
     const CP = new RegExp(module.exports.指令).exec(msg)[1]?.split(" ");
 
-    const tops = CP[1]?.trim() || userName, //小攻
-      bottoms = CP[2]?.trim() || userName; //小受
+    const tops = CP[1]?.trim() ?? userName ?? "小夜", //小攻
+      bottoms = CP[2]?.trim() ?? userName ?? "小雫"; //小受
 
     const CPStory = await getReplacedCPStory(tops, bottoms);
     return { type: "text", content: CPStory };
@@ -54,6 +56,6 @@ async function getReplacedCPStory(tops, bottoms) {
   const originalRandomCPStory = await getOriginalRandomCPStory(JSON.parse(story), tops, bottoms);
   //替换角色
   let replacedCPStory = originalRandomCPStory?.replace(/<攻>/g, tops);
-  replacedCPStory = originalRandomCPStory?.replace(/<受>/g, bottoms);
+  replacedCPStory = replacedCPStory?.replace(/<受>/g, bottoms);
   return replacedCPStory;
 }

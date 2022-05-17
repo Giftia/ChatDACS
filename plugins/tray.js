@@ -1,9 +1,11 @@
 module.exports = {
-  插件名: "状态栏提示插件", //插件名，仅在插件加载时展示
-  指令: "^/notify (.*)", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.2", //插件版本，仅在插件加载时展示
-  作者: "Giftina", //插件作者，仅在插件加载时展示
-  描述: "自动在任务栏显示一个常驻托盘，可用于弹出消息通知", //插件说明，仅在插件加载时展示
+  插件名: "状态栏提示插件",
+  指令: "^[/!]?弹窗 (.*)",
+  版本: "2.0",
+  作者: "Giftina",
+  描述: "自动在任务栏显示一个常驻托盘，可用于弹出消息通知。仅在Windows系统下有效。",
+  使用示例: "弹窗 您可能是盗版软件的受害者",
+  预期返回: "[在宿主电脑弹出一个消息通知：'您可能是盗版软件的受害者']",
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
     if (process.platform === "win32") {
@@ -43,8 +45,14 @@ async function runTray() {
       newTray.notify("配置文件不存在", "是不是哪里出问题了, 建议重开");
     }
   });
+
+  const newPlugin = newTray.item("新建插件", async () => {
+    //用插件模板新建插件，之后再写
+  });
+
   const separator = newTray.separator();
-  const quit = newTray.item("退出", { bold: true }, () => {
+
+  const quit = newTray.item("退出", () => {
     newTray.kill();
     process.exit(0);
   });

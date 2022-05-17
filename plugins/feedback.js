@@ -1,9 +1,13 @@
+const devGroupNumber = "120243247"; //小夜开发群
+
 module.exports = {
-  插件名: "报错插件", //插件名，仅在插件加载时展示
-  指令: "^报错 (.*)", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.3", //插件版本，仅在插件加载时展示
-  作者: "Giftina", //插件作者，仅在插件加载时展示
-  描述: "向小夜开发组报错消息，消息会实时转达到小夜开发成员", //插件说明，仅在插件加载时展示
+  插件名: "报错插件",
+  指令: "^[/!]?报错 (.*)",
+  版本: "2.0",
+  作者: "Giftina",
+  描述: "向小夜开发组报错消息，消息会实时转达到小夜开发成员",
+  使用示例: "报错 插件爆炸了",
+  预期返回: `谢谢您的报错，小夜已经把您的报错信息 插件爆炸了 发给了小夜开发群${devGroupNumber}啦`,
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
     const feedback = new RegExp(module.exports.指令).exec(msg)[1];
@@ -19,7 +23,6 @@ module.exports = {
   },
 };
 
-const devGroupNumber = "120243247";
 const axios = require("axios").default;
 const fs = require("fs");
 const path = require("path");

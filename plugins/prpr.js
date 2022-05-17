@@ -1,9 +1,11 @@
 module.exports = {
-  插件名: "prpr插件", //插件名，仅在插件加载时展示
-  指令: "^/prpr(.*)", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.0", //插件版本，仅在插件加载时展示
-  作者: "Giftina", //插件作者，仅在插件加载时展示
-  描述: "prpr，来自jjbot的功能", //插件说明，仅在插件加载时展示
+  插件名: "prpr插件",
+  指令: "^[/!]?prpr(.*)",
+  版本: "2.0",
+  作者: "Giftina",
+  描述: "让小夜帮你舔 ta 吧。来自 jjbot 的功能",
+  使用示例: "/prpr 嘉然",
+  预期返回: "小夜 舔了舔 嘉然 的 小嘴，我好兴奋啊!",
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
     const bodyPart = [

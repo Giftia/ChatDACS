@@ -1,12 +1,15 @@
 module.exports = {
-  插件名: "哔哩哔哩BV解析插件", //插件名，仅在插件加载时展示
-  指令: ".*(BV[a-zA-Z0-9]{10,12})$", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.4", //插件版本，仅在插件加载时展示
-  作者: "Giftina", //插件作者，仅在插件加载时展示
-  描述: "回复格式适配web端，通过哔哩哔哩官方接口解读BV号背后所隐藏的故事（误", //插件说明，仅在插件加载时展示
+  插件名: "哔哩哔哩BV解析插件",
+  指令: "BV[a-zA-Z0-9]{10,10}",
+  版本: "2.0",
+  作者: "Giftina",
+  描述: "回复格式适配web端，通过哔哩哔哩官方接口解读BV号背后所隐藏的故事。",
+  使用示例: "BV19q4y1c7K4",
+  预期返回: "a(https://www.bilibili.com/video/av550874197)[【整活预热】全自动智能虚拟主播就是小夜我啦！，av550874197]",
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
-    return { type: "text", content: await Bv2Av(msg) };
+    const bvString = msg.split("BV")[1].slice(0, 10);
+    return { type: "text", content: await Bv2Av(bvString) };
   },
 };
 

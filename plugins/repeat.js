@@ -1,9 +1,13 @@
+const repeatStartTimes = 2; //复读机复读消息的触发重复次数
+
 module.exports = {
-  插件名: "复读机插件", //插件名，仅在插件加载时展示
-  指令: "", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.0", //插件版本，仅在插件加载时展示
-  作者: "Giftina", //插件作者，仅在插件加载时展示
-  描述: "复读插件，当某条消息重复特定次数时复读一次", //插件说明，仅在插件加载时展示
+  插件名: "复读机插件",
+  指令: "",
+  版本: "2.0",
+  作者: "Giftina",
+  描述: `特殊插件，没有主动触发指令。当某条消息重复 ${repeatStartTimes} 次时，'小夜牌高保真复读机' 会跟风复读一次。`,
+  使用示例: "[某条消息重复了2次]",
+  预期返回: "[小夜复读了这条消息]",
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
     //如果没有groupId，则是web端或哔哩哔哩端消息，给个0
@@ -34,6 +38,7 @@ module.exports = {
   },
 };
 
-const repeatStartTimes = 2; //复读机开始复读消息的前置重复次数
-//维护一个 `{ groupId: { latestMessage, repeatCount }, groupId: { latestMessage, repeatCount }, ... }` 的对象，用于记录每个群组的最新的一条消息与复读次数
+/**
+ * 维护一个 `{ groupId: { latestMessage, repeatCount }, groupId: { latestMessage, repeatCount }, ... }` 的对象，用于记录每个群组的最新的一条消息与复读次数
+ */
 let repeatMap = {};

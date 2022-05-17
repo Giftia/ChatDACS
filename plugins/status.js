@@ -1,18 +1,20 @@
 module.exports = {
-  插件名: "查询配置插件", //插件名，仅在插件加载时展示
-  指令: "^[/!]status$|^[/!]状态$", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.2", //插件版本，仅在插件加载时展示
-  作者: "Giftina", //插件作者，仅在插件加载时展示
-  描述: "查询系统当前的主要配置项", //插件说明，仅在插件加载时展示
+  插件名: "系统配置查询插件",
+  指令: "^[/!]?(status|系统状态)$",
+  版本: "2.0",
+  作者: "Giftina",
+  描述: "查询小夜的相关信息与系统当前的主要配置项",
+  使用示例: "系统状态",
+  预期返回: "[小夜的相关信息与系统当前的主要配置项]",
 
   execute: async function (msg, userId, userName, groupId, groupName, option) {
-    const status = await CheckoutStatus(msg, userId, userName, groupId, groupName, option);
+    const status = await CheckoutStatus(option);
     return { type: "text", content: status };
   },
 };
 
 //查询配置
-async function CheckoutStatus(msg, userId, userName, groupId, groupName, option) {
+async function CheckoutStatus(option) {
   const selfQQId = !option ? QQBOT_QQ : option == "1648468212" ? "1648468212(小小夜本家)" : option;
   const stat =
     `宿主架构: ${os.hostname()} ${os.type()} ${os.arch()}
