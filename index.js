@@ -18,7 +18,7 @@ if (_cn_reg.test(process.cwd())) {
 /**
  * 声明依赖与配置
  */
-const version = "ChatDACS v3.4.4"; //版本号，会显示在浏览器tab与标题栏
+const version = "ChatDACS v3.5.0"; //版本号，会显示在浏览器tab与标题栏
 const utils = require("./plugins/system/utils.js"); //载入系统通用模块
 const compression = require("compression"); //用于gzip压缩
 const express = require("express"); //轻巧的express框架
@@ -326,7 +326,7 @@ io.on("connection", (socket) => {
 function start_qqbot() {
   app.post(GO_CQHTTP_SERVICE_ANTI_POST_API, (req, res) => {
     //禁言1小时以上自动退群
-    if (req.body.sub_type == "ban" && req.body.user_id == QQBOT_QQ) {
+    if (req.body.sub_type == "ban" && req.body.user_id == (req.body.message?.self_id ?? QQBOT_QQ)) {
       if (req.body.duration >= 3599) {
         request(
           `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_leave?group_id=${req.body.group_id}`,
@@ -345,7 +345,7 @@ function start_qqbot() {
       } else {
         //被禁言改名
         request(
-          `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${req.body.group_id}&user_id=${QQBOT_QQ}&card=${encodeURI("你妈的，为什么 禁言我")}`,
+          `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${req.body.group_id}&user_id=${req.body.message?.self_id ?? QQBOT_QQ}&card=${encodeURI("你妈的，为什么 禁言我")}`,
           function (error, _response, _body) {
             if (!error) {
               logger.info(
@@ -480,7 +480,7 @@ function start_qqbot() {
         who = who.replace("]", "").trim();
         if (Constants.is_qq_reg.test(who)) {
           //如果是自己要被张菊，那么张菊
-          if (QQBOT_QQ == who) {
+          if ((req.body.message?.self_id ?? QQBOT_QQ) == who) {
             request(
               `http://${GO_CQHTTP_SERVICE_API_URL}/get_group_member_info?group_id=${req.body.group_id}&user_id=${req.body.user_id}`,
               function (_error, _response, body) {
@@ -624,7 +624,7 @@ function start_qqbot() {
                   who = who.replace("]", "").trim();
                   if (Constants.is_qq_reg.test(who)) {
                     //如果是自己要被闭菊，那么闭菊
-                    if (QQBOT_QQ == who) {
+                    if ((req.body.message?.self_id ?? QQBOT_QQ) == who) {
                       logger.error(
                         `群 ${req.body.group_id} 停止了小夜服务`.error,
                       );
@@ -632,7 +632,7 @@ function start_qqbot() {
                         `UPDATE qq_group SET talk_enabled = '0' WHERE group_id ='${req.body.group_id}'`,
                       );
                       res.send({
-                        reply: `小夜的菊花闭上了，这只小夜在本群的所有服务已经停用，取消请发 张菊[CQ:at,qq=${QQBOT_QQ}]`,
+                        reply: `小夜的菊花闭上了，这只小夜在本群的所有服务已经停用，取消请发 张菊[CQ:at,qq=${req.body.message?.self_id ?? QQBOT_QQ}]`,
                       });
                       return 0;
                       //不是这只小夜被闭菊的话，嘲讽那只小夜
@@ -650,7 +650,7 @@ function start_qqbot() {
                     `UPDATE qq_group SET talk_enabled = '0' WHERE group_id ='${req.body.group_id}'`,
                   );
                   res.send({
-                    reply: `小夜的菊花闭上了，小夜在本群的所有服务已经停用，取消请发 张菊[CQ:at,qq=${QQBOT_QQ}]`,
+                    reply: `小夜的菊花闭上了，小夜在本群的所有服务已经停用，取消请发 张菊[CQ:at,qq=${req.body.message?.self_id ?? QQBOT_QQ}]`,
                   });
                   return 0;
                 }
@@ -674,7 +674,7 @@ function start_qqbot() {
                 //戳一戳
                 if (
                   req.body.sub_type === "poke" &&
-                  req.body.target_id == QQBOT_QQ
+                  req.body.target_id == (req.body.message?.self_id ?? QQBOT_QQ)
                 ) {
                   c1c_count++;
                   if (c1c_count > 2) {
@@ -899,18 +899,17 @@ ${final_talents}
                       if (!err) {
                         let points = sql[0].points.split(",");
                         res.send({
-                          reply: `[CQ:at,qq=${req.body.sender.user_id
-                            }]人生总结: 
-                  
-    颜值: ${points[0]} 罕见
-    智力: ${points[1]} 罕见
-    体质: ${points[2]} 罕见
-    家境: ${points[3]} 罕见
-    快乐: 0 罕见
-    享年: 0 罕见
-    总评: ${points[0] + points[1] + points[2] + points[3]} 罕见
-    
-    感谢您的重开，欢迎您下次光临`,
+                          reply: `[CQ:at,qq=${req.body.sender.user_id}]人生总结: 
+
+颜值: ${points[0]} 罕见
+智力: ${points[1]} 罕见
+体质: ${points[2]} 罕见
+家境: ${points[3]} 罕见
+快乐: 0 罕见
+享年: 0 罕见
+总评: ${points[0] + points[1] + points[2] + points[3]} 罕见
+
+感谢您的重开，欢迎您下次光临`,
                         });
                       }
                     },
@@ -1919,11 +1918,11 @@ ${final_talents}
                 //丢一个骰子，按reply_probability几率回复
                 let reply_flag = Math.floor(Math.random() * 100);
                 //如果被@了，那么回复几率上升80%
-                let at_replaced_msg = req.body.message; //要把[CQ:at,qq=${QQBOT_QQ}] 去除掉，否则聊天核心会乱成一锅粥
+                let at_replaced_msg = req.body.message; //要把[CQ:at,qq=${req.body.message?.self_id ?? QQBOT_QQ}] 去除掉，否则聊天核心会乱成一锅粥
                 if (xiaoye_ated.test(req.body.message)) {
                   reply_flag -= 80;
                   at_replaced_msg = req.body.message
-                    .replace(`[CQ:at,qq=${QQBOT_QQ}]`, "")
+                    .replace(`[CQ:at,qq=${req.body.message?.self_id ?? QQBOT_QQ}]`, "")
                     .trim(); //去除@小夜
                 }
                 //骰子命中，那就让小夜来自动回复
@@ -2623,23 +2622,14 @@ function ECYWenDa() {
   });
 }
 
-//获取json串长度
-function getJsonLength(jsonData) {
-  let jsonLength = 0;
-  for (let _item in jsonData) {
-    jsonLength++;
-  }
-  return jsonLength;
-}
-
 //抽10个天赋
 function Talents10x(talents) {
   return new Promise((resolve, _reject) => {
-    let index = getJsonLength(talents);
+    const talentsLength = Object.keys(talents).length;
     let roll_talents = "",
       talents_list = [];
     for (let i = 0; i < 10; i++) {
-      const talents_index = Math.floor(1001 + Math.random() * index);
+      const talents_index = Math.floor(1001 + Math.random() * talentsLength);
       const talents_content = `\n${i} ${talents[talents_index].name}（${talents[talents_index].description}）`;
       roll_talents += talents_content;
       talents_list.push(talents_index);
@@ -2675,5 +2665,5 @@ async function ProcessExecute(msg, userId, userName, groupId, groupName, option)
 }
 
 /**
- * 🎧 ArkLight —— M2U
+ * 我正在听：🎧 雾里 —— 姚六一
  */

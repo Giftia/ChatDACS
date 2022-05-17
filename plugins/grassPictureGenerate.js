@@ -1,20 +1,22 @@
 module.exports = {
-  插件名: "黑白生草图生成器插件", //插件名，仅在插件加载时展示
-  指令: "^/黑白图 (.*)", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.0", //插件版本，仅在插件加载时展示
-  作者: "Giftina", //插件作者，仅在插件加载时展示
-  描述: "生成一张黑白生草图", //插件说明，仅在插件加载时展示
+  插件名: "黑白生草图生成器插件",
+  指令: "^[/!]?黑白图 (.*)",
+  版本: "2.0",
+  作者: "Giftina",
+  描述: "生成一张黑白生草图。",
+  使用示例: "黑白图 当你凝望神圣手雷的时候，神圣手雷也在凝望你 あなたが神圣手雷を見つめるとき、神圣手雷もあなたを見つめています[CQ:image,file=913b054d35b2f4ac1bb85f5dc5f9d62b.image,url=https://gchat.qpic.cn/gchatpic_new/296513927/881350377-2430173961-913B054D35B2F4AC1BB85F5DC5F9D62B/0?term=3,subType=1]",
+  预期返回: "[一张黑白生草图]",
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
-    //从 "/黑白图 测试[CQ:image,file=913b054d35b2f4ac1bb85f5dc5f9d62b.image,url=https://gchat.qpic.cn/gchatpic_new/296513927/881350377-2430173961-913B054D35B2F4AC1BB85F5DC5F9D62B/0?term=3,subType=1]" 获取 "测试"
+    //获取第一行字符串
     const mainContent = msg.split("[")[0].replace("/黑白图 ", "") ?? "当你凝望神圣手雷的时候，神圣手雷也在凝望你";
-    const pictureSources = Constants.img_url_reg.exec(msg)[0] ?? "[CQ:image,file=657109635d3492bdb455defa8936ad96.image,url=https://gchat.qpic.cn/gchatpic_new/1005056803/2063243247-2847024251-657109635D3492BDB455DEFA8936AD96/0?term=3]"; //取图片链接
+    const pictureSources = Constants.img_url_reg.exec(msg)[0] ?? "https://gchat.qpic.cn/gchatpic_new/1005056803/2063243247-2847024251-657109635D3492BDB455DEFA8936AD96/0?term=3"; //取图片链接
 
     const firstContent = mainContent?.split(" ")[0]?.trim() ?? "当你凝望神圣手雷的时候，神圣手雷也在凝望你"; //第一行内容
     const secondContent = mainContent?.split(" ")[1]?.trim() ?? ""; //第二行内容, 替代"あなたが神圣手雷を見つめるとき、神圣手雷もあなたを見つめています";
 
     const fileURL = await generatePicture(pictureSources, firstContent, secondContent);
-    return { type: "text", content: `[CQ:image,file=${fileURL}]` };
+    return { type: "text", content: fileURL };
   },
 };
 

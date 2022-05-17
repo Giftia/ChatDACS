@@ -1,9 +1,11 @@
 module.exports = {
-  插件名: "帮助插件", //插件名，仅在插件加载时展示
-  指令: "[/!]help|帮助|菜单|插件列表|说明", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.5", //插件版本，仅在插件加载时展示
-  作者: "Giftina", //插件作者，仅在插件加载时展示
-  描述: "会回复系统当前可用插件列表，描述插件版本和对应的触发指令正则表达式", //插件说明，仅在插件加载时展示
+  插件名: "帮助插件",
+  指令: "^[/!]?(help|帮助|菜单|插件|说明|指令|命令|小夜怎么用)$",
+  版本: "2.0",
+  作者: "Giftina",
+  描述: "会回复系统当前可用插件列表，描述插件版本和对应的使用示例。",
+  使用示例: "/help",
+  预期返回: "当前插件列表和使用示例：",
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
     const plugins = require.all({
@@ -17,9 +19,9 @@ module.exports = {
       },
     });
 
-    let pluginList = ["当前插件列表和正则指令：\r\n"];
+    let pluginList = ["当前插件列表和使用示例：\r\n"];
     for (const i in plugins) {
-      pluginList.push(`${plugins[i].插件名}_v${plugins[i].版本}: ${plugins[i].指令}\r\n`);
+      pluginList.push(`${plugins[i].插件名}_v${plugins[i].版本}: ${plugins[i].使用示例}\r\n`);
     }
 
     return { type: "text", content: pluginList.toString()?.replace(/,/g, "") };

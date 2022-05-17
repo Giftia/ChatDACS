@@ -1,9 +1,11 @@
 module.exports = {
-  插件名: "搜图插件", //插件名，仅在插件加载时展示
-  指令: "来点(好.*的.*|坏的.*)|来点.*", //指令触发关键词，可使用正则表达式匹配
-  版本: "1.5", //插件版本，仅在插件加载时展示
-  作者: "Giftina", //插件作者，仅在插件加载时展示
-  描述: "搜索指定的tag图片，图片来源api.lolicon.app", //插件说明，仅在插件加载时展示
+  插件名: "搜图插件",
+  指令: "来点(好.*的.*|坏的.*)|来点.*",
+  版本: "2.0",
+  作者: "Giftina",
+  描述: "搜索一张指定tag的二次元图，xx 即你想搜索的 tag。`好的` 代表正常尺度，`坏的` 代表🈲。图片来源api.lolicon.app。",
+  使用示例: "来点好的白丝",
+  预期返回: "[一张健全的白丝图]",
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
     const tag = new RegExp(module.exports.指令).exec(msg)[1] ?? msg.split("来点")[1] ?? "";

@@ -1,8 +1,9 @@
+/**
+ * @name 系统工具类
+ * @description 各种公用函数和系统底层函数
+ * @version 1.11
+ */
 module.exports = {
-  name: "工具类",
-  version: "1.11",
-  details: "各种公用函数和系统底层函数",
-
   /**
    * 年月日时分秒
    * @returns {object} { YearMonthDay: "yyyy-mm-dd", Clock: "hh:mm:ss" }
