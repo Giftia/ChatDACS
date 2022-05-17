@@ -1,10 +1,4 @@
 module.exports = {
-  "env": {
-    "commonjs": true,
-    "es2021": true,
-    "node": true
-  },
-  "extends": "eslint:recommended",
   "parserOptions": {
     "ecmaVersion": "latest"
   },
@@ -26,5 +20,11 @@ module.exports = {
       "always"
     ],
     "no-unused-vars": "warn",
-  }
+    "node/shebang": "off",
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:node/recommended",
+    "prettier"
+  ],
 };

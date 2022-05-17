@@ -31,7 +31,9 @@
     "yaml": "^1.10.2"
   },
   "devDependencies": {
-    "eslint": "^8.11.0"
+    "eslint": "^8.15.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-node": "^11.1.0"
   },
   "repository": {
     "type": "git",
@@ -50,5 +52,8 @@
       "node14-win-x64"
     ],
     "outputPath": "."
+  },
+  "engines": {
+    "node": "~14"
   }
 }

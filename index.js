@@ -899,18 +899,17 @@ ${final_talents}
                       if (!err) {
                         let points = sql[0].points.split(",");
                         res.send({
-                          reply: `[CQ:at,qq=${req.body.sender.user_id
-                            }]人生总结: 
-                  
-    颜值: ${points[0]} 罕见
-    智力: ${points[1]} 罕见
-    体质: ${points[2]} 罕见
-    家境: ${points[3]} 罕见
-    快乐: 0 罕见
-    享年: 0 罕见
-    总评: ${points[0] + points[1] + points[2] + points[3]} 罕见
-    
-    感谢您的重开，欢迎您下次光临`,
+                          reply: `[CQ:at,qq=${req.body.sender.user_id}]人生总结: 
+
+颜值: ${points[0]} 罕见
+智力: ${points[1]} 罕见
+体质: ${points[2]} 罕见
+家境: ${points[3]} 罕见
+快乐: 0 罕见
+享年: 0 罕见
+总评: ${points[0] + points[1] + points[2] + points[3]} 罕见
+
+感谢您的重开，欢迎您下次光临`,
                         });
                       }
                     },
@@ -2623,23 +2622,14 @@ function ECYWenDa() {
   });
 }
 
-//获取json串长度
-function getJsonLength(jsonData) {
-  let jsonLength = 0;
-  for (let _item in jsonData) {
-    jsonLength++;
-  }
-  return jsonLength;
-}
-
 //抽10个天赋
 function Talents10x(talents) {
   return new Promise((resolve, _reject) => {
-    let index = getJsonLength(talents);
+    const talentsLength = Object.keys(talents).length;
     let roll_talents = "",
       talents_list = [];
     for (let i = 0; i < 10; i++) {
-      const talents_index = Math.floor(1001 + Math.random() * index);
+      const talents_index = Math.floor(1001 + Math.random() * talentsLength);
       const talents_content = `\n${i} ${talents[talents_index].name}（${talents[talents_index].description}）`;
       roll_talents += talents_content;
       talents_list.push(talents_index);
