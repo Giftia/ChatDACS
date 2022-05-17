@@ -16,7 +16,7 @@ module.exports = {
     const secondContent = mainContent?.split(" ")[1]?.trim() ?? ""; //第二行内容, 替代"あなたが神圣手雷を見つめるとき、神圣手雷もあなたを見つめています";
 
     const fileURL = await generatePicture(pictureSources, firstContent, secondContent);
-    return { type: "text", content: fileURL };
+    return { type: "picture", content: fileURL };
   },
 };
 
