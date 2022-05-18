@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "微信息知频道消息推送插件",
   指令: "提醒",
-  版本: "2.0",
+  版本: "2.1",
   作者: "Giftina",
   描述: "将指定格式的消息推送至微信息知指定频道，适合传送消息至微信。",
   使用示例: "提醒我晚上要手冲",
@@ -16,7 +16,7 @@ module.exports = {
     ).then(function (response) {
       console.log(response.data);
     });
-    return `好的，我会${msg.replace(/我/g, "你")}`;
+    return { type: "text", content: `好的，我会${msg.replace(/我/g, "你")}` };
   },
 };
 

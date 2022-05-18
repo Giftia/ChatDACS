@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "状态栏提示插件",
   指令: "^[/!]?弹窗 (.*)",
-  版本: "2.0",
+  版本: "2.1",
   作者: "Giftina",
   描述: "自动在任务栏显示一个常驻托盘，可用于弹出消息通知。仅在Windows系统下有效。",
   使用示例: "弹窗 您可能是盗版软件的受害者",
@@ -13,7 +13,7 @@ module.exports = {
       const text = new RegExp(module.exports.指令).exec(msg)[1];
       await tray.notify(`来自${userId}(${userName})的消息`, text);
     }
-    return "";
+    return { type: "text", content: "已经在宿主电脑弹出了一个消息通知，请查收" };
   },
 };
 
