@@ -1,21 +1,21 @@
 module.exports = {
   插件名: "聊天教学插件",
-  指令: "^[/!]?问：(.*)答：(.*)",
-  版本: "2.0",
+  指令: "^问：(.*)答：(.*)",
+  版本: "2.1",
   作者: "Giftina",
   描述: "添加一组新的聊天回复，抄板于虹原翼版小夜v3教学系统。来调教小夜说话吧！在优秀的聊天算法加成下，帮助养成由数万用户调教练就的嘴臭词库。当小夜收到含有 `关键词` 的语句时便会有几率触发回复。若该关键词有多个回复，将会随机选择一个回复。支持图片问答。注意！冒号是中文全角的 `：`，而不是英文半角的 `:`，并且在 `关键词` 和 `答：` 之间有一个空格。注意注意！如果像这样 `问：小夜的主人到底是谁呀 答：是你呀` 直接教完整的一句话的话是很难有效触发的，这就很考验你应该如何选择关键词了噢。像上面那个例子的话建议改成这样噢： `问：主人 答：是你呀`",
   使用示例: "问：HELLO 答：WORLD",
   预期返回: "哇!小夜学会啦!对我说: HELLO 试试吧，小夜有可能会回复 WORLD 噢",
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
-    const teachMsg = msg.substr(2).split("答：");
-    const teachMsgChecked = teachMsg.replace(/'/g, ""); //防爆
-    if (teachMsgChecked.length !== 2) {
+    const teachMsgChecked = msg.replace(/'/g, ""); //防爆
+    const teachMsg = teachMsgChecked.substr(2).split("答：");
+    if (teachMsg.length !== 2) {
       console.log("教学指令: 分割有误，退出教学".error);
       return { type: "text", content: "@你教的姿势好像不对噢qwq" };
     }
-    const ask = teachMsgChecked[0].trim(),
-      ans = teachMsgChecked[1].trim();
+    const ask = teachMsg[0].trim(),
+      ans = teachMsg[1].trim();
     if (ask == "" || ans == "") {
       console.log("问/答为空，退出教学".error);
       return { type: "text", content: "@你教的关键词或者回答好像是空的噢qwq" };
