@@ -14,6 +14,7 @@
       技术栈：语言 —— JavaScript，Web框架 —— Express，前端组件库 —— layui。<br/>
       画师：塘李<br/>
       <br/>
+      使用文档：<a href="http://docs.giftia.moe/">http://docs.giftia.moe/</a><br/>
       示例 DEMO：<a href="http://110.42.221.72/" target="_blank">http://110.42.221.72/</a><br/>
       语录来自小夜：<a href="https://github.com/Giftia/Project_Xiaoye" target="_blank">github.com/Giftia/Project_Xiaoye</a>
       <br>
