@@ -18,7 +18,8 @@ if (_cn_reg.test(process.cwd())) {
 /**
  * 声明依赖与配置
  */
-const version = "ChatDACS v3.5.0"; //版本号，会显示在浏览器tab与标题栏
+const versionNumber = "v3.5.1"; //版本号
+const version = `ChatDACS ${versionNumber}`; //系统版本，会显示在web端标题栏
 const utils = require("./plugins/system/utils.js"); //载入系统通用模块
 const compression = require("compression"); //用于gzip压缩
 const express = require("express"); //轻巧的express框架
@@ -33,6 +34,7 @@ const cookie = require("cookie");
 const http = require("http").Server(app);
 const io = require("socket.io")(http);
 const request = require("request");
+const axios = require("axios").default;
 const sqlite3 = require("sqlite3").verbose();
 const db = new sqlite3.Database("./db.db"); //数据库位置，默认与index.js同目录
 const colors = require("colors"); //Console日志染色颜色配置
@@ -325,7 +327,13 @@ io.on("connection", (socket) => {
  */
 function start_qqbot() {
   app.post(GO_CQHTTP_SERVICE_ANTI_POST_API, (req, res) => {
-    //禁言1小时以上自动退群
+    //响应心跳
+    if (req.body.meta_event_type === "heartbeat") {
+      res.send();
+      return 0;
+    }
+
+    //被禁言1小时以上自动退群
     if (req.body.sub_type == "ban" && req.body.user_id == (req.body.message?.self_id ?? QQBOT_QQ)) {
       if (req.body.duration >= 3599) {
         request(
@@ -425,11 +433,10 @@ function start_qqbot() {
         break;
       case "ban":
         notify =
-          `${req.body.user_id} 在群 ${req.body.group_id} 被禁言 ${req.body.duration} 秒`
-            .error;
+          `${req.body.user_id} 在群 ${req.body.group_id} 被禁言 ${req.body.duration} 秒`.error;
         break;
       case "poke":
-        notify = "戳了一戳".log;
+        notify = `${req.body.user_id} 戳了一下 ${req.body.target_id}`.log;
         break;
       default:
         res.send();
@@ -475,9 +482,7 @@ function start_qqbot() {
         Constants.open_ju_reg.test(req.body.message) &&
         Constants.has_qq_reg.test(req.body.message)
       ) {
-        let msg_in = req.body.message.split("菊")[1];
-        let who = msg_in.split("[CQ:at,qq=")[1];
-        who = who.replace("]", "").trim();
+        const who = Constants.has_qq_reg.exec(req.body.message)[1];
         if (Constants.is_qq_reg.test(who)) {
           //如果是自己要被张菊，那么张菊
           if ((req.body.message?.self_id ?? QQBOT_QQ) == who) {
@@ -524,7 +529,7 @@ function start_qqbot() {
             return 0;
             //不是这只小夜被张菊的话，嘲讽那只小夜
           } else {
-            res.send({ reply: `${msg_in}说你呢，快张菊!` });
+            res.send({ reply: `[CQ:at,qq=${who}] 说你呢，快张菊!` });
             return 0;
           }
         }
@@ -619,9 +624,7 @@ function start_qqbot() {
                   Constants.close_ju_reg.test(req.body.message) &&
                   Constants.has_qq_reg.test(req.body.message)
                 ) {
-                  let msg_in = req.body.message.split("菊")[1];
-                  let who = msg_in.split("[CQ:at,qq=")[1];
-                  who = who.replace("]", "").trim();
+                  const who = Constants.has_qq_reg.exec(req.body.message)[1];
                   if (Constants.is_qq_reg.test(who)) {
                     //如果是自己要被闭菊，那么闭菊
                     if ((req.body.message?.self_id ?? QQBOT_QQ) == who) {
@@ -637,7 +640,7 @@ function start_qqbot() {
                       return 0;
                       //不是这只小夜被闭菊的话，嘲讽那只小夜
                     } else {
-                      res.send({ reply: `${msg_in}说你呢，快闭菊!` });
+                      res.send({ reply: `[CQ:at,qq=${who}] 说你呢，快闭菊!` });
                       return 0;
                     }
                   }
@@ -661,8 +664,12 @@ function start_qqbot() {
                   req.body.user_id,
                   req.body?.sender?.nickname,
                   req.body.group_id,
-                  "",
-                  req.body.message?.self_id);
+                  "", //群名暂时还没加
+                  {
+                    selfId: req.body.message?.self_id,
+                    targetId: req.body.sub_type == "poke" ? req.body.target_id : null,
+                  }
+                );
                 if (pluginsReply != "") {
                   const replyToQQ = utils.PluginAnswerToGoCqhttpStyle(pluginsReply);
                   request(
@@ -674,26 +681,25 @@ function start_qqbot() {
                 //戳一戳
                 if (
                   req.body.sub_type === "poke" &&
-                  req.body.target_id == (req.body.message?.self_id ?? QQBOT_QQ)
+                  req.body.target_id == (req.body?.self_id ?? QQBOT_QQ)
                 ) {
+                  logger.info("小夜被戳了".log);
                   c1c_count++;
+
                   if (c1c_count > 2) {
                     c1c_count = 0;
-                    let final = "哎呀戳坏了，不理你了 ٩(๑`^`๑)۶";
+                    const final = "哎呀戳坏了，不理你了 ٩(๑`^`๑)۶";
                     request(
                       `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id
                       }&message=${encodeURI(final)}`,
                       function (error, _response, _body) {
                         if (!error) {
-                          logger.info(
-                            `${req.body.user_id} 戳了一下 ${req.body.target_id}`.log,
-                          );
                           request(
                             `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${req.body.group_id}&user_id=${req.body.user_id}&duration=10`,
                             function (error, _response, _body) {
                               if (!error) {
                                 logger.info(
-                                  `小夜生气了，${req.body.user_id} 被禁言`.error,
+                                  `小夜戳坏了，${req.body.user_id} 被禁言10s`.error,
                                 );
                               }
                             },
@@ -705,15 +711,7 @@ function start_qqbot() {
                     const final = "请不要戳小小夜 >_<";
                     request(
                       `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id
-                      }&message=${encodeURI(final)}`,
-                      function (error, _response, _body) {
-                        if (!error) {
-                          logger.info(
-                            `${req.body.user_id} 戳了一下 ${req.body.target_id}`.log,
-                          );
-                        }
-                      },
-                    );
+                      }&message=${encodeURI(final)}`);
                   }
                   return 0;
                 }
@@ -2335,6 +2333,21 @@ async function InitConfig() {
     );
     logger.info("world.execute(me);".alert);
   });
+
+  /**
+   * 检查更新
+   */
+  axios(
+    "https://api.github.com/repos/Giftia/ChatDACS/releases/latest",
+  ).then((res) => {
+    if (res.data.tag_name !== versionNumber) {
+      logger.info(`当前小夜版本 ${versionNumber}，检测到小夜有新版本 ${res.data.tag_name}，请前往 https://github.com/Giftia/ChatDACS/releases 更新小夜吧`.alert);
+    } else {
+      logger.info(`当前小夜已经是最新版本 ${versionNumber}`.log);
+    }
+  }).catch((err) => {
+    logger.error(`检查更新失败，错误原因: ${err}`.error);
+  });
 }
 
 //异步结巴 by@ssp97
@@ -2639,13 +2652,13 @@ function Talents10x(talents) {
 }
 
 //插件系统核心
-async function ProcessExecute(msg, userId, userName, groupId, groupName, option) {
+async function ProcessExecute(msg, userId, userName, groupId, groupName, options) {
   let pluginReturn = "";
   for (const i in plugins) {
     const reg = new RegExp(plugins[i].指令);
     if (reg.test(msg)) {
       try {
-        pluginReturn = await plugins[i].execute(msg, userId, userName, groupId, groupName, option);
+        pluginReturn = await plugins[i].execute(msg, userId, userName, groupId, groupName, options);
       } catch (e) {
         logger.error(
           `插件 ${plugins[i].插件名} ${plugins[i].版本} 爆炸啦: ${e.stack}`.error,

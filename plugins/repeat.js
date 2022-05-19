@@ -1,15 +1,18 @@
-const repeatStartTimes = 2; //复读机复读消息的触发重复次数
+const repeatStartTimes = 2; //当消息重复几次时，复读消息
 
 module.exports = {
   插件名: "复读机插件",
   指令: "",
-  版本: "2.0",
+  版本: "2.1",
   作者: "Giftina",
   描述: `特殊插件，没有主动触发指令。当某条消息重复 ${repeatStartTimes} 次时，'小夜牌高保真复读机' 会跟风复读一次。`,
   使用示例: "[某条消息重复了2次]",
   预期返回: "[小夜复读了这条消息]",
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
+    //如果没有msg，说明应该是戳一戳消息
+    msg = msg ?? `[CQ:poke,qq=${options.targetId}]`;
+
     //如果没有groupId，则是web端或哔哩哔哩端消息，给个0
     groupId = groupId ?? "0";
 

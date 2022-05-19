@@ -1,21 +1,21 @@
 module.exports = {
   插件名: "系统配置查询插件",
   指令: "^[/!]?(status|系统状态)$",
-  版本: "2.0",
+  版本: "2.1",
   作者: "Giftina",
   描述: "查询小夜的相关信息与系统当前的主要配置项",
   使用示例: "系统状态",
   预期返回: "[小夜的相关信息与系统当前的主要配置项]",
 
-  execute: async function (msg, userId, userName, groupId, groupName, option) {
-    const status = await CheckoutStatus(option);
+  execute: async function (msg, userId, userName, groupId, groupName, options) {
+    const status = await CheckoutStatus(options.selfId);
     return { type: "text", content: status };
   },
 };
 
 //查询配置
-async function CheckoutStatus(option) {
-  const selfQQId = !option ? QQBOT_QQ : option == "1648468212" ? "1648468212(小小夜本家)" : option;
+async function CheckoutStatus(selfId) {
+  const selfQQId = !selfId ? QQBOT_QQ : selfId == "1648468212" ? "1648468212(小小夜本家)" : selfId;
   const stat =
     `宿主架构: ${os.hostname()} ${os.type()} ${os.arch()}
 当前配置:
