@@ -14,6 +14,7 @@
       技术栈：语言 —— JavaScript，Web框架 —— Express，前端组件库 —— layui。<br/>
       画师：塘李<br/>
       <br/>
+      使用文档：<a href="http://docs.giftia.moe/">http://docs.giftia.moe/</a><br/>
       示例 DEMO：<a href="http://110.42.221.72/" target="_blank">http://110.42.221.72/</a><br/>
       语录来自小夜：<a href="https://github.com/Giftia/Project_Xiaoye" target="_blank">github.com/Giftia/Project_Xiaoye</a>
       <br>
@@ -57,7 +58,7 @@
 
 - 保护您的隐私，BOT 完全属于您，我无法得知您 BOT 的任何信息（我甚至无法知道您部署了一个私人 BOT）
 - 高可用度，稳定的功能，不会因为公共小夜离线而无法运行；独立的词库，不会出现 ky 的回复
-- 可自行定制 BOT 账号的头像、名字、功能，甚至是自己改造功能
+- 可自行定制 BOT 账号的头像、名字、配置，甚至是自己改造功能
 - 减轻我的服务器负担，让公共小夜活得更久，可循环利用
 - 通过搭建流程体验，学习一门先进的技术，很 cool，很极客
 
