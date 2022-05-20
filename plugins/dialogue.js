@@ -1,9 +1,9 @@
 module.exports = {
-  插件名: "台词名场面搜索插件",
+  插件名: "名场面插件",
   指令: "^[/!]?名场面 (.*)",
-  版本: "1.0",
+  版本: "1.1",
   作者: "Giftina",
-  描述: "根据字幕台词搜索台词出处，原作：https://github.com/windrises/dialogue.moe",
+  描述: "根据字幕台词搜索名场面出处，原作：https://github.com/windrises/dialogue.moe",
   使用示例: "名场面 不能逃避",
   预期返回: "原作：福音战士新剧场版：序 不能逃避…不能逃避…不能逃避… 不能逃避…不能逃避…不能逃避… 不能逃避",
 
@@ -29,11 +29,15 @@ module.exports = {
         const dialogue = res.data.dialogues[Math.floor(Math.random() * res.data.dialogues.length)];
 
         const result = `原作：${dialogue.subject_name}
-……
-${dialogue.text_before}
-${dialogue.text_current}
-${dialogue.text_after}
-……`;
+:━━━━●${dialogue.time_current}────:
+  ⇆         ◁        ❚❚        ▷          ↻
+
+          正 在 播 放 名 场 面
+
+  - ${dialogue.text_before}
+  - ${dialogue.text_current}
+  - ${dialogue.text_after}
+`;
 
         return result;
       }
