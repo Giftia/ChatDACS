@@ -3,10 +3,6 @@ module.exports = {
     "ecmaVersion": "latest"
   },
   "rules": {
-    "indent": [
-      "warn",
-      2
-    ],
     "linebreak-style": [
       "warn",
       "windows"
