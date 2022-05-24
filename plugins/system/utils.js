@@ -1,7 +1,7 @@
 /**
  * @name 系统工具类
  * @description 各种公用函数和系统底层函数
- * @version 1.11
+ * @version 1.12
  */
 module.exports = {
   /**
@@ -72,10 +72,10 @@ module.exports = {
    * @returns {string} "昵称" ?? "匿名"
    */
   async RandomNickname() {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, _reject) => {
       request(
         `http://api.tianapi.com/txapi/cname/index?key=${TIAN_XING_API_KEY}`,
-        (err, response, body) => {
+        (err, _response, body) => {
           body = JSON.parse(body);
           if (!err && body.code == 200) {
             resolve(body.newslist[0].naming);
@@ -141,6 +141,34 @@ module.exports = {
   },
 
   /**
+   * 将插件回复转为QQ频道能解析的格式
+   * @param {string} answer 
+   * @returns {object} { type: "picture | directPicture | audio | video | file", content: "内容" }
+   */
+  PluginAnswerToQQGuildStyle(answer) {
+    switch (answer.type) {
+      case "picture":
+        return {
+          image: `http://127.0.0.1:${WEB_PORT}${answer.content?.file}`,
+        };
+      case "directPicture":
+        return {
+          image: `http://127.0.0.1:${WEB_PORT}${answer.content?.file.replace("./static", "")}`,
+        };
+      case "audio":
+        return {
+          text: answer.content.filename,
+          audio: `http://127.0.0.1:${WEB_PORT}${answer.content?.file}`,
+        };
+      default:
+        return {
+          text: answer.content,
+        };
+    }
+
+  },
+
+  /**
    * 保存qq侧传来的图
    * @param {string} imgUrl 
    * @returns {string} "/xiaoye/images/xxx.jpg"
@@ -165,6 +193,139 @@ module.exports = {
     });
   },
 
+  //随机选取一个群(可以用来启动时加载当前所有群)
+  RandomGroupList() {
+    return new Promise((resolve, reject) => {
+      request(`http://${GO_CQHTTP_SERVICE_API_URL}/get_group_list`, (err, response, body) => {
+        body = JSON.parse(body);
+        if (!err && body.data.length != 0) {
+          const rand_group_num = Math.floor(Math.random() * body.data.length);
+          console.log("随机选取一个群: ", body.data[rand_group_num].group_id);
+          resolve(body.data[rand_group_num].group_id);
+        } else {
+          reject(
+            "随机选取一个群错误。错误原因: " + JSON.stringify(response.body),
+          );
+        }
+      });
+    });
+  },
+
+  //获取balabala
+  GetBalabalaList() {
+    return new Promise((resolve, reject) => {
+      db.all("SELECT * FROM balabala;", (err, sql) => {
+        if (!err && sql[0]) {
+          let balabala = sql;
+          resolve(balabala);
+        } else {
+          reject("获取balabala错误。错误原因: " + err + ", sql:" + sql);
+        }
+      });
+    });
+  },
+
+  //随机延时提醒闭菊的群
+  DelayAlert(serviceStoppedList) {
+    const alertMsg = [
+      //提醒文本列表
+      "呜呜呜，把人家冷落了那么久，能不能让小夜张菊了呢...",
+      "闭菊那么久了，朕的菊花痒了!还不快让小夜张菊!",
+      "小夜也想为大家带来快乐，所以让小夜张菊，好吗？",
+      "欧尼酱，不要再无视我了，小夜那里很舒服的，让小夜张菊试试吧~",
+    ];
+    for (let i in serviceStoppedList) {
+      const delayTime = Math.floor(Math.random() * 60); //随机延时0到60秒
+      const randomAlertMsg =
+        alertMsg[Math.floor(Math.random() * alertMsg.length)];
+      console.log(
+        `小夜将会延时 ${delayTime} 秒后提醒群 ${serviceStoppedList[i]} 张菊，提醒文本为: ${randomAlertMsg}`,
+      );
+      setTimeout(function () {
+        request(
+          `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${serviceStoppedList[i]
+          }&message=${encodeURI(randomAlertMsg)}`,
+          function (error, _response, _body) {
+            if (!error) {
+              console.log(
+                `小夜提醒了群 ${serviceStoppedList[i]} 张菊，提醒文本为: ${randomAlertMsg}`,
+              );
+            }
+          },
+        );
+      }, 1000 * delayTime);
+    }
+  },
+
+  //异步sqliteALL by@ssp97
+  sqliteAll: function (query) {
+    return new Promise(function (resolve, reject) {
+      db.all(query, function (err, rows) {
+        if (err) {
+          reject(err.message);
+        } else {
+          resolve(rows);
+        }
+      });
+    });
+  },
+
+  //私聊发送孤寡
+  GuGua(who) {
+    const guGuaPicList = [
+      //图片列表
+      "1.jpg",
+      "2.jpg",
+      "3.jpg",
+      "4.png",
+      "5.gif",
+    ];
+    for (let i in guGuaPicList) {
+      const file_online = `http://127.0.0.1:${WEB_PORT}/xiaoye/ps/${guGuaPicList[i]}`;
+      const pic_now = `[CQ:image,file=${file_online}]`;
+      setTimeout(function () {
+        request(
+          `http://${GO_CQHTTP_SERVICE_API_URL}/send_private_msg?user_id=${who}&message=${encodeURI(
+            pic_now,
+          )}`,
+          function (error, _response, _body) {
+            if (!error) {
+              console.log(`小夜孤寡了 ${who}，孤寡图为: ${pic_now}`.log);
+            }
+          },
+        );
+      }, 1000 * 5 * i);
+    }
+  },
+
+  //群发送孤寡
+  QunGuGua(who) {
+    const guGuaPicList = [
+      //图片列表
+      "1.jpg",
+      "2.jpg",
+      "3.jpg",
+      "4.png",
+      "5.gif",
+    ];
+    for (let i in guGuaPicList) {
+      const file_online = `http://127.0.0.1:${WEB_PORT}/xiaoye/ps/${guGuaPicList[i]}`;
+      const pic_now = `[CQ:image,file=${file_online}]`;
+      setTimeout(function () {
+        request(
+          `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${who}&message=${encodeURI(
+            pic_now,
+          )}`,
+          function (error, _response, _body) {
+            if (!error) {
+              console.log(`小夜孤寡了群 ${who}，孤寡图为: ${pic_now}`.log);
+            }
+          },
+        );
+      }, 1000 * 5 * i);
+    }
+  },
+
 };
 
 const request = require("request");
@@ -176,7 +337,7 @@ const crypto = require("crypto");
 const sqlite3 = require("sqlite3").verbose();
 const db = new sqlite3.Database("db.db"); //数据库位置，默认与index.js同目录
 const mp3Duration = require("mp3-duration");
-let WEB_PORT, TIAN_XING_API_KEY;
+let WEB_PORT, GO_CQHTTP_SERVICE_API_URL, TIAN_XING_API_KEY;
 
 Init();
 
@@ -197,5 +358,6 @@ function ReadConfig() {
 async function Init() {
   const resolve = await ReadConfig();
   WEB_PORT = resolve.System.WEB_PORT;
+  GO_CQHTTP_SERVICE_API_URL = resolve.System.GO_CQHTTP_SERVICE_API_URL;
   TIAN_XING_API_KEY = resolve.ApiKey.TIAN_XING_API_KEY;
 }

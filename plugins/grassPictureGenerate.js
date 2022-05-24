@@ -4,7 +4,7 @@ module.exports = {
   版本: "2.1",
   作者: "Giftina",
   描述: "生成一张黑白生草图。",
-  使用示例: "黑白图 当你凝望神圣手雷的时候，神圣手雷也在凝望你 あなたが神圣手雷を見つめるとき、神圣手雷もあなたを見つめています[CQ:image,file=913b054d35b2f4ac1bb85f5dc5f9d62b.image,url=https://gchat.qpic.cn/gchatpic_new/296513927/881350377-2430173961-913B054D35B2F4AC1BB85F5DC5F9D62B/0?term=3,subType=1]",
+  使用示例: "黑白图 当你凝望神圣手雷的时候，神圣手雷也在凝望你 あなたが神圣手雷を見つめるとき、神圣手雷もあなたを見つめています[图片]",
   预期返回: "[一张黑白生草图]",
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {

@@ -11,6 +11,9 @@ System:
   #接入哔哩哔哩直播聊天开关:
   CONNECT_BILIBILI_LIVE_SWITCH: false
 
+  #接入QQ频道开关:
+  CONNECT_QQ_GUILD_SWITCH: false
+
   #web端使用的本机端口，如果有冲突的话请尝试更改:
   WEB_PORT: 80
 
@@ -30,6 +33,12 @@ ApiKey:
 
   #息知频道key，申请地址 https://xz.qqoq.net/
   XIZHI_CHANNEL_KEY: ""
+
+  #QQ频道BotAppID，申请地址 https://q.qq.com/，获取地址 https://q.qq.com/bot/#/developer/developer-setting
+  QQ_GUILD_APP_ID: ""
+
+  #QQ频道机器人令牌，申请地址 https://q.qq.com/，获取地址 https://q.qq.com/bot/#/developer/developer-setting
+  QQ_GUILD_TOKEN: ""
 
 #qqBot配置
 qqBot:

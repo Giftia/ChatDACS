@@ -21,12 +21,33 @@ module.exports = Object.freeze({
   fake_forward_reg: new RegExp("^/强制迫害.*"), //匹配伪造转发指令
   approve_group_invite_reg: new RegExp("^/批准 (.*)"), //匹配批准加群指令
   test_reply_reg: new RegExp("\\[CQ:reply,id:.*复读"), //匹配回复测试指令
-  life_restart_reg: new RegExp("^人生重开"), //匹配人生重开指令
-  roll_talents_reg: new RegExp("^选择天赋 (.*)"), //匹配选择天赋指令
-  set_points_reg: new RegExp("^分配属性 (.*)"), //匹配分配属性指令
-  only_0to9_reg: new RegExp("^[0-9]$"), //匹配仅0-9
 
   //全局常量
   TTS_FILE_RECV_PATH: "./static/xiaoye/live_latest_reply.txt", //哔哩哔哩字幕文件存储路径
   HTML_PATH: "/static/index.html", //首页
+  AUDIO_START: 0, //AudioControl 开始播放操作
+  //winston 日志配置
+  LOG_LEVELS: {
+    levels: {
+      error: 0,
+      warn: 1,
+      info: 2,
+      http: 3,
+      verbose: 4,
+      debug: 5,
+      silly: 6,
+    },
+    colors: {
+      error: "red",
+      warn: "orange",
+      info: "yellow",
+      http: "green",
+      verbose: "blue",
+      debug: "gray",
+      silly: "gray",
+    },
+  },
+  HELP_CONTENT:
+    "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏右侧还有更多功能。",
+
 });

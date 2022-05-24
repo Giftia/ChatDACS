@@ -22,6 +22,7 @@
     "music-metadata": "^7.12.2",
     "nodejieba": "2.5.2",
     "play-sound": "^1.1.5",
+    "qq-guild-bot": "^2.9.4",
     "request": "^2.88.2",
     "require.all": "^2.0.5",
     "socket.io": "^4.4.1",
