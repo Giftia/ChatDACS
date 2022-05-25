@@ -28,7 +28,7 @@
     "rss-parser": "^3.12.0",
     "socket.io": "^4.4.1",
     "sqlite3": "^5.0.7",
-    "trayicon": "^1.2.1",
+    "trayicon": "^1.2.2",
     "winston": "^3.6.0",
     "yaml": "^1.10.2"
   },
@@ -45,10 +45,9 @@
   "pkg": {
     "assets": [
       "node_modules/canvas/build/Release/*",
-      "node_modules/sqlite3/lib/binding/napi-v3-win32-x64/node_sqlite3.node",
+      "node_modules/sqlite3/lib/binding/napi-v6-win32-unknown-x64/node_sqlite3.node",
       "node_modules/nodejieba/build/Release/nodejieba.node",
-      "node_modules/socket.io/client-dist/*",
-      "static"
+      "node_modules/socket.io/client-dist/*"
     ],
     "targets": [
       "node14-win-x64"

@@ -29,22 +29,11 @@ jobs:
       - name: Package
         run: pkg . --compress Brotli
 
-      - name: Reinstall Modules For Plugins
-        run: |
-          npm i request
-          npm i yaml
-          npm i sqlite3
-          npm i require.all
-          npm i axios
-          npm i trayicon
-          npm i canvas
-
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3
         with:
           name: ChatDACS
           path: |
-            ./node_modules/
             ./config/
             ./static/
             ./plugins/

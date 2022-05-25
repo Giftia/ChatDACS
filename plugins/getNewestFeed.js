@@ -12,7 +12,6 @@ module.exports = {
   },
 };
 
-// const Parser = require(process.cwd(), "rss-parser");
 const Parser = require("rss-parser");
 const rssParser = new Parser({
   headers: {
