@@ -27,7 +27,7 @@
     "socket.io": "^4.4.1",
     "sqlite3": "^5.0.7",
     "winston": "^3.6.0",
-    "yaml": "^1.10.2"
+    "yaml": "^2.1.0"
   },
   "devDependencies": {
     "eslint": "^8.15.0",
