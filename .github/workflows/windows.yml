@@ -23,23 +23,23 @@ jobs:
       - name: Clean Install Modules
         run: npm ci --prod
 
-      - name: Install PKG Tool
-        run: npm install pkg -g
-
-      - name: Package
-        run: pkg . --compress Brotli
-
       - name: Move Modules For Plugins
         run: |
           mkdir plugins/node_modules
           copy node_modules/request plugins/node_modules -r
-          copy node_modules/js-yaml plugins/node_modules -r
+          copy node_modules/yaml plugins/node_modules -r
           copy node_modules/trayicon plugins/node_modules -r
           copy node_modules/sqlite3 plugins/node_modules -r
           copy node_modules/require.all plugins/node_modules -r
           copy node_modules/axios plugins/node_modules -r
           copy node_modules/canvas plugins/node_modules -r
           copy node_modules/rss-parser plugins/node_modules -r
+
+      - name: Install PKG Tool
+        run: npm install pkg -g
+
+      - name: Package
+        run: pkg . --compress Brotli
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3
