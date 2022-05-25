@@ -18,7 +18,7 @@ if (_cn_reg.test(process.cwd())) {
 /**
  * 声明依赖与配置
  */
-const versionNumber = "v3.5.2"; //版本号
+const versionNumber = "v3.5.3"; //版本号
 const version = `ChatDACS ${versionNumber}`; //系统版本，会显示在web端标题栏
 const utils = require("./plugins/system/utils.js"); //载入系统通用模块
 const Constants = require("./config/constants.js"); //系统常量
@@ -163,8 +163,8 @@ var onlineUsers = 0, //预定义
 logger.info("开始加载插件……".log);
 const plugins = require.all({
   dir: path.join(process.cwd(), "plugins"),
-  match: /.*\.js/,
-  require: /\.(js)$/,
+  match: /\.js$/,
+  require: /\.js$/,
   recursive: false,
   encoding: "utf-8",
   resolve: function (plugins) {
