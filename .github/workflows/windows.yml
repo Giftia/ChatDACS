@@ -12,28 +12,22 @@ jobs:
     name: Build 🚀
     runs-on: windows-latest
     steps:
-      - name: Set up node
+      - name: Set Up Node
         uses: actions/setup-node@v2
         with:
           node-version: "14"
 
-      - name: Check out code
+      - name: Check Out Code
         uses: actions/checkout@v2
 
       - name: Clean Install Modules
         run: npm ci --prod
 
-      - name: Move Modules For Plugins
+      - name: Clean Install For Plugins
         run: |
-          mkdir plugins/node_modules
-          copy node_modules/request plugins/node_modules -r
-          copy node_modules/yaml plugins/node_modules -r
-          copy node_modules/trayicon plugins/node_modules -r
-          copy node_modules/sqlite3 plugins/node_modules -r
-          copy node_modules/require.all plugins/node_modules -r
-          copy node_modules/axios plugins/node_modules -r
-          copy node_modules/canvas plugins/node_modules -r
-          copy node_modules/rss-parser plugins/node_modules -r
+          cd ./plugins/
+          npm ci --prod
+          cd ..
 
       - name: Install PKG Tool
         run: npm install pkg -g
