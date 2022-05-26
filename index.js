@@ -18,7 +18,7 @@ if (_cn_reg.test(process.cwd())) {
 /**
  * 声明依赖与配置
  */
-const versionNumber = "v3.5.3"; //版本号
+const versionNumber = "v3.5.4"; //版本号
 const version = `ChatDACS ${versionNumber}`; //系统版本，会显示在web端标题栏
 const utils = require("./plugins/system/utils.js"); //载入系统通用模块
 const Constants = require("./config/constants.js"); //系统常量
@@ -54,7 +54,7 @@ require.all = require("require.all"); //插件加载器
 const { KeepLiveTCP } = require("bilibili-live-ws");
 const yaml = require("yaml"); //使用yaml解析配置文件
 const voicePlayer = require("play-sound")({
-  player: path.join(process.cwd(), "plugins", "cmdmp3win.exe"),
+  player: path.join(process.cwd(), "plugins", "mpg123", "mpg123.exe"),
 }); //mp3静默播放工具，用于直播时播放语音
 const ipTranslator = require("lib-qqwry")(true); //lib-qqwry是一个高效纯真IP库(qqwry.dat)引擎，传参 true 是将IP库文件读入内存中以提升效率
 const { createOpenAPI, createWebsocket } = require("qq-guild-bot"); //QQ频道SDK
@@ -708,23 +708,10 @@ function StartQQBot() {
                     `@有人对线说 ${message}，小夜要嘴臭了`,
                   );
                   ChatProcess(message)
-                    .then((resolve) => {
-                      let reply = resolve;
-                      plugins.tts(reply)
+                    .then((reply) => {
+                      plugins.tts.execute(`吠 ${reply}`)
                         .then((resolve) => {
-                          let tts_file = `[CQ:record,file=http://127.0.0.1:${WEB_PORT}${resolve.file},url=http://127.0.0.1:${WEB_PORT}${resolve.file}]`;
-                          res.send({ reply: tts_file });
-                        })
-                        .catch((reject) => {
-                          console.log(`TTS错误: ${reject}`.error);
-                        });
-                    })
-                    .catch((reject) => {
-                      //如果没有匹配到回复，那就回复一句默认语音
-                      console.log(`${reject}，语音没有回复`.warn);
-                      plugins.tts()
-                        .then((resolve) => {
-                          let tts_file = `[CQ:record,file=http://127.0.0.1:${WEB_PORT}${resolve.file},url=http://127.0.0.1:${WEB_PORT}${resolve.file}]`;
+                          const tts_file = `[CQ:record,file=http://127.0.0.1:${WEB_PORT}${resolve.file},url=http://127.0.0.1:${WEB_PORT}${resolve.file}]`;
                           res.send({ reply: tts_file });
                         })
                         .catch((reject) => {
@@ -1619,21 +1606,20 @@ function StartQQBot() {
                   return 0;
                 }
 
-                //测试: 将指定的回复进行操作
-                if (Constants.test_reply_reg.test(req.body.message)) {
-                  //从 [CQ:reply,id=265936982] [CQ:at,qq=38263547] 复读 消息里获取id
+                //手动复读，复读回复中指定的消息
+                if (Constants.reply_reg.test(req.body.message)) {
+                  //从 [CQ:reply,id=-1982767585][CQ:at,qq=1005056803] 复读 消息里获取id
 
-                  let msg_in = req.body.message.split("id=")[1];
-                  let id = msg_in.split("] [")[0].trim();
-                  id = msg_in.split("][")[0].trim();
+                  const msgID = req.body.message.split("id=")[1].split("]")[0].trim();
+                  logger.info(`收到手动复读指令，消息id: ${msgID}`.log);
 
                   request(
-                    `http://${GO_CQHTTP_SERVICE_API_URL}/get_msg?message_id=${id}`,
+                    `http://${GO_CQHTTP_SERVICE_API_URL}/get_msg?message_id=${msgID}`,
                     function (error, _response, body) {
                       body = JSON.parse(body);
                       if (!error) {
                         logger.info(`复读历史消息: ${body.data.message}`.log);
-                        res.send({ reply: `${body.data.message}` });
+                        res.send({ reply: body.data.message });
                       }
                     },
                   );
@@ -1658,7 +1644,7 @@ function StartQQBot() {
                 }
 
                 //管理员功能: 提醒停止服务的群启用小夜
-                if (req.body.message === "/admin alert_open") {
+                if (req.body.message === "/提醒启用小夜") {
                   for (let i in QQBOT_ADMIN_LIST) {
                     if (req.body.user_id == QQBOT_ADMIN_LIST[i]) {
                       logger.info("管理员启动了提醒任务".log);
@@ -1764,37 +1750,6 @@ function StartQQBot() {
                       io.emit("system", `@小夜回复: ${resolve}`);
                       res.send({ reply: resolve });
                       return 0;
-                    })
-                    .catch((reject) => {
-                      //无匹配则随机回复balabala废话
-                      utils.GetBalabalaList()
-                        .then((resolve) => {
-                          let random_balabala =
-                            resolve[Math.floor(Math.random() * resolve.length)]
-                              .balabala;
-                          res.send({ reply: random_balabala });
-                          io.emit(
-                            "system",
-                            `@小夜觉得${random_balabala}`,
-                          );
-                          logger.info(
-                            `${reject}，小夜觉得${random_balabala}`.log,
-                          );
-                          return 0;
-                        })
-                        .catch((reject) => {
-                          logger.info(
-                            `小夜试图balabala但出错了: ${reject}`.error,
-                          );
-                          res.send({
-                            reply: `小夜试图balabala但出错了: ${reject}`,
-                          });
-                          io.emit(
-                            "system",
-                            `@小夜试图balabala但出错了: ${reject}`,
-                          );
-                          return 0;
-                        });
                     });
                 } else {
                   res.send(); //相当于严格模式，如果有多条res.send将会报错
@@ -1823,25 +1778,6 @@ function StartQQBot() {
           logger.info(`小夜回复 ${resolve}`.log);
           io.emit("system", `@小夜回复: ${resolve}`);
           res.send({ reply: resolve });
-        })
-        .catch((reject) => {
-          //无匹配则随机回复balabala废话
-          utils.GetBalabalaList()
-            .then((resolve) => {
-              let random_balabala =
-                resolve[Math.floor(Math.random() * resolve.length)].balabala;
-              res.send({ reply: random_balabala });
-              io.emit("system", `@小夜觉得${random_balabala}`);
-              logger.info(`${reject}，小夜觉得${random_balabala}`.log);
-            })
-            .catch((reject) => {
-              logger.info(`小夜试图balabala但出错了: ${reject}`.error);
-              res.send({ reply: `小夜试图balabala但出错了: ${reject}` });
-              io.emit(
-                "system",
-                `@小夜试图balabala但出错了: ${reject}`,
-              );
-            });
         });
       return 0;
     } else {
@@ -1880,10 +1816,10 @@ function StartQQBot() {
  */
 function StartLive() {
   const live = new KeepLiveTCP(BILIBILI_LIVE_ROOM_ID);
-  live.on("open", () => logger.info("直播间连接成功".log));
+  live.on("open", () => logger.info(`哔哩哔哩直播间 ${BILIBILI_LIVE_ROOM_ID} 连接成功`.log));
 
   live.on("live", () => {
-    live.on("heartbeat", (online) => logger.info(`心跳包成功，直播间在线人数: ${online}`.log));
+    live.on("heartbeat", (online) => logger.info(`直播间在线人数: ${online}`.log));
 
     live.on("DANMU_MSG", async (data) => {
       const danmu = {
@@ -1891,6 +1827,8 @@ function StartLive() {
         userId: data.info[2][0],
         userName: data.info[2][1]
       };
+
+      console.log(`${danmu.userName} 说: ${danmu.content}`.log);
 
       //哔哩哔哩端插件应答器
       const pluginsReply = await ProcessExecute(danmu.content, danmu.userId, danmu.userName) ?? "";
@@ -1903,94 +1841,36 @@ function StartLive() {
         const chatReply = await ChatProcess(danmu.content);
         if (chatReply) {
           replyToBiliBili = chatReply;
-        } else {
-          //如果没有匹配到回复，那就随机回复balabala废话
-          const balaBalaList = await utils.GetBalabalaList();
-          const randBalaBala = balaBalaList[Math.floor(Math.random() * balaBalaList.length)].balabala;
-          replyToBiliBili = randBalaBala;
         }
       }
 
       fs.writeFileSync(Constants.TTS_FILE_RECV_PATH, `@${danmu.userName} ${replyToBiliBili}`);
-      const chatReplyToTTS = await plugins.tts(replyToBiliBili);
-      const ttsFile = `${process.cwd()}/static${chatReplyToTTS.file}`;
-      voicePlayer.play(ttsFile, function (err) {
-        if (err) throw err;
-      });
+      const chatReplyToTTS = await plugins.tts.execute(`吠 ${replyToBiliBili}`);
+
+      //如果语音合成成功的话，直接播放
+      if (chatReplyToTTS.content.file) {
+        const ttsFile = `${process.cwd()}/static${chatReplyToTTS.content.file}`;
+        voicePlayer.play(ttsFile, function (err) {
+          if (err) {
+            console.log("播放失败：", err);
+          }
+        });
+      }
     });
 
     live.on("SEND_GIFT", (data) => {
       const gift = data.data;
-      console.log(`${gift.uname}送了${gift.num}个${gift.giftName}`.log);
-      if (gift.num > 1) {
-        console.log(`${gift.uname}送了${gift.num}个${gift.giftName}`.log);
-        console.log(`${gift.uname}送了${gift.num}个${gift.giftName}`.log);
-      }
-    });
-
-    live.on("GUARD_BUY", (data) => {
-      const guard = data.data;
-      console.log(`${guard.username}购买了${guard.num}个${guard.item}`.log);
+      console.log(`${gift.uname}送了 ${gift.num} 个 ${gift.giftName}`.log);
     });
 
     live.on("WELCOME", (data) => {
       const welcome = data.data;
-      console.log(`${welcome.uname}进入直播间`.log);
+      console.log(`${welcome.uname} 进入直播间`.log);
     });
 
     live.on("WELCOME_GUARD", (data) => {
       const welcome = data.data;
-      console.log(`${welcome.uname}进入直播间`.log);
-    });
-
-    live.on("ROOM_BLOCK_MSG", (data) => {
-      const block = data.data;
-      console.log(`${block.uname}禁言了${block.time}秒`.log);
-    });
-
-    live.on("ROOM_UNBLOCK_MSG", (data) => {
-      const block = data.data;
-      console.log(`${block.uname}解除禁言`.log);
-    });
-
-    live.on("ROOM_BLOCK_ALL", (data) => {
-      const block = data.data;
-      console.log(`${block.uname}禁言了`.log);
-    });
-
-    live.on("ROOM_UNBLOCK_ALL", (data) => {
-      const block = data.data;
-      console.log(`${block.uname}解除禁言`.log);
-    });
-
-    live.on("ROOM_BLOCK_USER", (data) => {
-      const block = data.data;
-      console.log(`${block.uname}禁言了`.log);
-    });
-
-    live.on("ROOM_UNBLOCK_USER", (data) => {
-      const block = data.data;
-      console.log(`${block.uname}解除禁言`.log);
-    });
-
-    live.on("SYS_MSG", (data) => {
-      const msg = data.data;
-      console.log(`${msg.msg}`.log);
-    });
-
-    live.on("SYS_GIFT", (data) => {
-      const msg = data.data;
-      console.log(`${msg.msg}`.log);
-    });
-
-    live.on("SYS_MSG_IN", (data) => {
-      const msg = data.data;
-      console.log(`${msg.msg}`.log);
-    });
-
-    live.on("SYS_GIFT_IN", (data) => {
-      const msg = data.data;
-      console.log(`${msg.msg}`.log);
+      console.log(`${welcome.uname} 进入直播间`.log);
     });
   });
 }

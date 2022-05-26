@@ -1,14 +1,21 @@
 module.exports = {
   插件名: "语音合成插件",
   指令: "^[/!]?吠(.*)",
-  版本: "2.0",
+  版本: "2.1",
   作者: "Giftina",
   描述: "让小夜开口说话吧。小夜使用基于大数据的情感幼女语音合成技术，能吠出更自然的发音、更丰富的情感和更强大的表现力。可以插入一些棒读音以提高生草效果。语速、语调、声线可调，自由度比较好。",
   使用示例: "/吠 太好听了吧啊，你唱歌真的好嗷好听啊，简直就是天岸籁，我刚才听到你唱歌了，我们以后一起唱好不好，一起唱昂，一起做学园偶像昂",
   预期返回: "[唐可可中文语音]",
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
-    const ttsFile = await TTS(msg);
+    const ttsContextFromIncomingMessage = new RegExp(module.exports.指令).exec(msg)[1];
+    const ttsContent = ttsContextFromIncomingMessage || "你好谢谢小笼包再见!";
+    //如果有图片回复，则不合成语音
+    if (Constants.isImage_reg.test(ttsContent)) {
+      return "";
+    }
+
+    const ttsFile = await TTS(ttsContent);
     return { type: "audio", content: ttsFile };
   },
 };
@@ -16,11 +23,10 @@ module.exports = {
 const axios = require("axios").default;
 const fs = require("fs");
 const utils = require("./system/utils.js");
+const Constants = require("../config/constants.js");
 
 //扒的百度臻品音库-度米朵
-async function TTS(msg) {
-  const ttsContextFromIncomingMessage = new RegExp(module.exports.指令).exec(msg)[1];
-  const ttsContent = ttsContextFromIncomingMessage ? msg.split("/吠")[1] : "你好谢谢小笼包再见!";
+async function TTS(ttsContent) {
   const ttsResult = await axios({
     url: "https://ai.baidu.com/aidemo",
     method: "POST",
@@ -39,8 +45,8 @@ async function TTS(msg) {
        */
       spd: "7",  //语速，取值0-15，默认为5中语速
       pit: "10", //音调，取值0-15，默认为5中语调
-      vol: "9", //音量，取值0-9，默认为5中音量
-      aue: "3",  //格式, 3：mp3(default) 4： pcm-16k 5： pcm-8k 6. wav
+      vol: "9", //音量，取值0-15，默认为5中音量
+      aue: "3",  //格式, 3：mp3(default) 4： pcm-16k 5： pcm-8k 6. wav 注：这个接口会无视该参数，生成mp3格式
       tex: encodeURI(ttsContent)
     },
   })
