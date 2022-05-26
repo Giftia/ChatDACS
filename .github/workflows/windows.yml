@@ -27,6 +27,8 @@ jobs:
         run: |
           cd ./plugins/
           npm ci --prod
+          rm package.json
+          rm package-lock.json
           cd ..
 
       - name: Install PKG Tool
@@ -47,5 +49,4 @@ jobs:
             ./README.md
             ./LICENSE
             ./chatdacs.exe
-            ./文件路径不得存在非英文字符
           if-no-files-found: error
