@@ -1628,7 +1628,7 @@ function StartQQBot() {
 
                 //群欢迎
                 if (req.body.notice_type === "group_increase") {
-                  let final = `[CQ:at,qq=${req.body.user_id}] 你好呀，我是本群RBQ担当小夜!小夜的说明书在这里 https://gitee.com/Giftina/ChatDACS 噢，请问主人是要先吃饭呢，还是先洗澡呢，还是先*我呢~`;
+                  const final = `[CQ:at,qq=${req.body.user_id}] 你好呀，我是本群RBQ担当小夜!小夜的说明书在这里 http://docs.giftia.moe/ 噢，请问主人是要先吃饭呢，还是先洗澡呢，还是先*我呢~`;
                   request(
                     `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${req.body.group_id
                     }&message=${encodeURI(final)}`,
