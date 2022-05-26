@@ -2,7 +2,7 @@ module.exports = Object.freeze({
   //正则表达式
   change_reply_probability_reg: new RegExp("^/回复率 [0-9]*"), //匹配修改qqBot小夜回复率
   change_fudu_probability_reg: new RegExp("^/复读率 [0-9]*"), //匹配修改qqBot小夜复读率
-  isImage_reg: new RegExp("\\[CQ:image,file:"), //匹配qq图片消息
+  isImage_reg: new RegExp("\\[CQ:image,file"), //匹配qq图片消息
   img_url_reg: new RegExp("https(.*term=3)"), //匹配图片地址
   isVideo_reg: new RegExp("\\[CQ:video,file:"), //匹配qq视频消息
   video_url_reg: new RegExp("http(.*term:unknow)"), //匹配视频地址
@@ -20,7 +20,7 @@ module.exports = Object.freeze({
   gugua_reg: new RegExp("^/孤寡.*"), //匹配孤寡指令
   fake_forward_reg: new RegExp("^/强制迫害.*"), //匹配伪造转发指令
   approve_group_invite_reg: new RegExp("^/批准 (.*)"), //匹配批准加群指令
-  test_reply_reg: new RegExp("\\[CQ:reply,id:.*复读"), //匹配回复测试指令
+  reply_reg: new RegExp("\\[CQ:reply,id=.*复读"), //匹配回复测试指令
 
   //全局常量
   TTS_FILE_RECV_PATH: "./static/xiaoye/live_latest_reply.txt", //哔哩哔哩字幕文件存储路径

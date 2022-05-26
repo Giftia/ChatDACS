@@ -1,7 +1,7 @@
 /**
  * @name 系统工具类
  * @description 各种公用函数和系统底层函数
- * @version 1.12
+ * @version 1.13
  */
 module.exports = {
   /**
@@ -206,20 +206,6 @@ module.exports = {
           reject(
             "随机选取一个群错误。错误原因: " + JSON.stringify(response.body),
           );
-        }
-      });
-    });
-  },
-
-  //获取balabala
-  GetBalabalaList() {
-    return new Promise((resolve, reject) => {
-      db.all("SELECT * FROM balabala;", (err, sql) => {
-        if (!err && sql[0]) {
-          let balabala = sql;
-          resolve(balabala);
-        } else {
-          reject("获取balabala错误。错误原因: " + err + ", sql:" + sql);
         }
       });
     });

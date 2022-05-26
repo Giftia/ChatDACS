@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "随机网图插件",
   指令: "^[/!]?随机网图$",
-  版本: "2.0",
+  版本: "2.1",
   作者: "Giftina",
   描述: "从随机网络图源下载图片后发送图片。",
   使用示例: "随机网图",
@@ -15,11 +15,9 @@ module.exports = {
 
 /**
  * 其他可用随机图源：
- * https://api.nmb.show/xiaojiejie1.php
- * https://api.btstu.cn/sjbz/?m_lx=suiji
  * https://api.btstu.cn/sjbz/zsy.php
  */
-const 随机图源 = "http://api.nmb.show/xiaojiejie2.php";
+const 随机图源 = "https://api.btstu.cn/sjbz/?m_lx=suiji";
 const request = require("request");
 const fs = require("fs");
 
