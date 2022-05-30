@@ -18,7 +18,7 @@ if (_cn_reg.test(process.cwd())) {
 /**
  * 声明依赖与配置
  */
-const versionNumber = "v3.5.4"; //版本号
+const versionNumber = "v3.5.4-fix"; //版本号
 const version = `ChatDACS ${versionNumber}`; //系统版本，会显示在web端标题栏
 const utils = require("./plugins/system/utils.js"); //载入系统通用模块
 const Constants = require("./config/constants.js"); //系统常量
@@ -191,9 +191,14 @@ io.on("connection", (socket) => {
     return 0;
   }
 
-  //获取地理位置
-  const ip = socket.handshake.headers["x-forwarded-for"] ? socket.handshake.headers["x-forwarded-for"]?.split("::ffff:")[1] : socket.handshake.address.split("::ffff:")[1];
-  const location = ipTranslator.searchIP(ip).Country;
+  //获取 ip 与 地理位置
+  const ip = socket.handshake.headers["x-forwarded-for"] ? socket.handshake.headers["x-forwarded-for"]?.split("::ffff:")[1] : socket.handshake.address.split("::ffff:")[1] ?? socket.handshake.address;
+  let location = "未知归属地";
+  try {
+    location = ipTranslator.searchIP(ip).Country;
+  } catch (error) {
+    logger.error(`获取地理位置失败: ${error}`);
+  }
 
   socket.emit("version", version);
   io.emit("onlineUsers", ++onlineUsers);
