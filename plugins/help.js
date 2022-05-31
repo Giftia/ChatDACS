@@ -31,7 +31,7 @@ module.exports = {
           详情: `作者 ${plugins[i].作者}, 最新版本 ${plugins[i].版本}`,
         };
       }
-      return { type: "text", content: JSON.stringify(docsMap) };
+      return { type: "text", content: docsMap };
     }
 
     let pluginList = ["当前插件列表和使用示例：\r\n"];
