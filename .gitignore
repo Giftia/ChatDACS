@@ -61,3 +61,4 @@ typings/
 .next
 
 # Others
+plugins/go-cqhttp/ffmpeg.exe
