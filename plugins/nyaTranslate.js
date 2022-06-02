@@ -3,7 +3,7 @@ module.exports = {
   指令: "^[/!]?喵嗷(.*)|^[/!]?猫语(.*)",
   版本: "2.0",
   作者: "Giftina",
-  描述: "可以将文本加密为 `喵嗷呜` 格式的喵语，也可将喵语解密成原始文本。原作 https://github.com/ezshine/chrome-extension-catroom",
+  描述: "可以将文本加密为 `喵嗷呜` 格式的喵语，也可将喵语解密成原始文本。解密不需要猫语前缀，直接原样发送即可。原作 https://github.com/ezshine/chrome-extension-catroom",
   使用示例: "喵嗷嗷嗷嗷呜~嗷呜喵嗷喵嗷嗷~嗷嗷嗷~",
   预期返回: "喵~",
 

@@ -4,13 +4,15 @@
   "dependencies": {
     "axios": "^0.26.1",
     "canvas": "^2.9.1",
+    "dayjs": "^1.11.2",
+    "mp3-duration": "^1.1.0",
+    "node-schedule": "^2.1.0",
     "request": "^2.88.2",
     "require.all": "^2.0.5",
     "rss-parser": "^3.12.0",
     "sqlite3": "^5.0.7",
     "trayicon": "^1.2.2",
-    "yaml": "^1.10.2",
-    "mp3-duration": "^1.1.0"
+    "yaml": "^1.10.2"
   },
   "engines": {
     "node": "~14"

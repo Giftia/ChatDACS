@@ -3,7 +3,7 @@ module.exports = {
   指令: "^[/!]?cp(.*)",
   版本: "2.0",
   作者: "Giftina",
-  描述: "cp文生成器，语料来自 https://github.com/mxhcpstories/mxh-cp-stories/blob/master/src/assets/story.json",
+  描述: "cp文生成器，生成一段简单的 cp 文。简简单单，就是最好的爱。语料来自 https://github.com/mxhcpstories/mxh-cp-stories/blob/master/src/assets/story.json",
   使用示例: "cp 小夜 小雫",
   预期返回: "小夜，小雫，你们的爱情是什么样子？",
 

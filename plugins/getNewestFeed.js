@@ -33,8 +33,7 @@ async function getNewestFeed() {
   const link = item.link;
 
   const result = `${title}
-
-${description}
+预览：${description}
 
 ${link}`;
 

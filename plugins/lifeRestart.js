@@ -3,7 +3,7 @@ module.exports = {
   指令: "^[/!]?人生重开$|^[/!]?选择天赋 (.*)|^[/!]?分配属性 (.*)|^[/!]?人生总结$",
   版本: "1.0",
   作者: "Giftina",
-  描述: "一个真实的人生重开模拟器，原作 https://github.com/VickScarlet/lifeRestart",
+  描述: "一个人生重开模拟器，区别于原作，该版本非常真实。原作 https://github.com/VickScarlet/lifeRestart",
   使用示例: "人生重开",
   预期返回: "[人生重开的结果]",
 
