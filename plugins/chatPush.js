@@ -1,11 +1,11 @@
 module.exports = {
   插件名: "微信息知频道消息推送插件",
-  指令: "^提醒",
-  版本: "2.2",
+  指令: "^推送",
+  版本: "2.3",
   作者: "Giftina",
   描述: "将指定格式的消息推送至微信息知指定频道，适合传送消息至微信。",
-  使用示例: "提醒我晚上要手冲",
-  预期返回: "好的，我会提醒你晚上要手冲",
+  使用示例: "推送我晚上要手冲",
+  预期返回: "好的，已经推送到微信，你晚上要手冲",
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
     if (!XIZHI_CHANNEL_KEY) {
@@ -16,7 +16,7 @@ module.exports = {
     ).then(function (response) {
       console.log(response.data);
     });
-    return { type: "text", content: `好的，我会${msg.replace(/我/g, "你")}` };
+    return { type: "text", content: `好的，已经推送到微信，${msg.replace(/我/g, "你").replace("推送", "")}` };
   },
 };
 
