@@ -24,7 +24,7 @@
     "qq-guild-bot": "^2.9.5",
     "request": "^2.88.2",
     "require.all": "^2.0.5",
-    "socket.io": "^4.4.1",
+    "socket.io": "^4.5.1",
     "sqlite3": "^5.0.7",
     "winston": "^3.7.2",
     "yaml": "^2.1.0"
