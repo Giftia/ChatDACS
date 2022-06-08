@@ -30,7 +30,7 @@
     "yaml": "^2.1.1"
   },
   "devDependencies": {
-    "eslint": "^8.15.0",
+    "eslint": "^8.17.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-node": "^11.1.0",
     "mp3-duration": "^1.1.0",
