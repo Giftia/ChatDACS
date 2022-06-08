@@ -89,3 +89,7 @@
 ## 免责声明 Disclaimer
 
 若本项目涉及任何侵权、违规、违法情况，请联系我： `admin@giftia.moe` ，我将第一时间进行处理。
+
+## Stargazers over time
+
+[![Stargazers over time](https://starchart.cc/Giftia/ChatDACS.svg)](https://starchart.cc/Giftia/ChatDACS)
