@@ -46,13 +46,13 @@
 
 ## 😘 写在最前面 Hi
 
-**`功能指令介绍` 以及 `私人部署教程` 请点击跳转至 👉 [星野夜蝶 使用文档](http://docs.giftia.moe/)**
+### `功能指令介绍` 以及 `私人部署教程` 请点击跳转至 👉 [星野夜蝶 使用文档](http://docs.giftia.moe/)
 
 在线体验地址：[沙雕 Ai 聊天系统](http://110.42.221.72/)
 
 如有任何疑问、建议或者需要联系我，请加群 [【星野夜蝶 粉丝群】 QQ 群 120243247 ](https://jq.qq.com/?_wv=1027&k=ovqyydCe)
 
-对于普通用户，推荐您直接使用官方免费的公共小夜 QQ 账号：1648468212（不定时会被疼讯封号 7 天），邀请小夜入群即可，我会不定期批准请求。
+对于普通用户，推荐您直接使用官方免费的公共小夜 QQ 账号：1648468212，邀请小夜入群即可，我会不定期批准请求。
 
 你也可以加入粉丝群，群里有不少群友自发个人部署的第三方小夜，你可以申请使用群友搭建的小夜。
 
@@ -77,8 +77,8 @@
 - [x] 简单好用的插件系统 `Easy Use Plugins System`
 - [x] 支持接入哔哩哔哩直播间 `Support Bilibili Live`
 - [x] 支持接入 QQ 频道 `Support QQ Guild`
-- [ ] 支持接入 Telegram `Support Telegram`
-- [ ] 哔哩哔哩直播互动游戏 `Bilibili Live Game`
+- [ ] 即将支持接入 Telegram `Support Telegram (Coming Soon)`
+- [ ] 即将发布哔哩哔哩直播互动游戏 `Bilibili Live Game (Coming Soon)`
 
 ---
 
@@ -90,6 +90,14 @@
 
 若本项目涉及任何侵权、违规、违法情况，请联系我： `admin@giftia.moe` ，我将第一时间进行处理。
 
-## Stargazers over time
+## 🌟 Stargazers
+
+[![Stargazers repo roster for @Giftia/ChatDACS](https://reporoster.com/stars/Giftia/ChatDACS)](https://github.com/Giftia/ChatDACS/stargazers)
+
+## 🍴 Forkers
+
+[![Forkers repo roster for @Giftia/ChatDACS](https://reporoster.com/forks/Giftia/ChatDACS)](https://github.com/Giftia/ChatDACS/network/members)
+
+## 🌠 Stargazers over time
 
 [![Stargazers over time](https://starchart.cc/Giftia/ChatDACS.svg)](https://starchart.cc/Giftia/ChatDACS)
