@@ -313,8 +313,15 @@ io.on("connection", (socket) => {
  * 小夜核心代码，对接go-cqhttp
  */
 function StartQQBot() {
-  app.post(GO_CQHTTP_SERVICE_ANTI_POST_API, (req, res) => {
+  app.post(GO_CQHTTP_SERVICE_ANTI_POST_API, async (req, res) => {
     const event = req.body;
+
+    //处理频道消息
+    if (event.message_type == "guild") {
+      logger.info(`小夜收到频道 ${event.channel_id} 的 ${event.user_id} (${event.sender.nickname}) 发来的消息: ${event.message}`);
+      await ProcessGuildMessage(event);
+      return 0;
+    }
 
     //被禁言1小时以上自动退群
     if (event.sub_type == "ban" && event.user_id == (event.message?.self_id ?? QQBOT_QQ)) {
@@ -1811,6 +1818,29 @@ function StartQQBot() {
         }
       });
     });
+  }
+}
+
+/**
+ * qq内嵌的频道的消息处理，并不是独立的qq频道
+ */
+async function ProcessGuildMessage(event) {
+  //qq内嵌频道插件应答器
+  const pluginsReply = await ProcessExecute(
+    event.message,
+    event.user_id,
+    event?.sender?.nickname,
+    event.channel_id,
+    "", //群名暂时还没加
+    ""
+  );
+
+  if (pluginsReply != "") {
+    const replyToGuild = utils.PluginAnswerToGoCqhttpStyle(pluginsReply);
+    request(
+      `http://${GO_CQHTTP_SERVICE_API_URL}/send_guild_channel_msg?guild_id=${event.guild_id}&channel_id=${event.channel_id}&message=${encodeURI(
+        replyToGuild,
+      )}`);
   }
 }
 
