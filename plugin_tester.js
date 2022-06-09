@@ -39,7 +39,7 @@ let plugins = require.all({
 });
 console.log(plugins);
 console.log("插件加载完毕√".log);
-console.log("现在可以在命令行中输入指令来验证插件功能，按回车提交\r\n".warn);
+console.log("现在可以在命令行中输入指令来验证插件功能，按回车提交\n".warn);
 
 rl.on("line", (input) => {
   run(input);

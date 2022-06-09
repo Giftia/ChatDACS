@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "帮助插件",
-  指令: "^[/!]?(help|帮助|菜单|插件|说明|指令|命令|小夜怎么用|docs)$",
-  版本: "2.1",
+  指令: "^[/!]?(help|帮助|菜单|插件|说明|指令|命令|小夜怎么用|docs|command)$",
+  版本: "2.2",
   作者: "Giftina",
   描述: "会回复系统当前可用插件列表，描述插件版本和对应的使用示例。",
   使用示例: "/help",
@@ -35,13 +35,25 @@ module.exports = {
       }
       return { type: "text", content: Object2Markdown(docsMap) };
     }
+    //针对 command 指令生成轮播placeholder
+    else if (msg === "command") {
+      /**
+       * [使用示例, 使用示例, ...]
+       */
+      let docsMap = [];
+      for (const i in plugins) {
+        docsMap.push(plugins[i].使用示例);
+      }
 
-    let pluginList = ["当前插件列表和使用示例：\r\n"];
-    for (const i in plugins) {
-      pluginList.push(`${plugins[i].插件名}_v${plugins[i].版本}: ${plugins[i].使用示例}\r\n`);
+      return { type: "text", content: "\"" + docsMap.join("\",\"") + "\"" };
     }
 
-    return { type: "text", content: pluginList.toString()?.replace(/,/g, "") };
+    let pluginList = ["当前插件列表和使用示例："];
+    for (const i in plugins) {
+      pluginList.push(`${plugins[i].插件名}_v${plugins[i].版本}: ${plugins[i].使用示例}`);
+    }
+
+    return { type: "text", content: pluginList.join("\n") };
   },
 };
 
