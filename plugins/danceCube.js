@@ -248,53 +248,6 @@ async function AnalysisLocation(location) {
   return { province, city };
 }
 
-// playerInfoSample，描述玩家信息的格式
-const playerInfoSample = {
-  "UserID": 823258,
-  "HeadimgURL": "https://dance-user-file.oss-cn-shanghai.aliyuncs.com/images/headimg/502/132/823258_1654671840453.jpg",
-  "UserName": "Giftina",
-  "Sex": 1,
-  "Phone": "13867521227",
-  "CityName": "浙江绍兴",
-  "MaxCursorSpeed": 8,
-  "MusicSpeed": 7,
-  "OtherCursorSpeed": "65",
-  "MusicScore": 93321,
-  "Point": 0,
-  "RankNation": 11781,
-  "ComboPercent": 758,
-  "LvRatio": 1634,
-  "IsVIP": false,
-  "IsInBlackList": false,
-  "TeamID": 0,
-  "TeamName": null,
-  "StrictMode": false,
-  "JudgeTip": false,
-  "MirrorMode": false,
-  "MirrorModeVal": 0,
-  "ResultPush": false,
-  "ResultPushPicLevel": 0,
-  "ResultPushPic1": false,
-  "ResultPushPic2": false,
-  "ResultPushPic3": false,
-  "OffsetAutoAdjust": true,
-  "PrivacyLevel": 1,
-  "TitleID": 0,
-  "TitleUrl": "",
-  "Brightness": 1,
-  "MuteExpireTime": "1900-01-01 00:00:00",
-  "IsMuted": false,
-  "TipsType": 2,
-  "HeadimgBoxPath": "https://ts-asset.shenghuayule.com/images/resource/dancecube/a67ae0bdb7602c0d6d9cc1c7d6e57e8390adefa0.png",
-  "WinTimes": 0,
-  "Coins": 0,
-  "GameLev": 0,
-  "GameLevName": null,
-  "HideCursor": 0,
-  "HpMode": 0,
-  "DeleteStatus": 0
-};
-
 /**
  * 维护一个 `{ userId: { playerId: "", playerName: "", location: "" }, userId: { playerId: "", playerName: "", location: "" }, ... }` 的对象，用于记录玩家的绑定信息
  */
