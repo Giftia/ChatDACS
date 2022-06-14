@@ -263,6 +263,12 @@ async function AnalysisPlayerInfo(playerId) {
   ctx.fillText("CopyRight 胜骅科技", canvas.width - 50, canvas.height - 20);
   ctx.fillText("Design By Giftina", canvas.width - 50, canvas.height - 10);
 
+  //整屏加个半透明水印
+  ctx.font = `170px '${eventFontName}'`;
+  ctx.fillStyle = "rgba(33, 33, 33, 0.4)";
+  ctx.textAlign = "center";
+  ctx.fillText("工 事 中", canvas.width / 2, canvas.height / 2 + 80);
+
   //保存图片
   const fileName = `${playerId}.png`;
   const filePath = path.join(__dirname, "danceCube", "user", fileName);
