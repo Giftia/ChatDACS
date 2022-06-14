@@ -18,7 +18,7 @@ if (_cn_reg.test(process.cwd())) {
 /**
  * 声明依赖与配置
  */
-const versionNumber = "v3.5.5"; //版本号
+const versionNumber = "v3.5.5-dev"; //版本号
 const version = `ChatDACS ${versionNumber}`; //系统版本，会显示在web端标题栏
 const utils = require("./plugins/system/utils.js"); //载入系统通用模块
 const Constants = require("./config/constants.js"); //系统常量
@@ -137,6 +137,7 @@ var boomTimer; //60s计时器
 var onlineUsers = 0, //预定义
   QQBOT_QQ,
   QQBOT_ADMIN_LIST,
+  QQ_GROUP_WELCOME_MESSAGE,
   BILIBILI_LIVE_ROOM_ID,
   CHAT_SWITCH,
   CONNECT_GO_CQHTTP_SWITCH,
@@ -544,6 +545,23 @@ function StartQQBot() {
                 /**
                  * 群指令系统
                  */
+
+                //群欢迎
+                if (event.notice_type === "group_increase") {
+                  const welcomeMessage = QQ_GROUP_WELCOME_MESSAGE.replace(/\[@新人\]/g, `[CQ:at,qq=${event.user_id}]`);
+                  request(
+                    `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id
+                    }&message=${encodeURI(welcomeMessage)}`,
+                    function (error, _response, _body) {
+                      if (!error) {
+                        logger.info(
+                          `${event.user_id} 加入了群 ${event.group_id}，小夜欢迎了ta`.log,
+                        );
+                      }
+                    },
+                  );
+                  return 0;
+                }
 
                 //地雷爆炸判断，先判断这条消息是否引爆，再从数据库取来群地雷数组，引爆后删除地雷，原先的地雷是用随机数生成被炸前最大回复作为引信，现在换一种思路，用更简单的随机数引爆
                 let boom_flag = Math.floor(Math.random() * 100); //踩中flag
@@ -1635,23 +1653,6 @@ function StartQQBot() {
                   return 0;
                 }
 
-                //群欢迎
-                if (event.notice_type === "group_increase") {
-                  const final = `[CQ:at,qq=${event.user_id}] 你好呀，我是本群RBQ担当小夜!小夜的说明书在这里 http://docs.giftia.moe/ 噢，请问主人是要先吃饭呢，还是先洗澡呢，还是先*我呢~`;
-                  request(
-                    `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id
-                    }&message=${encodeURI(final)}`,
-                    function (error, _response, _body) {
-                      if (!error) {
-                        logger.info(
-                          `${event.user_id} 加入了群 ${event.group_id}，小夜欢迎了ta`.log,
-                        );
-                      }
-                    },
-                  );
-                  return 0;
-                }
-
                 //管理员功能: 提醒停止服务的群启用小夜
                 if (event.message === "/提醒启用小夜") {
                   for (let i in QQBOT_ADMIN_LIST) {
@@ -1691,7 +1692,7 @@ function StartQQBot() {
                   return 0;
                 }
 
-                //管理员功能: 修改聊天复读率
+                //管理员功能: 修改聊天随机复读率
                 if (
                   Constants.change_fudu_probability_reg.test(event.message)
                 ) {
@@ -1710,10 +1711,6 @@ function StartQQBot() {
                   });
                   return 0;
                 }
-
-                /**
-                 *  要新增指令与功能请在这条分割线的上方添加，在下面添加有可能会导致冲突以及不可预料的异常
-                 */
 
                 //丢一个骰子，按fudu_probability几率复读
                 let fudu_flag = Math.floor(Math.random() * 100);
@@ -1761,7 +1758,7 @@ function StartQQBot() {
                       return 0;
                     });
                 } else {
-                  res.send(); //相当于严格模式，如果有多条res.send将会报错
+                  res.send(); //相当于严格模式，如果有多条res.send将会报错 `重复响应`
                 }
               }
               //群不存在于qq_group表则写入qq_group表
@@ -1789,10 +1786,9 @@ function StartQQBot() {
           res.send({ reply: resolve });
         });
       return 0;
-    } else {
-      res.send();
-      return 0;
     }
+    res.send();
+    return 0;
   });
 
   //每隔24小时搜索qq_group表，随机延时提醒停用服务的群启用服务
@@ -2096,6 +2092,7 @@ async function InitConfig() {
 
   QQBOT_QQ = config.qqBot.QQBOT_QQ; //qqBot使用的qq帐号
   QQBOT_ADMIN_LIST = config.qqBot.QQBOT_ADMIN_LIST; //小夜的管理员列表
+  QQ_GROUP_WELCOME_MESSAGE = config.qqBot.QQ_GROUP_WELCOME_MESSAGE; //qq入群欢迎语
   AUTO_APPROVE_QQ_FRIEND_REQUEST_SWITCH = config.qqBot.AUTO_APPROVE_QQ_FRIEND_REQUEST_SWITCH; //自动批准好友请求开关
   QQBOT_PRIVATE_CHAT_SWITCH = config.qqBot.QQBOT_PRIVATE_CHAT_SWITCH; //私聊开关
   CHAT_JIEBA_LIMIT = config.qqBot.CHAT_JIEBA_LIMIT; //qqBot限制分词数量

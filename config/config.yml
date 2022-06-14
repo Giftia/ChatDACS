@@ -48,23 +48,26 @@ qqBot:
   #qqBot小夜的管理员列表，管理员有权执行管理员指令，且第一位管理员将会处理用户邀请小夜加群的请求:
   QQBOT_ADMIN_LIST: ["1005056803", "2418754147", "38263547"]
 
-  #自动批准好友请求开关(近期封号原因多为添加好友频繁，故默认关闭自动加好友):
-  AUTO_APPROVE_QQ_FRIEND_REQUEST_SWITCH: false
+  #qq入群欢迎语，[@新人] 出现的部分将会替换成 @新人:
+  QQ_GROUP_WELCOME_MESSAGE: "[@新人] 你好呀，我是本群RBQ担当小夜！小夜的说明书在这里 https://docs.giftia.moe/ 噢，请问主人是要先吃饭呢，还是先洗澡呢，还是先*我呢~"
+
+  #自动批准好友请求开关，如果不启用，陌生人将不能邀请小夜加群:
+  AUTO_APPROVE_QQ_FRIEND_REQUEST_SWITCH: true
 
   #私聊开关:
   QQBOT_PRIVATE_CHAT_SWITCH: false
 
   #限制分词权重数量，设置得越低，更侧重大意，回复更贴近重点，但容易重复相同的回复，
   #设置得越高，回复会更随意、更沙雕，但更容易答非所问:
-  CHAT_JIEBA_LIMIT: 5
+  CHAT_JIEBA_LIMIT: 6
 
-  #qqBot小夜回复几率，单位是%，可通过 /admin_change_reply_probability 指令更改:
+  #qqBot小夜回复几率，单位是%，可通过 /回复率 指令更改:
   QQBOT_REPLY_PROBABILITY: 1
 
-  #qqBot小夜复读几率，单位是%，可通过 /admin_change_fudu_probability 指令更改:
+  #qqBot小夜随机复读几率，单位是%，可通过 /复读率 指令更改:
   QQBOT_FUDU_PROBABILITY: 1
 
-  #qq侧接收到的图片保存与转发开关，虽然经常可以收到一些好康的图，但是非常占硬盘空间:
+  #qq侧接收到的图片保存与转发开关，可以将所有聊天图片存到本地并在web端显示，但是非常占硬盘空间:
   QQBOT_SAVE_ALL_IMAGE_TO_LOCAL_SWITCH: false
 
   #最大共存地雷数:
