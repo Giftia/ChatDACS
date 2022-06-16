@@ -1,14 +1,14 @@
 /**
  * 玩家账户密钥，向服务器请求数据时会携带该参数鉴权，具有修改账户的最高权限，需要自行抓包获取，请勿透露给不信任的他人，否则最糟糕的情况可能会导致游戏账户被恶意注销
  */
-const authorization = "";
+const authorization = "bearer oj5Ogkdk4C_dkNIuopINiMDohtu9SVxaD8zm34uq0w7a7KT-nqvU48J3NULyx-QPKVgzGh1flOlBwk_g1bRokBwa05V2PpGwiNuVe4VyUe3_SdRphhsAGIV-Hj8WUHvXDa-IDMVYUPNFxJ5_U9m9ZvwirPmd8I07sjFEWrX6iu4ZYU4Gu5kwI-LM2LIUxw5v3Ccybqr2QDdAJskhyEjqKJrOKEK-onPXmfALOWoD6A4Dp8qknzABfQk0jJMdt757Vxzk0gj2CgKHQglfULWTPJmIhnxHBgym7BN4Rdb0y0NqsZuvf7tBO40HH564FFalIZdpbzFGYlSg2l83lDQLrFF_YWCoBtHp_MgqSG2piHzzAGPT845I-6GkYYJTisVzrIsp6xgzFis9qDtAwUuYuub66E5tbrmBSj5UWf_G7EnEc_AR5akw--5BHJY6DuCqaCvQaqbBlyAkGf-GGsF75ZN-OXhK-w3qiE-v3qTkFt9ASklj8mAZE7lqqGIm9mLXRL_dWLcjA7DV-KIrOIsR2BOFsct23fkCgpUIiGlNB-wxQcRSkCLJco3iva1XrduK9borDPuL7M67DChC4VxoHFT8L0MqLuZZCDSiRHaLY7izNZZs3nznpQLiPz3Xy63WGUiuXGSehB1dBZIr6RP6-Ms9ixbZoWCwGuf2z8aicQRAPUdYwWGYdH6XrCEmR28hAJXlhKA5hssPYLUPFJ7KlhbJPX_jXWsONqeh5RIuyRYVwBVk8gspNCHPR0cAzbvTFiFEYXXx6giICs703ZiC5XBcMbaMLqsFsd-2cgFzR3VIQIWim9U2lraMxVvdZnn4gF6Vx6hfKlPPBkCX_ylZX3syD5MyjqZYiTqIX8N_PIaODpVZ79VRnVzCx_e6E0cODpHKPH1D7NJuif9_k3hn7BdCfWybtafJfIVaYSc1kyhrQC38Bu_H4xFYG4QrIil_";
 
 module.exports = {
   插件名: "内测·舞立方信息查询插件",
   指令: "^[/!]?(绑定|个人信息|战绩|机台状态|关注机台|我要出勤)(.*)",
   版本: "0.2",
   作者: "Giftina",
-  描述: "舞立方信息查询，可以查询玩家信息以及机台状态。内测期间，功能会随时增减，返回结果会随时更改。由于数据存在内存里，所以每次更新代码的时候，内存扬了，数据没了，玩家绑定信息就会失效。",
+  描述: "非官方插件。舞立方信息查询，可以查询玩家信息以及机台状态。内测期间，功能、返回结果、玩家绑定信息会随机失效。数据来源以及素材版权归属 胜骅科技 https://www.arccer.com/ ，如有侵权请联系作者删除。",
   使用示例: "个人信息",
   预期返回: "[炫酷的舞立方个人信息图片]",
 
@@ -267,7 +267,7 @@ async function AnalysisPlayerInfo(playerId) {
   ctx.font = `170px '${eventFontName}'`;
   ctx.fillStyle = "rgba(33, 33, 33, 0.4)";
   ctx.textAlign = "center";
-  ctx.fillText("工 事 中", canvas.width / 2, canvas.height / 2 + 80);
+  ctx.fillText("内  测", canvas.width / 2, canvas.height / 2 + 80);
 
   //保存图片
   const fileName = `${playerId}.png`;
