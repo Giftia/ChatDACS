@@ -461,12 +461,11 @@ function StartQQBot() {
     }
 
     //群服务开关判断
+    const subTypeCondition = ["ban", "poke", "friend_add"];
     if (
       event.message_type == "group" ||
       event.notice_type == "group_increase" ||
-      event.sub_type == "ban" ||
-      event.sub_type == "poke" ||
-      event.sub_type == "friend_add"
+      subTypeCondition.includes(event.sub_type)
     ) {
       //服务启用开关
       //指定小夜的话
