@@ -1,7 +1,7 @@
 /**
  * 玩家账户密钥，向服务器请求数据时会携带该参数鉴权，具有修改账户的最高权限，需要自行抓包获取，请勿透露给不信任的他人，否则最糟糕的情况可能会导致游戏账户被恶意注销
  */
-const authorization = "bearer oj5Ogkdk4C_dkNIuopINiMDohtu9SVxaD8zm34uq0w7a7KT-nqvU48J3NULyx-QPKVgzGh1flOlBwk_g1bRokBwa05V2PpGwiNuVe4VyUe3_SdRphhsAGIV-Hj8WUHvXDa-IDMVYUPNFxJ5_U9m9ZvwirPmd8I07sjFEWrX6iu4ZYU4Gu5kwI-LM2LIUxw5v3Ccybqr2QDdAJskhyEjqKJrOKEK-onPXmfALOWoD6A4Dp8qknzABfQk0jJMdt757Vxzk0gj2CgKHQglfULWTPJmIhnxHBgym7BN4Rdb0y0NqsZuvf7tBO40HH564FFalIZdpbzFGYlSg2l83lDQLrFF_YWCoBtHp_MgqSG2piHzzAGPT845I-6GkYYJTisVzrIsp6xgzFis9qDtAwUuYuub66E5tbrmBSj5UWf_G7EnEc_AR5akw--5BHJY6DuCqaCvQaqbBlyAkGf-GGsF75ZN-OXhK-w3qiE-v3qTkFt9ASklj8mAZE7lqqGIm9mLXRL_dWLcjA7DV-KIrOIsR2BOFsct23fkCgpUIiGlNB-wxQcRSkCLJco3iva1XrduK9borDPuL7M67DChC4VxoHFT8L0MqLuZZCDSiRHaLY7izNZZs3nznpQLiPz3Xy63WGUiuXGSehB1dBZIr6RP6-Ms9ixbZoWCwGuf2z8aicQRAPUdYwWGYdH6XrCEmR28hAJXlhKA5hssPYLUPFJ7KlhbJPX_jXWsONqeh5RIuyRYVwBVk8gspNCHPR0cAzbvTFiFEYXXx6giICs703ZiC5XBcMbaMLqsFsd-2cgFzR3VIQIWim9U2lraMxVvdZnn4gF6Vx6hfKlPPBkCX_ylZX3syD5MyjqZYiTqIX8N_PIaODpVZ79VRnVzCx_e6E0cODpHKPH1D7NJuif9_k3hn7BdCfWybtafJfIVaYSc1kyhrQC38Bu_H4xFYG4QrIil_";
+const authorization = "";
 
 module.exports = {
   插件名: "内测·舞立方信息查询插件",
@@ -177,7 +177,7 @@ async function BindUser(userId, playerId) {
 }
 
 /**
- * 解析玩家信息，绘制成炫酷的结算图
+ * 解析玩家信息，绘制成炫酷的个人信息图
  * @param {string} playerId 玩家id
  */
 async function AnalysisPlayerInfo(playerId) {
@@ -204,6 +204,151 @@ async function AnalysisPlayerInfo(playerId) {
 个人积分：${points}
 全连率：${fullComboPercent}
 光标速度：${cursorSpeed}`;
+
+  //开始绘制图片
+  //加载头像和头像框，以及背景图
+  const headImgBuffer = await loadImage(headImg);
+  const headImgBoxBuffer = headImgBox ? await loadImage(headImgBox) : null;
+  const sexIcon = sex == "♀" ? "xx_zdsq-nv.png" : "xx_zdsq_nan.png";
+  const sexIconBuffer = await loadImage(path.join(__dirname, "danceCube", "assets", sexIcon));
+  const backgroundImgBuffer = await loadImage(path.join(__dirname, "danceCube", "assets", "ui_sjd_zltc_01.png"));
+
+  const canvas = createCanvas(backgroundImgBuffer.width, backgroundImgBuffer.height);
+  const ctx = canvas.getContext("2d");
+
+  //绘制背景图
+  ctx.drawImage(backgroundImgBuffer, 0, 0);
+
+  //在中上位置绘制头像
+  const headImgLeft = backgroundImgBuffer.width / 2;
+  const headImgTop = 100;
+  const headImgWidth = 70;
+  const headImgHeight = 70;
+  ctx.drawImage(headImgBuffer, headImgLeft, headImgTop, headImgWidth, headImgHeight);
+
+  //在头像上面绘制头像框
+  if (headImgBox) {
+    const headImgBoxLeft = headImgLeft - 35;
+    const headImgBoxTop = headImgTop - 35;
+    const headImgBoxWidth = headImgWidth + 70;
+    const headImgBoxHeight = headImgHeight + 70;
+    ctx.drawImage(headImgBoxBuffer, headImgBoxLeft, headImgBoxTop, headImgBoxWidth, headImgBoxHeight);
+  }
+
+  //在头像正下方绘制玩家名，♂蓝，♀粉
+  ctx.font = `20px '${eventFontName}'`;
+  ctx.fillStyle = sex === "♂" ? "LightBlue" : "LightPink";
+  ctx.textAlign = "center";
+  ctx.fillText(playerName, headImgLeft + headImgWidth / 2, headImgTop + headImgHeight + 30);
+
+  //在玩家名正下方绘制性别图标
+  ctx.drawImage(sexIconBuffer, headImgLeft + headImgWidth / 2 - 10, headImgTop + headImgHeight + 40, 20, 20);
+
+  //在玩家名下方绘制玩家信息
+  ctx.font = `20px '${eventFontName}'`;
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.fillText(info, headImgLeft + headImgWidth / 2, headImgTop + headImgHeight + 90);
+
+  //中上位置展示置顶战绩
+  ctx.font = `50px '${titleFontName}'`;
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.fillText("战绩", canvas.width / 2, 180);
+
+  //右下角版权信息
+  ctx.font = `10px '${eventFontName}'`;
+  ctx.fillStyle = "#555555";
+  ctx.textAlign = "center";
+  ctx.fillText("CopyRight 胜骅科技", canvas.width - 50, canvas.height - 20);
+  ctx.fillText("Design By Giftina", canvas.width - 50, canvas.height - 10);
+
+  //整屏加个半透明水印
+  ctx.font = `100px '${eventFontName}'`;
+  ctx.fillStyle = "rgba(33, 33, 33, 0.4)";
+  ctx.textAlign = "center";
+  ctx.fillText("内  测", canvas.width / 2, canvas.height / 2 + 80);
+
+  //保存图片
+  const fileName = `${playerId}.png`;
+  const filePath = path.join(__dirname, "danceCube", "user", fileName);
+  const buffer = canvas.toBuffer("image/png");
+  fs.writeFileSync(filePath, buffer);
+
+  return info;
+}
+
+/**
+ * 查询玩家Json信息
+ * @param {string} playerId 玩家id
+ */
+async function GetPlayerInfo(playerId) {
+  const playerInfo = await axios.get(api.playerInfo, {
+    headers: headers,
+    params: {
+      userId: playerId,
+    },
+  })
+    .then(async function (response) {
+      return response.data;
+    })
+    .catch(function (error) {
+      console.log(`获取玩家资料失败: ${error}`.error);
+      return "获取玩家资料失败: ", error;
+    });
+  return playerInfo;
+}
+
+/**
+ * 查询玩家战绩，绘制成炫酷的结算图
+ * @param {string} playerId 玩家id
+ * @param {string} musicIndex 音乐类型，1 最新，2 国语，3 粤语，4 韩文，5 欧美，6 其他
+ */
+async function GetPlayerRank(playerId, musicIndex) {
+  const playerRank = await axios.get(api.playerRank, {
+    headers: headers,
+    params: {
+      musicIndex: musicIndex,
+      userId: playerId,
+    },
+  })
+    .then(async function (response) {
+      const results = response.data;
+      const reply = results.map((result) => {
+        const musicName = result.Name;
+        const record = result.LvRecord;
+        return `${musicName} ${record}`;
+      });
+      return reply.join("\n");
+    })
+    .catch(function (error) {
+      console.log(`获取玩家战绩失败: ${error}`.error);
+      return "获取玩家战绩失败: ", error;
+    });
+
+  const playerInfo = await GetPlayerInfo(playerId);
+  if (!playerInfo) {
+    return "这个玩家找不到呢，是不是输错ID了呢";
+  }
+
+  const headImg = playerInfo.HeadimgURL;
+  const headImgBox = playerInfo.HeadimgBoxPath;
+  const playerName = playerInfo.UserName;
+  const sex = playerInfo.Sex == 1 ? "♂" : "♀";
+  const teamName = playerInfo.TeamName ?? "未加入";
+  const playerLevel = playerInfo.LvRatio;
+  const rankNation = playerInfo.RankNation;
+  const points = playerInfo.MusicScore;
+  const fullComboPercent = playerInfo.ComboPercent / 100 + "%";
+  const cursorSpeed = playerInfo.MusicSpeed;
+
+  const info = `${playerName} ${sex}
+  战队：${teamName ?? "未加入"}
+  战力值：${playerLevel}
+  全国排行：${rankNation}
+  个人积分：${points}
+  全连率：${fullComboPercent}
+  光标速度：${cursorSpeed}`;
 
   //开始绘制图片
   //加载头像和头像框，以及背景图
@@ -275,56 +420,6 @@ async function AnalysisPlayerInfo(playerId) {
   const buffer = canvas.toBuffer("image/png");
   fs.writeFileSync(filePath, buffer);
 
-  return info;
-}
-
-/**
- * 查询玩家Json信息
- * @param {string} playerId 玩家id
- */
-async function GetPlayerInfo(playerId) {
-  const playerInfo = await axios.get(api.playerInfo, {
-    headers: headers,
-    params: {
-      userId: playerId,
-    },
-  })
-    .then(async function (response) {
-      return response.data;
-    })
-    .catch(function (error) {
-      console.log(`获取玩家资料失败: ${error}`.error);
-      return "获取玩家资料失败: ", error;
-    });
-  return playerInfo;
-}
-
-/**
- * 查询玩家战绩
- * @param {string} playerId 玩家id
- * @param {string} musicIndex 音乐类型，1 最新，2 国语，3 粤语，4 韩文，5 欧美，6 其他
- */
-async function GetPlayerRank(playerId, musicIndex) {
-  const playerRank = await axios.get(api.playerRank, {
-    headers: headers,
-    params: {
-      musicIndex: musicIndex,
-      userId: playerId,
-    },
-  })
-    .then(async function (response) {
-      const results = response.data;
-      const reply = results.map((result) => {
-        const musicName = result.Name;
-        const record = result.LvRecord;
-        return `${musicName} ${record}`;
-      });
-      return reply.join("\n");
-    })
-    .catch(function (error) {
-      console.log(`获取玩家战绩失败: ${error}`.error);
-      return "获取玩家战绩失败: ", error;
-    });
   return playerRank;
 }
 
