@@ -1,0 +1,57 @@
+name: Compile ChatDACS for Linux
+on:
+  push:
+    branches:
+      - master
+
+env:
+  GITHUB_TOKEN: ${{ github.token }}
+
+jobs:
+  my-job:
+    name: Build 🚀
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set Up Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+
+      - name: Check Out Code
+        uses: actions/checkout@v2
+
+      - name: Remove Other Platforms go-cqhttp
+        run: |
+          rm ./plugins/go-cqhttp/go-cqhttp_windows_amd64.exe
+          rm ./plugins/go-cqhttp/go-cqhttp.bat
+
+      - name: Clean Install Modules
+        run: npm ci --prod
+
+      - name: Clean Install For Plugins
+        run: |
+          cd ./plugins/
+          npm ci --prod
+          rm package.json
+          rm package-lock.json
+          cd ..
+
+      - name: Install PKG Tool
+        run: npm install pkg -g
+
+      - name: Package
+        run: pkg -t node14-linux . --compress Brotli
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ChatDACS
+          path: |
+            ./config/
+            ./static/
+            ./plugins/
+            ./db.db
+            ./README.md
+            ./LICENSE
+            ./chatdacs
+          if-no-files-found: error

@@ -20,6 +20,9 @@ jobs:
       - name: Check Out Code
         uses: actions/checkout@v2
 
+      - name: Remove Other Platforms go-cqhttp
+        run: rm ./plugins/go-cqhttp/go-cqhttp
+
       - name: Clean Install Modules
         run: npm ci --prod
 
