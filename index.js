@@ -1785,9 +1785,10 @@ function StartQQBot() {
           res.send({ reply: resolve });
         });
       return 0;
+    } else {
+      res.send();
+      return 0;
     }
-    res.send();
-    return 0;
   });
 
   //每隔24小时搜索qq_group表，随机延时提醒停用服务的群启用服务
