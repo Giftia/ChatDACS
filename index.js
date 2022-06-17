@@ -2125,10 +2125,12 @@ async function InitConfig() {
     }
 
     /**
-     * 仅在windows系统下自动启动go-cqhttp
+     * 在 Windows、Linux 系统下自动启动go-cqhttp
      */
-    if (process.platform === "win32") {
-      ChildProcess.execFile("go-cqhttp.bat", {
+    const autoStartGoCqhttpSystemCondition = ["win32", "linux"];
+    const goCqhttpRoute = { win32: "go-cqhttp.bat", linux: "go-cqhttp" };
+    if (autoStartGoCqhttpSystemCondition.includes(process.platform)) {
+      ChildProcess.execFile(goCqhttpRoute[process.platform], {
         cwd: path.join(process.cwd(), "plugins", "go-cqhttp")
       }, (error, _stdout, _stderr) => {
         if (error) {
