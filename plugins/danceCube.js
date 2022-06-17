@@ -1,12 +1,11 @@
 /**
- * 玩家账户密钥，向服务器请求数据时会携带该参数鉴权，具有修改账户的最高权限，需要自行抓包获取，请勿透露给不信任的他人，否则最糟糕的情况可能会导致游戏账户被恶意注销
+ * authorization.token 文件内容为玩家账户密钥，向服务器请求数据时会携带该参数鉴权，具有修改账户的最高权限，需要自行抓包获取，请勿透露给不信任的他人，否则最糟糕的情况可能会导致游戏账户被恶意注销
  */
-const authorization = "";
 
 module.exports = {
   插件名: "内测·舞立方信息查询插件",
   指令: "^[/!]?(绑定|个人信息|战绩|机台状态|关注机台|我要出勤)(.*)",
-  版本: "0.2",
+  版本: "0.3",
   作者: "Giftina",
   描述: "非官方插件。舞立方信息查询，可以查询玩家信息以及机台状态。内测期间，功能、返回结果、玩家绑定信息会随机失效。数据来源以及素材版权归属 胜骅科技 https://www.arccer.com/ ，如有侵权请联系作者删除。",
   使用示例: "个人信息",
@@ -126,6 +125,15 @@ const { createCanvas, loadImage, registerFont } = require("canvas"); //用于绘
 const path = require("path");
 const fs = require("fs");
 const axios = require("axios").default;
+const authorization = fs.readFileSync(
+  path.join(__dirname, "danceCube", "authorization.token"),
+  "utf-8",
+  function (err, data) {
+    if (!err) {
+      return data;
+    }
+  },
+);
 const headers = {
   "Authorization": authorization,
   "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Html5Plus/1.0 (Immersed/44) uni-app",
@@ -197,8 +205,7 @@ async function AnalysisPlayerInfo(playerId) {
   const fullComboPercent = playerInfo.ComboPercent / 100 + "%";
   const cursorSpeed = playerInfo.MusicSpeed;
 
-  const info = `${playerName} ${sex}
-战队：${teamName ?? "未加入"}
+  const info = `战队：${teamName ?? "未加入"}
 战力值：${playerLevel}
 全国排行：${rankNation}
 个人积分：${points}
@@ -220,52 +227,46 @@ async function AnalysisPlayerInfo(playerId) {
   ctx.drawImage(backgroundImgBuffer, 0, 0);
 
   //在中上位置绘制头像
-  const headImgLeft = backgroundImgBuffer.width / 2;
-  const headImgTop = 100;
-  const headImgWidth = 70;
-  const headImgHeight = 70;
+  const headImgLeft = backgroundImgBuffer.width / 2 - 55;
+  const headImgTop = 75;
+  const headImgWidth = 120;
+  const headImgHeight = 120;
   ctx.drawImage(headImgBuffer, headImgLeft, headImgTop, headImgWidth, headImgHeight);
 
   //在头像上面绘制头像框
   if (headImgBox) {
-    const headImgBoxLeft = headImgLeft - 35;
-    const headImgBoxTop = headImgTop - 35;
-    const headImgBoxWidth = headImgWidth + 70;
-    const headImgBoxHeight = headImgHeight + 70;
+    const headImgBoxLeft = headImgLeft - 65;
+    const headImgBoxTop = headImgTop - 65;
+    const headImgBoxWidth = headImgWidth + 130;
+    const headImgBoxHeight = headImgHeight + 130;
     ctx.drawImage(headImgBoxBuffer, headImgBoxLeft, headImgBoxTop, headImgBoxWidth, headImgBoxHeight);
   }
 
   //在头像正下方绘制玩家名，♂蓝，♀粉
-  ctx.font = `20px '${eventFontName}'`;
+  ctx.font = `60px '${eventFontName}'`;
   ctx.fillStyle = sex === "♂" ? "LightBlue" : "LightPink";
   ctx.textAlign = "center";
-  ctx.fillText(playerName, headImgLeft + headImgWidth / 2, headImgTop + headImgHeight + 30);
+  ctx.fillText(playerName, headImgLeft + headImgWidth / 2, headImgTop + headImgHeight + 120);
 
   //在玩家名正下方绘制性别图标
-  ctx.drawImage(sexIconBuffer, headImgLeft + headImgWidth / 2 - 10, headImgTop + headImgHeight + 40, 20, 20);
+  ctx.drawImage(sexIconBuffer, headImgLeft + headImgWidth / 2 - 10, headImgTop + headImgHeight + 150, 20, 20);
 
   //在玩家名下方绘制玩家信息
   ctx.font = `20px '${eventFontName}'`;
   ctx.fillStyle = "#ffffff";
   ctx.textAlign = "center";
-  ctx.fillText(info, headImgLeft + headImgWidth / 2, headImgTop + headImgHeight + 90);
-
-  //中上位置展示置顶战绩
-  ctx.font = `50px '${titleFontName}'`;
-  ctx.fillStyle = "#ffffff";
-  ctx.textAlign = "center";
-  ctx.fillText("战绩", canvas.width / 2, 180);
+  ctx.fillText(info, headImgLeft + headImgWidth / 2, headImgTop + headImgHeight + 250);
 
   //右下角版权信息
   ctx.font = `10px '${eventFontName}'`;
-  ctx.fillStyle = "#555555";
+  ctx.fillStyle = "rgba(99, 99, 99, 0.6)";
   ctx.textAlign = "center";
-  ctx.fillText("CopyRight 胜骅科技", canvas.width - 50, canvas.height - 20);
-  ctx.fillText("Design By Giftina", canvas.width - 50, canvas.height - 10);
+  ctx.fillText("CopyRight 胜骅科技", canvas.width - 60, canvas.height - 18);
+  ctx.fillText("Design By Giftina", canvas.width - 60, canvas.height - 8);
 
   //整屏加个半透明水印
-  ctx.font = `100px '${eventFontName}'`;
-  ctx.fillStyle = "rgba(33, 33, 33, 0.4)";
+  ctx.font = `160px '${eventFontName}'`;
+  ctx.fillStyle = "rgba(99, 99, 99, 0.2)";
   ctx.textAlign = "center";
   ctx.fillText("内  测", canvas.width / 2, canvas.height / 2 + 80);
 
@@ -492,7 +493,7 @@ async function FocusMachine(userId, machineTerminalID) {
     },
   })
     .then(async function (response) {
-      const machine = response.data.filter((machine) => {
+      const machine = response.data.find((machine) => {
         return machine.MachineTerminalID === machineTerminalID;
       });
       return machine[0];
@@ -538,7 +539,7 @@ async function GoGoGo(userId) {
   })
     .then(async function (response) {
       const machineList = response.data;
-      const machine = machineList.filter((machine) => {
+      const machine = machineList.find((machine) => {
         return machine.MachineTerminalID === focusMachine.machineTerminalID;
       });
       return machine[0];
