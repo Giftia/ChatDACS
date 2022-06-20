@@ -541,7 +541,7 @@ async function GoGoGo(userId) {
       const machine = machineList.find((machine) => {
         return machine.MachineTerminalID === focusMachine.machineTerminalID;
       });
-      return machine[0];
+      return machine;
     })
     .catch(function (error) {
       console.log(`获取机台状态失败: ${error}`.error);
