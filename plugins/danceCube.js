@@ -5,7 +5,7 @@
 module.exports = {
   插件名: "内测·舞立方信息查询插件",
   指令: "^[/!]?(绑定|个人信息|战绩|机台状态|关注机台|我要出勤)(.*)",
-  版本: "0.3",
+  版本: "0.4",
   作者: "Giftina",
   描述: "非官方插件。舞立方信息查询，可以查询玩家信息以及机台状态。内测期间，功能、返回结果、玩家绑定信息会随机失效。数据来源以及素材版权归属 胜骅科技 https://www.arccer.com/ ，如有侵权请联系作者删除。",
   使用示例: "个人信息",
@@ -65,7 +65,7 @@ module.exports = {
           return { type: "text", content: errorNoData };
         } else {
           const location = await AnalysisLocation(playerData[userId].location);
-          console.log(`将绑定信息地址 ${playerData[userId].location} 解析为 ${location}`.info);
+          console.log(`将绑定信息地址 ${playerData[userId].location} 解析为 ${location.province + location.city}`.log);
           if (!location) {
             return { type: "text", content: "解析你的地区失败了，对不起呀，你还可以手动查询，指令如：机台状态 浙江省 杭州市" };
           } else {
@@ -467,15 +467,14 @@ ${reply.join("\n")}
  */
 async function AnalysisLocation(location) {
   // 简陋的省份解析
-  let province = location.slice(0, 2);
-  let city = location.slice(2, 4);
+  let province = location.split("省")[0];
+  const city = location.split("省")[1];
 
   if (!province || !city) {
     return;
   }
 
   province += "省";
-  city += "市";
   return { province, city };
 }
 
