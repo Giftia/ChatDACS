@@ -495,7 +495,7 @@ async function FocusMachine(userId, machineTerminalID) {
       const machine = response.data.find((machine) => {
         return machine.MachineTerminalID === machineTerminalID;
       });
-      return machine[0];
+      return machine;
     })
     .catch(function (error) {
       console.log(`获取玩家资料失败: ${error}`.error);
