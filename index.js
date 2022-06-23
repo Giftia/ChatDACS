@@ -18,7 +18,7 @@ if (_cn_reg.test(process.cwd())) {
 /**
  * 声明依赖与配置
  */
-const versionNumber = "v3.5.6"; //版本号
+const versionNumber = "v3.5.6-fix"; //版本号
 const version = `ChatDACS ${versionNumber}`; //系统版本，会显示在web端标题栏
 const utils = require("./plugins/system/utils.js"); //载入系统通用模块
 const Constants = require("./config/constants.js"); //系统常量
@@ -138,6 +138,8 @@ var onlineUsers = 0, //预定义
   QQBOT_QQ,
   QQBOT_ADMIN_LIST,
   QQ_GROUP_WELCOME_MESSAGE,
+  QQ_GROUP_POKE_REPLY_MESSAGE,
+  QQ_GROUP_POKE_BOOM_REPLY_MESSAGE,
   BILIBILI_LIVE_ROOM_ID,
   CHAT_SWITCH,
   CONNECT_GO_CQHTTP_SWITCH,
@@ -547,7 +549,7 @@ function StartQQBot() {
 
                 //群欢迎
                 if (event.notice_type === "group_increase") {
-                  const welcomeMessage = QQ_GROUP_WELCOME_MESSAGE.replace(/\[@新人\]/g, `[CQ:at,qq=${event.user_id}]`);
+                  const welcomeMessage = QQ_GROUP_WELCOME_MESSAGE.replace(/@新人/g, `[CQ:at,qq=${event.user_id}]`);
                   request(
                     `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id
                     }&message=${encodeURI(welcomeMessage)}`,
@@ -696,10 +698,9 @@ function StartQQBot() {
 
                   if (c1c_count > 2) {
                     c1c_count = 0;
-                    const final = "哎呀戳坏了，不理你了 ٩(๑`^`๑)۶";
                     request(
                       `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id
-                      }&message=${encodeURI(final)}`,
+                      }&message=${encodeURI(QQ_GROUP_POKE_BOOM_REPLY_MESSAGE)}`,
                       function (error, _response, _body) {
                         if (!error) {
                           request(
@@ -716,10 +717,9 @@ function StartQQBot() {
                       },
                     );
                   } else {
-                    const final = "请不要戳小小夜 >_<";
                     request(
                       `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id
-                      }&message=${encodeURI(final)}`);
+                      }&message=${encodeURI(QQ_GROUP_POKE_REPLY_MESSAGE)}`);
                   }
                   return 0;
                 }
@@ -2093,6 +2093,8 @@ async function InitConfig() {
   QQBOT_QQ = config.qqBot.QQBOT_QQ; //qqBot使用的qq帐号
   QQBOT_ADMIN_LIST = config.qqBot.QQBOT_ADMIN_LIST; //小夜的管理员列表
   QQ_GROUP_WELCOME_MESSAGE = config.qqBot.QQ_GROUP_WELCOME_MESSAGE; //qq入群欢迎语
+  QQ_GROUP_POKE_REPLY_MESSAGE = config.qqBot.QQ_GROUP_POKE_REPLY_MESSAGE; //戳一戳的文案
+  QQ_GROUP_POKE_BOOM_REPLY_MESSAGE = config.qqBot.QQ_GROUP_POKE_BOOM_REPLY_MESSAGE; //戳坏了的文案
   AUTO_APPROVE_QQ_FRIEND_REQUEST_SWITCH = config.qqBot.AUTO_APPROVE_QQ_FRIEND_REQUEST_SWITCH; //自动批准好友请求开关
   QQBOT_PRIVATE_CHAT_SWITCH = config.qqBot.QQBOT_PRIVATE_CHAT_SWITCH; //私聊开关
   CHAT_JIEBA_LIMIT = config.qqBot.CHAT_JIEBA_LIMIT; //qqBot限制分词数量

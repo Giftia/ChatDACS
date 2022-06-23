@@ -48,8 +48,14 @@ qqBot:
   #qqBot小夜的管理员列表，管理员有权执行管理员指令，且第一位管理员将会处理用户邀请小夜加群的请求:
   QQBOT_ADMIN_LIST: ["1005056803", "2418754147", "38263547"]
 
-  #qq入群欢迎语，[@新人] 出现的部分将会替换成 @新人:
-  QQ_GROUP_WELCOME_MESSAGE: "[@新人] 你好呀，我是本群RBQ担当小夜！小夜的说明书在这里 https://docs.giftia.moe/ 噢，请问主人是要先吃饭呢，还是先洗澡呢，还是先*我呢~"
+  #qq入群欢迎语，@新人 出现的部分将会替换成 @新人:
+  QQ_GROUP_WELCOME_MESSAGE: "@新人 你好呀，我是本群RBQ担当小夜！小夜的说明书在这里 https://docs.giftia.moe/ 噢，请问主人是要先吃饭呢，还是先洗澡呢，还是先*我呢~"
+
+  #戳一戳的文案:
+  QQ_GROUP_POKE_REPLY_MESSAGE: "请不要戳小小夜 >_<"
+
+  #戳坏了的文案:
+  QQ_GROUP_POKE_BOOM_REPLY_MESSAGE: "哎呀戳坏了，不理你了 ٩(๑`^`๑)۶"
 
   #自动批准好友请求开关，如果不启用，陌生人将不能邀请小夜加群:
   AUTO_APPROVE_QQ_FRIEND_REQUEST_SWITCH: true
