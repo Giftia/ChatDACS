@@ -5,7 +5,8 @@
   "license": "GPL-3.0",
   "scripts": {
     "run": "node index.js",
-    "pkg": "pkg ."
+    "pkg": "pkg .",
+    "docker": "docker build . -t giftina/chatdacs"
   },
   "dependencies": {
     "axios": "^0.27.2",

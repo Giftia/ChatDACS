@@ -1,0 +1,19 @@
+# node
+node_modules
+.npm-cache
+
+# git
+.git
+.gitignore
+
+# global
+**/*.log
+**/*.md
+Dockerfile
+
+#others
+plugin_tester.js
+CNAME
+.eslintignore
+.eslintrc.js
+_config.yml
