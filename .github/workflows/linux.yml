@@ -26,12 +26,12 @@ jobs:
           rm ./plugins/go-cqhttp/go-cqhttp.bat
 
       - name: Clean Install Modules
-        run: npm ci --prod
+        run: npm ci --production
 
       - name: Clean Install For Plugins
         run: |
           cd ./plugins/
-          npm ci --prod
+          npm ci --production
           rm package.json
           rm package-lock.json
           cd ..

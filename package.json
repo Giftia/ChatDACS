@@ -5,12 +5,13 @@
   "license": "GPL-3.0",
   "scripts": {
     "run": "node index.js",
-    "pkg": "pkg ."
+    "pkg": "pkg .",
+    "docker": "docker build . -t giftina/chatdacs"
   },
   "dependencies": {
     "axios": "^0.27.2",
     "bilibili-live-ws": "^6.2.1",
-    "canvas": "^2.9.1",
+    "canvas": "^2.9.2",
     "colors": "^1.4.0",
     "compression": "^1.7.4",
     "cookie": "^0.5.0",
