@@ -7,18 +7,18 @@
 /**
  * 启动时中文路径检查
  */
-const ChildProcess = require("child_process");
+const { exec } = require("child_process");
 const _cn_reg = new RegExp("[\u4e00-\u9fa5]");
 if (_cn_reg.test(process.cwd())) {
   const warnMessage = `因为Unicode的兼容性问题，程序所在路劲不能有汉字日语韩语表情包之类的奇奇怪怪的字符，请使用常规的ASCII字符!如有疑问，请加QQ群 120243247 咨询。当前路径含有不对劲的字符: ${process.cwd()}`;
   console.log(warnMessage);
-  ChildProcess.exec(`msg %username% ${warnMessage}`);
+  exec(`msg %username% ${warnMessage}`);
 }
 
 /**
  * 声明依赖与配置
  */
-const versionNumber = "v3.5.6-fix"; //版本号
+const versionNumber = "v3.5.7-beta"; //版本号
 const version = `ChatDACS ${versionNumber}`; //系统版本，会显示在web端标题栏
 const utils = require("./plugins/system/utils.js"); //载入系统通用模块
 const Constants = require("./config/constants.js"); //系统常量
@@ -116,6 +116,8 @@ const logger = winston.createLogger({
     }),
   ],
 });
+
+logger.info("world.execute(me);".alert);
 
 /**
  * 错误捕获
@@ -1909,10 +1911,10 @@ function StartLive() {
  */
 function StartQQGuild() {
   const testConfig = {
-    appID: QQ_GUILD_APP_ID, // 申请机器人时获取到的机器人 BotAppID
-    token: QQ_GUILD_TOKEN, // 申请机器人时获取到的机器人 BotToken
+    appID: QQ_GUILD_APP_ID,
+    token: QQ_GUILD_TOKEN,
     intents: ["GUILD_MESSAGES"], // 事件订阅,用于开启可接收的消息类型
-    sandbox: true, // 沙箱支持，可选，默认false. v2.7.0+
+    sandbox: true, // 沙箱频道
   };
   const qqGuildClient = createOpenAPI(testConfig);
   const qqGuildWS = createWebsocket(testConfig);
@@ -2105,13 +2107,13 @@ async function InitConfig() {
 
   BILIBILI_LIVE_ROOM_ID = config.Others.BILIBILI_LIVE_ROOM_ID ?? 49148; //哔哩哔哩直播间id
 
-  console.log("_______________________________________\n");
+  console.log("_______________________________________\n".rainbow);
   console.log(`\n|          ${version}           |\n`.alert);
 
   if (CHAT_SWITCH) {
-    logger.info("web端自动聊天开启\n".on);
+    logger.info("小夜web端自动聊天开启\n".on);
   } else {
-    logger.info("web端自动聊天关闭\n".off);
+    logger.info("小夜web端自动聊天关闭\n".off);
   }
 
   /**
@@ -2131,11 +2133,12 @@ async function InitConfig() {
      * 在 Windows、Linux 系统下自动启动go-cqhttp
      */
     const autoStartGoCqhttpSystemCondition = ["win32", "linux"];
-    const goCqhttpRoute = { win32: "go-cqhttp.bat", linux: "go-cqhttp" };
+    const goCqhttpFile = { win32: "go-cqhttp.bat", linux: "./go-cqhttp -faststart" };
     if (autoStartGoCqhttpSystemCondition.includes(process.platform)) {
-      ChildProcess.execFile(goCqhttpRoute[process.platform], {
-        cwd: path.join(process.cwd(), "plugins", "go-cqhttp")
-      }, (error, _stdout, _stderr) => {
+      const goCqhttp = exec(goCqhttpFile[process.platform], {
+        cwd: path.join(process.cwd(), "plugins", "go-cqhttp"),
+        windowsHide: true,
+      }, (error) => {
         if (error) {
           logger.error(`go-cqhttp启动失败，错误原因: ${error}`.error);
           return;
@@ -2143,40 +2146,57 @@ async function InitConfig() {
         logger.error("go-cqhttp窗口意外退出，小夜将无法正常使用，请尝试重新启动".error);
         return;
       });
+
+      /**
+       * 在 Linux 系统下直接输出 go-cqhttp 的打印信息
+       */
+
+      if (process.platform === "linux") {
+        goCqhttp.stdout.on("data", function (data) {
+          console.log(data.toString());
+        });
+      }
     }
 
     logger.info(
-      `qqBot小夜开启，配置: \n  ·使用QQ帐号 ${QQBOT_QQ}\n  ·对接go-cqhttp接口 ${GO_CQHTTP_SERVICE_API_URL}\n  ·监听反向post于 127.0.0.1:${WEB_PORT}${GO_CQHTTP_SERVICE_ANTI_POST_API}\n  ·私聊服务是否开启: ${QQBOT_PRIVATE_CHAT_SWITCH}\n`
+      `小夜QQ接入开启，配置: \n  ·使用QQ帐号 ${QQBOT_QQ}\n  ·对接go-cqhttp接口 ${GO_CQHTTP_SERVICE_API_URL}\n  ·监听反向post于 127.0.0.1:${WEB_PORT}${GO_CQHTTP_SERVICE_ANTI_POST_API}\n  ·私聊服务是否开启: ${QQBOT_PRIVATE_CHAT_SWITCH}\n`
         .on,
     );
     xiaoye_ated = new RegExp(`\\[CQ:at,qq=${QQBOT_QQ}\\]`); //匹配小夜被@
     StartQQBot();
   } else {
-    logger.info("小夜关闭\n".off);
+    logger.info("小夜QQ接入关闭\n".off);
   }
 
   if (CONNECT_BILIBILI_LIVE_SWITCH) {
     logger.info(
-      `小夜直播对线开启，请确认哔哩哔哩直播间id是否为 ${BILIBILI_LIVE_ROOM_ID}\n`.on,
+      `小夜哔哩哔哩直播接入开启，直播间id为 ${BILIBILI_LIVE_ROOM_ID}\n`.on,
     );
     StartLive();
   } else {
-    logger.info("小夜直播对线关闭\n".off);
+    logger.info("小夜哔哩哔哩直播接入关闭\n".off);
   }
 
   if (CONNECT_QQ_GUILD_SWITCH) {
-    logger.info("小夜QQ频道开启\n".on);
+    logger.info("小夜QQ频道接入开启\n".on);
     StartQQGuild();
   } else {
-    logger.info("小夜QQ频道关闭\n".off);
+    logger.info("小夜QQ频道接入关闭\n".off);
   }
 
   http.listen(WEB_PORT, () => {
     console.log("_______________________________________\n".rainbow);
     logger.info(
-      `服务启动完毕，访问 127.0.0.1:${WEB_PORT} 即可查看本地web端\n`,
+      `服务启动完毕，访问 127.0.0.1:${WEB_PORT} 即可进入本地web端\n`,
     );
-    logger.info("world.execute(me);".alert);
+  });
+
+  http.on("error", (err) => {
+    http.close();
+    logger.info(`本机${WEB_PORT}端口被其他应用程序占用，请尝试关闭占用${WEB_PORT}端口的其他程序 或 修改配置文件的 WEB_PORT 配置项。错误代码：${err.code}`.error);
+    setTimeout(() => {
+      http.listen(WEB_PORT);
+    }, 5000);
   });
 
   /**
@@ -2186,9 +2206,9 @@ async function InitConfig() {
     "https://api.github.com/repos/Giftia/ChatDACS/releases/latest",
   ).then((res) => {
     if (res.data.tag_name !== versionNumber) {
-      logger.info(`当前小夜版本 ${versionNumber}，检测到小夜最新版本是 ${res.data.tag_name}，请前往 https://github.com/Giftia/ChatDACS/releases 更新小夜吧`.alert);
+      logger.info(`当前小夜版本 ${versionNumber}，检测到小夜最新发行版本是 ${res.data.tag_name}，请前往 https://github.com/Giftia/ChatDACS/releases 更新小夜吧`.alert);
     } else {
-      logger.info(`当前小夜已经是最新版本 ${versionNumber}`.log);
+      logger.info(`当前小夜已经是最新发行版本 ${versionNumber}`.log);
     }
   }).catch((err) => {
     logger.error(`检查更新失败，错误原因: ${err}`.error);
@@ -2372,5 +2392,5 @@ async function ProcessExecute(msg, userId, userName, groupId, groupName, options
 }
 
 /**
- * 我正在听：🎧 雾里 —— 姚六一
+ * 我正在听：🎧 Tiny Stars —— LoveLive! Superstar!!
  */
