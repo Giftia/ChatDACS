@@ -321,7 +321,7 @@ const yaml = require("yaml"); //使用yaml解析配置文件
 const url = require("url");
 const crypto = require("crypto");
 const sqlite3 = require("sqlite3").verbose();
-const db = new sqlite3.Database("db.db"); //数据库位置，默认与index.js同目录
+const db = new sqlite3.Database(path.join(process.cwd(), "config", "db.db")); //数据库位置
 const mp3Duration = require("mp3-duration");
 let WEB_PORT, GO_CQHTTP_SERVICE_API_URL, TIAN_XING_API_KEY;
 

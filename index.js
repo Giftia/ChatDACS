@@ -18,7 +18,7 @@ if (_cn_reg.test(process.cwd())) {
 /**
  * 声明依赖与配置
  */
-const versionNumber = "v3.5.7"; //版本号
+const versionNumber = "v3.6.0-beta"; //版本号
 const version = `ChatDACS ${versionNumber}`; //系统版本，会显示在web端标题栏
 const utils = require("./plugins/system/utils.js"); //载入系统通用模块
 const Constants = require("./config/constants.js"); //系统常量
@@ -37,7 +37,7 @@ const io = require("socket.io")(http);
 const request = require("request");
 const axios = require("axios").default;
 const sqlite3 = require("sqlite3").verbose();
-const db = new sqlite3.Database("./db.db"); //数据库位置，默认与index.js同目录
+const db = new sqlite3.Database("./config/db.db"); //数据库位置
 const colors = require("colors"); //Console日志染色颜色配置
 colors.setTheme({
   alert: "inverse",

@@ -38,9 +38,22 @@ module.exports = {
 const fs = require("fs");
 const path = require("path");
 const yaml = require("yaml"); //使用yaml解析配置文件
-const sqlite3 = require("sqlite3").verbose();
-const db = new sqlite3.Database("db.db"); //数据库位置，默认与index.js同目录
 let CHAT_BAN_WORDS;
+
+const { Sequelize, DataTypes } = require("sequelize");
+const sequelize = new Sequelize({
+  dialect: "sqlite",
+  storage: path.join(process.cwd(), "config", "db.db")
+});
+
+const BalabalaTable = sequelize.define("balabala", {
+  balabala: {
+    type: DataTypes.STRING,
+    allowNull: false
+  }
+}, {
+  tableName: "balabala"
+});
 
 Init();
 

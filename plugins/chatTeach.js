@@ -62,7 +62,7 @@ const fs = require("fs");
 const path = require("path");
 const yaml = require("yaml"); //使用yaml解析配置文件
 const sqlite3 = require("sqlite3").verbose();
-const db = new sqlite3.Database("db.db"); //数据库位置，默认与index.js同目录
+const db = new sqlite3.Database(path.join(process.cwd(), "config", "db.db")); //数据库位置
 let CHAT_BAN_WORDS;
 
 Init();

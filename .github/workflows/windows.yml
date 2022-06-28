@@ -48,7 +48,6 @@ jobs:
             ./config/
             ./static/
             ./plugins/
-            ./db.db
             ./README.md
             ./LICENSE
             ./chatdacs.exe
