@@ -5,7 +5,7 @@
 module.exports = {
   插件名: "内测·舞立方信息查询插件",
   指令: "^[/!]?(绑定|个人信息|战绩|机台状态|关注机台|我要出勤)(.*)",
-  版本: "0.4",
+  版本: "0.5",
   作者: "Giftina",
   描述: "非官方插件。舞立方信息查询，可以查询玩家信息以及机台状态。内测期间，功能、返回结果、玩家绑定信息会随机失效。数据来源以及素材版权归属 胜骅科技 https://www.arccer.com/ ，如有侵权请联系作者删除。",
   使用示例: "个人信息",
@@ -37,6 +37,7 @@ module.exports = {
       }
 
       reply = await AnalysisPlayerInfo(playerId);
+      return { type: "picture", content: { file: reply } };
     }
     // 战绩
     else if (getRankCommand.test(msg)) {
@@ -149,11 +150,11 @@ const api = {
 };
 //加载字体
 const titleFontName = "优设标题圆";
-registerFont(path.join(__dirname, "danceCube", "assets", "优设标题圆.otf"), { family: titleFontName });
+registerFont(path.join(__dirname, "danceCube", "assets", "YouSheBiaoTiYuan.otf"), { family: titleFontName });
 const infoFontName = "霞鹜新晰黑";
 registerFont(path.join(__dirname, "danceCube", "assets", "LXGWNewClearGothic-Book.ttf"), { family: infoFontName });
 const eventFontName = "江城知音体";
-registerFont(path.join(__dirname, "danceCube", "assets", "江城知音体 600W.ttf"), { family: eventFontName });
+registerFont(path.join(__dirname, "danceCube", "assets", "JiangChengZhiYingTi600W.ttf"), { family: eventFontName });
 
 /**
  * 玩家绑定
@@ -249,10 +250,10 @@ async function AnalysisPlayerInfo(playerId) {
   ctx.fillText(playerName, headImgLeft + headImgWidth / 2, headImgTop + headImgHeight + 120);
 
   //在玩家名正下方绘制性别图标
-  ctx.drawImage(sexIconBuffer, headImgLeft + headImgWidth / 2 - 10, headImgTop + headImgHeight + 150, 20, 20);
+  ctx.drawImage(sexIconBuffer, headImgLeft + headImgWidth / 2 - 10, headImgTop + headImgHeight + 150, 30, 30);
 
   //在玩家名下方绘制玩家信息
-  ctx.font = `20px '${eventFontName}'`;
+  ctx.font = `30px '${eventFontName}'`;
   ctx.fillStyle = "#ffffff";
   ctx.textAlign = "center";
   ctx.fillText(info, headImgLeft + headImgWidth / 2, headImgTop + headImgHeight + 250);
@@ -268,15 +269,17 @@ async function AnalysisPlayerInfo(playerId) {
   ctx.font = `160px '${eventFontName}'`;
   ctx.fillStyle = "rgba(99, 99, 99, 0.2)";
   ctx.textAlign = "center";
-  ctx.fillText("内  测", canvas.width / 2, canvas.height / 2 + 80);
+  ctx.fillText("测  试", canvas.width / 2, canvas.height / 2 + 80);
 
   //保存图片
   const fileName = `${playerId}.png`;
-  const filePath = path.join(__dirname, "danceCube", "user", fileName);
+  const filePath = path.join(process.cwd(), "static", "xiaoye", "images", fileName);
   const buffer = canvas.toBuffer("image/png");
   fs.writeFileSync(filePath, buffer);
 
-  return info;
+  const fileURL = `/xiaoye/images/${fileName}`;
+
+  return fileURL;
 }
 
 /**
