@@ -1,11 +1,11 @@
 module.exports = {
   插件名: "帮助插件",
-  指令: "^[/!]?(help|帮助|菜单|插件|说明|指令|命令|小夜怎么用|docs|command)$",
-  版本: "2.2",
+  指令: "^[/!]?(help|帮助|菜单|说明书|指令|命令|小夜怎么用|docs|command)$",
+  版本: "2.3",
   作者: "Giftina",
   描述: "会回复系统当前可用插件列表，描述插件版本和对应的使用示例。",
   使用示例: "/help",
-  预期返回: "当前插件列表和使用示例：",
+  预期返回: "当前插件列表和使用示例：...",
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
     const plugins = require.all({
@@ -52,6 +52,22 @@ module.exports = {
     for (const i in plugins) {
       pluginList.push(`${plugins[i].插件名}_v${plugins[i].版本}: ${plugins[i].使用示例}`);
     }
+
+    // 附上qq端特有的功能说明
+    pluginList.push(`
+QQ群专有功能：
+闭菊 张菊@小夜
+/孤寡 @孤寡对象
+我有个朋友说我好了@小夜
+/强制迫害 @对象 说了什么 小夜说了什么
+
+QQ地雷战：
+埋地雷
+踩地雷
+一个手雷 @被害者
+希望的花 @希望目标
+击鼓传雷
+`);
 
     return { type: "text", content: pluginList.join("\n") };
   },
