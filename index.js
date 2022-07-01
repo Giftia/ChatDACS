@@ -308,12 +308,10 @@ io.on("connection", async (socket) => {
  * 小夜核心代码，对接go-cqhttp
  */
 async function StartQQBot() {
-
-  // 启动时加载当前所有群，写入数据库进行群服务初始化
-  logger.info("正在进行群服务初始化".log);
-  const { newsCount, totalCount } = await utils.InitGroupList();
-  logger.info(`新加载了${newsCount}个群，共${totalCount}个群，群服务初始化完毕`.log);
-
+  /**
+   * goCqhttp 启动后加载当前所有群，写入数据库进行群服务初始化
+   */
+  await utils.InitGroupList();
 
   app.post(GO_CQHTTP_SERVICE_ANTI_POST_API, async (req, res) => {
     const event = req.body;
@@ -1771,7 +1769,6 @@ async function InitConfig() {
       /**
        * 在 Linux 系统下直接输出 go-cqhttp 的打印信息
        */
-
       if (process.platform === "linux") {
         goCqhttp.stdout.on("data", function (data) {
           console.log(data.toString());
@@ -1784,7 +1781,7 @@ async function InitConfig() {
         .on,
     );
     xiaoye_ated = new RegExp(`\\[CQ:at,qq=${QQBOT_QQ}\\]`); // 匹配小夜被@
-    StartQQBot();
+    await StartQQBot();
   } else {
     logger.info("小夜QQ接入关闭\n".off);
   }
@@ -1805,19 +1802,12 @@ async function InitConfig() {
     logger.info("小夜QQ频道接入关闭\n".off);
   }
 
-  http.listen(WEB_PORT, () => {
-    console.log("_______________________________________\n".rainbow);
-    logger.info(
-      `服务启动完毕，访问 127.0.0.1:${WEB_PORT} 即可进入本地web端\n`,
-    );
-  });
+  StartHttpServer();
 
   http.on("error", (err) => {
     http.close();
     logger.info(`本机${WEB_PORT}端口被其他应用程序占用，请尝试关闭占用${WEB_PORT}端口的其他程序 或 修改配置文件的 WEB_PORT 配置项。错误代码：${err.code}`.error);
-    setTimeout(() => {
-      http.listen(WEB_PORT);
-    }, 5000);
+    setTimeout(() => StartHttpServer(), 5000);
   });
 
   /**
@@ -1836,7 +1826,21 @@ async function InitConfig() {
   });
 }
 
-// 异步结巴 by@ssp97
+/**
+ * HTTP服务器启动
+ */
+function StartHttpServer() {
+  http.listen(WEB_PORT, () => {
+    console.log("_______________________________________\n".rainbow);
+    logger.info(
+      `服务启动完毕，访问 127.0.0.1:${WEB_PORT} 即可进入本地web端\n`,
+    );
+  });
+};
+
+/**
+ * 异步结巴 by@ssp97
+ */
 async function ChatJiebaFuzzy(msg) {
   msg = msg.replace("/", "");
   msg = jieba.extract(msg, CHAT_JIEBA_LIMIT); // 按权重分词
@@ -1876,7 +1880,11 @@ async function ChatJiebaFuzzy(msg) {
   return candidateNextList;
 }
 
-// 聊天处理，超智能(障)的聊天算法: 全匹配搜索，模糊搜索，分词模糊搜索
+/**
+ * 聊天处理，超智能(障)的聊天算法: 全匹配搜索，模糊搜索，分词模糊搜索
+ * @param {string} ask 关键词
+ * @returns {string} 小夜回复
+ */
 async function ChatProcess(ask) {
   console.log("开始全匹配搜索".log);
   const fullContentSearchAnswer = await utils.FullContentSearchAnswer(ask);
