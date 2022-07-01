@@ -230,28 +230,35 @@ module.exports = {
   },
 
   /**
-   * 启动时加载当前所有群，写入数据库进行群服务初始化
-   * @returns {Promise<object>} { 新加载群数量, 总群数量 }
+   * goCqhttp 启动后加载当前所有群，写入数据库进行群服务初始化
+   * @returns {Promise<void>} void
    */
   async InitGroupList() {
+    console.log("正在进行群服务初始化……".log);
     const groupList = await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_group_list`)
       .then((response) => {
         return response.data.data;
+      })
+      .catch((error) => {
+        console.log(`go-cqhttp 还没启动，无法获取群信息，稍后会自动重试，错误代码：${error.code}`.error);
       });
-    const groupIdList = groupList.map((group) => group.group_id);
 
-    // 如果在数据库中已经存在，则不再重复添加
-    const groupListInDB = await QQGroupModel.findAll();
-    const groupIdListInDB = groupListInDB.map((group) => group.groupId);
-    const groupIdListToAdd = groupIdList.filter((groupId) => !groupIdListInDB.includes(groupId));
-    if (groupIdListToAdd.length > 0) {
-      await QQGroupModel.bulkCreate(groupIdListToAdd.map((groupId) => ({ groupId })));
+    if (!groupList) {
+      setTimeout(() => this.InitGroupList(), 5000);
+      return;
+    } else {
+      const groupIdList = groupList.map((group) => group.group_id);
+
+      // 如果在数据库中已经存在，则不再重复添加
+      const groupListInDB = await QQGroupModel.findAll();
+      const groupIdListInDB = groupListInDB.map((group) => group.groupId);
+      const groupIdListToAdd = groupIdList.filter((groupId) => !groupIdListInDB.includes(groupId));
+      if (groupIdListToAdd.length > 0) {
+        await QQGroupModel.bulkCreate(groupIdListToAdd.map((groupId) => ({ groupId })));
+      }
+
+      console.log(`群服务初始化完毕，新加载了${groupIdListToAdd.length}个群，共${groupIdListInDB.length}个群`.log);
     }
-
-    return {
-      newsCount: groupIdListToAdd.length,
-      totalCount: groupIdListInDB.length,
-    };
   },
 
   /**
