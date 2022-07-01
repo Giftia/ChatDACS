@@ -25,7 +25,7 @@ function RandomECY() {
         request(picUrl).pipe(
           fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
             console.log(`保存了好康的二次元图：${picUrl}，然后再给用户`.log);
-            resolve(`/images/${picUrl.split("/").pop()}`);  //绕过防盗链，保存为本地图片
+            resolve(`/images/${picUrl.split("/").pop()}`);  // 绕过防盗链，保存为本地图片
           })
         );
       } else {

@@ -13,7 +13,7 @@ module.exports = {
   },
 };
 
-const 图片文件夹 = "./static/images/"; //修改为自己的图库文件夹，绝对路径和相对路径都可以，绝对路径类似 D:\\色图\\贫乳\\ ，记得要像这样 \\ 多加一个反斜杠
+const 图片文件夹 = "./static/images/"; // 修改为自己的图库文件夹，绝对路径和相对路径都可以，绝对路径类似 D:\\色图\\贫乳\\ ，记得要像这样 \\ 多加一个反斜杠
 const path = require("path");
 const fs = require("fs");
 

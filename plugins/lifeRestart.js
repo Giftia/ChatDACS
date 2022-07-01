@@ -31,7 +31,7 @@ module.exports = {
  * @returns 
  */
 async function LifeRestart(userId, userName) {
-  //抽选天赋
+  // 抽选天赋
   const talents = fs.readFileSync(
     path.join(process.cwd(), "config", "talents.json"),
     "utf-8",
@@ -48,14 +48,14 @@ async function LifeRestart(userId, userName) {
         `玩家 ${userId} 抽选10个随机天赋: ${resolve.randomTalents}`
       );
 
-      //如果游戏存档不存在该玩家的游戏记录，则创建一个，写入天赋列表
+      // 如果游戏存档不存在该玩家的游戏记录，则创建一个，写入天赋列表
       if (!Object.prototype.hasOwnProperty.call(userData, userId)) {
         userData[userId] = {
           talentsList: resolve.talentsList,
           points: "",
         };
       } else {
-        //如果游戏存档存在该玩家的游戏记录，则更新天赋列表
+        // 如果游戏存档存在该玩家的游戏记录，则更新天赋列表
         userData[userId].talentsList = resolve.talentsList;
       }
 
@@ -81,7 +81,7 @@ async function SelectTalents(msg, userId, userName) {
 
   console.log(`玩家 ${userName} 想要选择天赋: ${assertTalentsID}`);
 
-  //容错，如果有异常值，替换成对应序号
+  // 容错，如果有异常值，替换成对应序号
   for (let i in assertTalentsID) {
     if (
       !/^[0-9]$/.test(assertTalentsID[i]) || !assertTalentsID[i]
@@ -90,7 +90,7 @@ async function SelectTalents(msg, userId, userName) {
     }
   }
 
-  //查询玩家抽到的天赋列表
+  // 查询玩家抽到的天赋列表
   const talentsList = userData[userId].talentsList;
   console.log(`玩家 ${userName} 拥有天赋: ${talentsList}`);
 
@@ -104,10 +104,10 @@ async function SelectTalents(msg, userId, userName) {
 
   console.log(`玩家 ${userName} 选择天赋: ${selectedTalentsIDs}`);
 
-  //选择的天赋存入游戏存档
+  // 选择的天赋存入游戏存档
   userData[userId].talentsList = selectedTalentsIDs;
 
-  //挨个去查对应的效果作为回复
+  // 挨个去查对应的效果作为回复
   const data = fs.readFileSync(
     path.join(process.cwd(), "config", "talents.json"),
     "utf-8",
@@ -121,7 +121,7 @@ async function SelectTalents(msg, userId, userName) {
   const talents = JSON.parse(data);
 
   for (let i in selectedTalentsIDs) {
-    //把index转换为天赋id，取出天赋数据
+    // 把index转换为天赋id，取出天赋数据
     const talent = talents[Object.keys(talents)[selectedTalentsIDs[i]]];
     const grade = gradeIconMaps[talent?.grade || 0];
 
@@ -156,7 +156,7 @@ function SetPoints(msg, userId, userName) {
     }
   }
 
-  //写入游戏存档
+  // 写入游戏存档
   userData[userId].points = assertPoints;
 
   return `${userName} 已分配属性点: 
@@ -182,7 +182,7 @@ function SetPoints(msg, userId, userName) {
  * @returns 
  */
 async function LifeSummary(userId, userName) {
-  //读取玩家游戏存档作总结
+  // 读取玩家游戏存档作总结
   const points = userData[userId].points;
 
   return `${userName} 人生总结: 
@@ -211,16 +211,16 @@ async function Talents10x(data) {
     let randomTalents = "",
       talentsList = [];
     for (let i = 0; i < 10; i++) {
-      //随机选天赋index
+      // 随机选天赋index
       const randomTalentIndex = Math.floor(Math.random() * talentsLength);
-      //把index转换为天赋id，取出天赋数据
+      // 把index转换为天赋id，取出天赋数据
       const talent = talents[Object.keys(talents)[randomTalentIndex]];
       const talentName = talent.name, talentDescription = talent.description;
 
-      //按天赋稀有度 grade 增加图标
+      // 按天赋稀有度 grade 增加图标
       const grade = gradeIconMaps[talent?.grade || 0];
 
-      //把天赋名称和描述拼接成一个字符串
+      // 把天赋名称和描述拼接成一个字符串
       const talentsDescription = `\n${i} ${grade}${talentName}（${talentDescription}）`;
       randomTalents += talentsDescription;
       talentsList.push(randomTalentIndex);

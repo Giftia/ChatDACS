@@ -1,4 +1,4 @@
-const devGroupNumber = "120243247"; //小夜开发群
+const devGroupNumber = "120243247"; // 小夜开发群
 
 module.exports = {
   插件名: "报错插件",
@@ -26,7 +26,7 @@ module.exports = {
 const axios = require("axios").default;
 const fs = require("fs");
 const path = require("path");
-const yaml = require("yaml"); //使用yaml解析配置文件
+const yaml = require("yaml"); // 使用yaml解析配置文件
 let GO_CQHTTP_SERVICE_API_URL, CONNECT_GO_CQHTTP_SWITCH;
 
 Init();

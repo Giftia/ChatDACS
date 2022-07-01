@@ -20,7 +20,7 @@ module.exports = {
 const request = require("request");
 const fs = require("fs");
 const path = require("path");
-const yaml = require("yaml"); //使用yaml解析配置文件
+const yaml = require("yaml"); // 使用yaml解析配置文件
 let SUMT_API_KEY;
 
 Init();
@@ -55,8 +55,8 @@ function RandomTbShow() {
           fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
             console.log(`保存了珍贵的随机买家秀：${picUrl}，然后再给用户`.log);
           })
-        ); //来之不易啊，保存为本地图片
-        resolve(body.pic_url); //但是不给本地地址，还是给的源地址，这样节省带宽
+        ); // 来之不易啊，保存为本地图片
+        resolve(body.pic_url); // 但是不给本地地址，还是给的源地址，这样节省带宽
       } else {
         reject("随机买家秀错误，是卡特实验室接口的锅。错误原因：" + JSON.stringify(response.body));
       }

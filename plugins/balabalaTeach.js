@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "敷衍语料教学插件",
   指令: "^[/!]?说不出话 (.*)",
-  版本: "2.0",
+  版本: "2.1",
   作者: "Giftina",
   描述: "balabala敷衍教学，教给小夜一些比较通用的回复。对于一些难以回复的对话，小夜的词库中没有搜索到回复的时候，小夜会随机回复这些回复作为敷衍，回复了，但完全没有回复的意义。",
   使用示例: "说不出话 ？",
@@ -9,7 +9,7 @@ module.exports = {
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
     const teachMsg = new RegExp(module.exports.指令).exec(msg)[1];
-    const teachMsgChecked = teachMsg.replace(/'/g, ""); //防爆
+    const teachMsgChecked = teachMsg.replace(/'/g, ""); // 防爆
     console.log(
       `${userId}(${userName}) 想要教给小夜balabala: ${teachMsgChecked}，现在开始检测合法性`.log,
     );
@@ -29,18 +29,21 @@ module.exports = {
       }
     }
     console.log("balabala教学: 没有检测到问题，可以学习".log);
-    db.run(`INSERT INTO balabala VALUES('${teachMsgChecked}')`);
-    console.log("balabala教学: 学习成功".log);
+
+    await PerfunctoryModel.create({ content: teachMsgChecked })
+      .then(() => {
+        console.log("balabala教学: 学习成功".log);
+      });
+
     return { type: "text", content: `哇！小夜学会啦！小夜可能在说不出话的时候说 ${teachMsgChecked} 噢` };
   },
 };
 
 const fs = require("fs");
 const path = require("path");
-const yaml = require("yaml"); //使用yaml解析配置文件
-const sqlite3 = require("sqlite3").verbose();
-const db = new sqlite3.Database("db.db"); //数据库位置，默认与index.js同目录
+const yaml = require("yaml"); // 使用yaml解析配置文件
 let CHAT_BAN_WORDS;
+const PerfunctoryModel = require(path.join(process.cwd(), "config", "model", "perfunctoryModel.js"));
 
 Init();
 

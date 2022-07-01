@@ -35,7 +35,7 @@ const request = require("request");
 const axios = require("axios").default;
 const fs = require("fs");
 const path = require("path");
-const yaml = require("yaml"); //使用yaml解析配置文件
+const yaml = require("yaml"); // 使用yaml解析配置文件
 let GO_CQHTTP_SERVICE_API_URL, CONNECT_GO_CQHTTP_SWITCH;
 
 //搜索tag
@@ -58,7 +58,7 @@ function SearchTag(tag, type) {
               reject(`${tag}太大了，下不下来`);
             }
           })
-        ); //绕过防盗链，保存为本地图片
+        ); // 绕过防盗链，保存为本地图片
       } else {
         reject(`找不到${tag}`);
       }

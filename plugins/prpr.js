@@ -36,7 +36,7 @@ module.exports = {
       userName = "自己";
     }
     let prprTarget = new RegExp(module.exports.指令).exec(msg)[1].trim();
-    //如果没有prpr对象，那么prpr自己
+    // 如果没有prpr对象，那么prpr自己
     if (!prprTarget) {
       prprTarget = "自己";
     }

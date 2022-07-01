@@ -64,27 +64,27 @@
 
             layim.config({
               uploadImage: {
-                //上传图片接口
-                url: "/upload/image", //（返回的数据格式见下文）
-                type: "post", //默认post
+                // 上传图片接口
+                url: "/upload/image", // （返回的数据格式见下文）
+                type: "post", // 默认post
                 data: {},
               },
               uploadFile: {
-                //上传文件接口
-                url: "/upload/file", //（返回的数据格式见下文）
-                type: "post", //默认post
+                // 上传文件接口
+                url: "/upload/file", // （返回的数据格式见下文）
+                type: "post", // 默认post
                 data: {},
               },
               init: {
-                //我的信息
+                // 我的信息
                 mine: {
-                  username: "您", //我的昵称
-                  id: "233", //我的ID
+                  username: "您", // 我的昵称
+                  id: "233", // 我的ID
                   status: "online",
-                  avatar: "/huaji.webp", //我的头像
+                  avatar: "/huaji.webp", // 我的头像
                   sign: "三点几啦",
                 },
-                //我的好友列表
+                // 我的好友列表
                 friend: [
                   {
                     groupname: "系统",
@@ -169,7 +169,7 @@
                 ],
               },
 
-              //扩展聊天面板工具栏
+              // 扩展聊天面板工具栏
               tool: [
                 {
                   alias: "help",
@@ -208,13 +208,13 @@
                 },
               ],
 
-              //扩展更多列表
+              // 扩展更多列表
               moreList: [
                 {
                   alias: "mineWar",
                   title: "地 雷 战（开发中）",
-                  iconUnicode: "&#xe66c;", //图标字体的unicode，可不填
-                  iconClass: "", //图标字体的class类名
+                  iconUnicode: "&#xe66c;", // 图标字体的unicode，可不填
+                  iconClass: "", // 图标字体的class类名
                 },
                 {
                   alias: "bonus",
@@ -248,15 +248,15 @@
                 },
               ],
 
-              voice: "/ding.mp3", //声音提醒文件位置
-              notice: 1, //是否开启桌面消息提醒，即在浏览器之外的提醒
-              maxLength: 3000, //可允许的消息最大字符长度
-              tabIndex: 0, //用户设定初始打开的Tab项下标
-              isNewFriend: 0, //是否开启“新的朋友”
-              isgroup: 1, //是否开启“群聊”
-              chatTitleColor: "#edbc28", //顶部Bar颜色
-              title: msg, //标题
-              copyright: 1, //layui已不限制授权使用
+              voice: "/ding.mp3", // 声音提醒文件位置
+              notice: 1, // 是否开启桌面消息提醒，即在浏览器之外的提醒
+              maxLength: 3000, // 可允许的消息最大字符长度
+              tabIndex: 0, // 用户设定初始打开的Tab项下标
+              isNewFriend: 0, // 是否开启“新的朋友”
+              isgroup: 1, // 是否开启“群聊”
+              chatTitleColor: "#edbc28", // 顶部Bar颜色
+              title: msg, // 标题
+              copyright: 1, // layui已不限制授权使用
             });
           });
 
@@ -265,48 +265,48 @@
             layim.showNew("about", true);
           });
 
-          //工具栏-召唤小夜
+          // 工具栏-召唤小夜
           layim.on("tool(xiaoye)", function (insert, send) {
-            insert("小夜"); //将内容插入到编辑器
+            insert("小夜"); // 将内容插入到编辑器
             send();
           });
 
-          //工具栏-cos
+          // 工具栏-cos
           layim.on("tool(cos)", function (insert, send) {
             insert("cos图");
             send();
           });
 
-          //工具栏-ecy
+          // 工具栏-ecy
           layim.on("tool(ecy)", function (insert, send) {
             insert("随机二次元图");
             send();
           });
 
-          //工具栏-tbshow
+          // 工具栏-tbshow
           layim.on("tool(tbshow)", function (insert, send) {
             insert("买家秀");
             send();
           });
 
-          //工具栏-r18
+          // 工具栏-r18
           layim.on("tool(r18)", function (insert, send) {
             insert("可以色色");
             send();
           });
 
-          //工具栏-帮助
+          // 工具栏-帮助
           layim.on("tool(help)", function (insert, send) {
             insert("帮助");
             send();
           });
 
-          //工具栏-发送链接
+          // 工具栏-发送链接
           layim.on("tool(link)", function (insert, send) {
             insert("a(https://docs.giftia.moe/)[星野夜蝶 使用文档]");
           });
 
-          //更多菜单
+          // 更多菜单
           layim.on("moreList", function (obj) {
             switch (obj.alias) {
               case "mineWar":
@@ -409,15 +409,15 @@
             }
           });
 
-          //监听发送消息
+          // 监听发送消息
           layim.on("sendMessage", function (data) {
             socket.emit("message", { CID: myCID, msg: data.mine.content });
           });
 
-          //接收消息
+          // 接收消息
           socket.on("message", function (message) {
             switch (message.CID) {
-              case "0": //小夜回复的消息
+              case "0": // 小夜回复的消息
                 layim.getMessage({
                   username: "小夜",
                   avatar: "/xiaoye.webp",
@@ -427,9 +427,9 @@
                   content: message.msg,
                 });
                 break;
-              case myCID: //自己发送的消息
+              case myCID: // 自己发送的消息
                 break;
-              default:  //其他人发送的消息
+              default:  // 其他人发送的消息
                 username = message.name;
                 layim.getMessage({
                   username: username,
@@ -443,7 +443,7 @@
             }
           });
 
-          //接收图片消息
+          // 接收图片消息
           socket.on("picture", function (message) {
             layim.getMessage({
               username: "小夜",
@@ -455,7 +455,7 @@
             });
           });
 
-          //接收视频消息
+          // 接收视频消息
           socket.on("video", function (message) {
             layim.getMessage({
               username: "小夜",
@@ -467,7 +467,7 @@
             });
           });
 
-          //接收音频消息
+          // 接收音频消息
           socket.on("audio", function (message) {
             layim.getMessage({
               username: "小夜",
@@ -479,7 +479,7 @@
             });
           });
 
-          //接收文件消息
+          // 接收文件消息
           socket.on("file", function (message) {
             layim.getMessage({
               username: "小夜",
@@ -491,7 +491,7 @@
             });
           });
 
-          //接收系统消息
+          // 接收系统消息
           socket.on("system", function (message) {
             layim.getMessage({
               username: "系统消息",
@@ -503,7 +503,7 @@
             });
           });
 
-          //接收qq图片消息
+          // 接收qq图片消息
           socket.on("qqImage", function (message) {
             layim.getMessage({
               username: "系统消息",
@@ -515,7 +515,7 @@
             });
           });
 
-          //接收qq视频消息
+          // 接收qq视频消息
           socket.on("qqVideo", function (message) {
             layim.getMessage({
               username: "系统消息",
@@ -527,39 +527,39 @@
             });
           });
 
-          //查看群聊信息
+          // 查看群聊信息
           layim.on("detail", function (data) {
-            console.log(data); //获取当前会话对象
+            console.log(data); // 获取当前会话对象
             layim.panel({
-              title: data.name + " 群信息", //标题
+              title: data.name + " 群信息", // 标题
               tpl:
                 '<div style="padding: 10px;">' +
                 data.cid +
-                "{{d.data.test}}</div>", //模版
+                "{{d.data.test}}</div>", // 模版
               data: {
-                //数据
+                // 数据
                 test: "?",
               },
             });
           });
 
-          //监听查看更多记录
+          // 监听查看更多记录
           layim.on("chatLog", function (data, ul) {
-            console.log(data); //得到当前会话对象的基本信息
-            console.log(ul); //得到当前聊天列表所在的ul容器，比如可以借助他来实现往上插入更多记录
+            console.log(data); // 得到当前会话对象的基本信息
+            console.log(ul); // 得到当前聊天列表所在的ul容器，比如可以借助他来实现往上插入更多记录
 
-            //弹出一个更多聊天记录面板
+            // 弹出一个更多聊天记录面板
             layim.panel({
-              title: "与 " + data.username + " 的聊天记录", //标题
-              tpl: "聊天记录：{{d.data.test}}", //模版
+              title: "与 " + data.username + " 的聊天记录", // 标题
+              tpl: "聊天记录：{{d.data.test}}", // 模版
               data: {
-                //数据
+                // 数据
                 test: "Hello",
               },
             });
           });
 
-          //监听聊天窗口的切换
+          // 监听聊天窗口的切换
           layim.on("chatChange", function (data) {
             const text = document.getElementsByTagName("input")[0],
               btn = document.getElementsByTagName("button")[0],
@@ -582,7 +582,7 @@
               socket.emit("typingOver");
             };
 
-            //仅在小夜聊天轮播placeholder，展示可用命令
+            // 仅在小夜聊天轮播placeholder，展示可用命令
             if (data.data.id == "101") {
               superplaceholder({
                 el: document.querySelector("input"),

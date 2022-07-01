@@ -25,7 +25,7 @@ module.exports = {
       if (res.data.length == 0) {
         return "没有找到结果";
       } else {
-        //随机从 res.data.dialogues 数组中取一组对话
+        // 随机从 res.data.dialogues 数组中取一组对话
         const dialogue = res.data.dialogues[Math.floor(Math.random() * res.data.dialogues.length)];
 
         const result = `原作：${dialogue.subject_name}

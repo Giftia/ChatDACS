@@ -10,7 +10,7 @@ module.exports = {
   execute: async function (msg, userId, userName, groupId, groupName, options) {
     const ttsContextFromIncomingMessage = new RegExp(module.exports.指令).exec(msg)[1];
     const ttsContent = ttsContextFromIncomingMessage || "你好谢谢小笼包再见!";
-    //如果有图片回复，则不合成语音
+    // 如果有图片回复，则不合成语音
     if (Constants.isImage_reg.test(ttsContent)) {
       return "";
     }
@@ -43,10 +43,10 @@ async function TTS(ttsContent) {
        * 精品音库：5为度小娇，103为度米朵，106为度博文，110为度小童，111为度小萌，默认为度小美
        * 1=2:普通男性,3:有情感的播音男性,4:有情感的萝莉声线-度丫丫;5:普通女性,6:抑扬顿挫有情感的讲故事男性(纪录频道),7:有情感的广东话女性,8:语气平淡的念诗男性(葛平),9:速读普通男性,10:略有情感的刚成年男性,11:刺耳而略有情感的讲故事男性(情感强度比6弱),12:温柔的有情感的讲故事女性
        */
-      spd: "7",  //语速，取值0-15，默认为5中语速
-      pit: "10", //音调，取值0-15，默认为5中语调
-      vol: "9", //音量，取值0-15，默认为5中音量
-      aue: "3",  //格式, 3：mp3(default) 4： pcm-16k 5： pcm-8k 6. wav 注：这个接口会无视该参数，生成mp3格式
+      spd: "7",  // 语速，取值0-15，默认为5中语速
+      pit: "10", // 音调，取值0-15，默认为5中语调
+      vol: "9", // 音量，取值0-15，默认为5中音量
+      aue: "3",  // 格式, 3：mp3(default) 4： pcm-16k 5： pcm-8k 6. wav 注：这个接口会无视该参数，生成mp3格式
       tex: encodeURI(ttsContent)
     },
   })
@@ -68,7 +68,7 @@ async function TTS(ttsContent) {
       }
     })
     .catch(function (error) {
-      //看来加请求头也不能白嫖了
+      // 看来加请求头也不能白嫖了
       console.log(`语音合成小夜TTS失败: ${error}`.error);
       return "语音合成小夜TTS错误: ", error;
     });
