@@ -230,7 +230,7 @@ module.exports = {
   },
 
   /**
-   *  goCqhttp 启动后加载当前所有群，写入数据库进行群服务初始化
+   * goCqhttp 启动后加载当前所有群，写入数据库进行群服务初始化
    * @returns {Promise<void>} void
    */
   async InitGroupList() {
