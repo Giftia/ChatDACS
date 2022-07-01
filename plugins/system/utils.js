@@ -553,12 +553,12 @@ const sequelize = require("sequelize");
 const Op = sequelize.Op;
 
 //models
-const UserModel = require(path.join(process.cwd(), "config", "model", "userModel.js"));
-const MessageModel = require(path.join(process.cwd(), "config", "model", "messageModel.js"));
-const QQGroupModel = require(path.join(process.cwd(), "config", "model", "qqGroupModel.js"));
-const MineModel = require(path.join(process.cwd(), "config", "model", "mineModel.js"));
-const ChatModel = require(path.join(process.cwd(), "config", "model", "chatModel.js"));
-const PerfunctoryModel = require(path.join(process.cwd(), "config", "model", "perfunctoryModel.js"));
+const UserModel = require(path.join(process.cwd(), "plugins", "system", "model", "userModel.js"));
+const MessageModel = require(path.join(process.cwd(), "plugins", "system", "model", "messageModel.js"));
+const QQGroupModel = require(path.join(process.cwd(), "plugins", "system", "model", "qqGroupModel.js"));
+const MineModel = require(path.join(process.cwd(), "plugins", "system", "model", "mineModel.js"));
+const ChatModel = require(path.join(process.cwd(), "plugins", "system", "model", "chatModel.js"));
+const PerfunctoryModel = require(path.join(process.cwd(), "plugins", "system", "model", "perfunctoryModel.js"));
 
 let WEB_PORT, GO_CQHTTP_SERVICE_API_URL, TIAN_XING_API_KEY;
 
