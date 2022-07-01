@@ -392,19 +392,13 @@ async function StartQQBot() {
       Constants.approve_group_invite_reg.test(event.message)
     ) {
       const flag = event.message.match(Constants.approve_group_invite_reg)[1];
-      request(
-        `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_add_request?flag=${encodeURI(
-          flag,
-        )}&type=invite&approve=1`,
-        function (error, _response, _body) {
-          if (!error) {
-            logger.info(
-              `管理员批准了群邀请请求 ${flag}`.log,
-            );
-            res.send({ reply: "已批准" });
-          }
-        },
+
+      axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_add_request?flag=${encodeURI(flag)}&type=invite&approve=1`);
+
+      logger.info(
+        `管理员批准了群邀请请求 ${flag}`.log,
       );
+      res.send({ reply: "已批准" });
       return 0;
     }
 
@@ -536,18 +530,16 @@ async function StartQQBot() {
 
           // 群欢迎
           if (event.notice_type === "group_increase") {
-            const welcomeMessage = QQ_GROUP_WELCOME_MESSAGE.replace(/@新人/g, `[CQ:at,qq=${event.user_id}]`);
-            request(
-              `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id
-              }&message=${encodeURI(welcomeMessage)}`,
-              function (error, _response, _body) {
-                if (!error) {
-                  logger.info(
-                    `${event.user_id} 加入了群 ${event.group_id}，小夜欢迎了ta`.log,
-                  );
-                }
-              },
+            console.log(
+              `${event.user_id} 加入了群 ${event.group_id}，小夜欢迎了ta`.log,
             );
+
+            const welcomeMessage = QQ_GROUP_WELCOME_MESSAGE.replace(/@新人/g, `[CQ:at,qq=${event.user_id}]`);
+
+            axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(welcomeMessage)}`);
+
+            // 在小夜加入新群后，将新群写入群服务表
+            await utils.AddNewGroup(event.group_id);
             return 0;
           }
 
