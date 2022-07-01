@@ -19,7 +19,7 @@ module.exports = {
       },
     });
 
-    //针对 docs 指令生成文档
+    // 针对 docs 指令生成文档
     if (msg === "docs") {
       /**
        * { 插件名: { 使用例, 预期返回, 功能描述, 作者 }, 插件名: { 使用例, 预期返回, 功能描述, 作者 }, ... }
@@ -35,7 +35,7 @@ module.exports = {
       }
       return { type: "text", content: Object2Markdown(docsMap) };
     }
-    //针对 command 指令生成轮播placeholder
+    // 针对 command 指令生成轮播placeholder
     else if (msg === "command") {
       /**
        * [使用示例, 使用示例, ...]

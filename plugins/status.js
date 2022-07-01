@@ -49,5 +49,5 @@ function ReadConfig() {
 //初始化
 async function Init() {
   const resolve = await ReadConfig();
-  QQBOT_ADMIN_LIST = resolve.qqBot.QQBOT_ADMIN_LIST; //qqBot小夜的管理员列表
+  QQBOT_ADMIN_LIST = resolve.qqBot.QQBOT_ADMIN_LIST; // qqBot小夜的管理员列表
 }

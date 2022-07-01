@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "今日老婆插件",
   指令: "^[/!]?今日老婆$",
-  版本: "1.1",
+  版本: "1.2",
   作者: "Giftina",
   描述: "将随机一对群友组成一对cp。",
   使用示例: "今日老婆",
@@ -14,30 +14,30 @@ module.exports = {
 
     console.log(`将 ${userId} 和 ${randomCp} 组成一对cp`.log);
 
-    const canvas = createCanvas(100, 100);
+    const canvas = createCanvas(200, 200);
     const ctx = canvas.getContext("2d");
     ctx.fillStyle = "PINK";
-    ctx.fillRect(0, 0, 100, 100);
+    ctx.fillRect(0, 0, 200, 200);
 
-    //画用户的头像
+    // 画用户的头像
     ctx.beginPath();
-    ctx.arc(30, 30, 30, 0, 2 * Math.PI);
+    ctx.arc(60, 60, 60, 0, 2 * Math.PI);
     ctx.fill();
     ctx.save();
     ctx.clip();
-    ctx.drawImage(selfHeadImgBuffer, 0, 0, 60, 60);
+    ctx.drawImage(selfHeadImgBuffer, 0, 0, 120, 120);
     ctx.closePath();
     ctx.restore();
 
-    //画cp的头像
+    // 画cp的头像
     ctx.beginPath();
-    ctx.arc(70, 70, 30, 0, 2 * Math.PI);
+    ctx.arc(140, 140, 60, 0, 2 * Math.PI);
     ctx.fill();
     ctx.clip();
-    ctx.drawImage(targetHeadImgBuffer, 40, 40, 60, 60);
+    ctx.drawImage(targetHeadImgBuffer, 80, 80, 120, 120);
     ctx.closePath();
 
-    //保存图片
+    // 保存图片
     const fileName = `${userId + "x" + randomCp}.jpg`;
     const filePath = path.join(process.cwd(), "static", "xiaoye", "images", fileName);
     const buffer = canvas.toBuffer("image/png");

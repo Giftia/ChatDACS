@@ -21,7 +21,7 @@
         var time_now = 0,
           time_last = 0,
           socket = io(),
-          arrIcon = ["/huaji.webp", "/xiaoye.webp"], //arrIcon[0] = client icon, arrIcon[1] = server icon
+          arrIcon = ["/huaji.webp", "/xiaoye.webp"], // arrIcon[0] = client icon, arrIcon[1] = server icon
           sorc = 1,
           liNow = -1,
           btn = document.getElementById("btn"),
@@ -126,15 +126,15 @@
 
       function CurentTime() {
         var now = new Date();
-        //var year = now.getFullYear();
+        // var year = now.getFullYear();
         var month = now.getMonth() + 1;
         var day = now.getDate();
         var hh = now.getHours();
         var mm = now.getMinutes();
         var ss = now.getSeconds();
         var clock; // = year + '年';
-        //if(month < 10)
-        //	clock += '0';
+        // if(month < 10)
+        // clock += '0';
         clock = month + "月";
         if (day < 10) clock += "0";
         clock += day + "日 ";

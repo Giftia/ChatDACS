@@ -10,14 +10,14 @@ module.exports = {
   execute: async function (msg, userId, userName, groupId, groupName, options) {
     const text = new RegExp(module.exports.指令).exec(msg)[1].replace(/我/g, "你");
 
-    //获取预约天数
+    // 获取预约天数
     const daySchedule = DayToTime(text);
 
-    //获取预约时间
+    // 获取预约时间
     const timeSchedule = TimeToSchedule(text, daySchedule);
 
     if (!timeSchedule) {
-      //如果没有匹配到预约时间，则返回错误信息
+      // 如果没有匹配到预约时间，则返回错误信息
       return { type: "text", content: "小夜不知道该什么时候提醒你呢…要指定提醒时间噢" };
     }
 
@@ -48,7 +48,7 @@ dayjs.tz.setDefault("Asia/Shanghai");
 const axios = require("axios").default;
 const fs = require("fs");
 const path = require("path");
-const yaml = require("yaml"); //使用yaml解析配置文件
+const yaml = require("yaml"); // 使用yaml解析配置文件
 let GO_CQHTTP_SERVICE_API_URL, CONNECT_GO_CQHTTP_SWITCH;
 
 Init();
@@ -81,21 +81,21 @@ function DayToTime(text) {
     后天: 2,
   };
 
-  //统计字符串中，"后天" 前有几个 "大"，1个 "大" 代表1天
+  // 统计字符串中，"后天" 前有几个 "大"，1个 "大" 代表1天
   if (text.includes("大后天")) {
     const x后天 = text.match(/后天/g)[0];
     const howManyNextDay = x后天.match(/大/g).length;
     return howManyNextDay;
   }
 
-  //获取常规天数
+  // 获取常规天数
   for (const key in dayMap) {
     if (text.includes(key)) {
       return dayjs().add(dayMap[key], "days");
     }
   }
 
-  //默认返回当天
+  // 默认返回当天
   return dayjs();
 }
 
@@ -114,7 +114,7 @@ function TimeToSchedule(text, daySchedule) {
     马上: 10,
   };
 
-  //将 text 遍历 timeMap
+  // 将 text 遍历 timeMap
   let hourSchedule = daySchedule;
   for (const key in timeMap) {
     if (text.includes(key)) {
@@ -123,7 +123,7 @@ function TimeToSchedule(text, daySchedule) {
     }
   }
 
-  //将 text 遍历 delayMap
+  // 将 text 遍历 delayMap
   let delaySchedule = daySchedule;
   for (const key in delayMap) {
     if (text.includes(key)) {
@@ -132,6 +132,6 @@ function TimeToSchedule(text, daySchedule) {
     }
   }
 
-  //最后.toDate();
+  // 最后.toDate();
   return delaySchedule.toDate();
 }

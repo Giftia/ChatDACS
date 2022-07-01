@@ -23,7 +23,7 @@ module.exports = {
 const axios = require("axios").default;
 const fs = require("fs");
 const path = require("path");
-const yaml = require("yaml"); //使用yaml解析配置文件
+const yaml = require("yaml"); // 使用yaml解析配置文件
 let XIZHI_CHANNEL_KEY;
 
 Init();

@@ -8,19 +8,19 @@ module.exports = {
   预期返回: "[一张黑白生草图]",
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
-    //获取第一行字符串
+    // 获取第一行字符串
     const mainContent = msg.split("[")[0].replace(/^[/!]?黑白图 /g, "") ?? "当你凝望神圣手雷的时候，神圣手雷也在凝望你";
-    const pictureSources = Constants.img_url_reg.exec(msg)[0] ?? "https://gchat.qpic.cn/gchatpic_new/1005056803/2063243247-2847024251-657109635D3492BDB455DEFA8936AD96/0?term=3"; //取图片链接
+    const pictureSources = Constants.img_url_reg.exec(msg)[0] ?? "https://gchat.qpic.cn/gchatpic_new/1005056803/2063243247-2847024251-657109635D3492BDB455DEFA8936AD96/0?term=3"; // 取图片链接
 
-    const firstContent = mainContent?.split(" ")[0]?.trim() ?? "当你凝望神圣手雷的时候，神圣手雷也在凝望你"; //第一行内容
-    const secondContent = mainContent?.split(" ")[1]?.trim() ?? ""; //第二行内容, 替代"あなたが神圣手雷を見つめるとき、神圣手雷もあなたを見つめています";
+    const firstContent = mainContent?.split(" ")[0]?.trim() ?? "当你凝望神圣手雷的时候，神圣手雷也在凝望你"; // 第一行内容
+    const secondContent = mainContent?.split(" ")[1]?.trim() ?? ""; // 第二行内容, 替代"あなたが神圣手雷を見つめるとき、神圣手雷もあなたを見つめています";
 
     const fileURL = await generatePicture(pictureSources, firstContent, secondContent);
     return { type: "picture", content: { file: fileURL } };
   },
 };
 
-const { createCanvas, loadImage } = require("canvas"); //用于绘制文字图像，迫害p图
+const { createCanvas, loadImage } = require("canvas"); // 用于绘制文字图像，迫害p图
 const utils = require("./system/utils.js");
 const path = require("path");
 const fs = require("fs");
@@ -28,12 +28,12 @@ const Constants = require("../config/constants.js");
 
 async function generatePicture(pictureSources, firstContent, secondContent) {
   return new Promise((resolve, reject) => {
-    //开始黑白
+    // 开始黑白
     const fileURL = loadImage(pictureSources).then((image) => {
       let canvas = createCanvas(
         parseInt(image.width),
         parseInt(image.height + 150),
-      ); //根据图片尺寸创建画布，并在下方加文字区
+      ); // 根据图片尺寸创建画布，并在下方加文字区
       let ctx = canvas.getContext("2d");
       ctx.drawImage(image, 0, 0);
       ctx.filter = "grayscale";
@@ -51,15 +51,15 @@ async function generatePicture(pictureSources, firstContent, secondContent) {
         firstContent,
         parseInt(image.width) / 2,
         parseInt(image.height) + 70,
-      ); //第一句
+      ); // 第一句
       ctx.font = "28px Sans";
       ctx.fillText(
         secondContent,
         parseInt(image.width) / 2,
         parseInt(image.height) + 110,
-      ); //第二句
+      ); // 第二句
 
-      //把图片挨个像素转为黑白
+      // 把图片挨个像素转为黑白
       let canvasData = ctx.getImageData(
         0,
         0,

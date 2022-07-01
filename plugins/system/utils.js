@@ -1,7 +1,7 @@
 /**
  * @name 系统工具类
  * @description 各种公用函数和系统底层函数
- * @version 1.13
+ * @version 2.0
  */
 module.exports = {
   /**
@@ -35,7 +35,7 @@ module.exports = {
 
   /**
    * 通过sha1生成唯一文件名
-   * @param {any} buf 
+   * @param {any} buf 啥都行
    * @returns {string} "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
    */
   sha1(buf) {
@@ -44,57 +44,93 @@ module.exports = {
 
   /**
    * 获取用户信息
-   * @param {string} CID 
-   * @returns {string[]} [ "nickname", "logintimes", "lastlogintime" ]
+   * @param {string} CID 用户唯一标识
+   * @returns {Promise<object>} { "nickname", "logintimes", "lastlogintime" }
    */
   async GetUserData(CID) {
-    return new Promise((resolve, reject) => {
-      db.all("SELECT * FROM users WHERE CID = '" + CID + "'", (err, sql) => {
-        if (!err && sql[0]) {
-          const nickname = JSON.stringify(sql[0].nickname);
-          const logintimes = JSON.stringify(sql[0].logintimes);
-          const lastlogintime = JSON.stringify(sql[0].lastlogintime);
-          resolve([nickname, logintimes, lastlogintime]);
-        } else {
-          reject(
-            "获取用户信息错误，一般是因为用户第一次登录。错误原因：" +
-            err +
-            ", sql:" +
-            sql[0],
-          );
-        }
+    const user = await UserModel.findOne({ where: { CID } })
+      .then((user) => ({
+        nickname: user?.nickname ?? null,
+        loginTimes: user?.logintimes ?? null,
+        updatedAt: user?.updatedAt ?? null,
+      }));
+    return user;
+  },
+
+  /**
+   * 更新登陆次数
+   * @param {string} CID 用户唯一标识
+   * @returns {void} void
+   */
+  UpdateLoginTimes(CID) {
+    UserModel.findOne({ where: { CID } })
+      .then((user) => {
+        if (user) {
+          user.update({
+            logintimes: ++user.logintimes,
+          });
+        };
       });
-    });
+  },
+
+  /**
+   * 新增用户
+   * @param {string} CID 用户唯一标识
+   * @param {string} nickname 用户昵称
+   * @returns {void} void
+   */
+  AddUser(CID, nickname) {
+    UserModel.create({ CID, nickname });
+  },
+
+  /**
+   * web端新消息写入数据库
+   * @param {string} CID 用户唯一标识
+   * @param {string} message 消息内容
+   * @returns {void} void
+   */
+  AddMessage(CID, message) {
+    MessageModel.create({ CID, message });
   },
 
   /**
    * 自动随机昵称，若没有成功随机到昵称则默认昵称为 匿名
-   * @returns {string} "昵称" ?? "匿名"
+   * @returns {Promise<string>} "昵称" ?? "匿名"
    */
   async RandomNickname() {
-    return new Promise((resolve, _reject) => {
-      request(
-        `http://api.tianapi.com/txapi/cname/index?key=${TIAN_XING_API_KEY}`,
-        (err, _response, body) => {
-          body = JSON.parse(body);
-          if (!err && body.code == 200) {
-            resolve(body.newslist[0].naming);
-          } else {
-            resolve("匿名");
-          }
-        },
-      );
-    });
+    const nickname = await axios.get(`http://api.tianapi.com/txapi/cname/index?key=${TIAN_XING_API_KEY}`)
+      .then((response) => {
+        if (response.data.code === 200) {
+          return response.data.newslist[0].naming;
+        } else {
+          return "匿名";
+        }
+      });
+    return nickname;
+  },
+
+  /**
+   * 更新用户昵称
+   * @param {string} CID 用户唯一标识
+   * @param {string} nickname 用户昵称
+   * @returns {Promise<void>} void
+   */
+  async UpdateNickname(CID, nickname) {
+    const userExists = await UserModel.findOne({ where: { CID } });
+
+    if (userExists) {
+      userExists.update({ nickname });
+    }
   },
 
   /**
    * 获取tts语音时长
-   * @param {buffer} dataBuffer 
+   * @param {buffer} dataBuffer 音频buffer
    * @returns {number} "xxx"(单位为毫秒)
    */
   getMP3Duration(dataBuffer) {
     return new Promise((resolve, reject) => {
-      mp3Duration(dataBuffer, function (err, duration) {
+      mp3Duration(dataBuffer, (err, duration) => {
         if (err) {
           reject(err.message);
         }
@@ -104,8 +140,8 @@ module.exports = {
   },
 
   /**
-   * 将插件回复转为web前端能解析的格式
-   * @param {string} answer 
+   * 将插件回复转为 web前端 能解析的格式
+   * @param {string} answer 插件回复
    * @returns {object} { type: "picture | directPicture | audio | video | file", content: "内容" }
    */
   PluginAnswerToWebStyle(answer) {
@@ -123,8 +159,8 @@ module.exports = {
   },
 
   /**
-   * 将插件回复转为go-cqhttp能解析的格式
-   * @param {string} answer 
+   * 将插件回复转为 go-cqhttp 能解析的格式
+   * @param {string} answer 插件回复
    * @returns {object} { type: "picture | directPicture | audio | video | file", content: "内容" }
    */
   PluginAnswerToGoCqhttpStyle(answer) {
@@ -141,8 +177,8 @@ module.exports = {
   },
 
   /**
-   * 将插件回复转为QQ频道能解析的格式
-   * @param {string} answer 
+   * 将插件回复转为 QQ频道 能解析的格式
+   * @param {string} answer 插件回复
    * @returns {object} { type: "picture | directPicture | audio | video | file", content: "内容" }
    */
   PluginAnswerToQQGuildStyle(answer) {
@@ -169,8 +205,8 @@ module.exports = {
   },
 
   /**
-   * 保存qq侧传来的图
-   * @param {string} imgUrl 
+   * 保存qq侧传来的图 TODO：换成axios
+   * @param {string} imgUrl 源链接
    * @returns {string} "/xiaoye/images/xxx.jpg"
    */
   SaveQQimg(imgUrl) {
@@ -193,123 +229,315 @@ module.exports = {
     });
   },
 
-  //随机选取一个群(可以用来启动时加载当前所有群)
-  RandomGroupList() {
-    return new Promise((resolve, reject) => {
-      request(`http://${GO_CQHTTP_SERVICE_API_URL}/get_group_list`, (err, response, body) => {
-        body = JSON.parse(body);
-        if (!err && body.data.length != 0) {
-          const rand_group_num = Math.floor(Math.random() * body.data.length);
-          console.log("随机选取一个群: ", body.data[rand_group_num].group_id);
-          resolve(body.data[rand_group_num].group_id);
-        } else {
-          reject(
-            "随机选取一个群错误。错误原因: " + JSON.stringify(response.body),
-          );
-        }
+  /**
+   * 启动时加载当前所有群，写入数据库进行群服务初始化
+   * @returns {Promise<void>} void
+   */
+  async InitGroupList() {
+    console.log("正在进行群服务初始化".log);
+    const groupList = await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_group_list`)
+      .then((response) => {
+        return response.data.data;
       });
+
+    // 如果已经存在，则不再重复添加
+    groupList.forEach((group) => {
+      QQGroupModel.findOrBuild({
+        where: {
+          groupId: group.group_id,
+        },
+        defaults: {
+          groupId: group.group_id,
+        },
+      });
+    });
+
+    await QQGroupModel.save();
+  },
+
+  /**
+   * 启用群服务开关
+   * @param {number} groupId 群id
+   * @returns {Promise<void>} void
+   */
+  async EnableGroupService(groupId) {
+    await QQGroupModel.update({
+      serviceEnabled: true,
+    }, {
+      where: {
+        groupId,
+      }
     });
   },
 
-  //随机延时提醒闭菊的群
-  DelayAlert(serviceStoppedList) {
+  /**
+   * 禁用群服务开关
+   * @param {number} groupId 群id
+   * @returns {Promise<void>} void
+   */
+  async DisableGroupService(groupId) {
+    await QQGroupModel.update({
+      serviceEnabled: false,
+    }, {
+      where: {
+        groupId,
+      }
+    });
+  },
+
+  /**
+   * 获取群服务开关
+   * @param {number} groupId 群id
+   * @returns {Promise<boolean>} 群服务开关
+   */
+  async GetGroupServiceSwitch(groupId) {
+    const group = await QQGroupModel.findOne({ where: { groupId } });
+
+    return group.serviceEnabled;
+  },
+
+  /**
+   * 检查QQ群中是否有地雷
+   * @param {string} groupId 群ID
+   * @returns {Promise<object | false>} 地雷的信息 或 false
+   */
+  async GetGroupMine(groupId) {
+    const mine = await MineModel.findOne({ where: { groupId } });
+
+    return mine ?? false;
+  },
+
+  /**
+   * 获取QQ群中所有地雷
+   * @param {string} groupId 群ID
+   * @returns {Promise<object | false>} 地雷的信息 或 false
+   */
+  async GetGroupAllMines(groupId) {
+    const mine = await MineModel.findAll({ where: { groupId } });
+
+    return mine ?? false;
+  },
+
+  /**
+   * 删除地雷
+   * @param {string} id 地雷id
+   * @returns {Promise<void>} void
+   */
+  async DeleteGroupMine(id) {
+    await MineModel.destroy({
+      where: { id }
+    }, {
+      force: true
+    });
+  },
+
+  /**
+   * 埋地雷
+   * @param {string} groupId 群ID
+   * @param {string} owner 地雷兵ID
+   * @returns {Promise<void>} void
+   */
+  async AddOneGroupMine(groupId, owner) {
+    await MineModel.create({ groupId, owner });
+  },
+
+  /**
+   * 获取击鼓传雷游戏状态
+   * @param {string} groupId 群ID
+   * @returns {Promise<object | false>} 状态信息 或 false
+   */
+  async GetGroupLoopBombGameStatus(groupId) {
+    const group = await QQGroupModel.findOne({ where: { groupId } });
+
+    return group.toJSON() ?? false;
+  },
+
+  /**
+   * 开始击鼓传雷游戏，将击鼓传雷游戏的 答案、持有人、开始时间 存入数据库
+   * @param {string} groupId 群ID
+   * @param {string} loopBombAnswer 答案
+   * @param {string} loopBombHolder 持有人
+   * @param {string} loopBombStartTime 开始时间
+   * @returns {Promise<void>} void
+   */
+  async StartGroupLoopBombGame(
+    groupId, loopBombAnswer, loopBombHolder, loopBombStartTime
+  ) {
+    await QQGroupModel.update({
+      loopBombGameStatus: true,
+      loopBombAnswer,
+      loopBombHolder,
+      loopBombStartTime,
+    }, {
+      where: {
+        groupId,
+      }
+    });
+  },
+
+  /**
+   * 更新下一题击鼓传雷游戏
+   * @param {string} groupId 群ID
+   * @param {string} loopBombAnswer 答案
+   * @param {string} loopBombHolder 持有人
+   * @returns {Promise<void>} void
+   */
+  async UpdateGroupLoopBombGame(groupId, loopBombAnswer, loopBombHolder) {
+    await QQGroupModel.update({
+      loopBombAnswer,
+      loopBombHolder,
+    }, {
+      where: {
+        groupId,
+      }
+    });
+  },
+
+  /**
+   * 获取当前击鼓传雷的数据
+   * @param {string} groupId 群ID
+   * @returns {Promise<object>} { 持有人, 答案, 开始时间 }
+   */
+  async GetGroupLoopBomb(groupId) {
+    const group = await QQGroupModel.findOne({ where: { groupId } });
+
+    return {
+      bombHolder: group.loopBombHolder,
+      bombAnswer: group.loopBombAnswer,
+      bombStartTime: group.loopBombStartTime,
+    };
+  },
+
+  /**
+   * 击鼓传雷游戏结束，清空数据
+   * @param {string} groupId 群ID
+   * @returns {Promise<void>} void
+   */
+  async EndGroupLoopBombGame(groupId) {
+    await QQGroupModel.update({
+      loopBombGameStatus: false,
+      loopBombAnswer: null,
+      loopBombHolder: null,
+      loopBombStartTime: null,
+    }, {
+      where: {
+        groupId,
+      }
+    });
+  },
+
+  /**
+   * 随机延时提醒闭菊的群
+   * @returns {Promise<void>} void
+   */
+  async DelayAlert() {
     const alertMsg = [
-      //提醒文本列表
+      // 提醒文本列表
       "呜呜呜，把人家冷落了那么久，能不能让小夜张菊了呢...",
       "闭菊那么久了，朕的菊花痒了!还不快让小夜张菊!",
       "小夜也想为大家带来快乐，所以让小夜张菊，好吗？",
       "欧尼酱，不要再无视我了，小夜那里很舒服的，让小夜张菊试试吧~",
     ];
-    for (let i in serviceStoppedList) {
-      const delayTime = Math.floor(Math.random() * 60); //随机延时0到60秒
+
+    // 获取停用服务的群列表
+    const serviceStoppedGroupsList = await QQGroupModel.findAll({
+      where: {
+        serviceEnabled: false,
+      },
+    });
+
+    if (!serviceStoppedGroupsList) {
+      console.log("目前没有群是关闭服务的，挺好".log);
+    } else {
+      console.log(`以下群未启用小夜服务: ${serviceStoppedGroupsList} ，现在开始随机延时提醒`.log);
+    }
+
+    serviceStoppedGroupsList.forEach(groupId => {
+      const delayTime = Math.floor(Math.random() * 60); // 随机延时0到60秒
       const randomAlertMsg =
         alertMsg[Math.floor(Math.random() * alertMsg.length)];
       console.log(
-        `小夜将会延时 ${delayTime} 秒后提醒群 ${serviceStoppedList[i]} 张菊，提醒文本为: ${randomAlertMsg}`,
+        `小夜将会延时 ${delayTime} 秒后提醒群 ${groupId} 张菊，提醒文本为: ${randomAlertMsg}`,
       );
-      setTimeout(function () {
-        request(
-          `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${serviceStoppedList[i]
-          }&message=${encodeURI(randomAlertMsg)}`,
-          function (error, _response, _body) {
-            if (!error) {
-              console.log(
-                `小夜提醒了群 ${serviceStoppedList[i]} 张菊，提醒文本为: ${randomAlertMsg}`,
-              );
-            }
-          },
-        );
+      setTimeout(async () => {
+        await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI(randomAlertMsg)}`)
+          .then(() => {
+            console.log(
+              `小夜提醒了群 ${groupId} 张菊，提醒文本为: ${randomAlertMsg}`,
+            );
+          });
       }, 1000 * delayTime);
-    }
-  },
-
-  //异步sqliteALL by@ssp97
-  sqliteAll: function (query) {
-    return new Promise(function (resolve, reject) {
-      db.all(query, function (err, rows) {
-        if (err) {
-          reject(err.message);
-        } else {
-          resolve(rows);
-        }
-      });
     });
   },
 
-  //私聊发送孤寡
-  GuGua(who) {
-    const guGuaPicList = [
-      //图片列表
-      "1.jpg",
-      "2.jpg",
-      "3.jpg",
-      "4.png",
-      "5.gif",
-    ];
-    for (let i in guGuaPicList) {
-      const file_online = `http://127.0.0.1:${WEB_PORT}/xiaoye/ps/${guGuaPicList[i]}`;
-      const pic_now = `[CQ:image,file=${file_online}]`;
-      setTimeout(function () {
-        request(
-          `http://${GO_CQHTTP_SERVICE_API_URL}/send_private_msg?user_id=${who}&message=${encodeURI(
-            pic_now,
-          )}`,
-          function (error, _response, _body) {
-            if (!error) {
-              console.log(`小夜孤寡了 ${who}，孤寡图为: ${pic_now}`.log);
-            }
-          },
-        );
-      }, 1000 * 5 * i);
-    }
+  /**
+   * 私聊发送孤寡
+   * @param {string} qqId QQ号
+   * @returns {void} void
+   */
+  GuGua(qqId) {
+    console.log(`小夜孤寡了 ${qqId}`.log);
+
+    guGuaPicList.forEach((pic, index) => {
+      const picUrl = `[CQ:image,file=http://127.0.0.1:${WEB_PORT}/xiaoye/ps/${pic}]`;
+      setTimeout(async () => {
+        await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/send_private_msg?user_id=${qqId}&message=${encodeURI(picUrl)}`);
+      }, 1000 * 5 * index);
+    });
   },
 
-  //群发送孤寡
-  QunGuGua(who) {
-    const guGuaPicList = [
-      //图片列表
-      "1.jpg",
-      "2.jpg",
-      "3.jpg",
-      "4.png",
-      "5.gif",
-    ];
-    for (let i in guGuaPicList) {
-      const file_online = `http://127.0.0.1:${WEB_PORT}/xiaoye/ps/${guGuaPicList[i]}`;
-      const pic_now = `[CQ:image,file=${file_online}]`;
-      setTimeout(function () {
-        request(
-          `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${who}&message=${encodeURI(
-            pic_now,
-          )}`,
-          function (error, _response, _body) {
-            if (!error) {
-              console.log(`小夜孤寡了群 ${who}，孤寡图为: ${pic_now}`.log);
-            }
-          },
-        );
-      }, 1000 * 5 * i);
-    }
+  /**
+   * 群发送孤寡
+   * @param {string} groupId 群ID
+   * @returns {void} void
+   */
+  QunGuGua(groupId) {
+    console.log(`小夜孤寡了群 ${groupId}`.log);
+
+    guGuaPicList.forEach((pic, index) => {
+      const picUrl = `[CQ:image,file=http://127.0.0.1:${WEB_PORT}/xiaoye/ps/${pic}]`;
+      setTimeout(async () => {
+        await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI(picUrl)}`);
+      }, 1000 * 5 * index);
+    });
+  },
+
+  /**
+   * 全匹配语料，随机回复
+   * @param {string} ask 关键词
+   * @returns {Promise<string>} 回复内容
+   */
+  async FullContentSearchAnswer(ask) {
+    const answers = await ChatModel.findAll({ where: { ask } });
+
+    return answers[Math.floor(Math.random() * answers.length)].answer ?? null;
+  },
+
+  /**
+   * 模糊匹配语料，随机回复
+   * @param {string} ask 关键词
+   * @returns {Promise<string>} 回复内容
+   */
+  async FuzzyContentSearchAnswer(ask) {
+    const answers = await ChatModel.findAll({
+      where: {
+        ask: {
+          [Op.like]: `%${ask}%`
+        }
+      }
+    });
+
+    return answers[Math.floor(Math.random() * answers.length)].answer ?? null;
+  },
+
+  /**
+   * 随机回复敷衍语料
+   * @returns {Promise<string>} 敷衍回复
+   */
+  async PerfunctoryAnswer() {
+    const perfunctoryWords = await PerfunctoryModel.findAll();
+
+    return perfunctoryWords[Math.floor(Math.random() * perfunctoryWords.length)].content ?? null;
   },
 
 };
@@ -317,12 +545,22 @@ module.exports = {
 const request = require("request");
 const fs = require("fs");
 const path = require("path");
-const yaml = require("yaml"); //使用yaml解析配置文件
+const yaml = require("yaml"); // 使用yaml解析配置文件
 const url = require("url");
 const crypto = require("crypto");
-const sqlite3 = require("sqlite3").verbose();
-const db = new sqlite3.Database(path.join(process.cwd(), "config", "db.db")); //数据库位置
+const axios = require("axios").default;
 const mp3Duration = require("mp3-duration");
+const sequelize = require("sequelize");
+const Op = sequelize.Op;
+
+//models
+const UserModel = require(path.join(process.cwd(), "config", "model", "userModel.js"));
+const MessageModel = require(path.join(process.cwd(), "config", "model", "messageModel.js"));
+const QQGroupModel = require(path.join(process.cwd(), "config", "model", "qqGroupModel.js"));
+const MineModel = require(path.join(process.cwd(), "config", "model", "mineModel.js"));
+const ChatModel = require(path.join(process.cwd(), "config", "model", "chatModel.js"));
+const PerfunctoryModel = require(path.join(process.cwd(), "config", "model", "perfunctoryModel.js"));
+
 let WEB_PORT, GO_CQHTTP_SERVICE_API_URL, TIAN_XING_API_KEY;
 
 Init();
@@ -330,7 +568,7 @@ Init();
 //读取配置文件
 function ReadConfig() {
   return new Promise((resolve, reject) => {
-    fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", function (err, data) {
+    fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", (err, data) => {
       if (!err) {
         resolve(yaml.parse(data));
       } else {
@@ -347,3 +585,12 @@ async function Init() {
   GO_CQHTTP_SERVICE_API_URL = resolve.System.GO_CQHTTP_SERVICE_API_URL;
   TIAN_XING_API_KEY = resolve.ApiKey.TIAN_XING_API_KEY;
 }
+
+//孤寡图序列
+const guGuaPicList = [
+  "1.jpg",
+  "2.jpg",
+  "3.jpg",
+  "4.png",
+  "5.gif",
+];

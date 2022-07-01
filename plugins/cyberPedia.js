@@ -35,7 +35,7 @@ function SaveAnswer(cyberPediaAnswer) {
 const request = require("request");
 const fs = require("fs");
 const path = require("path");
-const yaml = require("yaml"); //使用yaml解析配置文件
+const yaml = require("yaml"); // 使用yaml解析配置文件
 let TIAN_XING_API_KEY, answer;
 
 Init();

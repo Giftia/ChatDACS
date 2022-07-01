@@ -9,7 +9,7 @@ module.exports = {
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
     if (process.platform === "win32") {
-      //使用trayicon弹出消息通知
+      // 使用trayicon弹出消息通知
       const text = new RegExp(module.exports.指令).exec(msg)[1];
       await tray.notify(`来自${userId}(${userName})的消息`, text);
     }
@@ -47,7 +47,7 @@ async function runTray() {
   });
 
   const newPlugin = newTray.item("新建插件", async () => {
-    //用插件模板新建插件，之后再写
+    // 用插件模板新建插件，之后再写
   });
 
   const separator = newTray.separator();

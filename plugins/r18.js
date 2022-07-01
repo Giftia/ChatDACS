@@ -36,7 +36,7 @@ function RandomR18() {
               reject("这张色图太大了，下不下来");
             }
           })
-        ); //绕过防盗链，保存为本地图片
+        ); // 绕过防盗链，保存为本地图片
       } else {
         reject("获取随机r18错误，错误原因：" + JSON.stringify(response.body));
       }

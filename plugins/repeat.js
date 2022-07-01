@@ -1,4 +1,4 @@
-const repeatStartTimes = 2; //当消息重复几次时，复读消息
+const repeatStartTimes = 2; // 当消息重复几次时，复读消息
 
 module.exports = {
   插件名: "复读机插件",
@@ -10,30 +10,30 @@ module.exports = {
   预期返回: "[小夜复读了这条消息]",
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
-    //如果没有msg，说明应该是戳一戳消息
+    // 如果没有msg，说明应该是戳一戳消息
     msg = msg ?? `[CQ:poke,qq=${options.targetId}]`;
 
-    //如果没有groupId，则是web端或哔哩哔哩端消息，给个0
+    // 如果没有groupId，则是web端或哔哩哔哩端消息，给个0
     groupId = groupId ?? "0";
 
-    //如果不存在该群组的消息记录，则创建一个
+    // 如果不存在该群组的消息记录，则创建一个
     if (!Object.prototype.hasOwnProperty.call(repeatMap, groupId)) {
       repeatMap[groupId] = {
         latestMessage: msg,
         repeatCount: 1,
       };
     } else {
-      //如果该群最新消息和上一条消息相同，则计数器加1
+      // 如果该群最新消息和上一条消息相同，则计数器加1
       if (repeatMap[groupId].latestMessage == msg) {
         repeatMap[groupId].repeatCount++;
       } else {
-        //否则复读不成立，重置计数器
+        // 否则复读不成立，重置计数器
         repeatMap[groupId].latestMessage = msg;
         repeatMap[groupId].repeatCount = 1;
       }
     }
 
-    //当某条消息重复特定次数时复读一次
+    // 当某条消息重复特定次数时复读一次
     if (repeatMap[groupId].repeatCount == repeatStartTimes) {
       return { type: "text", content: repeatMap[groupId].latestMessage };
     }

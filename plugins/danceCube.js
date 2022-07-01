@@ -27,7 +27,7 @@ module.exports = {
     else if (getPlayerInfoCommand.test(msg)) {
       let playerId = args[1];
 
-      //如果没有携带 playerId 参数，则查询用户有没有绑定玩家，没有则提示绑定
+      // 如果没有携带 playerId 参数，则查询用户有没有绑定玩家，没有则提示绑定
       if (!playerId) {
         if (!Object.prototype.hasOwnProperty.call(playerData, userId)) {
           return { type: "text", content: errorNoData };
@@ -43,7 +43,7 @@ module.exports = {
     else if (getRankCommand.test(msg)) {
       let playerId = args[1];
 
-      //如果没有携带 playerId 参数，则查询用户有没有绑定玩家，没有则提示绑定
+      // 如果没有携带 playerId 参数，则查询用户有没有绑定玩家，没有则提示绑定
       if (!playerId) {
         if (!Object.prototype.hasOwnProperty.call(playerData, userId)) {
           return { type: "text", content: errorNoData };
@@ -60,7 +60,7 @@ module.exports = {
       let province = args[1];
       let city = province?.includes("市") ? "市辖区" : args[2];
 
-      //如果没有携带参数，则从绑定信息中获取，没有则提示绑定
+      // 如果没有携带参数，则从绑定信息中获取，没有则提示绑定
       if (!args[1]) {
         if (!Object.prototype.hasOwnProperty.call(playerData, userId)) {
           return { type: "text", content: errorNoData };
@@ -84,11 +84,11 @@ module.exports = {
     }
     // 关注机台
     else if (focusMachineCommand.test(msg)) {
-      //如果没有携带 playerId 参数，则查询用户有没有绑定玩家，没有则提示绑定
+      // 如果没有携带 playerId 参数，则查询用户有没有绑定玩家，没有则提示绑定
       if (!Object.prototype.hasOwnProperty.call(playerData, userId)) {
         return { type: "text", content: errorNoData };
       }
-      //如果没有指定机台ID，需要引导用户输入机台ID
+      // 如果没有指定机台ID，需要引导用户输入机台ID
       else if (!args[1]) {
         return { type: "text", content: "好像没有指定机台ID噢，请发送 机台状态 指令来查询你附近的机台的ID吧" };
       }
@@ -98,7 +98,7 @@ module.exports = {
     }
     // 我要出勤
     else if (goGoGOCommand.test(msg)) {
-      //查询用户关注的机台状态，如果没有关注机台，则提示用户关注机台
+      // 查询用户关注的机台状态，如果没有关注机台，则提示用户关注机台
       if (!Object.prototype.hasOwnProperty.call(playerData, userId)) {
         return { type: "text", content: errorNoData };
       } else if (!playerData[userId].focusMachine) {
@@ -122,7 +122,7 @@ const goGoGOCommand = new RegExp(/^[/!]?我要出勤/);
 const defaultMusicIndex = 6; // 音乐类型，1 最新，2 国语，3 粤语，4 韩文，5 欧美，6 其他
 const errorNoData = "你还没有绑定舞立方账号呢，请使用指令 绑定 玩家ID 来绑定你的舞立方账号";
 
-const { createCanvas, loadImage, registerFont } = require("canvas"); //用于绘制文字图像，迫害p图
+const { createCanvas, loadImage, registerFont } = require("canvas"); // 用于绘制文字图像，迫害p图
 const path = require("path");
 const fs = require("fs");
 const axios = require("axios").default;
@@ -166,7 +166,7 @@ async function BindUser(userId, playerId) {
   if (!playerInfo.UserID) {
     return "这个玩家找不到呢，是不是输错id了呢";
   }
-  //如果的绑定信息不存在，则创建
+  // 如果的绑定信息不存在，则创建
   if (!Object.prototype.hasOwnProperty.call(playerData, userId)) {
     playerData[userId] = {
       playerId: playerInfo.UserID,
@@ -175,7 +175,7 @@ async function BindUser(userId, playerId) {
     };
     return `绑定成功，现在你绑定的账号是 ${playerInfo.UserName}`;
   } else {
-    //如果的绑定信息存在，则更新
+    // 如果的绑定信息存在，则更新
     playerData[userId] = {
       playerId: playerInfo.UserID,
       playerName: playerInfo.UserName,
@@ -213,8 +213,8 @@ async function AnalysisPlayerInfo(playerId) {
 全连率：${fullComboPercent}
 光标速度：${cursorSpeed}`;
 
-  //开始绘制图片
-  //加载头像和头像框，以及背景图
+  // 开始绘制图片
+  // 加载头像和头像框，以及背景图
   const headImgBuffer = await loadImage(headImg);
   const headImgBoxBuffer = headImgBox ? await loadImage(headImgBox) : null;
   const sexIcon = sex == "♀" ? "xx_zdsq-nv.png" : "xx_zdsq_nan.png";
@@ -224,17 +224,17 @@ async function AnalysisPlayerInfo(playerId) {
   const canvas = createCanvas(backgroundImgBuffer.width, backgroundImgBuffer.height);
   const ctx = canvas.getContext("2d");
 
-  //绘制背景图
+  // 绘制背景图
   ctx.drawImage(backgroundImgBuffer, 0, 0);
 
-  //在中上位置绘制头像
+  // 在中上位置绘制头像
   const headImgLeft = backgroundImgBuffer.width / 2 - 55;
   const headImgTop = 75;
   const headImgWidth = 120;
   const headImgHeight = 120;
   ctx.drawImage(headImgBuffer, headImgLeft, headImgTop, headImgWidth, headImgHeight);
 
-  //在头像上面绘制头像框
+  // 在头像上面绘制头像框
   if (headImgBox) {
     const headImgBoxLeft = headImgLeft - 65;
     const headImgBoxTop = headImgTop - 65;
@@ -243,35 +243,35 @@ async function AnalysisPlayerInfo(playerId) {
     ctx.drawImage(headImgBoxBuffer, headImgBoxLeft, headImgBoxTop, headImgBoxWidth, headImgBoxHeight);
   }
 
-  //在头像正下方绘制玩家名，♂蓝，♀粉
+  // 在头像正下方绘制玩家名，♂蓝，♀粉
   ctx.font = `60px '${eventFontName}'`;
   ctx.fillStyle = sex === "♂" ? "LightBlue" : "LightPink";
   ctx.textAlign = "center";
   ctx.fillText(playerName, headImgLeft + headImgWidth / 2, headImgTop + headImgHeight + 120);
 
-  //在玩家名正下方绘制性别图标
+  // 在玩家名正下方绘制性别图标
   ctx.drawImage(sexIconBuffer, headImgLeft + headImgWidth / 2 - 10, headImgTop + headImgHeight + 150, 30, 30);
 
-  //在玩家名下方绘制玩家信息
+  // 在玩家名下方绘制玩家信息
   ctx.font = `30px '${eventFontName}'`;
   ctx.fillStyle = "#ffffff";
   ctx.textAlign = "center";
   ctx.fillText(info, headImgLeft + headImgWidth / 2, headImgTop + headImgHeight + 250);
 
-  //右下角版权信息
+  // 右下角版权信息
   ctx.font = `10px '${eventFontName}'`;
   ctx.fillStyle = "rgba(99, 99, 99, 0.6)";
   ctx.textAlign = "center";
   ctx.fillText("CopyRight 胜骅科技", canvas.width - 60, canvas.height - 18);
   ctx.fillText("Design By Giftina", canvas.width - 60, canvas.height - 8);
 
-  //整屏加个半透明水印
+  // 整屏加个半透明水印
   ctx.font = `160px '${eventFontName}'`;
   ctx.fillStyle = "rgba(99, 99, 99, 0.2)";
   ctx.textAlign = "center";
   ctx.fillText("测  试", canvas.width / 2, canvas.height / 2 + 80);
 
-  //保存图片
+  // 保存图片
   const fileName = `${playerId}.png`;
   const filePath = path.join(process.cwd(), "static", "xiaoye", "images", fileName);
   const buffer = canvas.toBuffer("image/png");
@@ -354,8 +354,8 @@ async function GetPlayerRank(playerId, musicIndex) {
   全连率：${fullComboPercent}
   光标速度：${cursorSpeed}`;
 
-  //开始绘制图片
-  //加载头像和头像框，以及背景图
+  // 开始绘制图片
+  // 加载头像和头像框，以及背景图
   const headImgBuffer = await loadImage(headImg);
   const headImgBoxBuffer = headImgBox ? await loadImage(headImgBox) : null;
   const sexIcon = sex == "♀" ? "xx_zdsq-nv.png" : "xx_zdsq_nan.png";
@@ -365,17 +365,17 @@ async function GetPlayerRank(playerId, musicIndex) {
   const canvas = createCanvas(backgroundImgBuffer.width, backgroundImgBuffer.height);
   const ctx = canvas.getContext("2d");
 
-  //绘制背景图
+  // 绘制背景图
   ctx.drawImage(backgroundImgBuffer, 0, 0);
 
-  //绘制头像
+  // 绘制头像
   const headImgLeft = 100;
   const headImgTop = 260;
   const headImgWidth = 70;
   const headImgHeight = 70;
   ctx.drawImage(headImgBuffer, headImgLeft, headImgTop, headImgWidth, headImgHeight);
 
-  //在头像上面绘制头像框
+  // 在头像上面绘制头像框
   if (headImgBox) {
     const headImgBoxLeft = headImgLeft - 35;
     const headImgBoxTop = headImgTop - 35;
@@ -384,41 +384,41 @@ async function GetPlayerRank(playerId, musicIndex) {
     ctx.drawImage(headImgBoxBuffer, headImgBoxLeft, headImgBoxTop, headImgBoxWidth, headImgBoxHeight);
   }
 
-  //在头像正下方绘制玩家名，♂蓝，♀粉
+  // 在头像正下方绘制玩家名，♂蓝，♀粉
   ctx.font = `20px '${eventFontName}'`;
   ctx.fillStyle = sex === "♂" ? "LightBlue" : "LightPink";
   ctx.textAlign = "center";
   ctx.fillText(playerName, headImgLeft + headImgWidth / 2, headImgTop + headImgHeight + 30);
 
-  //在玩家名正下方绘制性别图标
+  // 在玩家名正下方绘制性别图标
   ctx.drawImage(sexIconBuffer, headImgLeft + headImgWidth / 2 - 10, headImgTop + headImgHeight + 40, 20, 20);
 
-  //在玩家名下方绘制玩家信息
+  // 在玩家名下方绘制玩家信息
   ctx.font = `20px '${eventFontName}'`;
   ctx.fillStyle = "#ffffff";
   ctx.textAlign = "center";
   ctx.fillText(info, headImgLeft + headImgWidth / 2, headImgTop + headImgHeight + 90);
 
-  //中上位置展示置顶战绩
+  // 中上位置展示置顶战绩
   ctx.font = `50px '${titleFontName}'`;
   ctx.fillStyle = "#ffffff";
   ctx.textAlign = "center";
   ctx.fillText("战绩", canvas.width / 2, 180);
 
-  //右下角版权信息
+  // 右下角版权信息
   ctx.font = `10px '${eventFontName}'`;
   ctx.fillStyle = "#555555";
   ctx.textAlign = "center";
   ctx.fillText("CopyRight 胜骅科技", canvas.width - 50, canvas.height - 20);
   ctx.fillText("Design By Giftina", canvas.width - 50, canvas.height - 10);
 
-  //整屏加个半透明水印
+  // 整屏加个半透明水印
   ctx.font = `170px '${eventFontName}'`;
   ctx.fillStyle = "rgba(33, 33, 33, 0.4)";
   ctx.textAlign = "center";
   ctx.fillText("内  测", canvas.width / 2, canvas.height / 2 + 80);
 
-  //保存图片
+  // 保存图片
   const fileName = `${playerId}.png`;
   const filePath = path.join(__dirname, "danceCube", "user", fileName);
   const buffer = canvas.toBuffer("image/png");
@@ -486,7 +486,7 @@ async function AnalysisLocation(location) {
  * @param {string} machineTerminalID 机台号
  */
 async function FocusMachine(userId, machineTerminalID) {
-  //先验证机台是否存在
+  // 先验证机台是否存在
   const machineInfo = await axios.get(api.machineList, {
     headers: headers,
     params: {
@@ -509,7 +509,7 @@ async function FocusMachine(userId, machineTerminalID) {
     return "这个机台不存在呢，是不是输错了呢，请发送 机台状态 指令来查询机台ID吧";
   }
 
-  //再获取机台位置
+  // 再获取机台位置
   const province = machineInfo.ProvinceAndCity.split(" ")[0];
   const city = machineInfo.ProvinceAndCity.split(" ")[1];
 

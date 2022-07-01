@@ -25,10 +25,10 @@ const rssParser = new Parser({
  */
 async function getNewestFeed() {
   const feed = await rssParser.parseURL("https://cangku.icu/feed");
-  //随机返回一个feed.items
+  // 随机返回一个feed.items
   const item = feed.items[Math.floor(Math.random() * feed.items.length)];
   const title = item.title;
-  //介绍预览，截取前50个字符
+  // 介绍预览，截取前50个字符
   const description = item.contentSnippet.slice(0, 50) + "...";
   const link = item.link;
 
