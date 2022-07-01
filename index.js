@@ -310,7 +310,10 @@ io.on("connection", async (socket) => {
 async function StartQQBot() {
 
   // 启动时加载当前所有群，写入数据库进行群服务初始化
-  await utils.InitGroupList();
+  logger.info("正在进行群服务初始化".log);
+  const { newsCount, totalCount } = await utils.InitGroupList();
+  logger.info(`新加载了${newsCount}个群，共${totalCount}个群，群服务初始化完毕`.log);
+
 
   app.post(GO_CQHTTP_SERVICE_ANTI_POST_API, async (req, res) => {
     const event = req.body;
@@ -1436,7 +1439,7 @@ async function StartQQBot() {
   });
 
   // 每隔24小时搜索qqGroup表，随机延时提醒停用服务的群启用服务
-  setInterval(utils.DelayAlert(), 1000 * 60 * 60 * 24);
+  setInterval(async () => await utils.DelayAlert(), 1000 * 60 * 60 * 24);
 }
 
 /**

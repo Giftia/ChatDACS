@@ -231,28 +231,27 @@ module.exports = {
 
   /**
    * 启动时加载当前所有群，写入数据库进行群服务初始化
-   * @returns {Promise<void>} void
+   * @returns {Promise<object>} { 新加载群数量, 总群数量 }
    */
   async InitGroupList() {
-    console.log("正在进行群服务初始化".log);
     const groupList = await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_group_list`)
       .then((response) => {
         return response.data.data;
       });
+    const groupIdList = groupList.map((group) => group.group_id);
 
-    // 如果已经存在，则不再重复添加
-    groupList.forEach((group) => {
-      QQGroupModel.findOrBuild({
-        where: {
-          groupId: group.group_id,
-        },
-        defaults: {
-          groupId: group.group_id,
-        },
-      });
-    });
+    // 如果在数据库中已经存在，则不再重复添加
+    const groupListInDB = await QQGroupModel.findAll();
+    const groupIdListInDB = groupListInDB.map((group) => group.groupId);
+    const groupIdListToAdd = groupIdList.filter((groupId) => !groupIdListInDB.includes(groupId));
+    if (groupIdListToAdd.length > 0) {
+      await QQGroupModel.bulkCreate(groupIdListToAdd.map((groupId) => ({ groupId })));
+    }
 
-    await QQGroupModel.save();
+    return {
+      newsCount: groupIdListToAdd.length,
+      totalCount: groupIdListInDB.length,
+    };
   },
 
   /**
@@ -510,7 +509,7 @@ module.exports = {
   async FullContentSearchAnswer(ask) {
     const answers = await ChatModel.findAll({ where: { ask } });
 
-    return answers[Math.floor(Math.random() * answers.length)].answer ?? null;
+    return answers[Math.floor(Math.random() * answers.length)]?.answer ?? null;
   },
 
   /**
@@ -527,7 +526,7 @@ module.exports = {
       }
     });
 
-    return answers[Math.floor(Math.random() * answers.length)].answer ?? null;
+    return answers[Math.floor(Math.random() * answers.length)]?.answer ?? null;
   },
 
   /**
