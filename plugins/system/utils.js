@@ -1,7 +1,7 @@
 /**
  * @name 系统工具类
  * @description 各种公用函数和系统底层函数
- * @version 2.0
+ * @version 2.1
  */
 module.exports = {
   /**
@@ -258,6 +258,18 @@ module.exports = {
       }
 
       console.log(`群服务初始化完毕，新加载了${groupIdListToAdd.length}个群，共${groupIdListInDB.length}个群`.log);
+    }
+  },
+
+  /**
+   * 初始化小夜新加入的群的群服务
+   * @param {string} groupId 群id
+   * @returns {Promise<void>} void
+   */
+  async AddNewGroup(groupId) {
+    const group = await QQGroupModel.findOne({ where: { groupId } });
+    if (!group) {
+      await QQGroupModel.create({ groupId });
     }
   },
 
