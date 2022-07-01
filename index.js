@@ -1831,11 +1831,16 @@ function StartHttpServer() {
 };
 
 /**
- * 异步结巴 by@ssp97
+ * 异步结巴 thanks@ssp97
  */
 async function ChatJiebaFuzzy(msg) {
   msg = msg.replace("/", "");
   msg = jieba.extract(msg, CHAT_JIEBA_LIMIT); // 按权重分词
+
+  if (msg.length === 0) {
+    return [];
+  }
+
   let candidate = [];
   let candidateNextList = [];
   let candidateNextGrand = 0;
@@ -1899,7 +1904,7 @@ async function ChatProcess(ask) {
   // 最后是分词模糊搜索
   console.log("没有匹配到模糊回复，开始分词模糊搜索".log);
   const jiebaCandidateList = await ChatJiebaFuzzy(ask);
-  if (jiebaCandidateList.length > 0) {
+  if (jiebaCandidateList.length > 0 && !jiebaCandidateList[0]) {
     const candidateListAnswer = jiebaCandidateList[
       Math.floor(Math.random() * jiebaCandidateList.length)
     ];
