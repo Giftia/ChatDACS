@@ -43,7 +43,7 @@ const fs = require("fs");
 const path = require("path");
 const yaml = require("yaml"); // 使用yaml解析配置文件
 let CHAT_BAN_WORDS;
-const PerfunctoryModel = require(path.join(process.cwd(), "config", "model", "perfunctoryModel.js"));
+const PerfunctoryModel = require(path.join(process.cwd(), "plugins", "system", "model", "perfunctoryModel.js"));
 
 Init();
 

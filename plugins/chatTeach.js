@@ -42,7 +42,7 @@ module.exports = {
 const fs = require("fs");
 const path = require("path");
 const yaml = require("yaml"); // 使用yaml解析配置文件
-const ChatModel = require(path.join(process.cwd(), "config", "model", "chatModel.js"));
+const ChatModel = require(path.join(process.cwd(), "plugins", "system", "model", "chatModel.js"));
 let CHAT_BAN_WORDS;
 
 Init();
