@@ -1,0 +1,80 @@
+# Thanks @ssp97 for the initial work on this file.
+name: ChatDACS一键运行包构建 Build ChatDACS One-Click-To-Deploy Package
+on:
+  push:
+    branches:
+      - master
+
+env:
+  GITHUB_TOKEN: ${{ github.token }}
+
+# https://github.com/actions/setup-node/blob/main/docs/advanced-usage.md#multiple-operating-systems-and-architectures
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+        node_version:
+          - 14
+        architecture:
+          - x64
+    name: Build On：Node ${{ matrix.node_version }} - ${{ matrix.architecture }} on ${{ matrix.os }}
+    steps:
+      - name: Set Up Environment
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node_version }}
+          architecture: ${{ matrix.architecture }}
+          cache: "npm"
+          cache-dependency-path: |
+            ./packages-lock.json
+            plugins/package-lock.json
+
+      - name: Check Out Code
+
+      - name: Remove Other Platforms go-cqhttp
+        run: rm ./plugins/go-cqhttp/go-cqhttp
+
+      - name: Clean Install Modules
+        run: npm ci --production
+
+      - name: Clean Install For Plugins
+        run: |
+          cd ./plugins/
+          npm ci --production
+          rm package.json
+          rm package-lock.json
+          cd ..
+
+      - name: Install PKG Tool
+        run: npm install pkg -g
+
+      - name: Package
+        run: pkg . --compress Brotli
+
+      # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
+      - name: Declare VERSION
+        run: |
+          node -e "
+            const fs = require('fs');
+            const version = require('./version.json');
+            fs.writeFileSync('./versionNumber', version.versionNumber);
+          "
+          echo "VERSION=./versionNumber" >> $GITHUB_ENV
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ChatDACS-${{ env.versionNumber }}_${{ matrix.os }}
+          path: |
+            ./config/
+            ./static/
+            ./plugins/
+            ./README.md
+            ./LICENSE
+            ./chatdacs.exe
+          if-no-files-found: error
