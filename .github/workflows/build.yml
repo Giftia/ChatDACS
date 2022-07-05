@@ -70,8 +70,7 @@ jobs:
             const version = require('./version.json');
             fs.writeFileSync('./versionNumber', version.versionNumber);
           "
-          echo "versionNumber=./versionNumber" >> $GITHUB_ENV
-          echo $GITHUB_ENV
+          echo "VERSION_NUMBER=${{ ./versionNumber }}" >> $GITHUB_ENV
 
       - name: Pre-compress
         run: |
