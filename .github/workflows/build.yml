@@ -68,9 +68,9 @@ jobs:
           node -e "
             const fs = require('fs');
             const version = require('./version.json');
-            fs.writeFileSync('./versionNumber', version.versionNumber);
+            fs.writeFileSync('versionNumber', version.versionNumber);
           "
-          echo "VERSION_NUMBER=${{ ./versionNumber }}" >> $GITHUB_ENV
+          echo "VERSION_NUMBER=versionNumber" >> $GITHUB_ENV
 
       - name: Pre-compress
         run: |
