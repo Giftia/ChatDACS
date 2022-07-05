@@ -46,13 +46,32 @@ jobs:
           rm package-lock.json
           cd ..
 
+      - name: Install pkg Tool
+        run: npm i pkg -g
+
       - name: Use pkg to Package
-        run: |
-          npm install pkg -g
-          pkg . --compress Brotli
+        run: pkg . --compress Brotli
 
       - name: Pre-compress
-        run: zip -r ChatDACS-${{ env.versionNumber }}_${{ matrix.os }}.zip ./config/ ./static/ ./plugins/ ./README.md ./LICENSE ./chatdacs.exe
+        run: |
+          npm i archiver -g
+          node -e "
+            const archiver = require('archiver');
+            const fs = require('fs');
+            const path = require('path');
+            const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-${{ env.versionNumber }}_${{ matrix.os }}.zip'));
+            const archive = archiver('zip', {
+              zlib: { level: 9 } // Sets the compression level.
+            });
+            archive.pipe(output);
+            archive.directory('./config/', 'config');
+            archive.directory('./static/', 'static');
+            archive.directory('./plugins/', 'plugins');
+            archive.file('./README.md', { name: 'README.md' });
+            archive.file('./LICENSE', { name: 'LICENSE' });
+            archive.file('./chatdacs.exe', { name: 'chatdacs.exe' });
+            archive.finalize();
+          "
 
       # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
       - name: Declare VERSION
