@@ -54,7 +54,7 @@ jobs:
 
       - name: Pre-compress
         run: |
-          npm i archiver -g
+          npm i archiver
           node -e "
             const archiver = require('archiver');
             const fs = require('fs');
