@@ -7,17 +7,18 @@
       Hoshino Yedie<br/>
     </h1>
     <h2 align="center">
-      沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)
+      沙雕Ai聊天系统<br/>
+      ChatDACS<br/>
+      (Chatbot : shaDiao Ai Chat System)
     </h2>
     <p align="center">
-      一个简单的机器人框架，支持接入哔哩哔哩直播，具备完全功能的web网页控制台。<br/>
-      技术栈：语言 —— JavaScript，Web框架 —— Express，前端组件库 —— layui。<br/>
-      画师：塘李<br/>
+      一个简单的聊天机器人框架，支持接入多个平台，具备全功能的网页控制台。<br/>
+      技术栈：后端 —— Node.js，前端组件库 —— layui。<br/>
+      画师：塘 李<br/>
       <br/>
       使用文档：<a href="http://docs.giftia.moe/">http://docs.giftia.moe/</a><br/>
       示例 DEMO：<a href="http://110.42.221.72/" target="_blank">http://110.42.221.72/</a><br/>
-      语录来自小夜：<a href="https://github.com/Giftia/Project_Xiaoye" target="_blank">github.com/Giftia/Project_Xiaoye</a>
-      <br>
+      语录来自小夜：<a href="https://github.com/Giftia/Project_Xiaoye" target="_blank">github.com/Giftia/Project_Xiaoye</a><br/>
     </p>
   </td>
 
@@ -44,7 +45,7 @@
 
 ---
 
-## 😘 写在最前面 Hi
+## 😘 你好 Hi
 
 ### `功能指令介绍` 以及 `私人部署教程` 请点击跳转至 👉 [星野夜蝶 使用文档](https://docs.giftia.moe/)
 
@@ -52,7 +53,7 @@
 
 如有任何疑问、建议或者需要联系我，请加群 [【星野夜蝶 粉丝群】 QQ 群 120243247 ](https://jq.qq.com/?_wv=1027&k=ovqyydCe)
 
-对于普通用户，推荐您直接使用官方免费的公共小夜 QQ 账号：1648468212，邀请小夜入群即可，我会不定期批准请求。
+对于普通用户，推荐您直接使用官方免费的公共小夜 QQ 账号：`1648468212`，邀请小夜入群即可，我会不定期批准请求。
 
 你也可以加入粉丝群，群里有不少群友自发个人部署的第三方小夜，你可以申请使用群友搭建的小夜。
 
@@ -71,13 +72,13 @@
 - [x] 完善的 web 端聊天界面与各种奇奇怪怪的功能 `Nice H5 UI and some funny functions`
 - [x] 无限制的在线聊天 `Unlimited chatroom`
 - [x] 与经过 2w+ 用户调教养成的人工智能机器人小夜实时聊天 `Chat with Ai Xiaoye`
-- [x] 令人激动的、实用的在线涩图功能 `🈲`
-- [x] web 端图片、视频与文件分享 `Share your images, videos and files on webEnd`
+- [x] 令人激动的、实用的在线涩图功能 `🔞 Features`
+- [x] web 端图片、视频与文件分享 `Share your images, videos and files`
 - [x] 与 go-cqhttp 对接，实现了 qq 机器人小夜 `Connectable with go-cqhttp`
-- [x] 简单好用的插件系统 `Easy Use Plugins System`
-- [x] 支持接入哔哩哔哩直播间 `Support Bilibili Live`
-- [x] 支持接入 QQ 频道 `Support QQ Guild`
-- [ ] 即将支持接入 Telegram `Support Telegram (Coming Soon)`
+- [x] 简单好用的插件系统 `Easy-to-use plugin system`
+- [x] 支持接入哔哩哔哩直播间 `Support connect Bilibili Live-Room`
+- [x] 支持接入 QQ 频道 和 QQ 频道机器人 `Support connect QQ Guild and QQ Guild Bot`
+- [ ] 即将支持接入 Telegram `Support connect Telegram (Coming Soon)`
 - [ ] 即将发布哔哩哔哩直播互动游戏 `Bilibili Live Game (Coming Soon)`
 
 ---
