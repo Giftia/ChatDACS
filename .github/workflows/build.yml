@@ -29,6 +29,7 @@ jobs:
         with:
           node-version: ${{ matrix.node_version }}
           architecture: ${{ matrix.architecture }}
+          cache: "npm"
           cache-dependency-path: |
             ./packages-lock.json
             plugins/package-lock.json
@@ -49,7 +50,17 @@ jobs:
         run: npm i pkg -g
 
       - name: Use pkg to Package
-        run: pkg . --compress Brotli
+        run: pkg -t node14-${{ runner.os }} . --compress Brotli
+
+      # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
+      - name: Declare VERSION
+        run: |
+          node -e "
+            const fs = require('fs');
+            const version = require('./version.json');
+            fs.writeFileSync('./versionNumber', version.versionNumber);
+          "
+          echo "versionNumber=./versionNumber" >> $GITHUB_ENV
 
       - name: Pre-compress
         run: |
@@ -71,17 +82,10 @@ jobs:
             archive.file('./chatdacs.exe', { name: 'chatdacs.exe' });
             archive.file('./chatdacs', { name: 'chatdacs' });
             archive.finalize();
+            archive.on('error', function(err) {
+              throw err;
+          });
           "
-
-      # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
-      - name: Declare VERSION
-        run: |
-          node -e "
-            const fs = require('fs');
-            const version = require('./version.json');
-            fs.writeFileSync('./versionNumber', version.versionNumber);
-          "
-          echo "VERSION=./versionNumber" >> $GITHUB_ENV
 
       - name: Get Current Time
         id: time
