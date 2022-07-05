@@ -29,7 +29,6 @@ jobs:
         with:
           node-version: ${{ matrix.node_version }}
           architecture: ${{ matrix.architecture }}
-          cache: "npm"
           cache-dependency-path: |
             ./packages-lock.json
             plugins/package-lock.json
@@ -70,6 +69,7 @@ jobs:
             archive.file('./README.md', { name: 'README.md' });
             archive.file('./LICENSE', { name: 'LICENSE' });
             archive.file('./chatdacs.exe', { name: 'chatdacs.exe' });
+            archive.file('./chatdacs', { name: 'chatdacs' });
             archive.finalize();
           "
 
