@@ -8,7 +8,7 @@ env:
   GITHUB_TOKEN: ${{ github.token }}
 
 jobs:
-  my-job:
+  build-job:
     name: Build 🚀
     runs-on: windows-latest
     steps:
@@ -40,10 +40,13 @@ jobs:
       - name: Package
         run: pkg . --compress Brotli
 
+      - name: Declare VERSION
+        run: echo "VERSION=version.json" >> $GITHUB_ENV
+
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ChatDACS
+          name: ChatDACS-${{ env.VERSION.versionNumber }}_windows
           path: |
             ./config/
             ./static/
