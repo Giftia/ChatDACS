@@ -34,8 +34,6 @@ jobs:
             ./packages-lock.json
             plugins/package-lock.json
 
-      - name: Check Out Code
-
       - name: Remove Other Platforms go-cqhttp
         run: rm ./plugins/go-cqhttp/go-cqhttp
 
