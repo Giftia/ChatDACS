@@ -1,5 +1,5 @@
 # Thanks @ssp97 for the initial work on this file.
-name: ChatDACS一键运行包构建 Build ChatDACS One-Click-To-Deploy Package
+name: Build ChatDACS One-Click-To-Deploy Package ChatDACS一键运行包构建
 on:
   push:
     branches:
@@ -23,9 +23,9 @@ jobs:
           - x64
     name: Build On：Node ${{ matrix.node_version }} - ${{ matrix.architecture }} on ${{ matrix.os }}
     steps:
-      - name: Set Up Environment
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - name: Set Up Environment
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node_version }}
           architecture: ${{ matrix.architecture }}
@@ -33,8 +33,6 @@ jobs:
           cache-dependency-path: |
             ./packages-lock.json
             plugins/package-lock.json
-
-      - name: Check Out Code
 
       - name: Remove Other Platforms go-cqhttp
         run: rm ./plugins/go-cqhttp/go-cqhttp
