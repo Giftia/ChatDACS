@@ -21,7 +21,7 @@ jobs:
           - 14
         architecture:
           - x64
-    name: Build On：Node ${{ matrix.node_version }} - ${{ matrix.architecture }} on ${{ matrix.os }}
+    name: Build On：${{ matrix.os }} ${{ matrix.architecture }} - Node ${{ matrix.node_version }}
     steps:
       - uses: actions/checkout@v3
       - name: Set Up Environment
@@ -38,21 +38,21 @@ jobs:
         run: rm ./plugins/go-cqhttp/go-cqhttp
 
       - name: Clean Install Modules
-        run: npm ci --production
-
-      - name: Clean Install For Plugins
         run: |
+          npm ci --production
           cd ./plugins/
           npm ci --production
           rm package.json
           rm package-lock.json
           cd ..
 
-      - name: Install PKG Tool
-        run: npm install pkg -g
+      - name: Use pkg to Package
+        run: |
+          npm install pkg -g
+          pkg . --compress Brotli
 
-      - name: Package
-        run: pkg . --compress Brotli
+      - name: Pre-compress
+        run: zip -r ChatDACS-${{ env.versionNumber }}_${{ matrix.os }}.zip ./config/ ./static/ ./plugins/ ./README.md ./LICENSE ./chatdacs.exe
 
       # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
       - name: Declare VERSION
@@ -64,15 +64,13 @@ jobs:
           "
           echo "VERSION=./versionNumber" >> $GITHUB_ENV
 
+      - name: Get Current Time
+        id: time
+        run: echo "::set-output name=today::$(date +'%Y-%m-%d-%H-%M-%S')"
+
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ChatDACS-${{ env.versionNumber }}_${{ matrix.os }}
-          path: |
-            ./config/
-            ./static/
-            ./plugins/
-            ./README.md
-            ./LICENSE
-            ./chatdacs.exe
+          name: ChatDACS-${{ env.versionNumber }}_${{ matrix.os }}-${{ steps.time.outputs.today }}
+          path: ChatDACS-${{ env.versionNumber }}_${{ matrix.os }}.zip
           if-no-files-found: error
