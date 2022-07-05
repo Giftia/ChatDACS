@@ -1,5 +1,5 @@
 # Thanks @ssp97 for the initial work on this file.
-name: Build ChatDACS One-Click-To-Deploy Package ChatDACS一键运行包构建
+name: Build ChatDACS One-Click-To-Deploy Package (ChatDACS一键运行包构建)
 on:
   push:
     branches:
@@ -15,8 +15,8 @@ jobs:
     strategy:
       matrix:
         os:
-          - ubuntu-latest
           - windows-latest
+          - ubuntu-latest
         node_version:
           - 14
         architecture:
