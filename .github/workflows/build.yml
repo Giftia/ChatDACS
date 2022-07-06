@@ -52,15 +52,11 @@ jobs:
       # https://docs.github.com/en/actions/learn-github-actions/environment-variables#detecting-the-operating-system
       - name: Use pkg to Package on Windows
         if: runner.os == 'Windows'
-        run: |
-          echo "The operating system on the runner is $env:RUNNER_OS."
-          pkg -t node14-windows .
+        run: pkg -t node14-windows .
 
       - name: Use pkg to Package on Linux
         if: runner.os == 'Linux'
-        run: |
-          echo "The operating system on the runner is $env:RUNNER_OS."
-          pkg -t node14-linux .
+        run: pkg -t node14-linux .
 
       # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
       - name: Declare VERSION
@@ -68,9 +64,9 @@ jobs:
           node -e "
             const fs = require('fs');
             const version = require('./version.json');
-            fs.writeFileSync('$GITHUB_ENV', "versionNumber=version.versionNumber");
+            fs.writeFileSync('version-number', `VERSION_NUMBER=${version.versionNumber}`);
           "
-          echo "${{ fromJSON(env) }}"
+          cat ./version-number >> $GITHUB_ENV
 
       - name: Pre-compress
         run: |
@@ -79,7 +75,7 @@ jobs:
             const archiver = require('archiver');
             const fs = require('fs');
             const path = require('path');
-            const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-${{ env.versionNumber }}_${{ matrix.os }}.zip'));
+            const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-${{ env.VERSION_NUMBER }}_${{ matrix.os }}.zip'));
             const archive = archiver('zip', {
               zlib: { level: 9 } // Sets the compression level.
             });
@@ -104,6 +100,6 @@ jobs:
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ChatDACS-${{ env.versionNumber }}_${{ matrix.os }}-${{ steps.time.outputs.today }}
-          path: ChatDACS-${{ env.versionNumber }}_${{ matrix.os }}.zip
+          name: ChatDACS-${{ env.VERSION_NUMBER }}_${{ matrix.os }}-${{ steps.time.outputs.today }}
+          path: ChatDACS-${{ env.VERSION_NUMBER }}_${{ matrix.os }}.zip
           if-no-files-found: error
