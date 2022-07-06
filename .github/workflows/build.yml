@@ -60,6 +60,7 @@ jobs:
 
       # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
       - name: Declare VERSION
+        shell: bash
         run: |
           node -e "
             const fs = require('fs');
@@ -69,6 +70,7 @@ jobs:
           cat ./version-number >> $GITHUB_ENV
 
       - name: Pre-compress
+        shell: bash
         run: |
           npm i archiver
           node -e "
@@ -76,7 +78,7 @@ jobs:
             const fs = require('fs');
             const path = require('path');
             const version = require('./version.json');
-            const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-' + version.versionNumber + '_${{ runner.os }}.zip'));
+            const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}.zip'));
             const archive = archiver('zip', {
               zlib: { level: 9 } // Sets the compression level. 9 is the max compression.
             });
@@ -95,16 +97,7 @@ jobs:
         id: time
         run: echo "::set-output name=now::$(date +'%Y-%m-%d-%H-%M-%S')"
 
-      - name: Upload Build Artifact On Windows
-        if: runner.os == 'Windows'
-        uses: actions/upload-artifact@v3
-        with:
-          name: ChatDACS-$env:VERSION_NUMBER_${{ runner.os }}-${{ steps.time.outputs.now }}
-          path: ChatDACS-$env:VERSION_NUMBER_${{ runner.os }}.zip
-          if-no-files-found: error
-
-      - name: Upload Build Artifact On Linux
-        if: runner.os == 'Linux'
+      - name: Upload Build Artifact
         uses: actions/upload-artifact@v3
         with:
           name: ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}-${{ steps.time.outputs.now }}
