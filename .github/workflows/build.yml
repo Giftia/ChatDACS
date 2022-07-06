@@ -98,8 +98,8 @@ jobs:
       - name: Upload Build Artifact On Windows
         uses: actions/upload-artifact@v3
         with:
-          name: ChatDACS-${{ env:VERSION_NUMBER }}_${{ runner.os }}-${{ steps.time.outputs.now }}
-          path: ChatDACS-${{ env:VERSION_NUMBER }}_${{ runner.os }}.zip
+          name: ChatDACS-$env:VERSION_NUMBER_${{ runner.os }}-${{ steps.time.outputs.now }}
+          path: ChatDACS-$env:VERSION_NUMBER_${{ runner.os }}.zip
           if-no-files-found: error
 
       - name: Upload Build Artifact On Linux
