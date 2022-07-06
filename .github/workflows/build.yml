@@ -21,7 +21,7 @@ jobs:
           - 14
         architecture:
           - x64
-    name: Build On：${{ matrix.os }} ${{ matrix.architecture }} - Node ${{ matrix.node_version }}
+    name: Build On：${{ matrix.os }}_${{ matrix.architecture }} - Node ${{ matrix.node_version }}
     steps:
       - uses: actions/checkout@v3
       - name: Set Up Environment
@@ -52,11 +52,11 @@ jobs:
       # https://docs.github.com/en/actions/learn-github-actions/environment-variables#detecting-the-operating-system
       - name: Use pkg to Package on Windows
         if: runner.os == 'Windows'
-        run: pkg -t node14-windows .
+        run: pkg -t node${{ matrix.node_version }}-windows . --compress GZip
 
       - name: Use pkg to Package on Linux
         if: runner.os == 'Linux'
-        run: pkg -t node14-linux .
+        run: pkg -t node${{ matrix.node_version }}-linux . --compress GZip
 
       # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
       - name: Declare VERSION
@@ -65,8 +65,11 @@ jobs:
             const fs = require('fs');
             const version = require('./version.json');
             fs.writeFileSync('version-number', 'VERSION_NUMBER=' + version.versionNumber);
+            console.log(${{ fromJSON(env) }});
           "
           cat ./version-number >> $GITHUB_ENV
+          cat ${{ fromJSON(env) }}
+          cat $fromJSON(env)
 
       - name: Pre-compress
         run: |
@@ -75,9 +78,9 @@ jobs:
             const archiver = require('archiver');
             const fs = require('fs');
             const path = require('path');
-            const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-${{ env.VERSION_NUMBER }}_${{ matrix.os }}.zip'));
+            const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}.zip'));
             const archive = archiver('zip', {
-              zlib: { level: 9 } // Sets the compression level.
+              zlib: { level: 9 } // Sets the compression level. 9 is the max compression.
             });
             archive.pipe(output);
             archive.directory('./config/', 'config');
@@ -88,9 +91,6 @@ jobs:
             archive.file('./chatdacs.exe', { name: 'chatdacs.exe' });
             archive.file('./chatdacs', { name: 'chatdacs' });
             archive.finalize();
-            archive.on('error', function(err) {
-              throw err;
-          });
           "
 
       - name: Get Current Time
@@ -100,6 +100,6 @@ jobs:
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ChatDACS-${{ env.VERSION_NUMBER }}_${{ matrix.os }}-${{ steps.time.outputs.today }}
-          path: ChatDACS-${{ env.VERSION_NUMBER }}_${{ matrix.os }}.zip
+          name: ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}-${{ steps.time.outputs.today }}
+          path: ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}.zip
           if-no-files-found: error
