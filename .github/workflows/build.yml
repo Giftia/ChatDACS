@@ -67,7 +67,7 @@ jobs:
             fs.writeFileSync('version-number', 'VERSION_NUMBER=' + version.versionNumber);
           "
           cat ./version-number >> $GITHUB_ENV
-          echo ${{ env.VERSION_NUMBER }}
+          echo $VERSION_NUMBER
 
       - name: Pre-compress
         run: |
