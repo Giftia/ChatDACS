@@ -58,22 +58,15 @@ jobs:
         if: runner.os == 'Linux'
         run: pkg -t node${{ matrix.node_version }}-linux . --compress GZip
 
-      - name: Create The version-number File
+      # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
+      - name: Declare VERSION
         run: |
           node -e "
             const fs = require('fs');
             const version = require('./version.json');
             fs.writeFileSync('version-number', 'VERSION_NUMBER=' + version.versionNumber);
           "
-
-      # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
-      - name: Declare VERSION On Windows
-        if: runner.os == 'Windows'
-        run: cat ./version-number >> $env
-
-      - name: Declare VERSION On Linux
-        if: runner.os == 'Linux'
-        run: cat ./version-number >> $GITHUB_ENV
+          cat ./version-number >> $GITHUB_ENV
 
       - name: Pre-compress
         run: |
@@ -82,7 +75,8 @@ jobs:
             const archiver = require('archiver');
             const fs = require('fs');
             const path = require('path');
-            const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}.zip'));
+            const version = require('./version.json');
+            const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-' + version.versionNumber + '_${{ runner.os }}.zip'));
             const archive = archiver('zip', {
               zlib: { level: 9 } // Sets the compression level. 9 is the max compression.
             });
@@ -101,7 +95,14 @@ jobs:
         id: time
         run: echo "::set-output name=now::$(date +'%Y-%m-%d-%H-%M-%S')"
 
-      - name: Upload Build Artifact
+      - name: Upload Build Artifact On Windows
+        uses: actions/upload-artifact@v3
+        with:
+          name: ChatDACS-${{ env:VERSION_NUMBER }}_${{ runner.os }}-${{ steps.time.outputs.now }}
+          path: ChatDACS-${{ env:VERSION_NUMBER }}_${{ runner.os }}.zip
+          if-no-files-found: error
+
+      - name: Upload Build Artifact On Linux
         uses: actions/upload-artifact@v3
         with:
           name: ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}-${{ steps.time.outputs.now }}
