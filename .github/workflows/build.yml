@@ -52,11 +52,11 @@ jobs:
       # https://docs.github.com/en/actions/learn-github-actions/environment-variables#detecting-the-operating-system
       - name: Use pkg To Package On Windows
         if: runner.os == 'Windows'
-        run: pkg -t node${{ matrix.node_version }}-windows . --compress GZip
+        run: pkg -t node${{ matrix.node_version }}-windows . --compress Brotli
 
       - name: Use pkg to Package On Linux
         if: runner.os == 'Linux'
-        run: pkg -t node${{ matrix.node_version }}-linux . --compress GZip
+        run: pkg -t node${{ matrix.node_version }}-linux . --compress Brotli
 
       # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
       - name: Declare VERSION
@@ -77,7 +77,6 @@ jobs:
             const archiver = require('archiver');
             const fs = require('fs');
             const path = require('path');
-            const version = require('./version.json');
             const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}.zip'));
             const archive = archiver('zip', {
               zlib: { level: 9 } // Sets the compression level. 9 is the max compression.
