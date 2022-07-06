@@ -65,11 +65,8 @@ jobs:
             const fs = require('fs');
             const version = require('./version.json');
             fs.writeFileSync('version-number', 'VERSION_NUMBER=' + version.versionNumber);
-            console.log($fromJSON(env));
-            console.log(${fromJSON(env)});
           "
           cat ./version-number >> $GITHUB_ENV
-          cat ${{ fromJSON(env) }}
           cat $fromJSON(env)
 
       - name: Pre-compress
