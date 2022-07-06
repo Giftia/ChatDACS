@@ -64,7 +64,7 @@ jobs:
           node -e "
             const fs = require('fs');
             const version = require('./version.json');
-            fs.writeFileSync('version-number', `VERSION_NUMBER=${version.versionNumber}`);
+            fs.writeFileSync('version-number', 'VERSION_NUMBER=' + version.versionNumber);
           "
           cat ./version-number >> $GITHUB_ENV
 
