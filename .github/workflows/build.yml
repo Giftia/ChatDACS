@@ -96,6 +96,7 @@ jobs:
         run: echo "::set-output name=now::$(date +'%Y-%m-%d-%H-%M-%S')"
 
       - name: Upload Build Artifact On Windows
+        if: runner.os == 'Windows'
         uses: actions/upload-artifact@v3
         with:
           name: ChatDACS-$env:VERSION_NUMBER_${{ runner.os }}-${{ steps.time.outputs.now }}
@@ -103,6 +104,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload Build Artifact On Linux
+        if: runner.os == 'Linux'
         uses: actions/upload-artifact@v3
         with:
           name: ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}-${{ steps.time.outputs.now }}
