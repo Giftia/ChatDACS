@@ -15,8 +15,8 @@ jobs:
     strategy:
       matrix:
         os:
-          - ubuntu-latest
           - windows-latest
+          - ubuntu-latest
         node_version:
           - 14
         architecture:
@@ -50,24 +50,30 @@ jobs:
         run: npm i pkg -g
 
       # https://docs.github.com/en/actions/learn-github-actions/environment-variables#detecting-the-operating-system
-      - name: Use pkg to Package on Windows
+      - name: Use pkg To Package On Windows
         if: runner.os == 'Windows'
         run: pkg -t node${{ matrix.node_version }}-windows . --compress GZip
 
-      - name: Use pkg to Package on Linux
+      - name: Use pkg to Package On Linux
         if: runner.os == 'Linux'
         run: pkg -t node${{ matrix.node_version }}-linux . --compress GZip
 
-      # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
-      - name: Declare VERSION
+      - name: Create The version-number File
         run: |
           node -e "
             const fs = require('fs');
             const version = require('./version.json');
             fs.writeFileSync('version-number', 'VERSION_NUMBER=' + version.versionNumber);
           "
-          cat ./version-number >> $GITHUB_ENV
-          cat $GITHUB_ENV
+
+      # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
+      - name: Declare VERSION On Windows
+        if: runner.os == 'Windows'
+        run: cat ./version-number >> $env
+
+      - name: Declare VERSION On Linux
+        if: runner.os == 'Linux'
+        run: cat ./version-number >> $GITHUB_ENV
 
       - name: Pre-compress
         run: |
@@ -76,8 +82,7 @@ jobs:
             const archiver = require('archiver');
             const fs = require('fs');
             const path = require('path');
-            const version = require('./version.json');
-            const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-' + version.versionNumber + '_${{ runner.os }}.zip'));
+            const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}.zip'));
             const archive = archiver('zip', {
               zlib: { level: 9 } // Sets the compression level. 9 is the max compression.
             });
@@ -94,11 +99,11 @@ jobs:
 
       - name: Get Current Time
         id: time
-        run: echo "::set-output name=today::$(date +'%Y-%m-%d-%H-%M-%S')"
+        run: echo "::set-output name=now::$(date +'%Y-%m-%d-%H-%M-%S')"
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}-${{ steps.time.outputs.today }}
+          name: ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}-${{ steps.time.outputs.now }}
           path: ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}.zip
           if-no-files-found: error
