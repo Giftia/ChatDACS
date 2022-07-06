@@ -68,7 +68,7 @@ jobs:
           node -e "
             const fs = require('fs');
             const version = require('./version.json');
-            fs.writeFileSync('${{ $GITHUB_ENV }}', version.versionNumber);
+            fs.writeFileSync('$GITHUB_ENV', "versionNumber=version.versionNumber");
           "
           echo "${{ fromJSON(env) }}"
 
@@ -79,7 +79,7 @@ jobs:
             const archiver = require('archiver');
             const fs = require('fs');
             const path = require('path');
-            const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-${{ env.VERSION_NUMBER }}_${{ matrix.os }}.zip'));
+            const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-${{ env.versionNumber }}_${{ matrix.os }}.zip'));
             const archive = archiver('zip', {
               zlib: { level: 9 } // Sets the compression level.
             });
@@ -104,6 +104,6 @@ jobs:
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ChatDACS-${{ env.VERSION_NUMBER }}_${{ matrix.os }}-${{ steps.time.outputs.today }}
-          path: ChatDACS-${{ env.VERSION_NUMBER }}_${{ matrix.os }}.zip
+          name: ChatDACS-${{ env.versionNumber }}_${{ matrix.os }}-${{ steps.time.outputs.today }}
+          path: ChatDACS-${{ env.versionNumber }}_${{ matrix.os }}.zip
           if-no-files-found: error
