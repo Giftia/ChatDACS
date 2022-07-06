@@ -15,13 +15,13 @@ jobs:
     strategy:
       matrix:
         os:
-          - ubuntu-latest
           - windows-latest
+          - ubuntu-latest
         node_version:
           - 14
         architecture:
           - x64
-    name: Build On：${{ matrix.os }} ${{ matrix.architecture }} - Node ${{ matrix.node_version }}
+    name: Build On：${{ matrix.os }}_${{ matrix.architecture }} - Node ${{ matrix.node_version }}
     steps:
       - uses: actions/checkout@v3
       - name: Set Up Environment
@@ -49,34 +49,37 @@ jobs:
       - name: Install pkg Tool
         run: npm i pkg -g
 
-      - name: Use pkg to Package on Windows
-        if: ${{ runner.os }} == "Windows"
-        run: pkg -t node14-windows . --compress Brotli
+      # https://docs.github.com/en/actions/learn-github-actions/environment-variables#detecting-the-operating-system
+      - name: Use pkg To Package On Windows
+        if: runner.os == 'Windows'
+        run: pkg -t node${{ matrix.node_version }}-windows . --compress Brotli
 
-      - name: Use pkg to Package on Linux
-        if: ${{ runner.os }} == "Linux"
-        run: pkg -t node14-linux . --compress Brotli
+      - name: Use pkg to Package On Linux
+        if: runner.os == 'Linux'
+        run: pkg -t node${{ matrix.node_version }}-linux . --compress Brotli
 
       # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
       - name: Declare VERSION
+        shell: bash
         run: |
           node -e "
             const fs = require('fs');
             const version = require('./version.json');
-            fs.writeFileSync('./versionNumber', version.versionNumber);
+            fs.writeFileSync('version-number', 'VERSION_NUMBER=' + version.versionNumber);
           "
-          echo "versionNumber=./versionNumber" >> $GITHUB_ENV
+          cat ./version-number >> $GITHUB_ENV
 
       - name: Pre-compress
+        shell: bash
         run: |
           npm i archiver
           node -e "
             const archiver = require('archiver');
             const fs = require('fs');
             const path = require('path');
-            const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-${{ env.versionNumber }}_${{ matrix.os }}.zip'));
+            const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}.zip'));
             const archive = archiver('zip', {
-              zlib: { level: 9 } // Sets the compression level.
+              zlib: { level: 9 } // Sets the compression level. 9 is the max compression.
             });
             archive.pipe(output);
             archive.directory('./config/', 'config');
@@ -87,18 +90,15 @@ jobs:
             archive.file('./chatdacs.exe', { name: 'chatdacs.exe' });
             archive.file('./chatdacs', { name: 'chatdacs' });
             archive.finalize();
-            archive.on('error', function(err) {
-              throw err;
-          });
           "
 
       - name: Get Current Time
         id: time
-        run: echo "::set-output name=today::$(date +'%Y-%m-%d-%H-%M-%S')"
+        run: echo "::set-output name=now::$(date +'%Y-%m-%d-%H-%M-%S')"
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ChatDACS-${{ env.versionNumber }}_${{ matrix.os }}-${{ steps.time.outputs.today }}
-          path: ChatDACS-${{ env.versionNumber }}_${{ matrix.os }}.zip
+          name: ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}-${{ steps.time.outputs.now }}
+          path: ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}.zip
           if-no-files-found: error
