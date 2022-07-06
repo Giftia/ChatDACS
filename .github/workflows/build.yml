@@ -67,7 +67,7 @@ jobs:
             fs.writeFileSync('version-number', 'VERSION_NUMBER=' + version.versionNumber);
           "
           cat ./version-number >> $GITHUB_ENV
-          echo $VERSION_NUMBER
+          cat $GITHUB_ENV
 
       - name: Pre-compress
         run: |
@@ -76,7 +76,8 @@ jobs:
             const archiver = require('archiver');
             const fs = require('fs');
             const path = require('path');
-            const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}.zip'));
+            const version = require('./version.json');
+            const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-' + version.versionNumber + '_${{ runner.os }}.zip'));
             const archive = archiver('zip', {
               zlib: { level: 9 } // Sets the compression level. 9 is the max compression.
             });
