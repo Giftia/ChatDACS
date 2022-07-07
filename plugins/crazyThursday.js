@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "疯狂星期四插件",
   指令: "疯狂星期四",
-  版本: "1.1",
+  版本: "1.2",
   作者: "Giftina",
   描述: "全自动学习关于 `疯狂星期四` 的语料。只要聊天对话中包含了 `疯狂星期四` ，就会自动学习之，并且回复一段其他的语料。",
   使用示例: "世上77亿人，有253亿只鸡，是人数量三倍。如果鸡与人类开战，你必须要对抗3只鸡，就算它死了，又会有同类补上，就算你一个朋友都没有，你还有三只鸡做敌。今天是肯德基疯狂星期四，V我50，我帮你杀敌",
@@ -9,6 +9,16 @@ module.exports = {
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
     const teachMsgChecked = msg.replace(/'/g, ""); //防爆
+
+    // 获取现有疯狂星期四语料量
+    if (teachMsgChecked === "疯狂星期四 -length") {
+      const corpus = await ChatModel.findAndCountAll({
+        where: {
+          ask: "疯狂星期四",
+        }
+      });
+      return { type: "text", content: `小夜现有${corpus.count}条疯狂星期四的语料` };
+    }
 
     // 对于 "疯狂星期四" 视为仅触发语料回复，不学习
     if (teachMsgChecked !== "疯狂星期四") {
@@ -36,21 +46,21 @@ module.exports = {
         });
     }
 
-    //随机回复一段疯狂星期四
+    // 随机回复一段疯狂星期四
     return { type: "text", content: await utils.FullContentSearchAnswer("疯狂星期四") };
   },
 };
 
 const fs = require("fs");
 const path = require("path");
-const yaml = require("yaml"); //使用yaml解析配置文件
+const yaml = require("yaml"); // 使用yaml解析配置文件
 const utils = require("./system/utils.js");
 const ChatModel = require(path.join(process.cwd(), "plugins", "system", "model", "chatModel.js"));
 let CHAT_BAN_WORDS;
 
 Init();
 
-//读取配置文件
+// 读取配置文件
 function ReadConfig() {
   return new Promise((resolve, reject) => {
     fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", function (err, data) {
@@ -63,7 +73,7 @@ function ReadConfig() {
   });
 }
 
-//初始化CHAT_BAN_WORDS
+// 初始化CHAT_BAN_WORDS
 async function Init() {
   const resolve = await ReadConfig();
   CHAT_BAN_WORDS = resolve.qqBot.CHAT_BAN_WORDS;
