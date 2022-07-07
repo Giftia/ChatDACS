@@ -28,7 +28,7 @@ let XIZHI_CHANNEL_KEY;
 
 Init();
 
-//读取配置文件
+// 读取配置文件
 function ReadConfig() {
   return new Promise((resolve, reject) => {
     fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", function (err, data) {
@@ -41,7 +41,7 @@ function ReadConfig() {
   });
 }
 
-//初始化WEB_PORT
+// 初始化WEB_PORT
 async function Init() {
   const resolve = await ReadConfig();
   XIZHI_CHANNEL_KEY = resolve.ApiKey.XIZHI_CHANNEL_KEY;
