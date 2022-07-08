@@ -583,7 +583,7 @@ let WEB_PORT, GO_CQHTTP_SERVICE_API_URL, TIAN_XING_API_KEY;
 
 Init();
 
-//读取配置文件
+// 读取配置文件
 function ReadConfig() {
   return new Promise((resolve, reject) => {
     fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", (err, data) => {
@@ -596,7 +596,7 @@ function ReadConfig() {
   });
 }
 
-//初始化WEB_PORT和TIAN_XING_API_KEY
+// 初始化WEB_PORT和TIAN_XING_API_KEY
 async function Init() {
   const resolve = await ReadConfig();
   WEB_PORT = resolve.System.WEB_PORT;

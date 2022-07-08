@@ -3,11 +3,11 @@
  */
 
 module.exports = {
-  插件名: "内测·舞立方信息查询插件",
+  插件名: "公测·舞立方信息查询插件",
   指令: "^[/!]?(绑定|个人信息|战绩|机台状态|关注机台|我要出勤)(.*)",
-  版本: "0.5",
+  版本: "1.0",
   作者: "Giftina",
-  描述: "非官方插件。舞立方信息查询，可以查询玩家信息以及机台状态。内测期间，功能、返回结果、玩家绑定信息会随机失效。数据来源以及素材版权归属 胜骅科技 https://www.arccer.com/ ，如有侵权请联系作者删除。",
+  描述: "舞立方信息查询，可以查询玩家信息以及机台状态。数据来源以及素材版权归属 胜骅科技 https://www.arccer.com/ ，如有侵权请联系作者删除。",
   使用示例: "个人信息",
   预期返回: "[炫酷的舞立方个人信息图片]",
 
@@ -28,11 +28,12 @@ module.exports = {
       let playerId = args[1];
 
       // 如果没有携带 playerId 参数，则查询用户有没有绑定玩家，没有则提示绑定
+      const playerData = await DanceCubeModel.findOne({ where: userId });
       if (!playerId) {
-        if (!Object.prototype.hasOwnProperty.call(playerData, userId)) {
+        if (!playerData) {
           return { type: "text", content: errorNoData };
         } else {
-          playerId = playerData[userId].playerId;
+          playerId = playerData.playerId;
         }
       }
 
@@ -44,11 +45,12 @@ module.exports = {
       let playerId = args[1];
 
       // 如果没有携带 playerId 参数，则查询用户有没有绑定玩家，没有则提示绑定
+      const playerData = await DanceCubeModel.findOne({ where: userId });
       if (!playerId) {
-        if (!Object.prototype.hasOwnProperty.call(playerData, userId)) {
+        if (!playerData) {
           return { type: "text", content: errorNoData };
         } else {
-          playerId = playerData[userId].playerId;
+          playerId = playerData.playerId;
         }
       }
 
@@ -61,12 +63,13 @@ module.exports = {
       let city = province?.includes("市") ? "市辖区" : args[2];
 
       // 如果没有携带参数，则从绑定信息中获取，没有则提示绑定
+      const playerData = await DanceCubeModel.findOne({ where: userId });
       if (!args[1]) {
-        if (!Object.prototype.hasOwnProperty.call(playerData, userId)) {
+        if (!playerData) {
           return { type: "text", content: errorNoData };
         } else {
-          const location = await AnalysisLocation(playerData[userId].location);
-          console.log(`将绑定信息地址 ${playerData[userId].location} 解析为 ${location.province + location.city}`.log);
+          const location = await AnalysisLocation(playerData.location);
+          console.log(`将绑定信息地址 ${playerData.location} 解析为 ${location.province + location.city}`.log);
           if (!location) {
             return { type: "text", content: "解析你的地区失败了，对不起呀，你还可以手动查询，指令如：机台状态 浙江省 杭州市" };
           } else {
@@ -85,7 +88,8 @@ module.exports = {
     // 关注机台
     else if (focusMachineCommand.test(msg)) {
       // 如果没有携带 playerId 参数，则查询用户有没有绑定玩家，没有则提示绑定
-      if (!Object.prototype.hasOwnProperty.call(playerData, userId)) {
+      const playerData = await DanceCubeModel.findOne({ where: userId });
+      if (!playerData) {
         return { type: "text", content: errorNoData };
       }
       // 如果没有指定机台ID，需要引导用户输入机台ID
@@ -99,9 +103,10 @@ module.exports = {
     // 我要出勤
     else if (goGoGOCommand.test(msg)) {
       // 查询用户关注的机台状态，如果没有关注机台，则提示用户关注机台
-      if (!Object.prototype.hasOwnProperty.call(playerData, userId)) {
+      const playerData = await DanceCubeModel.findOne({ where: userId });
+      if (!playerData) {
         return { type: "text", content: errorNoData };
-      } else if (!playerData[userId].focusMachine) {
+      } else if (!playerData.focusMachine) {
         return { type: "text", content: "你还没有关注机台呢，禁止出勤，请发送 机台状态 来查询你附近的机台的ID吧" };
       }
 
@@ -166,23 +171,18 @@ async function BindUser(userId, playerId) {
   if (!playerInfo.UserID) {
     return "这个玩家找不到呢，是不是输错id了呢";
   }
-  // 如果的绑定信息不存在，则创建
-  if (!Object.prototype.hasOwnProperty.call(playerData, userId)) {
-    playerData[userId] = {
-      playerId: playerInfo.UserID,
-      playerName: playerInfo.UserName,
-      location: playerInfo.CityName,
-    };
-    return `绑定成功，现在你绑定的账号是 ${playerInfo.UserName}`;
-  } else {
-    // 如果的绑定信息存在，则更新
-    playerData[userId] = {
-      playerId: playerInfo.UserID,
-      playerName: playerInfo.UserName,
-      location: playerInfo.CityName,
-    };
-    return `换绑成功，现在你绑定的账号是 ${playerInfo.UserName}`;
-  }
+
+  await DanceCubeModel.upsert({
+    userId,
+    playerId,
+    playerName: playerInfo.UserName,
+    location: playerInfo.CityName,
+  }, {
+    where: {
+      userId,
+    }
+  });
+  return `绑定成功，现在你绑定的账号是 ${playerInfo.UserName}`;
 }
 
 /**
@@ -269,7 +269,7 @@ async function AnalysisPlayerInfo(playerId) {
   ctx.font = `160px '${eventFontName}'`;
   ctx.fillStyle = "rgba(99, 99, 99, 0.2)";
   ctx.textAlign = "center";
-  ctx.fillText("测  试", canvas.width / 2, canvas.height / 2 + 80);
+  ctx.fillText("公  测", canvas.width / 2, canvas.height / 2 + 80);
 
   // 保存图片
   const fileName = `${playerId}.png`;
@@ -416,7 +416,7 @@ async function GetPlayerRank(playerId, musicIndex) {
   ctx.font = `170px '${eventFontName}'`;
   ctx.fillStyle = "rgba(33, 33, 33, 0.4)";
   ctx.textAlign = "center";
-  ctx.fillText("内  测", canvas.width / 2, canvas.height / 2 + 80);
+  ctx.fillText("公  测", canvas.width / 2, canvas.height / 2 + 80);
 
   // 保存图片
   const fileName = `${playerId}.png`;
@@ -513,13 +513,18 @@ async function FocusMachine(userId, machineTerminalID) {
   const province = machineInfo.ProvinceAndCity.split(" ")[0];
   const city = machineInfo.ProvinceAndCity.split(" ")[1];
 
-  playerData[userId] = {
+  await DanceCubeModel.update({
     focusMachine: {
       machineTerminalID: machineTerminalID,
       province: province,
       city: city,
     },
-  };
+  }, {
+    where: {
+      userId: userId,
+    }
+  });
+
   return `关注成功，现在你关注的机台是 ${machineInfo.PlaceName}，发送 我要出勤 查询你关注的机台情况`;
 }
 
@@ -531,7 +536,13 @@ async function GoGoGo(userId) {
   /**
    * focusMachine: { machineTerminalID, province, city }
    */
-  const focusMachine = playerData[userId].focusMachine;
+  const focusMachine = await DanceCubeModel.findOne({
+    where: {
+      userId: userId,
+    },
+    attributes: ["focusMachine"],
+  });
+
   const machine = await axios.get(api.machineListByPlace, {
     headers: headers,
     params: {
@@ -556,13 +567,13 @@ async function GoGoGo(userId) {
   const longitudeAndLatitude = `${machine.Longitude}, ${machine.Latitude}`; // 经纬度
   const status = machine.Online ? "🟢机台在线，立即出勤" : "🔴机台离线，散了吧";
   const machineGeneration = machine.Img1.includes("9700") ? "Ⅰ代机" : "Ⅱ代机";
+  const machinePicture1Link = `https://dancedemo.shenghuayule.com/Dance/${machine.Img1}`;
+  const machinePicture2Link = `https://dancedemo.shenghuayule.com/Dance/${machine.Img2}`;
   return `${status}
 ${machineName} ${machineGeneration}
 ${provinceAndCity} ${address}
-坐标：${longitudeAndLatitude}`;
+坐标：${longitudeAndLatitude}
+[CQ:image,file=${machinePicture1Link}][CQ:image,file=${machinePicture2Link}]`;
 }
 
-/**
- * 维护一个 `{ userId: { playerId: "", playerName: "", location: "", focusMachine: {} }, userId: { playerId: "", playerName: "", location: "", focusMachine: {} }, ... }` 的对象，用于记录玩家的绑定信息
- */
-const playerData = {};
+const DanceCubeModel = require(path.join(process.cwd(), "plugins", "system", "model", "danceCubeModel.js"));

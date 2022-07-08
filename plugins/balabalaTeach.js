@@ -47,7 +47,7 @@ const PerfunctoryModel = require(path.join(process.cwd(), "plugins", "system", "
 
 Init();
 
-//读取配置文件
+// 读取配置文件
 function ReadConfig() {
   return new Promise((resolve, reject) => {
     fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", function (err, data) {
@@ -60,7 +60,7 @@ function ReadConfig() {
   });
 }
 
-//初始化CHAT_BAN_WORDS
+// 初始化CHAT_BAN_WORDS
 async function Init() {
   const resolve = await ReadConfig();
   CHAT_BAN_WORDS = resolve.qqBot.CHAT_BAN_WORDS;
