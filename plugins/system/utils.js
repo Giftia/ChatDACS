@@ -1,7 +1,7 @@
 /**
  * @name 系统工具类
  * @description 各种公用函数和系统底层函数
- * @version 2.1
+ * @version 2.2
  */
 module.exports = {
   /**
