@@ -18,7 +18,9 @@
     <script src="/layim/layui.js"></script>
   </head>
 
-  <body onmousedown="switchLive2DVisible();">
+  <!-- <body onmousedown="switchLive2DVisible();"> -->
+
+  <body>
     <canvas id="live2d" width="225" height="300" class="live2d" style="position: fixed; bottom: 2.5rem; right: -6rem; opacity: 1; z-index: 2147483647; pointer-events: none; visibility: visible;"></canvas>
     <script async src="/superplaceholder.min.js"></script>
     <script>
@@ -27,7 +29,8 @@
           version: false,
           base: '/layim/plugin/'
         })
-        .use(["mobile", "form", 'live2dbundle', 'live2dcore'], function () {
+        // .use(["mobile", "form", 'live2dbundle', 'live2dcore'], function () {
+        .use(["mobile", "form"], function () {
           var mobile = layui.mobile,
             layim = mobile.layim,
             $ = mobile.jquery,
@@ -38,7 +41,7 @@
             backImageName = '', // 指定背景图片 ,默认为空
             modelDir = ['xiaoye']; // 指定需要加载的模型
 
-          initDefine(resourcesPath, backImageName, modelDir); // 初始化模型
+          // initDefine(resourcesPath, backImageName, modelDir); // 初始化模型
 
           const socket = io();
 
