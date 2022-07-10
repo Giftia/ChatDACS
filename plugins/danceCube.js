@@ -28,7 +28,7 @@ module.exports = {
       let playerId = args[1];
 
       // 如果没有携带 playerId 参数，则查询用户有没有绑定玩家，没有则提示绑定
-      const playerData = await DanceCubeModel.findOne({ where: userId });
+      const playerData = await DanceCubeModel.findOne({ where: { userId } });
       if (!playerId) {
         if (!playerData) {
           return { type: "text", content: errorNoData };
@@ -45,7 +45,7 @@ module.exports = {
       let playerId = args[1];
 
       // 如果没有携带 playerId 参数，则查询用户有没有绑定玩家，没有则提示绑定
-      const playerData = await DanceCubeModel.findOne({ where: userId });
+      const playerData = await DanceCubeModel.findOne({ where: { userId } });
       if (!playerId) {
         if (!playerData) {
           return { type: "text", content: errorNoData };
@@ -63,7 +63,7 @@ module.exports = {
       let city = province?.includes("市") ? "市辖区" : args[2];
 
       // 如果没有携带参数，则从绑定信息中获取，没有则提示绑定
-      const playerData = await DanceCubeModel.findOne({ where: userId });
+      const playerData = await DanceCubeModel.findOne({ where: { userId } });
       if (!args[1]) {
         if (!playerData) {
           return { type: "text", content: errorNoData };
@@ -88,7 +88,7 @@ module.exports = {
     // 关注机台
     else if (focusMachineCommand.test(msg)) {
       // 如果没有携带 playerId 参数，则查询用户有没有绑定玩家，没有则提示绑定
-      const playerData = await DanceCubeModel.findOne({ where: userId });
+      const playerData = await DanceCubeModel.findOne({ where: { userId } });
       if (!playerData) {
         return { type: "text", content: errorNoData };
       }
@@ -103,7 +103,7 @@ module.exports = {
     // 我要出勤
     else if (goGoGOCommand.test(msg)) {
       // 查询用户关注的机台状态，如果没有关注机台，则提示用户关注机台
-      const playerData = await DanceCubeModel.findOne({ where: userId });
+      const playerData = await DanceCubeModel.findOne({ where: { userId } });
       if (!playerData) {
         return { type: "text", content: errorNoData };
       } else if (!playerData.focusMachine) {
@@ -536,7 +536,7 @@ async function GoGoGo(userId) {
   /**
    * focusMachine: { machineTerminalID, province, city }
    */
-  const focusMachine = await DanceCubeModel.findOne({
+  const { focusMachine } = await DanceCubeModel.findOne({
     where: {
       userId: userId,
     },
