@@ -27,6 +27,12 @@ const DanceCubeModel = sequelize.define("danceCube", {
   },
   focusMachine: {
     type: DataTypes.CHAR,
+    set: function (value) {
+      return this.setDataValue("focusMachine", JSON.stringify(value));
+    },
+    get: function () {
+      return JSON.parse(this.getDataValue("focusMachine"));
+    },
   },
 }, {
   tableName: "danceCube",
