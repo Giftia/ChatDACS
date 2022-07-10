@@ -267,10 +267,7 @@ module.exports = {
    * @returns {Promise<void>} void
    */
   async AddNewGroup(groupId) {
-    const group = await QQGroupModel.findOne({ where: { groupId } });
-    if (!group) {
-      await QQGroupModel.create({ groupId });
-    }
+    await QQGroupModel.create({ groupId });
   },
 
   /**
@@ -311,7 +308,8 @@ module.exports = {
   async GetGroupServiceSwitch(groupId) {
     const group = await QQGroupModel.findOne({ where: { groupId } });
 
-    return group.serviceEnabled;
+    // 如果没有获取到，应该是刚刚加入群，默认开启群服务
+    return group?.serviceEnabled || true;
   },
 
   /**
