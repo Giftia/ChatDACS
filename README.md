@@ -16,7 +16,7 @@
       技术栈：后端 —— Node.js，前端组件库 —— layui。<br/>
       画师：塘 李<br/>
       <br/>
-      使用文档：<a href="http://docs.giftia.moe/">http://docs.giftia.moe/</a><br/>
+      使用文档：<a href="https://docs.giftia.moe/">https://docs.giftia.moe/</a><br/>
       示例 DEMO：<a href="http://110.42.221.72/" target="_blank">http://110.42.221.72/</a><br/>
       语录来自小夜：<a href="https://github.com/Giftia/Project_Xiaoye" target="_blank">github.com/Giftia/Project_Xiaoye</a><br/>
     </p>
