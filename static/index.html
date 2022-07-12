@@ -21,7 +21,7 @@
   <!-- <body onmousedown="switchLive2DVisible();"> -->
 
   <body>
-    <canvas id="live2d" width="225" height="300" class="live2d" style="position: fixed; bottom: 2.5rem; right: -6rem; opacity: 1; z-index: 2147483647; pointer-events: none; visibility: visible;"></canvas>
+    <!-- <canvas id="live2d" width="225" height="300" class="live2d" style="position: fixed; bottom: 2.5rem; right: -6rem; opacity: 1; z-index: 2147483647; pointer-events: none; visibility: visible;"></canvas> -->
     <script async src="/superplaceholder.min.js"></script>
     <script>
       layui
@@ -383,23 +383,7 @@
                 });
                 break;
               case "about":
-                layer.open({
-                  title: [
-                    "关于这个项目",
-                    "background-color: #FF4351; color:#fff;",
-                  ],
-                  content: `<h1 align="center">
-    <img src="https://repository-images.githubusercontent.com/171253757/27be1b16-8dbb-41ba-90b5-4b28157f3def" width="200" height="200" alt="ChatDACS"/><br/>
-    星野夜蝶<br/>
-    Hoshino Yedie<br/>
-  </h1>
-  <h2 align="center">
-    沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)
-  </h2>
-  <div align="center">
-    <img src="https://gitee.com/Giftina/ChatDACS/widgets/widget_card.svg?colors=4183c4,ffffff,ffffff,e3e9ed,666666,9b9b9b" alt="Gitee"/>
-  </p>`,
-                });
+                window.open("https://docs.giftia.moe/");
                 break;
               case "thanks":
                 layer.open({
