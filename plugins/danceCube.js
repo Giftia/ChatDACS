@@ -5,7 +5,7 @@
 module.exports = {
   插件名: "公测·舞立方信息查询插件",
   指令: "^[/!]?(绑定|个人信息|战绩|机台状态|关注机台|我要出勤)(.*)",
-  版本: "1.0",
+  版本: "1.1",
   作者: "Giftina",
   描述: "舞立方信息查询，可以查询玩家信息以及机台状态。数据来源以及素材版权归属 胜骅科技 https://www.arccer.com/ ，如有侵权请联系作者删除。",
   使用示例: "个人信息",
@@ -38,7 +38,7 @@ module.exports = {
       }
 
       reply = await AnalysisPlayerInfo(playerId);
-      return { type: "picture", content: { file: reply } };
+      return reply;
     }
     // 战绩
     else if (getRankCommand.test(msg)) {
@@ -140,18 +140,18 @@ const authorization = fs.readFileSync(
     }
   },
 );
+const baseURL = "https://dancedemo.shenghuayule.com/";
 const headers = {
   "Authorization": authorization,
   "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Html5Plus/1.0 (Immersed/44) uni-app",
   "Host": "dancedemo.shenghuayule.com",
-  "Referer": "https://dancedemo.shenghuayule.com/",
+  "Referer": baseURL,
 };
-const baseURL = "https://dancedemo.shenghuayule.com";
 const api = {
-  playerInfo: baseURL + "/Dance/api/User/GetInfo",
-  playerRank: baseURL + "/Dance/api/User/GetMyRank",
-  machineList: baseURL + "/Dance/OAuth/GetMachineList",
-  machineListByPlace: baseURL + "/Dance/OAuth/GetMachineListByPlace",
+  playerInfo: baseURL + "Dance/api/User/GetInfo",
+  playerRank: baseURL + "Dance/api/User/GetMyRank",
+  machineList: baseURL + "Dance/OAuth/GetMachineList",
+  machineListByPlace: baseURL + "Dance/OAuth/GetMachineListByPlace",
 };
 //加载字体
 const titleFontName = "优设标题圆";
@@ -168,8 +168,8 @@ registerFont(path.join(__dirname, "danceCube", "assets", "JiangChengZhiYingTi600
  */
 async function BindUser(userId, playerId) {
   const playerInfo = await GetPlayerInfo(playerId);
-  if (!playerInfo.UserID) {
-    return "这个玩家找不到呢，是不是输错id了呢";
+  if (playerInfo.error) {
+    return `获取玩家资料失败：${playerInfo.error}`;
   }
 
   await DanceCubeModel.upsert({
@@ -191,8 +191,8 @@ async function BindUser(userId, playerId) {
  */
 async function AnalysisPlayerInfo(playerId) {
   const playerInfo = await GetPlayerInfo(playerId);
-  if (!playerInfo) {
-    return "这个玩家找不到呢，是不是输错ID了呢";
+  if (playerInfo.error) {
+    return { type: "text", content: `获取玩家资料失败：${playerInfo.error}` };
   }
 
   const headImg = playerInfo.HeadimgURL;
@@ -279,7 +279,7 @@ async function AnalysisPlayerInfo(playerId) {
 
   const fileURL = `/xiaoye/images/${fileName}`;
 
-  return fileURL;
+  return { type: "picture", content: { file: fileURL } };
 }
 
 /**
@@ -292,13 +292,17 @@ async function GetPlayerInfo(playerId) {
     params: {
       userId: playerId,
     },
+    validateStatus: (status) => status < 500,
   })
     .then(async function (response) {
+      if (response.status !== 200) {
+        return { error: response.data.Message };
+      }
       return response.data;
     })
-    .catch(function (error) {
+    .catch((error) => {
       console.log(`获取玩家资料失败: ${error}`.error);
-      return "获取玩家资料失败: ", error;
+      return { error };
     });
   return playerInfo;
 }
@@ -331,8 +335,8 @@ async function GetPlayerRank(playerId, musicIndex) {
     });
 
   const playerInfo = await GetPlayerInfo(playerId);
-  if (!playerInfo) {
-    return "这个玩家找不到呢，是不是输错ID了呢";
+  if (playerInfo.error) {
+    return `获取玩家资料失败：${playerInfo.error}`;
   }
 
   const headImg = playerInfo.HeadimgURL;
