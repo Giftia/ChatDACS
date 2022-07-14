@@ -1,7 +1,7 @@
 /**
  * @name 系统工具类
  * @description 各种公用函数和系统底层函数
- * @version 2.2
+ * @version 2.3
  */
 module.exports = {
   /**
@@ -267,7 +267,10 @@ module.exports = {
    * @returns {Promise<void>} void
    */
   async AddNewGroup(groupId) {
-    await QQGroupModel.create({ groupId });
+    const groupExist = await QQGroupModel.findOne({ where: { groupId } });
+    if (!groupExist) {
+      await QQGroupModel.create({ groupId });
+    }
   },
 
   /**
