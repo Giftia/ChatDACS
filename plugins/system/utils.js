@@ -573,7 +573,7 @@ const mp3Duration = require("mp3-duration");
 const sequelize = require("sequelize");
 const Op = sequelize.Op;
 
-//models
+// models
 const UserModel = require(path.join(process.cwd(), "plugins", "system", "model", "userModel.js"));
 const MessageModel = require(path.join(process.cwd(), "plugins", "system", "model", "messageModel.js"));
 const QQGroupModel = require(path.join(process.cwd(), "plugins", "system", "model", "qqGroupModel.js"));
@@ -606,7 +606,7 @@ async function Init() {
   TIAN_XING_API_KEY = resolve.ApiKey.TIAN_XING_API_KEY;
 }
 
-//孤寡图序列
+// 孤寡图序列
 const guGuaPicList = [
   "1.jpg",
   "2.jpg",
