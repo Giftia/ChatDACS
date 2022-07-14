@@ -310,6 +310,10 @@ module.exports = {
    * @returns {Promise<boolean>} 群服务开关
    */
   async GetGroupServiceSwitch(groupId) {
+    // 偶发性找不到groupId，无害化处理
+    if (!groupId) {
+      return true;
+    }
     const group = await QQGroupModel.findOne({ where: { groupId } });
 
     // 如果没有获取到，应该是刚刚加入群，默认开启群服务
