@@ -24,12 +24,15 @@ jobs:
     name: Build On：${{ matrix.os }}_${{ matrix.architecture }} - Node ${{ matrix.node_version }}
     steps:
       - uses: actions/checkout@v3
-      - name: Set Up Environment
+      - uses: pnpm/action-setup@v2.2.2
+        with:
+          version: 7
+      - name: Use Node.js ${{ matrix.node_version }}
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node_version }}
           architecture: ${{ matrix.architecture }}
-          cache: "npm"
+          cache: "pnpm"
           cache-dependency-path: |
             ./packages-lock.json
             plugins/package-lock.json
@@ -39,9 +42,9 @@ jobs:
 
       - name: Clean Install Modules
         run: |
-          npm ci --production
+          pnpm ci --production
           cd ./plugins/
-          npm ci --production
+          pnpm ci --production
           rm package.json
           rm package-lock.json
           cd ..
@@ -72,7 +75,7 @@ jobs:
       - name: Pre-compress
         shell: bash
         run: |
-          npm i archiver
+          pnpm i archiver
           node -e "
             const archiver = require('archiver');
             const fs = require('fs');
