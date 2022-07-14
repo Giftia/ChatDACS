@@ -42,9 +42,9 @@ jobs:
 
       - name: Clean Install Modules
         run: |
-          pnpm ci --production
+          pnpm i
           cd ./plugins/
-          pnpm ci --production
+          pnpm i
           rm package.json
           rm package-lock.json
           cd ..
