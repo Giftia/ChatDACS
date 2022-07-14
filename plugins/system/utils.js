@@ -1,7 +1,7 @@
 /**
  * @name 系统工具类
  * @description 各种公用函数和系统底层函数
- * @version 2.2
+ * @version 2.3
  */
 module.exports = {
   /**
@@ -267,7 +267,11 @@ module.exports = {
    * @returns {Promise<void>} void
    */
   async AddNewGroup(groupId) {
-    await QQGroupModel.create({ groupId });
+    const groupExist = await QQGroupModel.findOne({ where: { groupId } });
+    if (!groupExist) {
+      await QQGroupModel.create({ groupId });
+      console.log(`初始化小夜新加入的群的群服务：${groupId}`.log);
+    }
   },
 
   /**
@@ -306,6 +310,10 @@ module.exports = {
    * @returns {Promise<boolean>} 群服务开关
    */
   async GetGroupServiceSwitch(groupId) {
+    // 偶发性找不到groupId，无害化处理
+    if (!groupId) {
+      return true;
+    }
     const group = await QQGroupModel.findOne({ where: { groupId } });
 
     // 如果没有获取到，应该是刚刚加入群，默认开启群服务
@@ -569,7 +577,7 @@ const mp3Duration = require("mp3-duration");
 const sequelize = require("sequelize");
 const Op = sequelize.Op;
 
-//models
+// models
 const UserModel = require(path.join(process.cwd(), "plugins", "system", "model", "userModel.js"));
 const MessageModel = require(path.join(process.cwd(), "plugins", "system", "model", "messageModel.js"));
 const QQGroupModel = require(path.join(process.cwd(), "plugins", "system", "model", "qqGroupModel.js"));
@@ -602,7 +610,7 @@ async function Init() {
   TIAN_XING_API_KEY = resolve.ApiKey.TIAN_XING_API_KEY;
 }
 
-//孤寡图序列
+// 孤寡图序列
 const guGuaPicList = [
   "1.jpg",
   "2.jpg",

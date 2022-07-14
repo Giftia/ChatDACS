@@ -189,7 +189,7 @@ InitConfig();
 io.on("connection", async (socket) => {
   socket.emit("getCookie");
   const CID = cookie.parse(socket.request.headers.cookie || "").ChatdacsID;
-  if (CID === undefined) {
+  if (CID == undefined) {
     socket.emit("getCookie");
     return 0;
   }
@@ -1878,11 +1878,19 @@ async function ChatJiebaFuzzy(msg) {
 }
 
 /**
- * 聊天处理，超智能(障)的聊天算法: 全匹配搜索，模糊搜索，分词模糊搜索
+ * 响应聊天回复，超智能(障)的聊天算法: 全匹配搜索 => 模糊搜索 => 分词模糊搜索 => 敷衍
  * @param {string} ask 关键词
  * @returns {string} 小夜回复
  */
 async function ChatProcess(ask) {
+  //如果ask异常，可能是非聊天事件触发了响应聊天回复，直接敷衍回复
+  if (!ask) {
+    console.log("ask异常，直接敷衍回复".log);
+    const randomBalaBala = await utils.PerfunctoryAnswer();
+    console.log(`返回随机敷衍：${randomBalaBala}`.alert);
+    return randomBalaBala;
+  }
+
   console.log("开始全匹配搜索".log);
   const fullContentSearchAnswer = await utils.FullContentSearchAnswer(ask);
 
