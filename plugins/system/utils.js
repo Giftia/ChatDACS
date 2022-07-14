@@ -270,6 +270,7 @@ module.exports = {
     const groupExist = await QQGroupModel.findOne({ where: { groupId } });
     if (!groupExist) {
       await QQGroupModel.create({ groupId });
+      console.log(`初始化小夜新加入的群的群服务：${groupId}`.log);
     }
   },
 
