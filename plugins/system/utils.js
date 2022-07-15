@@ -1,7 +1,6 @@
 /**
  * @name 系统工具类
  * @description 各种公用函数和系统底层函数
- * @version 2.3
  */
 module.exports = {
   /**
@@ -244,7 +243,7 @@ module.exports = {
       });
 
     if (!groupList) {
-      setTimeout(() => this.InitGroupList(), 5000);
+      setTimeout(() => this.InitGroupList(), 10000);
       return;
     } else {
       const groupIdList = groupList.map((group) => group.group_id);

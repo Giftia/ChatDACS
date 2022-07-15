@@ -23,15 +23,12 @@ const DanceCubeModel = sequelize.define("danceCube", {
     type: DataTypes.CHAR(20),
   },
   location: {
-    type: DataTypes.CHAR(10),
-  },
-  focusMachine: {
     type: DataTypes.CHAR,
     set: function (value) {
-      return this.setDataValue("focusMachine", JSON.stringify(value));
+      return this.setDataValue("location", JSON.stringify(value));
     },
     get: function () {
-      return JSON.parse(this.getDataValue("focusMachine"));
+      return JSON.parse(this.getDataValue("location"));
     },
   },
 }, {

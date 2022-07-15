@@ -1,11 +1,10 @@
-/**
- * authorization.token 文件内容为玩家账户密钥，向服务器请求数据时会携带该参数鉴权，具有修改账户的最高权限，需要自行抓包获取，请勿透露给不信任的他人，否则最糟糕的情况可能会导致游戏账户被恶意注销
- */
+// 用于插眼所需要的百度地理编码密钥，需要自己去申请：https://lbsyun.baidu.com/index.php?title=webapi/guide/webservice-geocoding
+const baiduAk = "";
 
 module.exports = {
-  插件名: "公测·舞立方信息查询插件",
-  指令: "^[/!]?(绑定|个人信息|战绩|机台状态|关注机台|我要出勤)(.*)",
-  版本: "1.1",
+  插件名: "舞立方信息查询插件",
+  指令: "^[/!]?(绑定|个人信息|战绩|插眼|我要出勤)(.*)",
+  版本: "2.0",
   作者: "Giftina",
   描述: "舞立方信息查询，可以查询玩家信息以及机台状态。数据来源以及素材版权归属 胜骅科技 https://www.arccer.com/ ，如有侵权请联系作者删除。",
   使用示例: "个人信息",
@@ -55,59 +54,36 @@ module.exports = {
       }
 
       const musicIndex = args[2] || defaultMusicIndex;
-      reply = await GetPlayerRank(playerId, musicIndex);
-    }
-    // 机台状态
-    else if (getMachineStateCommand.test(msg)) {
-      let province = args[1];
-      let city = province?.includes("市") ? "市辖区" : args[2];
-
-      // 如果没有携带参数，则从绑定信息中获取，没有则提示绑定
-      const playerData = await DanceCubeModel.findOne({ where: { userId } });
-      if (!args[1]) {
-        if (!playerData) {
-          return { type: "text", content: errorNoData };
-        } else {
-          const location = await AnalysisLocation(playerData.location);
-          console.log(`将绑定信息地址 ${playerData.location} 解析为 ${location.province + location.city}`.log);
-          if (!location) {
-            return { type: "text", content: "解析你的地区失败了，对不起呀，你还可以手动查询，指令如：机台状态 浙江省 杭州市" };
-          } else {
-            province = location.province;
-            city = location.city;
-          }
-        }
+      const playerRank = await GetPlayerRank(playerId, musicIndex);
+      if (playerRank.error) {
+        reply = `查询战绩失败：${playerRank.error}`;
+      } else {
+        reply = playerRank;
       }
-
-      if (!province || !city) {
-        return { type: "text", content: "没有正确指定省份或城市噢，正确指令如：机台状态 浙江省 杭州市，市辖区示例：机台状态 上海市" };
-      }
-
-      reply = await GetMachineListByPlace(province, city);
     }
-    // 关注机台
-    else if (focusMachineCommand.test(msg)) {
-      // 如果没有携带 playerId 参数，则查询用户有没有绑定玩家，没有则提示绑定
+    // 插眼
+    else if (setLocationCommand.test(msg)) {
+      // 查询用户有没有绑定玩家，没有则提示绑定
       const playerData = await DanceCubeModel.findOne({ where: { userId } });
       if (!playerData) {
         return { type: "text", content: errorNoData };
       }
-      // 如果没有指定机台ID，需要引导用户输入机台ID
+      // 如果没有指定地名，需要引导用户输入地名
       else if (!args[1]) {
-        return { type: "text", content: "好像没有指定机台ID噢，请发送 机台状态 指令来查询你附近的机台的ID吧" };
+        return { type: "text", content: "好像没有指定地名噢，请发送  插眼 地名  在指定位置插眼吧" };
       }
 
-      const machineId = args[1];
-      reply = await FocusMachine(userId, machineId);
+      const location = args[1];
+      reply = await Geocoding(userId, location);
     }
     // 我要出勤
     else if (goGoGOCommand.test(msg)) {
-      // 查询用户关注的机台状态，如果没有关注机台，则提示用户关注机台
+      // 查询用户设定的坐标附近的机台状态，如果没有插眼，则提示用户插眼
       const playerData = await DanceCubeModel.findOne({ where: { userId } });
       if (!playerData) {
         return { type: "text", content: errorNoData };
-      } else if (!playerData.focusMachine) {
-        return { type: "text", content: "你还没有关注机台呢，禁止出勤，请发送 机台状态 来查询你附近的机台的ID吧" };
+      } else if (!playerData.location) {
+        return { type: "text", content: "你还没有插眼呢，禁止出勤，请发送  插眼 地名  在指定位置插眼吧" };
       }
 
       reply = await GoGoGo(userId);
@@ -120,8 +96,7 @@ module.exports = {
 const bindCommand = new RegExp(/^[/!]?绑定(.*)/);
 const getPlayerInfoCommand = new RegExp(/^[/!]?个人信息(.*)/);
 const getRankCommand = new RegExp(/^[/!]?战绩(.*)/);
-const getMachineStateCommand = new RegExp(/^[/!]?机台状态(.*)/);
-const focusMachineCommand = new RegExp(/^[/!]?关注机台(.*)/);
+const setLocationCommand = new RegExp(/^[/!]?插眼(.*)/);
 const goGoGOCommand = new RegExp(/^[/!]?我要出勤/);
 
 const defaultMusicIndex = 6; // 音乐类型，1 最新，2 国语，3 粤语，4 韩文，5 欧美，6 其他
@@ -131,6 +106,9 @@ const { createCanvas, loadImage, registerFont } = require("canvas"); // 用于�
 const path = require("path");
 const fs = require("fs");
 const axios = require("axios").default;
+/**
+ * authorization.token 文件内容为玩家账户密钥，向服务器请求数据时会携带该参数鉴权，具有修改账户的最高权限，需要自行抓包获取，请勿透露给不信任的他人，否则最糟糕的情况可能会导致游戏账户被恶意注销
+ */
 const authorization = fs.readFileSync(
   path.join(__dirname, "danceCube", "authorization.token"),
   "utf-8",
@@ -150,8 +128,8 @@ const headers = {
 const api = {
   playerInfo: baseURL + "Dance/api/User/GetInfo",
   playerRank: baseURL + "Dance/api/User/GetMyRank",
-  machineList: baseURL + "Dance/OAuth/GetMachineList",
-  machineListByPlace: baseURL + "Dance/OAuth/GetMachineListByPlace",
+  geocoding: "https://api.map.baidu.com/geocoding/v3",
+  machineListByLocation: baseURL + "Dance/OAuth/GetMachineListByLocation",
 };
 //加载字体
 const titleFontName = "优设标题圆";
@@ -269,7 +247,7 @@ async function AnalysisPlayerInfo(playerId) {
   ctx.font = `160px '${eventFontName}'`;
   ctx.fillStyle = "rgba(99, 99, 99, 0.2)";
   ctx.textAlign = "center";
-  ctx.fillText("公  测", canvas.width / 2, canvas.height / 2 + 80);
+  ctx.fillText("测  试", canvas.width / 2, canvas.height / 2 + 80);
 
   // 保存图片
   const fileName = `${playerId}.png`;
@@ -319,8 +297,12 @@ async function GetPlayerRank(playerId, musicIndex) {
       musicIndex: musicIndex,
       userId: playerId,
     },
+    validateStatus: (status) => status < 500,
   })
     .then(async function (response) {
+      if (response.status !== 200) {
+        return { error: response.data.Message };
+      }
       const results = response.data;
       const reply = results.map((result) => {
         const musicName = result.Name;
@@ -420,7 +402,7 @@ async function GetPlayerRank(playerId, musicIndex) {
   ctx.font = `170px '${eventFontName}'`;
   ctx.fillStyle = "rgba(33, 33, 33, 0.4)";
   ctx.textAlign = "center";
-  ctx.fillText("公  测", canvas.width / 2, canvas.height / 2 + 80);
+  ctx.fillText("测  试", canvas.width / 2, canvas.height / 2 + 80);
 
   // 保存图片
   const fileName = `${playerId}.png`;
@@ -432,148 +414,89 @@ async function GetPlayerRank(playerId, musicIndex) {
 }
 
 /**
- * 根据省市查询机台状态
- * @param {string} province 省
- * @param {string} city 市
+ * 插眼，根据玩家提供的地名查询经纬度并存入玩家数据库
+ * @param {string} location 位置
  */
-async function GetMachineListByPlace(province, city) {
-  const machineList = await axios.get(api.machineListByPlace, {
-    headers: headers,
+async function Geocoding(userId, location) {
+  // 百度地理编码
+  const { lng, lat, error } = await axios.get(api.geocoding, {
     params: {
-      province: province,
-      city: city,
+      address: location,
+      ak: baiduAk,
+      output: "json",
     },
   })
     .then(async function (response) {
-      const machineList = response.data;
-      const reply = machineList.map((machine) => {
-        const machineName = machine.PlaceName.replace(/\n/g, "");
-        const address = machine.Address.replace(/\n/g, "");
-        const status = machine.Online ? "🟢" : "🔴";
-        const machineGeneration = machine.Img1.includes("9700") ? "Ⅰ代" : "Ⅱ代"; // 按机台图片名判断其实不是很准确，但是大致看了下八九不离十
-        const machineTerminalID = machine.MachineTerminalID;
-        return `${status}${machineName} ${machineGeneration}\nID: ${machineTerminalID}\n${address}\n`;
-      });
-      return `${province}${city}机台状态：
-
-${reply.join("\n")}
-发送 关注机台 机台ID 可以关注机台
-（机台在线状态和世代仅供参考，以实际状态为准）
-`;
+      if (response.data.status !== 0) {
+        console.log(`地理编码失败：${response.data.message} `.log);
+        return { error: response.data.message };
+      }
+      return response.data.result.location;
     })
     .catch(function (error) {
-      console.log(`获取机台状态失败: ${error}`.error);
-      return "获取机台状态失败: ", error;
-    });
-  return machineList;
-}
-
-/**
- * 根据 location 解析省市
- * @param {string} location 省市
- */
-async function AnalysisLocation(location) {
-  // 简陋的省份解析
-  let province = location.split("省")[0];
-  const city = location.split("省")[1];
-
-  if (!province || !city) {
-    return;
-  }
-
-  province += "省";
-  return { province, city };
-}
-
-/**
- * 关注机台，后续出勤时直接查询该机台号
- * @param {string} machineTerminalID 机台号
- */
-async function FocusMachine(userId, machineTerminalID) {
-  // 先验证机台是否存在
-  const machineInfo = await axios.get(api.machineList, {
-    headers: headers,
-    params: {
-      onlyPassed: true,
-      getUserInfo: false, // 舞立方点灯计划的点灯玩家
-    },
-  })
-    .then(async function (response) {
-      const machine = response.data.find((machine) => {
-        return machine.MachineTerminalID === machineTerminalID;
-      });
-      return machine;
-    })
-    .catch(function (error) {
-      console.log(`获取玩家资料失败: ${error}`.error);
-      return "获取玩家资料失败: ", error;
+      console.log(`地理编码失败: ${error} `.log);
+      return { error };
     });
 
-  if (!machineInfo) {
-    return "这个机台不存在呢，是不是输错了呢，请发送 机台状态 指令来查询机台ID吧";
+  if (!lng || !lat) {
+    return `插眼失败：${error}，可能是这个地名不太好找，请换个地名再试试`;
   }
-
-  // 再获取机台位置
-  const province = machineInfo.ProvinceAndCity.split(" ")[0];
-  const city = machineInfo.ProvinceAndCity.split(" ")[1];
 
   await DanceCubeModel.update({
-    focusMachine: {
-      machineTerminalID: machineTerminalID,
-      province: province,
-      city: city,
-    },
+    location: { lng, lat },
   }, {
     where: {
       userId: userId,
     }
   });
 
-  return `关注成功，现在你关注的机台是 ${machineInfo.PlaceName}，发送 我要出勤 查询你关注的机台情况`;
+  return "插眼成功，发送 我要出勤 查询你附近的机台状态";
 }
 
 /**
- * 查询出勤状态
+ * 查询眼位附近机台状态
  * @param {*} userId 用户id
  */
 async function GoGoGo(userId) {
   /**
-   * focusMachine: { machineTerminalID, province, city }
+   * location: { lng, lat }
    */
-  const { focusMachine } = await DanceCubeModel.findOne({
+  const { location } = await DanceCubeModel.findOne({
     where: {
       userId: userId,
     },
-    attributes: ["focusMachine"],
+    attributes: ["location"],
   });
 
-  const machine = await axios.get(api.machineListByPlace, {
+  const machineList = await axios.get(api.machineListByLocation, {
     headers: headers,
-    params: {
-      province: focusMachine.province,
-      city: focusMachine.city,
-    },
+    params: { ...location },
   })
     .then(async function (response) {
-      const machineList = response.data;
-      const machine = machineList.find((machine) => {
-        return machine.MachineTerminalID === focusMachine.machineTerminalID;
-      });
-      return machine;
+      console.log(`查询眼位附近机台状态：${response.data} `);
+      return response.data;
     })
     .catch(function (error) {
-      console.log(`获取机台状态失败: ${error}`.error);
-      return "获取机台状态失败: ", error;
+      console.log(`获取机台状态失败：${error} `.error);
+      return "获取机台状态失败：", error;
     });
+
+  if (machineList.length === 0) {
+    return "获取机台状态失败：附近没有找到任何机台";
+  }
+
+  const machineCount = machineList.length;
+  const machine = machineList[0]; // 选择最近的一台舞立方
   const machineName = machine.PlaceName.replace(/\n/g, "");
   const provinceAndCity = machine.ProvinceAndCity.replace(/\n/g, "");
   const address = machine.Address.replace(/\n/g, "");
-  const longitudeAndLatitude = `${machine.Longitude}, ${machine.Latitude}`; // 经纬度
+  const longitudeAndLatitude = `${machine.Longitude}, ${machine.Latitude} `; // 经纬度
   const status = machine.Online ? "🟢机台在线，立即出勤" : "🔴机台离线，散了吧";
   const machineGeneration = machine.Img1.includes("9700") ? "Ⅰ代机" : "Ⅱ代机";
   const machinePicture1Link = `https://dancedemo.shenghuayule.com/Dance/${machine.Img1}`;
   const machinePicture2Link = `https://dancedemo.shenghuayule.com/Dance/${machine.Img2}`;
-  return `${status}
+  return `眼位附近有${machineCount}台舞立方，下面播报距离眼位最近的舞立方状态：
+${status}
 ${machineName} ${machineGeneration}
 ${provinceAndCity} ${address}
 坐标：${longitudeAndLatitude}
