@@ -1,6 +1,5 @@
-/**
- * authorization.token 文件内容为玩家账户密钥，向服务器请求数据时会携带该参数鉴权，具有修改账户的最高权限，需要自行抓包获取，请勿透露给不信任的他人，否则最糟糕的情况可能会导致游戏账户被恶意注销
- */
+// 用于插眼所需要的百度地理编码密钥，需要自己去申请：https://lbsyun.baidu.com/index.php?title=webapi/guide/webservice-geocoding
+const baiduAk = "";
 
 module.exports = {
   插件名: "舞立方信息查询插件",
@@ -107,6 +106,9 @@ const { createCanvas, loadImage, registerFont } = require("canvas"); // 用于�
 const path = require("path");
 const fs = require("fs");
 const axios = require("axios").default;
+/**
+ * authorization.token 文件内容为玩家账户密钥，向服务器请求数据时会携带该参数鉴权，具有修改账户的最高权限，需要自行抓包获取，请勿透露给不信任的他人，否则最糟糕的情况可能会导致游戏账户被恶意注销
+ */
 const authorization = fs.readFileSync(
   path.join(__dirname, "danceCube", "authorization.token"),
   "utf-8",
@@ -417,23 +419,28 @@ async function GetPlayerRank(playerId, musicIndex) {
  */
 async function Geocoding(userId, location) {
   // 百度地理编码
-  const { lng, lat } = await axios.get(api.geocoding, {
+  const { lng, lat, error } = await axios.get(api.geocoding, {
     params: {
       address: location,
-      ak: "u9vKc81UQZLPvVkNnX0XklXI58WqiKF6",
+      ak: baiduAk,
       output: "json",
     },
   })
     .then(async function (response) {
       if (response.data.status !== 0) {
-        return "地理编码失败";
+        console.log(`地理编码失败：${response.data.message} `.log);
+        return { error: response.data.message };
       }
       return response.data.result.location;
     })
     .catch(function (error) {
-      console.log(`地理编码失败: ${error}`.error);
-      return "地理编码失败: ", error;
+      console.log(`地理编码失败: ${error} `.log);
+      return { error };
     });
+
+  if (!lng || !lat) {
+    return `插眼失败：${error}，可能是这个地名不太好找，请换个地名再试试`;
+  }
 
   await DanceCubeModel.update({
     location: { lng, lat },
@@ -466,11 +473,11 @@ async function GoGoGo(userId) {
     params: { ...location },
   })
     .then(async function (response) {
-      console.log(`查询眼位附近机台状态：${response.data}`);
+      console.log(`查询眼位附近机台状态：${response.data} `);
       return response.data;
     })
     .catch(function (error) {
-      console.log(`获取机台状态失败：${error}`.error);
+      console.log(`获取机台状态失败：${error} `.error);
       return "获取机台状态失败：", error;
     });
 
@@ -483,7 +490,7 @@ async function GoGoGo(userId) {
   const machineName = machine.PlaceName.replace(/\n/g, "");
   const provinceAndCity = machine.ProvinceAndCity.replace(/\n/g, "");
   const address = machine.Address.replace(/\n/g, "");
-  const longitudeAndLatitude = `${machine.Longitude}, ${machine.Latitude}`; // 经纬度
+  const longitudeAndLatitude = `${machine.Longitude}, ${machine.Latitude} `; // 经纬度
   const status = machine.Online ? "🟢机台在线，立即出勤" : "🔴机台离线，散了吧";
   const machineGeneration = machine.Img1.includes("9700") ? "Ⅰ代机" : "Ⅱ代机";
   const machinePicture1Link = `https://dancedemo.shenghuayule.com/Dance/${machine.Img1}`;
