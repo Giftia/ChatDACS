@@ -5,7 +5,7 @@
 module.exports = {
   插件名: "公测·舞立方信息查询插件",
   指令: "^[/!]?(绑定|个人信息|战绩|机台状态|关注机台|我要出勤)(.*)",
-  版本: "1.1",
+  版本: "1.2",
   作者: "Giftina",
   描述: "舞立方信息查询，可以查询玩家信息以及机台状态。数据来源以及素材版权归属 胜骅科技 https://www.arccer.com/ ，如有侵权请联系作者删除。",
   使用示例: "个人信息",
@@ -55,7 +55,12 @@ module.exports = {
       }
 
       const musicIndex = args[2] || defaultMusicIndex;
-      reply = await GetPlayerRank(playerId, musicIndex);
+      const playerRank = await GetPlayerRank(playerId, musicIndex);
+      if (playerRank.error) {
+        reply = `查询战绩失败：${playerRank.error}`;
+      } else {
+        reply = playerRank;
+      }
     }
     // 机台状态
     else if (getMachineStateCommand.test(msg)) {
@@ -69,7 +74,7 @@ module.exports = {
           return { type: "text", content: errorNoData };
         } else {
           const location = await AnalysisLocation(playerData.location);
-          console.log(`将绑定信息地址 ${playerData.location} 解析为 ${location.province + location.city}`.log);
+          console.log(`将绑定信息地址 ${playerData.location} 解析为 ${location.province + " " + location.city}`.log);
           if (!location) {
             return { type: "text", content: "解析你的地区失败了，对不起呀，你还可以手动查询，指令如：机台状态 浙江省 杭州市" };
           } else {
@@ -83,7 +88,12 @@ module.exports = {
         return { type: "text", content: "没有正确指定省份或城市噢，正确指令如：机台状态 浙江省 杭州市，市辖区示例：机台状态 上海市" };
       }
 
-      reply = await GetMachineListByPlace(province, city);
+      const machineListByPlace = await GetMachineListByPlace(province, city);
+      if (machineListByPlace.error) {
+        reply = `查询机台状态失败：${machineListByPlace.error}`;
+      } else {
+        reply = machineListByPlace;
+      }
     }
     // 关注机台
     else if (focusMachineCommand.test(msg)) {
@@ -98,7 +108,12 @@ module.exports = {
       }
 
       const machineId = args[1];
-      reply = await FocusMachine(userId, machineId);
+      const machineFocused = await FocusMachine(userId, machineId);
+      if (machineFocused.error) {
+        reply = `关注机台失败：${machineFocused.error}`;
+      } else {
+        reply = machineFocused;
+      }
     }
     // 我要出勤
     else if (goGoGOCommand.test(msg)) {
@@ -110,7 +125,12 @@ module.exports = {
         return { type: "text", content: "你还没有关注机台呢，禁止出勤，请发送 机台状态 来查询你附近的机台的ID吧" };
       }
 
-      reply = await GoGoGo(userId);
+      const couldGoGoGo = await GoGoGo(userId);
+      if (couldGoGoGo.error) {
+        reply = `出勤失败：${couldGoGoGo.error}`;
+      } else {
+        reply = couldGoGoGo;
+      }
     }
 
     return { type: "text", content: reply };
@@ -319,8 +339,12 @@ async function GetPlayerRank(playerId, musicIndex) {
       musicIndex: musicIndex,
       userId: playerId,
     },
+    validateStatus: (status) => status < 500,
   })
     .then(async function (response) {
+      if (response.status !== 200) {
+        return { error: response.data.Message };
+      }
       const results = response.data;
       const reply = results.map((result) => {
         const musicName = result.Name;
@@ -443,8 +467,12 @@ async function GetMachineListByPlace(province, city) {
       province: province,
       city: city,
     },
+    validateStatus: (status) => status < 500,
   })
     .then(async function (response) {
+      if (response.status !== 200) {
+        return { error: response.data.Message };
+      }
       const machineList = response.data;
       const reply = machineList.map((machine) => {
         const machineName = machine.PlaceName.replace(/\n/g, "");
@@ -497,8 +525,12 @@ async function FocusMachine(userId, machineTerminalID) {
       onlyPassed: true,
       getUserInfo: false, // 舞立方点灯计划的点灯玩家
     },
+    validateStatus: (status) => status < 500,
   })
     .then(async function (response) {
+      if (response.status !== 200) {
+        return { error: response.data.Message };
+      }
       const machine = response.data.find((machine) => {
         return machine.MachineTerminalID === machineTerminalID;
       });
@@ -553,8 +585,12 @@ async function GoGoGo(userId) {
       province: focusMachine.province,
       city: focusMachine.city,
     },
+    validateStatus: (status) => status < 500,
   })
     .then(async function (response) {
+      if (response.status !== 200) {
+        return { error: response.data.Message };
+      }
       const machineList = response.data;
       const machine = machineList.find((machine) => {
         return machine.MachineTerminalID === focusMachine.machineTerminalID;
