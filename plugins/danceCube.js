@@ -507,9 +507,8 @@ async function GoGoGo(userId) {
       });
       return `眼位附近有${machineList.length}台舞立方，下面播报舞立方状态：
 
-      ${reply.join("\n")}
-（机台在线状态和世代仅供参考，以实际状态为准）
-  `;
+${reply.join("\n")}
+（机台在线状态和世代仅供参考，以实际状态为准）`;
     })
     .catch(function (error) {
       console.log(`获取机台状态失败: ${error} `.error);
