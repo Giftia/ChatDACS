@@ -4,7 +4,7 @@ const baiduAk = "";
 module.exports = {
   插件名: "舞立方信息查询插件",
   指令: "^[/!]?(绑定|个人信息|战绩|插眼|我要出勤)(.*)",
-  版本: "2.0",
+  版本: "2.1",
   作者: "Giftina",
   描述: "舞立方信息查询，可以查询玩家信息以及机台状态。数据来源以及素材版权归属 胜骅科技 https://www.arccer.com/ ，如有侵权请联系作者删除。",
   使用示例: "个人信息",
@@ -82,7 +82,7 @@ module.exports = {
       const playerData = await DanceCubeModel.findOne({ where: { userId } });
       if (!playerData) {
         return { type: "text", content: errorNoData };
-      } else if (!playerData.location) {
+      } else if (playerData.location == {}) {
         return { type: "text", content: "你还没有插眼呢，禁止出勤，请发送  插眼 地名  在指定位置插眼吧" };
       }
 
@@ -150,11 +150,18 @@ async function BindUser(userId, playerId) {
     return `获取玩家资料失败：${playerInfo.error}`;
   }
 
+  let location = {};
+  const { lng, lat } = await BaiduGeocoding(playerInfo.CityName);
+  if (!lng || !lat) {
+    console.log("获取玩家坐标失败，置为空".error);
+  }
+  location = { lng, lat };
+
   await DanceCubeModel.upsert({
     userId,
     playerId,
     playerName: playerInfo.UserName,
-    location: playerInfo.CityName,
+    location,
   }, {
     where: {
       userId,
@@ -414,14 +421,13 @@ async function GetPlayerRank(playerId, musicIndex) {
 }
 
 /**
- * 插眼，根据玩家提供的地名查询经纬度并存入玩家数据库
- * @param {string} location 位置
+ * 根据地名查询经纬度
  */
-async function Geocoding(userId, location) {
+async function BaiduGeocoding(address) {
   // 百度地理编码
   const { lng, lat, error } = await axios.get(api.geocoding, {
     params: {
-      address: location,
+      address: address,
       ak: baiduAk,
       output: "json",
     },
@@ -437,6 +443,17 @@ async function Geocoding(userId, location) {
       console.log(`地理编码失败: ${error} `.log);
       return { error };
     });
+
+  return { lng, lat, error };
+}
+
+/**
+ * 插眼，根据玩家提供的地名查询经纬度并存入玩家数据库
+ * @param {string} playerId 玩家id
+ * @param {string} address 位置
+ */
+async function Geocoding(userId, address) {
+  const { lng, lat, error } = await BaiduGeocoding(address);
 
   if (!lng || !lat) {
     return `插眼失败：${error}，可能是这个地名不太好找，请换个地名再试试`;
@@ -454,8 +471,7 @@ async function Geocoding(userId, location) {
 }
 
 /**
- * 查询眼位附近机台状态
- * @param {*} userId 用户id
+ * 查询眼位附近的机台状态
  */
 async function GoGoGo(userId) {
   /**
@@ -471,36 +487,35 @@ async function GoGoGo(userId) {
   const machineList = await axios.get(api.machineListByLocation, {
     headers: headers,
     params: { ...location },
+    validateStatus: (status) => status < 500,
   })
     .then(async function (response) {
-      console.log(`查询眼位附近机台状态：${response.data} `);
-      return response.data;
+      if (response.status !== 200) {
+        return { error: response.data.Message };
+      }
+      const machineList = response.data;
+      const reply = machineList.map((machine) => {
+        const machineName = machine.PlaceName.replace(/\n/g, "");
+        const provinceAndCity = machine.ProvinceAndCity.replace(/\n/g, "");
+        const address = machine.Address.replace(/\n/g, "");
+        const status = machine.Online ? "🟢机台在线，立即出勤" : "🔴机台离线，散了吧";
+        const machineGeneration = machine.Img1.includes("9700") ? "Ⅰ代" : "Ⅱ代"; // 按机台图片名判断其实不是很准确，但是大致看了下八九不离十
+        const machinePicture1Link = `https://dancedemo.shenghuayule.com/Dance/${machine.Img1}`;
+        const machinePicture2Link = `https://dancedemo.shenghuayule.com/Dance/${machine.Img2}`;
+        // [CQ:image,file=${machinePicture1Link}][CQ:image,file=${machinePicture2Link}]
+        return `${status}\n${machineName} ${machineGeneration}\n${provinceAndCity} ${address}\n`;
+      });
+      return `眼位附近有${machineList.length}台舞立方，下面播报舞立方状态：
+
+      ${reply.join("\n")}
+（机台在线状态和世代仅供参考，以实际状态为准）
+  `;
     })
     .catch(function (error) {
-      console.log(`获取机台状态失败：${error} `.error);
-      return "获取机台状态失败：", error;
+      console.log(`获取机台状态失败: ${error} `.error);
+      return "获取机台状态失败: ", error;
     });
-
-  if (machineList.length === 0) {
-    return "获取机台状态失败：附近没有找到任何机台";
-  }
-
-  const machineCount = machineList.length;
-  const machine = machineList[0]; // 选择最近的一台舞立方
-  const machineName = machine.PlaceName.replace(/\n/g, "");
-  const provinceAndCity = machine.ProvinceAndCity.replace(/\n/g, "");
-  const address = machine.Address.replace(/\n/g, "");
-  const longitudeAndLatitude = `${machine.Longitude}, ${machine.Latitude} `; // 经纬度
-  const status = machine.Online ? "🟢机台在线，立即出勤" : "🔴机台离线，散了吧";
-  const machineGeneration = machine.Img1.includes("9700") ? "Ⅰ代机" : "Ⅱ代机";
-  const machinePicture1Link = `https://dancedemo.shenghuayule.com/Dance/${machine.Img1}`;
-  const machinePicture2Link = `https://dancedemo.shenghuayule.com/Dance/${machine.Img2}`;
-  return `眼位附近有${machineCount}台舞立方，下面播报距离眼位最近的舞立方状态：
-${status}
-${machineName} ${machineGeneration}
-${provinceAndCity} ${address}
-坐标：${longitudeAndLatitude}
-[CQ:image,file=${machinePicture1Link}][CQ:image,file=${machinePicture2Link}]`;
+  return machineList;
 }
 
 const DanceCubeModel = require(path.join(process.cwd(), "plugins", "system", "model", "danceCubeModel.js"));
