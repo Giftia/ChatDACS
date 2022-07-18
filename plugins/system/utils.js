@@ -315,8 +315,12 @@ module.exports = {
     }
     const group = await QQGroupModel.findOne({ where: { groupId } });
 
-    // 如果没有获取到，应该是刚刚加入群，默认开启群服务
-    return group?.serviceEnabled || true;
+    // 如果没有获取到群，应该是小夜刚刚加入群，默认开启群服务
+    if (!group) {
+      return true;
+    }
+
+    return group.serviceEnabled;
   },
 
   /**
