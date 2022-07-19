@@ -4,7 +4,7 @@
   "dependencies": {
     "axios": "0.27.2",
     "canvas": "2.9.3",
-    "dayjs": "1.11.3",
+    "dayjs": "1.11.4",
     "mp3-duration": "1.1.0",
     "node-schedule": "2.1.0",
     "request": "2.88.2",
