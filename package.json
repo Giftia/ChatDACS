@@ -26,7 +26,7 @@
     "request": "2.88.2",
     "require.all": "2.0.5",
     "socket.io": "4.5.1",
-    "sqlite3": "5.0.8",
+    "sqlite3": "5.0.9",
     "winston": "3.8.1",
     "yaml": "2.1.1"
   },
