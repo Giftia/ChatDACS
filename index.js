@@ -70,15 +70,6 @@ jieba.load({
 });
 
 /**
- * 配置输入器
- */
-const readline = require("readline");
-const readLine = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
-
-/**
  * 本地日志配置
  */
 const winston = require("winston");
@@ -135,7 +126,6 @@ process.on("unhandledRejection", (err) => {
  */
 var boomTimer; // 60s计时器
 var onlineUsers = 0, // 预定义
-  QQBOT_QQ,
   QQBOT_ADMIN_LIST,
   QQ_GROUP_WELCOME_MESSAGE,
   QQ_GROUP_POKE_REPLY_MESSAGE,
@@ -152,7 +142,6 @@ var onlineUsers = 0, // 预定义
   QQBOT_FUDU_PROBABILITY,
   QQBOT_SAVE_ALL_IMAGE_TO_LOCAL_SWITCH,
   QQBOT_MAX_MINE_AT_MOST,
-  xiaoye_ated,
   QQBOT_PRIVATE_CHAT_SWITCH,
   AUTO_APPROVE_QQ_FRIEND_REQUEST_SWITCH,
   c1c_count = 0,
@@ -324,7 +313,7 @@ async function StartQQBot() {
     }
 
     // 被禁言1小时以上自动退群
-    if (event.sub_type == "ban" && event.user_id == (event.message?.self_id ?? QQBOT_QQ)) {
+    if (event.sub_type == "ban" && event.user_id == event.self_id) {
       if (event.duration >= 3599) {
         axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_leave?group_id=${event.group_id}`);
         logger.info(
@@ -336,7 +325,7 @@ async function StartQQBot() {
         );
       } else {
         // 被禁言改名
-        axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${event.message?.self_id ?? QQBOT_QQ}&card=${encodeURI("你妈的，为什么 禁言我")}`);
+        axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${event.self_id}&card=${encodeURI("你妈的，为什么 禁言我")}`);
         logger.info(
           `小夜在群 ${event.group_id} 被禁言，自动改名为 你妈的，为什么 禁言我`.log,
         );
@@ -457,7 +446,7 @@ async function StartQQBot() {
         const who = Constants.has_qq_reg.exec(event.message)[1];
         if (Constants.is_qq_reg.test(who)) {
           // 如果是自己要被张菊，那么张菊
-          if ((event.message?.self_id ?? QQBOT_QQ) == who) {
+          if (event.self_id == who) {
             axios.get(
               `http://${GO_CQHTTP_SERVICE_API_URL}/get_group_member_info?group_id=${event.group_id}&user_id=${event.user_id}`
             ).then(async (res) => {
@@ -592,13 +581,13 @@ async function StartQQBot() {
             const who = Constants.has_qq_reg.exec(event.message)[1];
             if (Constants.is_qq_reg.test(who)) {
               // 如果是自己要被闭菊，那么闭菊
-              if ((event.message?.self_id ?? QQBOT_QQ) == who) {
+              if (event.self_id == who) {
                 logger.error(
                   `群 ${event.group_id} 停止了小夜服务`.error,
                 );
                 await utils.DisableGroupService(event.group_id);
                 res.send({
-                  reply: `小夜的菊花闭上了，这只小夜在本群的所有服务已经停用，取消请发 张菊[CQ:at,qq=${event.message?.self_id ?? QQBOT_QQ}]`,
+                  reply: `小夜的菊花闭上了，这只小夜在本群的所有服务已经停用，取消请发 张菊[CQ:at,qq=${event.self_id}]`,
                 });
                 // 不是这只小夜被闭菊的话，嘲讽那只小夜（或人
               } else {
@@ -613,7 +602,7 @@ async function StartQQBot() {
             );
             await utils.DisableGroupService(event.group_id);
             res.send({
-              reply: `小夜的菊花闭上了，小夜在本群的所有服务已经停用，取消请发 张菊[CQ:at,qq=${event.message?.self_id ?? QQBOT_QQ}]`,
+              reply: `小夜的菊花闭上了，小夜在本群的所有服务已经停用，取消请发 张菊[CQ:at,qq=${event.self_id}]`,
             });
             return 0;
           }
@@ -626,7 +615,7 @@ async function StartQQBot() {
             event.group_id,
             "", // 群名还挺麻烦的，先不搞了
             {
-              selfId: event.message?.self_id,
+              selfId: event.self_id,
               targetId: event.sub_type == "poke" ? event.target_id : null,
             }
           );
@@ -640,7 +629,7 @@ async function StartQQBot() {
           // 戳一戳
           if (
             event.sub_type === "poke" &&
-            event.target_id == (event?.self_id ?? QQBOT_QQ)
+            event.target_id == event.self_id
           ) {
             logger.info("小夜被戳了".log);
             c1c_count++;
@@ -1342,11 +1331,11 @@ async function StartQQBot() {
           // 是否触发回复
           let replyFlag = Math.floor(Math.random() * 100);
           // 如果被@了，那么回复几率上升80%
-          let atReplacedMsg = event.message; // 要把[CQ:at,qq=${event.message?.self_id ?? QQBOT_QQ}] 去除掉，否则聊天核心会乱成一锅粥
-          if (xiaoye_ated.test(event.message)) {
+          let atReplacedMsg = event.message; // 要把[CQ:at,qq=${event.self_id}] 去除掉，否则聊天核心会乱成一锅粥
+          if (new RegExp(`\\[CQ:at,qq=${event.self_id}\\]`).test(event.message)) {
             replyFlag -= 80;
             atReplacedMsg = event.message
-              .replace(`[CQ:at,qq=${event.message?.self_id ?? QQBOT_QQ}]`, "")
+              .replace(`[CQ:at,qq=${event.self_id}]`, "")
               .trim(); // 去除@小夜
           }
           // 触发回复，那就由小夜来表演嘴臭
@@ -1661,7 +1650,6 @@ async function InitConfig() {
   QQ_GUILD_APP_ID = config.ApiKey.QQ_GUILD_APP_ID ?? "";
   QQ_GUILD_TOKEN = config.ApiKey.QQ_GUILD_TOKEN ?? "";
 
-  QQBOT_QQ = config.qqBot.QQBOT_QQ; // qqBot使用的qq帐号
   QQBOT_ADMIN_LIST = config.qqBot.QQBOT_ADMIN_LIST; // 小夜的管理员列表
   QQ_GROUP_WELCOME_MESSAGE = config.qqBot.QQ_GROUP_WELCOME_MESSAGE; // qq入群欢迎语
   QQ_GROUP_POKE_REPLY_MESSAGE = config.qqBot.QQ_GROUP_POKE_REPLY_MESSAGE; // 戳一戳的文案
@@ -1685,19 +1673,7 @@ async function InitConfig() {
     logger.info("小夜web端自动聊天关闭\n".off);
   }
 
-  /**
-   * 启动时请求用户是否开启QQbot
-   */
   if (CONNECT_GO_CQHTTP_SWITCH) {
-    // 先看配置里有没有配置好bot的qq号，没配置就请求输入
-    if (!QQBOT_QQ) {
-      readLine.question("配置文件中尚未配置小夜的QQ帐号，请在此输入想登录的机器人账号，按回车提交", (answer) => {
-        QQBOT_QQ = answer;
-        logger.info(`已将小夜的QQ帐号设置为 ${QQBOT_QQ}`.log);
-        readLine.close();
-      });
-    }
-
     /**
      * 在 Windows、Linux 系统下自动启动go-cqhttp
      */
@@ -1727,10 +1703,8 @@ async function InitConfig() {
     }
 
     logger.info(
-      `小夜QQ接入开启，配置: \n  ·使用QQ帐号 ${QQBOT_QQ}\n  ·对接go-cqhttp接口 ${GO_CQHTTP_SERVICE_API_URL}\n  ·监听反向post于 127.0.0.1:${WEB_PORT}${GO_CQHTTP_SERVICE_ANTI_POST_API}\n  ·私聊服务是否开启: ${QQBOT_PRIVATE_CHAT_SWITCH}\n`
-        .on,
+      `小夜QQ接入开启，配置: \n  ·对接go-cqhttp接口 ${GO_CQHTTP_SERVICE_API_URL}\n  ·监听反向post于 127.0.0.1:${WEB_PORT}${GO_CQHTTP_SERVICE_ANTI_POST_API}\n  ·私聊服务是否开启: ${QQBOT_PRIVATE_CHAT_SWITCH}\n`.on,
     );
-    xiaoye_ated = new RegExp(`\\[CQ:at,qq=${QQBOT_QQ}\\]`); // 匹配小夜被@
     await StartQQBot();
   } else {
     logger.info("小夜QQ接入关闭\n".off);
@@ -1790,6 +1764,7 @@ function StartHttpServer() {
 
 /**
  * 异步结巴 thanks@ssp97
+ * @param {Promise<string>} text
  */
 async function ChatJiebaFuzzy(msg) {
   msg = msg.replace("/", "");
@@ -1838,7 +1813,7 @@ async function ChatJiebaFuzzy(msg) {
 /**
  * 响应聊天回复，超智能(障)的聊天算法: 全匹配搜索 => 模糊搜索 => 分词模糊搜索 => 敷衍
  * @param {string} ask 关键词
- * @returns {string} 小夜回复
+ * @returns {Promise<string>} 小夜回复
  */
 async function ChatProcess(ask) {
   //如果ask异常，可能是非聊天事件触发了响应聊天回复，直接敷衍回复
@@ -1887,7 +1862,7 @@ async function ChatProcess(ask) {
 
 /**
  * 浓度极高的ACGN圈台词问答题库
- * @returns {object} { question, answer }
+ * @returns {Promise<object>} { question, answer }
  */
 async function ECYWenDa() {
   const data = await axios.get("https://api.oddfar.com/yl/q.php?c=2001&encode=json");
