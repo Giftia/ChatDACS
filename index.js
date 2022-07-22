@@ -326,31 +326,19 @@ async function StartQQBot() {
     // 被禁言1小时以上自动退群
     if (event.sub_type == "ban" && event.user_id == (event.message?.self_id ?? QQBOT_QQ)) {
       if (event.duration >= 3599) {
-        request(
-          `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_leave?group_id=${event.group_id}`,
-          function (error, _response, _body) {
-            if (!error) {
-              logger.info(
-                `小夜在群 ${event.group_id} 被禁言超过1小时，自动退群`.error,
-              );
-              io.emit(
-                "system",
-                `@小夜在群 ${event.group_id} 被禁言超过1小时，自动退群`,
-              );
-            }
-          },
+        axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_leave?group_id=${event.group_id}`);
+        logger.info(
+          `小夜在群 ${event.group_id} 被禁言超过1小时，自动退群`.error,
+        );
+        io.emit(
+          "system",
+          `@小夜在群 ${event.group_id} 被禁言超过1小时，自动退群`,
         );
       } else {
         // 被禁言改名
-        request(
-          `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${event.message?.self_id ?? QQBOT_QQ}&card=${encodeURI("你妈的，为什么 禁言我")}`,
-          function (error, _response, _body) {
-            if (!error) {
-              logger.info(
-                `小夜在群 ${event.group_id} 被禁言，自动改名为 你妈的，为什么 禁言我`.log,
-              );
-            }
-          },
+        axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${event.message?.self_id ?? QQBOT_QQ}&card=${encodeURI("你妈的，为什么 禁言我")}`);
+        logger.info(
+          `小夜在群 ${event.group_id} 被禁言，自动改名为 你妈的，为什么 禁言我`.log,
         );
       }
       res.send();
@@ -373,12 +361,12 @@ async function StartQQBot() {
       logger.info(
         `小夜收到加群请求，请求人：${event.user_id}，请求内容：${event.comment}，发送小夜管理员审核`.log,
       );
-      request(
+      axios.get(
         `http://${GO_CQHTTP_SERVICE_API_URL}/send_private_msg?user_id=${QQBOT_ADMIN_LIST[0]}&message=${encodeURI(msg)}`,
       );
       // 发送给邀请者批准提醒
       const inviteReplyContent = `你好呀，感谢你的使用，邀请小夜加入你的群后，请联系这只小夜的主人 ${QQBOT_ADMIN_LIST[0]} 来批准入群邀请噢`;
-      request(
+      axios.get(
         `http://${GO_CQHTTP_SERVICE_API_URL}/send_private_msg?user_id=${event.user_id}&message=${encodeURI(inviteReplyContent)}`,
       );
       res.send({});
@@ -470,45 +458,46 @@ async function StartQQBot() {
         if (Constants.is_qq_reg.test(who)) {
           // 如果是自己要被张菊，那么张菊
           if ((event.message?.self_id ?? QQBOT_QQ) == who) {
-            request(
-              `http://${GO_CQHTTP_SERVICE_API_URL}/get_group_member_info?group_id=${event.group_id}&user_id=${event.user_id}`,
-              function (_error, _response, body) {
-                body = JSON.parse(body);
-                if (body.data.role === "owner" || body.data.role === "admin") {
-                  logger.info(
-                    `群 ${event.group_id} 启用了小夜服务`.log
-                  );
-                  utils.EnableGroupService(event.group_id);
-                  res.send({
-                    reply:
-                      "小夜的菊花被管理员张开了，这只小夜在本群的所有服务已经启用，要停用请发 闭菊",
-                  });
-                  return 0;
-                  // 不是管理，再看看是不是qqBot管理员
-                } else {
-                  for (let i in QQBOT_ADMIN_LIST) {
-                    if (event.user_id == QQBOT_ADMIN_LIST[i]) {
-                      logger.info(`群 ${event.group_id} 启用了小夜服务`.log);
-                      utils.EnableGroupService(event.group_id);
-                      res.send({
-                        reply:
-                          "小夜的菊花被主人张开了，这只小夜在本群的所有服务已经启用，要停用请发 闭菊",
-                      });
-                      return 0;
-                    }
+            axios.get(
+              `http://${GO_CQHTTP_SERVICE_API_URL}/get_group_member_info?group_id=${event.group_id}&user_id=${event.user_id}`
+            ).then(async (res) => {
+              if (res.role === "owner" || res.role === "admin") {
+                logger.info(
+                  `群 ${event.group_id} 启用了小夜服务`.log
+                );
+                await utils.EnableGroupService(event.group_id);
+                res.send({
+                  reply: "小夜的菊花被管理员张开了，这只小夜在本群的所有服务已经启用，要停用请发 闭菊",
+                });
+                return 0;
+              }
+              // 申请人不是管理，再看看是不是qqBot管理员
+              else {
+                for (let i in QQBOT_ADMIN_LIST) {
+                  if (event.user_id == QQBOT_ADMIN_LIST[i]) {
+                    logger.info(
+                      `群 ${event.group_id} 启用了小夜服务`.log
+                    );
+                    await utils.EnableGroupService(event.group_id);
+                    res.send({
+                      reply:
+                        "小夜的菊花被主人张开了，这只小夜在本群的所有服务已经启用，要停用请发 闭菊",
+                    });
+                    return 0;
                   }
-                  // 看来真不是管理员呢
-                  res.send({
-                    reply:
-                      "你不是群管理呢，小夜不张，张菊需要让管理员来帮忙张噢",
-                  });
-                  return 0;
                 }
-              },
-            );
+                // 看来真不是管理员呢
+                res.send({
+                  reply:
+                    "你不是群管理呢，小夜不张，张菊需要让管理员来帮忙张噢",
+                });
+                return 0;
+              }
+            });
             return 0;
-            // 不是这只小夜被张菊的话，嘲讽那只小夜
-          } else {
+          }
+          // 不是这只小夜被张菊的话，嘲讽那只小夜
+          else {
             res.send({ reply: `[CQ:at,qq=${who}] 说你呢，快张菊!` });
             return 0;
           }
@@ -657,29 +646,17 @@ async function StartQQBot() {
             c1c_count++;
 
             if (c1c_count > 2) {
-              c1c_count = 0;
-              request(
-                `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id
-                }&message=${encodeURI(QQ_GROUP_POKE_BOOM_REPLY_MESSAGE)}`,
-                function (error, _response, _body) {
-                  if (!error) {
-                    request(
-                      `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${event.group_id}&user_id=${event.user_id}&duration=10`,
-                      function (error, _response, _body) {
-                        if (!error) {
-                          logger.info(
-                            `小夜戳坏了，${event.user_id} 被禁言10s`.error,
-                          );
-                        }
-                      },
-                    );
-                  }
-                },
+              logger.info(
+                `小夜被戳坏了，${event.user_id} 被禁言10s`.error,
               );
+              c1c_count = 0;
+              axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(QQ_GROUP_POKE_BOOM_REPLY_MESSAGE)}`);
+              axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${event.group_id}&user_id=${event.user_id}&duration=10`);
             } else {
-              request(
-                `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id
-                }&message=${encodeURI(QQ_GROUP_POKE_REPLY_MESSAGE)}`);
+              // 被戳的回复
+              axios.get(
+                `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(QQ_GROUP_POKE_REPLY_MESSAGE)}`
+              );
             }
             return 0;
           }
@@ -1002,31 +979,18 @@ async function StartQQBot() {
             }
 
             // 先救活目标
-            request(
-              `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${event.group_id}&user_id=${who}&duration=0`,
-              function (error, _response, _body) {
-                if (!error) {
-                  console.log(
-                    `群 ${event.group_id} 的 群员 ${event.user_id} 救活了 ${who}`
-                      .log,
-                  );
-                  res.send({
-                    reply: `团长，团长你在做什么啊团长，团长!为什么要救他啊，哼，呃，啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊!!!团长救下了[CQ:at,qq=${who}]，但自己被炸飞了，休养生息${boomTime}秒!不要停下来啊!`,
-                  });
-                }
-              },
+            axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${event.group_id}&user_id=${who}&duration=0`);
+            console.log(
+              `群 ${event.group_id} 的 群员 ${event.user_id} 救活了 ${who}`.log,
             );
+            res.send({
+              reply: `团长，团长你在做什么啊团长，团长!为什么要救他啊，哼，呃，啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊!!!团长救下了[CQ:at,qq=${who}]，但自己被炸飞了，休养生息${boomTime}秒!不要停下来啊!`,
+            });
 
             // 再禁言团长
-            request(
-              `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${event.group_id}&user_id=${event.user_id}&duration=${boomTime}`,
-              function (error, _response, _body) {
-                if (!error) {
-                  console.log(
-                    `${event.user_id} 自己被炸伤${boomTime}秒`.log,
-                  );
-                }
-              },
+            axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${event.group_id}&user_id=${event.user_id}&duration=${boomTime}`);
+            console.log(
+              `${event.user_id} 团长自己被炸伤${boomTime}秒`.log,
             );
             return 0;
           }
@@ -1276,40 +1240,35 @@ async function StartQQBot() {
             who = who.replace("]", "");
             who = who.trim();
             if (Constants.is_qq_reg.test(who)) {
-              request(
+              axios.get(
                 `http://${GO_CQHTTP_SERVICE_API_URL}/get_friend_list`,
-                (err, _response, body) => {
-                  body = JSON.parse(body);
-                  if (!err && body.data.length != 0) {
-                    for (let i in body.data) {
-                      if (who == body.data[i].user_id) {
-                        res.send({
-                          reply: `小夜收到了你的孤寡订单，现在就开始孤寡[CQ:at,qq=${who}]了噢孤寡~`,
-                        });
-                        request(
-                          `http://${GO_CQHTTP_SERVICE_API_URL}/send_private_msg?user_id=${who}&message=${encodeURI(
-                            `您好，我是孤寡小夜，您的好友 ${event.user_id} 给您点了一份孤寡套餐，请查收`,
-                          )}`,
-                          function (error, _response, _body) {
-                            if (!error) {
-                              console.log(
-                                `群 ${event.group_id} 的 群员 ${event.user_id} 孤寡了 ${who}`
-                                  .log,
-                              );
-                            }
-                          },
-                        );
-                        utils.GuGua(who);
-                        return 0;
-                      }
+              ).then((res) => {
+                if (res.length != 0) {
+                  for (let i in res) {
+                    if (who == res[i].user_id) {
+                      console.log(
+                        `群 ${event.group_id} 的 群员 ${event.user_id} 孤寡了 ${who}`
+                          .log,
+                      );
+                      res.send({
+                        reply: `小夜收到了你的孤寡订单，现在就开始孤寡[CQ:at,qq=${who}]了噢孤寡~`,
+                      });
+                      axios.get(
+                        `http://${GO_CQHTTP_SERVICE_API_URL}/send_private_msg?user_id=${who}&message=${encodeURI(
+                          `您好，我是孤寡小夜，您的好友 ${event.user_id} 给您点了一份孤寡套餐，请查收`,
+                        )}`
+                      );
+                      utils.GuGua(who);
+                      return 0;
                     }
-                    res.send({
-                      reply: `小夜没有[CQ:at,qq=${who}]的好友，没有办法孤寡ta呢，请先让ta加小夜为好友吧，小夜就在群里给大家孤寡一下吧`,
-                    });
-                    utils.QunGuGua(event.group_id);
                   }
-                },
-              );
+                  // 没有加好友，不能私聊孤寡
+                  res.send({
+                    reply: `小夜没有加[CQ:at,qq=${who}]为好友，没有办法孤寡ta呢，请先让ta加小夜为好友吧，为了补偿，小夜就在群里孤寡大家吧`,
+                  });
+                  utils.QunGuGua(event.group_id);
+                }
+              });
             } else {
               // 目标不是qq号
               res.send({
@@ -1448,10 +1407,9 @@ async function ProcessGuildMessage(event) {
 
   if (pluginsReply != "") {
     const replyToGuild = utils.PluginAnswerToGoCqhttpStyle(pluginsReply);
-    request(
-      `http://${GO_CQHTTP_SERVICE_API_URL}/send_guild_channel_msg?guild_id=${event.guild_id}&channel_id=${event.channel_id}&message=${encodeURI(
-        replyToGuild,
-      )}`);
+    axios.get(
+      `http://${GO_CQHTTP_SERVICE_API_URL}/send_guild_channel_msg?guild_id=${event.guild_id}&channel_id=${event.channel_id}&message=${encodeURI(replyToGuild)}`
+    );
   }
 }
 
