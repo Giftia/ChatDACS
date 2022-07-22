@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "迫害生草图生成器插件",
   指令: "^[/!]?迫害 (.*)",
-  版本: "2.1",
+  版本: "2.2",
   作者: "Giftina",
   描述: "让小夜来制作缺德的迫害表情包吧。现在可以迫害的对象：唐可可, 上原步梦, 猛男狗, 令和, 鸭鸭, 陈睿",
   使用示例: "/迫害 上原步梦 是我，是我先，明明都是我先来的……接吻也好，拥抱也好，还是喜欢上那家伙也好。",
@@ -18,6 +18,7 @@ module.exports = {
       令和: { pictureName: "nianhao.jpg", textPosition: { textAlign: "center", left: "130", top: "110", rotate: "-0.05", wordPerLine: "1", fontsize: "60" } },
       鸭鸭: { pictureName: "yaya.gif", textPosition: { textAlign: "center", left: "30", top: "30", rotate: "0", wordPerLine: "2", fontsize: "30" } },
       陈睿: { pictureName: "bilibili.png", textPosition: { textAlign: "center", left: "92", top: "385", rotate: "-0.01", wordPerLine: "12", fontsize: "14" } },
+      寄: { pictureName: "ji.jpg", textPosition: { textAlign: "center", left: "-3", top: "150", rotate: "-0.3", wordPerLine: "1", fontsize: "50" } },
     };
 
     const defaultPohaiTarget = pohaiList.唐可可;
@@ -35,11 +36,11 @@ module.exports = {
     for (let i in pohaiTargetList) {
       if (pohaiTarget === pohaiTargetList[i]) {
         // 被迫害人发现
+        pohaiPicture = pohaiList[pohaiTargetList[i]].pictureName;
+        textPosition = pohaiList[pohaiTargetList[i]].textPosition;
         console.log(
           `被迫害人 ${pohaiTarget} 发现，使用迫害图 ${pohaiPicture}`,
         );
-        pohaiPicture = pohaiList[pohaiTargetList[i]].pictureName;
-        textPosition = pohaiList[pohaiTargetList[i]].textPosition;
       }
     }
 

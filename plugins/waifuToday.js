@@ -82,7 +82,7 @@ async function Init() {
 /**
  * 随机选一名幸运群友
  * @param {number} groupId 群号
- * @returns {number} 幸运群友qq
+ * @returns {Promise<number>} 幸运群友qq
  */
 async function getRandomOne(groupId) {
   const groupMemberList = await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_group_member_list?group_id=${groupId}`)
