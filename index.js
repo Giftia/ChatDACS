@@ -298,7 +298,27 @@ io.on("connection", async (socket) => {
  */
 async function StartQQBot() {
   /**
-   * goCqhttp 启动后加载当前所有群，写入数据库进行群服务初始化
+   * 检查 go-cqhttp 更新
+   */
+  axios.get(
+    "https://api.github.com/repos/Mrs4s/go-cqhttp/releases/latest",
+  ).then((latestRes) => {
+    // 获取当前使用的 go-cqhttp 版本号
+    axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_version_info`)
+      .then((res) => {
+        // 和最新release比对
+        if (latestRes.data.tag_name !== res.data.data.app_version) {
+          logger.info(`当前go-cqhttp版本 ${res.data.data.app_version}，检测到go-cqhttp最新发行版本是 ${latestRes.data.tag_name}，请前往 https://github.com/Mrs4s/go-cqhttp/releases 更新go-cqhttp吧`.alert);
+        } else {
+          logger.info(`当前使用的go-cqhttp已经是最新发行版本 ${res.data.data.app_version}`.log);
+        }
+      });
+  }).catch((err) => {
+    logger.error(`检查更新失败，错误原因: ${err}`.error);
+  });
+
+  /**
+   * go-cqhttp 启动后加载当前所有群，写入数据库进行群服务初始化
    */
   await utils.InitGroupList();
 
@@ -1735,9 +1755,9 @@ async function InitConfig() {
   });
 
   /**
-   * 检查更新
+   * 检查本体更新
    */
-  axios(
+  axios.get(
     "https://api.github.com/repos/Giftia/ChatDACS/releases/latest",
   ).then((res) => {
     if (res.data.tag_name !== versionNumber) {
