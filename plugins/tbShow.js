@@ -11,11 +11,9 @@ module.exports = {
     if (!SUMT_API_KEY) {
       return { type: "text", content: `${this.插件名} 的接口密钥未配置，请通知小夜主人及时配置接口密钥。方法：在状态栏右键小夜头像，点击 打开配置文件，按接口密钥配置说明进行操作` };
     }
-    const filePath = await RandomTbShow() ?? "";
+    const fileURL = await RandomTbShow() ?? "";
 
     if (options.type === "qq") {
-      const fileDirectPath = url.pathToFileURL(path.resolve(`${filePath}`));
-
       const requestData = {
         group_id: groupId,
         messages: [
@@ -24,7 +22,7 @@ module.exports = {
             data: {
               name: userName,
               uin: 2854196306, // 对不起，QQ小冰
-              content: `[CQ:image,file=${fileDirectPath}]`,
+              content: `[CQ:image,file=${fileURL}]`,
             },
           },
         ],
@@ -35,14 +33,13 @@ module.exports = {
       return "";
     }
 
-    return { type: "picture", content: { file: filePath } };
+    return { type: "picture", content: { file: fileURL } };
   },
 };
 
 const request = require("request");
 const fs = require("fs");
 const axios = require("axios").default;
-const url = require("url");
 const path = require("path");
 const yaml = require("yaml"); // 使用yaml解析配置文件
 let SUMT_API_KEY, GO_CQHTTP_SERVICE_API_URL;

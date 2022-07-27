@@ -11,7 +11,7 @@ module.exports = {
     const filePath = await RandomR18();
 
     if (options.type === "qq") {
-      const fileDirectPath = url.pathToFileURL(path.resolve(`${filePath}`));
+      const fileDirectPath = url.pathToFileURL(path.resolve(`./static${filePath}`));
 
       const requestData = {
         group_id: groupId,
