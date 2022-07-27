@@ -992,7 +992,6 @@ async function StartQQBot() {
             const loopBombGame = await utils.GetGroupLoopBombGameStatus(event.group_id);
 
             // 判断游戏开关，没有开始的话就开始游戏，如果游戏已经超时结束了的话就重新开始
-
             if (
               !loopBombGame.loopBombEnabled ||
               60 - process.hrtime([loopBombGame.loopBombStartTime, 0])[0] < 0
@@ -1007,7 +1006,7 @@ async function StartQQBot() {
               // 给发起人出题，等待ta回答
               const wenDa = await ECYWenDa();
 
-              const question = `那么[CQ:at,qq=${event.user_id}]请听题: ${wenDa.question} 请按如下格式告诉小夜：击鼓传雷 你的答案，时间剩余59秒`;
+              const question = `那么[CQ:at,qq=${event.user_id}]请听题：${wenDa.question} 请按如下格式告诉小夜：击鼓传雷 你的答案，时间剩余59秒`;
 
               // 把答案、持有人、开始时间存入数据库
               await utils.StartGroupLoopBombGame(event.group_id, wenDa.answer, event.user_id, process.hrtime()[0]);
@@ -1039,7 +1038,7 @@ async function StartQQBot() {
                 // 金手指关闭
                 axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${bombHolder}&card=`);
 
-                const gameOverContent = `时间到了，pia，雷在[CQ:at,qq=${bombHolder}]手上炸了，你被炸成重伤了，休养生息${boomTime}秒!游戏结束!下次加油噢，那么答案公布: ${bombAnswer}`;
+                const gameOverContent = `时间到了，pia，雷在[CQ:at,qq=${bombHolder}]手上炸了，你被炸成重伤了，休养生息${boomTime}秒！游戏结束！下次加油噢，那么答案公布：${bombAnswer}`;
 
                 axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(gameOverContent)}`);
 
@@ -1069,7 +1068,7 @@ async function StartQQBot() {
                   console.log(
                     `抢答了，${event.user_id} 被禁言`.log,
                   );
-                  reply = `[CQ:at,qq=${event.user_id}] 抢答正确!答案确实是 ${bombAnswer}！但因为抢答了别人的题目所以被惩罚了！`;
+                  reply = `[CQ:at,qq=${event.user_id}] 抢答正确！答案确实是 ${bombAnswer} ！但因为抢答了别人的题目所以被惩罚了！`;
 
                   // 金手指关闭
                   axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${bombHolder}&card=`);
@@ -1080,7 +1079,7 @@ async function StartQQBot() {
                 // 回答正确
                 else {
                   console.log(`${bombHolder} 回答正确`.log);
-                  reply = `[CQ:at,qq=${event.user_id}] 回答正确！答案确实是 ${bombAnswer}!`;
+                  reply = `[CQ:at,qq=${event.user_id}] 回答正确！答案确实是 ${bombAnswer} ！`;
 
                   // 金手指关闭
                   axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${bombHolder}&card=`);
@@ -1094,7 +1093,7 @@ async function StartQQBot() {
                   // 随机选一位幸运群友
                   const randomMember = await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_group_member_list?group_id=${event.group_id}`)
                     .then(async (res) => {
-                      const members = res.data.data.member_list;
+                      const members = res.data.data;
                       const randomMember = members[Math.floor(Math.random() * members.length)].user_id;
                       console.log(
                         `随机选取一个群友 ${randomMember} 给他下一题`.log
@@ -1114,10 +1113,10 @@ async function StartQQBot() {
 
                   const wenDa = await ECYWenDa();
 
-                  const question = `抽到了幸运群友[CQ:at,qq=${randomMember}]!请听题: ${wenDa.question} 请按如下格式告诉小夜：击鼓传雷 你的答案，时间还剩余${diff}秒`;
+                  const question = `抽到了幸运群友[CQ:at,qq=${randomMember}]！请听题：${wenDa.question} 请按如下格式告诉小夜：击鼓传雷 你的答案，时间还剩余${diff}秒`;
 
                   // 把答案、持有人存入数据库
-                  await utils.UpdateGroupLoopBombGame(event.group_id, wenDa.answer, event.user_id);
+                  await utils.UpdateGroupLoopBombGame(event.group_id, wenDa.answer, randomMember);
 
                   // 金手指
                   axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${event.user_id}&card=${encodeURI(wenDa.answer)}`);
@@ -1134,7 +1133,7 @@ async function StartQQBot() {
               // 答错了，游戏结束
               else {
                 const boomTime = Math.floor(Math.random() * 60 * 3) + 60; // 造成伤害时间
-                const endGameContent = `[CQ:at,qq=${event.user_id}] 回答错误，好可惜，你被炸成重伤了，休养生息${boomTime}秒！游戏结束！下次加油噢，那么答案公布: ${bombAnswer}`;
+                const endGameContent = `[CQ:at,qq=${event.user_id}] 回答错误，好可惜，你被炸成重伤了，休养生息${boomTime}秒！游戏结束！下次加油噢，那么答案公布：${bombAnswer}`;
 
                 console.log(
                   `${event.user_id} 回答错误，被炸伤${boomTime}秒`.log,

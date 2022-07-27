@@ -391,7 +391,7 @@ module.exports = {
     groupId, loopBombAnswer, loopBombHolder, loopBombStartTime
   ) {
     await QQGroupModel.update({
-      loopBombGameStatus: true,
+      loopBombEnabled: true,
       loopBombAnswer,
       loopBombHolder,
       loopBombStartTime,
@@ -442,7 +442,7 @@ module.exports = {
    */
   async EndGroupLoopBombGame(groupId) {
     await QQGroupModel.update({
-      loopBombGameStatus: false,
+      loopBombEnabled: false,
       loopBombAnswer: null,
       loopBombHolder: null,
       loopBombStartTime: null,
