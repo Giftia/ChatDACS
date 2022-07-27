@@ -1,20 +1,48 @@
 module.exports = {
   插件名: "随机二次元图插件",
   指令: "^[/!]?(随机)二次元(图)$|^[/!]?二次元$",
-  版本: "2.0",
+  版本: "3.0",
   作者: "Giftina",
   描述: "发送一张正常尺度的二次元图。",
   使用示例: "二次元",
   预期返回: "[一张随机二次元图]",
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
-    const setu_file = await RandomECY();
-    return { type: "picture", content: { file: setu_file } };
+    const filePath = await RandomECY();
+
+    if (options.type === "qq") {
+      const fileDirectPath = url.pathToFileURL(path.resolve(`${filePath}`));
+
+      const requestData = {
+        group_id: groupId,
+        messages: [
+          {
+            type: "node",
+            data: {
+              name: userName,
+              uin: 2854196306, // 对不起，QQ小冰
+              content: `[CQ:image,file=${fileDirectPath}]`,
+            },
+          },
+        ],
+      };
+
+      await axios.post(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_forward_msg`, requestData);
+
+      return "";
+    }
+
+    return { type: "picture", content: { file: filePath } };
   },
 };
 
 const request = require("request");
 const fs = require("fs");
+const axios = require("axios").default;
+const url = require("url");
+let GO_CQHTTP_SERVICE_API_URL;
+const yaml = require("yaml");
+const path = require("path");
 
 //随机二次元图
 function RandomECY() {
@@ -33,4 +61,25 @@ function RandomECY() {
       }
     });
   });
+}
+
+Init();
+
+// 读取配置文件
+function ReadConfig() {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", function (err, data) {
+      if (!err) {
+        resolve(yaml.parse(data));
+      } else {
+        reject("读取配置文件错误。错误原因：" + err);
+      }
+    });
+  });
+}
+
+// 初始化
+async function Init() {
+  const resolve = await ReadConfig();
+  GO_CQHTTP_SERVICE_API_URL = resolve.System.GO_CQHTTP_SERVICE_API_URL;
 }

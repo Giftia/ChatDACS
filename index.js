@@ -273,7 +273,16 @@ io.on("connection", async (socket) => {
     io.emit("message", { CID: CID, name: socket.username, msg: msg }); // 用户广播
 
     // web端插件应答器
-    const pluginsReply = await ProcessExecute(msg, CID, socket.username) ?? "";
+    const pluginsReply = await ProcessExecute(
+      msg,
+      CID,
+      socket.username,
+      "",
+      "",
+      {
+        type: "web",
+      }
+    ) ?? "";
     if (pluginsReply) {
       const replyToWeb = utils.PluginAnswerToWebStyle(pluginsReply);
       const answerMessage = {
@@ -619,6 +628,7 @@ async function StartQQBot() {
             {
               selfId: event.self_id,
               targetId: event.sub_type == "poke" ? event.target_id : null,
+              type: "qq",
             }
           );
           if (pluginsReply != "") {
@@ -1393,8 +1403,10 @@ async function ProcessGuildMessage(event) {
     event.user_id,
     event?.sender?.nickname,
     event.channel_id,
-    "", // 群名，暂时不用
-    ""
+    "",
+    {
+      type: "qqInsideGuild",
+    }
   );
 
   if (pluginsReply != "") {
@@ -1425,7 +1437,16 @@ function StartLive() {
       console.log(`${danmu.userName} 说: ${danmu.content}`.log);
 
       // 哔哩哔哩端插件应答器
-      const pluginsReply = await ProcessExecute(danmu.content, danmu.userId, danmu.userName) ?? "";
+      const pluginsReply = await ProcessExecute(
+        danmu.content,
+        danmu.userId,
+        danmu.userName,
+        "",
+        "",
+        {
+          type: "bilibili",
+        }
+      ) ?? "";
       let replyToBiliBili = "";
       if (pluginsReply) {
         // 插件响应弹幕
@@ -1525,8 +1546,10 @@ function StartQQGuild() {
       data.msg.author.id,
       data.msg.author.username,
       data.msg.channel_id,
-      "", // 群名暂时还没加
-      ""
+      "",
+      {
+        type: "qqGuild",
+      }
     );
 
     if (pluginsReply) {

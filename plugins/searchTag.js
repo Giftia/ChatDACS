@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "搜图插件",
   指令: "来点(好.*的.*|坏的.*)|来点.*",
-  版本: "2.0",
+  版本: "3.0",
   作者: "Giftina",
   描述: "搜索一张指定tag的二次元图。`好的` 代表正常尺度，`坏的` 代表🔞。图片来源api.lolicon.app。",
   使用示例: "来点好的白丝",
@@ -23,8 +23,31 @@ module.exports = {
     console.log(`搜索 ${searchType ? "r18" : "正常"} tag：${searchTag}`.log);
 
     try {
-      const tagPictureFile = await SearchTag(searchTag, searchType);
-      return { type: "picture", content: { file: tagPictureFile } };
+      const filePath = await SearchTag(searchTag, searchType);
+
+      if (options.type === "qq") {
+        const fileDirectPath = url.pathToFileURL(path.resolve(`${filePath}`));
+
+        const requestData = {
+          group_id: groupId,
+          messages: [
+            {
+              type: "node",
+              data: {
+                name: userName,
+                uin: 2854196306, // 对不起，QQ小冰
+                content: `[CQ:image,file=${fileDirectPath}]`,
+              },
+            },
+          ],
+        };
+
+        await axios.post(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_forward_msg`, requestData);
+
+        return "";
+      }
+
+      return { type: "picture", content: { file: filePath } };
     } catch (error) {
       return { type: "text", content: `你要的${tag}发送失败啦：${error}` };
     }
@@ -36,6 +59,7 @@ const axios = require("axios").default;
 const fs = require("fs");
 const path = require("path");
 const yaml = require("yaml"); // 使用yaml解析配置文件
+const url = require("url");
 let GO_CQHTTP_SERVICE_API_URL, CONNECT_GO_CQHTTP_SWITCH;
 
 //搜索tag
