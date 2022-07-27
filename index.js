@@ -1218,7 +1218,7 @@ async function StartQQBot() {
           }
 
           // 孤寡
-          if (Constants.gugua_reg.test(event.message)) {
+          if (Constants.gu_gua_reg.test(event.message)) {
             if (event.message == "/孤寡") {
               res.send({
                 reply: "小夜收到了你的孤寡订单，现在就开始孤寡你了噢孤寡~",
@@ -1581,7 +1581,7 @@ app.get("/profile", async (req, res) => {
 /**
  * web端图片上传接口
  */
-app.post("/upload/image", upload.single("file"), function (req, _res, _next) {
+app.post("/upload/image", upload.single("file"), function (req) {
   logger.info("用户上传图片".log);
   logger.info(req.file);
   const oldname = req.file.path;
@@ -1595,7 +1595,7 @@ app.post("/upload/image", upload.single("file"), function (req, _res, _next) {
 /**
  * web端文件/视频上传接口
  */
-app.post("/upload/file", upload.single("file"), function (req, _res, _next) {
+app.post("/upload/file", upload.single("file"), function (req) {
   logger.info("用户上传文件".log);
   logger.info(req.file);
   const oldname = req.file.path;
