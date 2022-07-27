@@ -1045,6 +1045,9 @@ async function StartQQBot() {
                 // 游戏结束，清空数据
                 await utils.EndGroupLoopBombGame(event.group_id);
 
+                // 金手指关闭
+                axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${bombHolder}&card=`);
+
                 return 0;
               }, 1000 * 60);
             }
