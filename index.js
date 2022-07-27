@@ -273,7 +273,16 @@ io.on("connection", async (socket) => {
     io.emit("message", { CID: CID, name: socket.username, msg: msg }); // 用户广播
 
     // web端插件应答器
-    const pluginsReply = await ProcessExecute(msg, CID, socket.username) ?? "";
+    const pluginsReply = await ProcessExecute(
+      msg,
+      CID,
+      socket.username,
+      "",
+      "",
+      {
+        type: "web",
+      }
+    ) ?? "";
     if (pluginsReply) {
       const replyToWeb = utils.PluginAnswerToWebStyle(pluginsReply);
       const answerMessage = {
@@ -297,8 +306,10 @@ io.on("connection", async (socket) => {
  * 小夜核心代码，对接go-cqhttp
  */
 async function StartQQBot() {
+  CheckGoCqhttpUpdate();
+
   /**
-   * goCqhttp 启动后加载当前所有群，写入数据库进行群服务初始化
+   * go-cqhttp 启动后加载当前所有群，写入数据库进行群服务初始化
    */
   await utils.InitGroupList();
 
@@ -354,7 +365,7 @@ async function StartQQBot() {
         `http://${GO_CQHTTP_SERVICE_API_URL}/send_private_msg?user_id=${QQBOT_ADMIN_LIST[0]}&message=${encodeURI(msg)}`,
       );
       // 发送给邀请者批准提醒
-      const inviteReplyContent = `你好呀，感谢你的使用，邀请小夜加入你的群后，请联系这只小夜的主人 ${QQBOT_ADMIN_LIST[0]} 来批准入群邀请噢`;
+      const inviteReplyContent = `你好呀，谢谢你邀请小夜，请联系这只小夜的主人 ${QQBOT_ADMIN_LIST[0]} 来批准入群邀请噢。也欢迎来小夜开发群120243247聊聊你对小夜的想法噢。小夜永久免费开源于 https://github.com/Giftia/ChatDACS ，开发组欢迎你的加入！`;
       axios.get(
         `http://${GO_CQHTTP_SERVICE_API_URL}/send_private_msg?user_id=${event.user_id}&message=${encodeURI(inviteReplyContent)}`,
       );
@@ -617,6 +628,7 @@ async function StartQQBot() {
             {
               selfId: event.self_id,
               targetId: event.sub_type == "poke" ? event.target_id : null,
+              type: "qq",
             }
           );
           if (pluginsReply != "") {
@@ -1004,14 +1016,13 @@ async function StartQQBot() {
               // 给发起人出题，等待ta回答
               const wenDa = await ECYWenDa();
 
-              const question = `那么[CQ:at,qq=${event.user_id}]请听题: ${wenDa.question} 请按如下格式告诉小夜：击鼓传雷 你的答案，时间剩余59秒`;
+              const question = `那么[CQ:at,qq=${event.user_id}]请听题：${wenDa.question} 请按如下格式告诉小夜：击鼓传雷 你的答案，时间剩余59秒`;
 
               // 把答案、持有人、开始时间存入数据库
               await utils.StartGroupLoopBombGame(event.group_id, wenDa.answer, event.user_id, process.hrtime()[0]);
 
               // 金手指
               axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${event.user_id}&card=${encodeURI(wenDa.answer)}`);
-              console.log("击鼓传雷金手指已启动".log);
 
               // 丢出问题
               setTimeout(() => {
@@ -1036,12 +1047,15 @@ async function StartQQBot() {
                 // 金手指关闭
                 axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${bombHolder}&card=`);
 
-                const gameOverContent = `时间到了，pia，雷在[CQ:at,qq=${bombHolder}]手上炸了，你被炸成重伤了，休养生息${boomTime}秒!游戏结束!下次加油噢，那么答案公布: ${bombAnswer}`;
+                const gameOverContent = `时间到了，pia，雷在[CQ:at,qq=${bombHolder}]手上炸了，你被炸成重伤了，休养生息${boomTime}秒！游戏结束！下次加油噢，那么答案公布：${bombAnswer}`;
 
                 axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(gameOverContent)}`);
 
                 // 游戏结束，清空数据
                 await utils.EndGroupLoopBombGame(event.group_id);
+
+                // 金手指关闭
+                axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${bombHolder}&card=`);
 
                 return 0;
               }, 1000 * 60);
@@ -1066,7 +1080,7 @@ async function StartQQBot() {
                   console.log(
                     `抢答了，${event.user_id} 被禁言`.log,
                   );
-                  reply = `[CQ:at,qq=${event.user_id}] 抢答正确!答案确实是 ${bombAnswer}！但因为抢答了别人的题目所以被惩罚了！`;
+                  reply = `[CQ:at,qq=${event.user_id}] 抢答正确！答案确实是 ${bombAnswer} ！但因为抢答了别人的题目所以被惩罚了！`;
 
                   // 金手指关闭
                   axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${bombHolder}&card=`);
@@ -1077,7 +1091,7 @@ async function StartQQBot() {
                 // 回答正确
                 else {
                   console.log(`${bombHolder} 回答正确`.log);
-                  reply = `[CQ:at,qq=${event.user_id}] 回答正确！答案确实是 ${bombAnswer}!`;
+                  reply = `[CQ:at,qq=${event.user_id}] 回答正确！答案确实是 ${bombAnswer} ！`;
 
                   // 金手指关闭
                   axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${bombHolder}&card=`);
@@ -1091,7 +1105,7 @@ async function StartQQBot() {
                   // 随机选一位幸运群友
                   const randomMember = await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_group_member_list?group_id=${event.group_id}`)
                     .then(async (res) => {
-                      const members = res.data.data.member_list;
+                      const members = res.data.data;
                       const randomMember = members[Math.floor(Math.random() * members.length)].user_id;
                       console.log(
                         `随机选取一个群友 ${randomMember} 给他下一题`.log
@@ -1111,14 +1125,13 @@ async function StartQQBot() {
 
                   const wenDa = await ECYWenDa();
 
-                  const question = `抽到了幸运群友[CQ:at,qq=${randomMember}]!请听题: ${wenDa.question} 请按如下格式告诉小夜：击鼓传雷 你的答案，时间还剩余${diff}秒`;
+                  const question = `抽到了幸运群友[CQ:at,qq=${randomMember}]！请听题：${wenDa.question} 请按如下格式告诉小夜：击鼓传雷 你的答案，时间还剩余${diff}秒`;
 
                   // 把答案、持有人存入数据库
-                  await utils.UpdateGroupLoopBombGame(event.group_id, wenDa.answer, event.user_id);
+                  await utils.UpdateGroupLoopBombGame(event.group_id, wenDa.answer, randomMember);
 
                   // 金手指
                   axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${event.user_id}&card=${encodeURI(wenDa.answer)}`);
-                  console.log("击鼓传雷金手指已启动".log);
 
                   // 丢出问题
                   setTimeout(() => {
@@ -1131,7 +1144,7 @@ async function StartQQBot() {
               // 答错了，游戏结束
               else {
                 const boomTime = Math.floor(Math.random() * 60 * 3) + 60; // 造成伤害时间
-                const endGameContent = `[CQ:at,qq=${event.user_id}] 回答错误，好可惜，你被炸成重伤了，休养生息${boomTime}秒！游戏结束！下次加油噢，那么答案公布: ${bombAnswer}`;
+                const endGameContent = `[CQ:at,qq=${event.user_id}] 回答错误，好可惜，你被炸成重伤了，休养生息${boomTime}秒！游戏结束！下次加油噢，那么答案公布：${bombAnswer}`;
 
                 console.log(
                   `${event.user_id} 回答错误，被炸伤${boomTime}秒`.log,
@@ -1215,7 +1228,7 @@ async function StartQQBot() {
           }
 
           // 孤寡
-          if (Constants.gugua_reg.test(event.message)) {
+          if (Constants.gu_gua_reg.test(event.message)) {
             if (event.message == "/孤寡") {
               res.send({
                 reply: "小夜收到了你的孤寡订单，现在就开始孤寡你了噢孤寡~",
@@ -1390,8 +1403,10 @@ async function ProcessGuildMessage(event) {
     event.user_id,
     event?.sender?.nickname,
     event.channel_id,
-    "", // 群名，暂时不用
-    ""
+    "",
+    {
+      type: "qqInsideGuild",
+    }
   );
 
   if (pluginsReply != "") {
@@ -1422,7 +1437,16 @@ function StartLive() {
       console.log(`${danmu.userName} 说: ${danmu.content}`.log);
 
       // 哔哩哔哩端插件应答器
-      const pluginsReply = await ProcessExecute(danmu.content, danmu.userId, danmu.userName) ?? "";
+      const pluginsReply = await ProcessExecute(
+        danmu.content,
+        danmu.userId,
+        danmu.userName,
+        "",
+        "",
+        {
+          type: "bilibili",
+        }
+      ) ?? "";
       let replyToBiliBili = "";
       if (pluginsReply) {
         // 插件响应弹幕
@@ -1522,8 +1546,10 @@ function StartQQGuild() {
       data.msg.author.id,
       data.msg.author.username,
       data.msg.channel_id,
-      "", // 群名暂时还没加
-      ""
+      "",
+      {
+        type: "qqGuild",
+      }
     );
 
     if (pluginsReply) {
@@ -1578,7 +1604,7 @@ app.get("/profile", async (req, res) => {
 /**
  * web端图片上传接口
  */
-app.post("/upload/image", upload.single("file"), function (req, _res, _next) {
+app.post("/upload/image", upload.single("file"), function (req) {
   logger.info("用户上传图片".log);
   logger.info(req.file);
   const oldname = req.file.path;
@@ -1592,7 +1618,7 @@ app.post("/upload/image", upload.single("file"), function (req, _res, _next) {
 /**
  * web端文件/视频上传接口
  */
-app.post("/upload/file", upload.single("file"), function (req, _res, _next) {
+app.post("/upload/file", upload.single("file"), function (req) {
   logger.info("用户上传文件".log);
   logger.info(req.file);
   const oldname = req.file.path;
@@ -1728,26 +1754,7 @@ async function InitConfig() {
 
   StartHttpServer();
 
-  http.on("error", (err) => {
-    http.close();
-    logger.info(`本机${WEB_PORT}端口被其他应用程序占用，请尝试关闭占用${WEB_PORT}端口的其他程序 或 修改配置文件的 WEB_PORT 配置项。错误代码：${err.code}`.error);
-    setTimeout(() => StartHttpServer(), 5000);
-  });
-
-  /**
-   * 检查更新
-   */
-  axios(
-    "https://api.github.com/repos/Giftia/ChatDACS/releases/latest",
-  ).then((res) => {
-    if (res.data.tag_name !== versionNumber) {
-      logger.info(`当前小夜版本 ${versionNumber}，检测到小夜最新发行版本是 ${res.data.tag_name}，请前往 https://github.com/Giftia/ChatDACS/releases 更新小夜吧`.alert);
-    } else {
-      logger.info(`当前小夜已经是最新发行版本 ${versionNumber}`.log);
-    }
-  }).catch((err) => {
-    logger.error(`检查更新失败，错误原因: ${err}`.error);
-  });
+  CheckUpdate();
 }
 
 /**
@@ -1760,7 +1767,58 @@ function StartHttpServer() {
       `服务启动完毕，访问 127.0.0.1:${WEB_PORT} 即可进入本地web端\n`,
     );
   });
+
+  http.on("error", (err) => {
+    http.close();
+    logger.error(`本机${WEB_PORT}端口被其他应用程序占用，稍后会自动重试，请尝试关闭占用${WEB_PORT}端口的其他程序 或 修改配置文件的 WEB_PORT 配置项。错误代码：${err.code}`.error);
+    setTimeout(() => StartHttpServer(), 10000);
+  });
 };
+
+/**
+ * 检查本体更新
+ */
+function CheckUpdate() {
+  axios.get(
+    "https://api.github.com/repos/Giftia/ChatDACS/releases/latest",
+  ).then((res) => {
+    if (res.data.tag_name !== versionNumber) {
+      logger.info(`当前小夜版本 ${versionNumber}，检测到小夜最新发行版本是 ${res.data.tag_name}，请前往 https://github.com/Giftia/ChatDACS/releases 更新小夜吧`.alert);
+    } else {
+      logger.info(`当前小夜已经是最新发行版本 ${versionNumber}`.log);
+    }
+  }).catch((err) => {
+    logger.error(`检查小夜更新失败，稍后会自动重试，错误原因: ${err}`.error);
+    setTimeout(() => CheckUpdate(), 10000);
+  });
+}
+
+/**
+ * 检查 go-cqhttp 更新
+ */
+function CheckGoCqhttpUpdate() {
+  axios.get(
+    "https://api.github.com/repos/Mrs4s/go-cqhttp/releases/latest",
+  ).then((latestRes) => {
+    // 获取当前使用的 go-cqhttp 版本号
+    axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_version_info`)
+      .then((res) => {
+        // 和最新release比对
+        if (latestRes.data.tag_name !== res.data.data.app_version) {
+          logger.info(`当前小夜使用的 go-cqhttp 版本 ${res.data.data.app_version}，检测到 go-cqhttp 最新发行版本是 ${latestRes.data.tag_name}，请前往 https://github.com/Mrs4s/go-cqhttp/releases 更新 go-cqhttp 吧`.alert);
+        } else {
+          logger.info(`当前小夜使用的 go-cqhttp 已经是最新发行版本 ${res.data.data.app_version}`.log);
+        }
+      })
+      .catch((err) => {
+        logger.error(`检查 go-cqhttp 更新失败，稍后会自动重试，错误原因: ${err}`.error);
+        setTimeout(() => CheckGoCqhttpUpdate(), 10000);
+      });
+  }).catch((err) => {
+    logger.error(`检查 go-cqhttp 更新失败，稍后会自动重试，错误原因: ${err}`.error);
+    setTimeout(() => CheckGoCqhttpUpdate(), 10000);
+  });
+}
 
 /**
  * 异步结巴 thanks@ssp97
@@ -1865,7 +1923,7 @@ async function ChatProcess(ask) {
  * @returns {Promise<object>} { question, answer }
  */
 async function ECYWenDa() {
-  const data = await axios.get("https://api.oddfar.com/yl/q.php?c=2001&encode=json");
+  const data = (await axios.get("https://api.oddfar.com/yl/q.php?c=2001&encode=json")).data;
   const keyWord = jieba.extract(data.text, CHAT_JIEBA_LIMIT); // 分词出关键词
   if (keyWord.length == 0) {
     // 如果分词不了，那就直接夜爹牛逼

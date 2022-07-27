@@ -238,8 +238,8 @@ module.exports = {
       .then((response) => {
         return response.data.data;
       })
-      .catch((error) => {
-        console.log(`go-cqhttp 还没启动，无法获取群信息，稍后会自动重试，错误代码：${error.code}`.error);
+      .catch((err) => {
+        console.log(`go-cqhttp 还没启动，无法获取群信息，稍后会自动重试，错误原因: ${err}`.error);
       });
 
     if (!groupList) {
@@ -391,7 +391,7 @@ module.exports = {
     groupId, loopBombAnswer, loopBombHolder, loopBombStartTime
   ) {
     await QQGroupModel.update({
-      loopBombGameStatus: true,
+      loopBombEnabled: true,
       loopBombAnswer,
       loopBombHolder,
       loopBombStartTime,
@@ -442,7 +442,7 @@ module.exports = {
    */
   async EndGroupLoopBombGame(groupId) {
     await QQGroupModel.update({
-      loopBombGameStatus: false,
+      loopBombEnabled: false,
       loopBombAnswer: null,
       loopBombHolder: null,
       loopBombStartTime: null,

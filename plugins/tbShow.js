@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "淘宝买家秀色图插件",
   指令: "买家秀|福利姬",
-  版本: "2.0",
+  版本: "3.0",
   作者: "Giftina",
   描述: "在危险的尺度下发送一张非法的淘宝买家秀福利图。",
   使用示例: "买家秀",
@@ -11,17 +11,41 @@ module.exports = {
     if (!SUMT_API_KEY) {
       return { type: "text", content: `${this.插件名} 的接口密钥未配置，请通知小夜主人及时配置接口密钥。方法：在状态栏右键小夜头像，点击 打开配置文件，按接口密钥配置说明进行操作` };
     }
-    const setu_file = await RandomTbShow() ?? "";
-    const setu_file_url = `${setu_file}`;
-    return { type: "picture", content: { file: setu_file_url } };
+    const filePath = await RandomTbShow() ?? "";
+
+    if (options.type === "qq") {
+      const fileDirectPath = url.pathToFileURL(path.resolve(`${filePath}`));
+
+      const requestData = {
+        group_id: groupId,
+        messages: [
+          {
+            type: "node",
+            data: {
+              name: userName,
+              uin: 2854196306, // 对不起，QQ小冰
+              content: `[CQ:image,file=${fileDirectPath}]`,
+            },
+          },
+        ],
+      };
+
+      await axios.post(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_forward_msg`, requestData);
+
+      return "";
+    }
+
+    return { type: "picture", content: { file: filePath } };
   },
 };
 
 const request = require("request");
 const fs = require("fs");
+const axios = require("axios").default;
+const url = require("url");
 const path = require("path");
 const yaml = require("yaml"); // 使用yaml解析配置文件
-let SUMT_API_KEY;
+let SUMT_API_KEY, GO_CQHTTP_SERVICE_API_URL;
 
 Init();
 
@@ -42,9 +66,10 @@ function ReadConfig() {
 async function Init() {
   const resolve = await ReadConfig();
   SUMT_API_KEY = resolve.ApiKey.SUMT_API_KEY;
+  GO_CQHTTP_SERVICE_API_URL = resolve.System.GO_CQHTTP_SERVICE_API_URL;
 }
 
-//随机买家秀
+// 随机买家秀
 function RandomTbShow() {
   return new Promise((resolve, reject) => {
     request(`https://api.sumt.cn/api/rand.tbimg.php?token=${SUMT_API_KEY}&format=json`, (err, response, body) => {

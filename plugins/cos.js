@@ -1,23 +1,55 @@
 module.exports = {
   插件名: "cos图片插件",
   指令: "^[/!]?(cos图|cosplay)$",
-  版本: "2.0",
+  版本: "3.0",
   作者: "Giftina",
   描述: "在普通限度的尺度下发送一张合法的 cos 三次元图, 图片来源哔哩哔哩cos专栏。",
   使用示例: "cos图",
   预期返回: "[一张cos图]",
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
-    const cosFile = await RandomCos();
-    return { type: "picture", content: { file: cosFile } };
+    const filePath = await RandomCos();
+
+    if (options.type === "qq") {
+      const fileDirectPath = url.pathToFileURL(path.resolve(`./static${filePath}`));
+
+      const requestData = {
+        group_id: groupId,
+        messages: [
+          {
+            type: "node",
+            data: {
+              name: userName,
+              uin: 2854196306, // 对不起，QQ小冰
+              content: `[CQ:image,file=${fileDirectPath}]`,
+            },
+          },
+        ],
+      };
+
+      await axios.post(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_forward_msg`, requestData);
+
+      return "";
+    }
+
+    return { type: "picture", content: { file: filePath } };
   },
 };
 
 const request = require("request");
 const fs = require("fs");
+const axios = require("axios").default;
+const url = require("url");
+let GO_CQHTTP_SERVICE_API_URL;
+const path = require("path");
+const yaml = require("yaml");
 const cos_total_count = 2000; // 初始化随机cos上限，可以自己调整
 
-//随机cos
+/**
+ * 其他可用图源
+ * https://api.vc.bilibili.com/link_draw/v2/Photo/list?category=sifu&type=new&page_num=0&page_size=10
+ * https://api.vc.bilibili.com/link_draw/v2/Photo/index?type=recommend&page_num=0&page_size=1
+ */
 function RandomCos() {
   return new Promise((resolve, reject) => {
     const rand_page_num = Math.floor(Math.random() * cos_total_count);
@@ -49,8 +81,23 @@ function RandomCos() {
   });
 }
 
-/**
- * 其他可用图源
- * https://api.vc.bilibili.com/link_draw/v2/Photo/list?category=sifu&type=new&page_num=0&page_size=10
- * https://api.vc.bilibili.com/link_draw/v2/Photo/index?type=recommend&page_num=0&page_size=1
- */
+Init();
+
+// 读取配置文件
+function ReadConfig() {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", function (err, data) {
+      if (!err) {
+        resolve(yaml.parse(data));
+      } else {
+        reject("读取配置文件错误。错误原因：" + err);
+      }
+    });
+  });
+}
+
+// 初始化
+async function Init() {
+  const resolve = await ReadConfig();
+  GO_CQHTTP_SERVICE_API_URL = resolve.System.GO_CQHTTP_SERVICE_API_URL;
+}
