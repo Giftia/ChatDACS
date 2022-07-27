@@ -297,25 +297,7 @@ io.on("connection", async (socket) => {
  * 小夜核心代码，对接go-cqhttp
  */
 async function StartQQBot() {
-  /**
-   * 检查 go-cqhttp 更新
-   */
-  axios.get(
-    "https://api.github.com/repos/Mrs4s/go-cqhttp/releases/latest",
-  ).then((latestRes) => {
-    // 获取当前使用的 go-cqhttp 版本号
-    axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_version_info`)
-      .then((res) => {
-        // 和最新release比对
-        if (latestRes.data.tag_name !== res.data.data.app_version) {
-          logger.info(`当前go-cqhttp版本 ${res.data.data.app_version}，检测到go-cqhttp最新发行版本是 ${latestRes.data.tag_name}，请前往 https://github.com/Mrs4s/go-cqhttp/releases 更新go-cqhttp吧`.alert);
-        } else {
-          logger.info(`当前使用的go-cqhttp已经是最新发行版本 ${res.data.data.app_version}`.log);
-        }
-      });
-  }).catch((err) => {
-    logger.error(`检查更新失败，错误原因: ${err}`.error);
-  });
+  CheckGoCqhttpUpdate();
 
   /**
    * go-cqhttp 启动后加载当前所有群，写入数据库进行群服务初始化
@@ -1010,6 +992,7 @@ async function StartQQBot() {
             const loopBombGame = await utils.GetGroupLoopBombGameStatus(event.group_id);
 
             // 判断游戏开关，没有开始的话就开始游戏，如果游戏已经超时结束了的话就重新开始
+
             if (
               !loopBombGame.loopBombEnabled ||
               60 - process.hrtime([loopBombGame.loopBombStartTime, 0])[0] < 0
@@ -1748,26 +1731,7 @@ async function InitConfig() {
 
   StartHttpServer();
 
-  http.on("error", (err) => {
-    http.close();
-    logger.info(`本机${WEB_PORT}端口被其他应用程序占用，请尝试关闭占用${WEB_PORT}端口的其他程序 或 修改配置文件的 WEB_PORT 配置项。错误代码：${err.code}`.error);
-    setTimeout(() => StartHttpServer(), 5000);
-  });
-
-  /**
-   * 检查本体更新
-   */
-  axios.get(
-    "https://api.github.com/repos/Giftia/ChatDACS/releases/latest",
-  ).then((res) => {
-    if (res.data.tag_name !== versionNumber) {
-      logger.info(`当前小夜版本 ${versionNumber}，检测到小夜最新发行版本是 ${res.data.tag_name}，请前往 https://github.com/Giftia/ChatDACS/releases 更新小夜吧`.alert);
-    } else {
-      logger.info(`当前小夜已经是最新发行版本 ${versionNumber}`.log);
-    }
-  }).catch((err) => {
-    logger.error(`检查更新失败，错误原因: ${err}`.error);
-  });
+  CheckUpdate();
 }
 
 /**
@@ -1780,7 +1744,58 @@ function StartHttpServer() {
       `服务启动完毕，访问 127.0.0.1:${WEB_PORT} 即可进入本地web端\n`,
     );
   });
+
+  http.on("error", (err) => {
+    http.close();
+    logger.error(`本机${WEB_PORT}端口被其他应用程序占用，稍后会自动重试，请尝试关闭占用${WEB_PORT}端口的其他程序 或 修改配置文件的 WEB_PORT 配置项。错误代码：${err.code}`.error);
+    setTimeout(() => StartHttpServer(), 10000);
+  });
 };
+
+/**
+ * 检查本体更新
+ */
+function CheckUpdate() {
+  axios.get(
+    "https://api.github.com/repos/Giftia/ChatDACS/releases/latest",
+  ).then((res) => {
+    if (res.data.tag_name !== versionNumber) {
+      logger.info(`当前小夜版本 ${versionNumber}，检测到小夜最新发行版本是 ${res.data.tag_name}，请前往 https://github.com/Giftia/ChatDACS/releases 更新小夜吧`.alert);
+    } else {
+      logger.info(`当前小夜已经是最新发行版本 ${versionNumber}`.log);
+    }
+  }).catch((err) => {
+    logger.error(`检查小夜更新失败，稍后会自动重试，错误原因: ${err}`.error);
+    setTimeout(() => CheckUpdate(), 10000);
+  });
+}
+
+/**
+ * 检查 go-cqhttp 更新
+ */
+function CheckGoCqhttpUpdate() {
+  axios.get(
+    "https://api.github.com/repos/Mrs4s/go-cqhttp/releases/latest",
+  ).then((latestRes) => {
+    // 获取当前使用的 go-cqhttp 版本号
+    axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_version_info`)
+      .then((res) => {
+        // 和最新release比对
+        if (latestRes.data.tag_name !== res.data.data.app_version) {
+          logger.info(`当前小夜使用的 go-cqhttp 版本 ${res.data.data.app_version}，检测到 go-cqhttp 最新发行版本是 ${latestRes.data.tag_name}，请前往 https://github.com/Mrs4s/go-cqhttp/releases 更新 go-cqhttp 吧`.alert);
+        } else {
+          logger.info(`当前小夜使用的 go-cqhttp 已经是最新发行版本 ${res.data.data.app_version}`.log);
+        }
+      })
+      .catch((err) => {
+        logger.error(`检查 go-cqhttp 更新失败，稍后会自动重试，错误原因: ${err}`.error);
+        setTimeout(() => CheckGoCqhttpUpdate(), 10000);
+      });
+  }).catch((err) => {
+    logger.error(`检查 go-cqhttp 更新失败，稍后会自动重试，错误原因: ${err}`.error);
+    setTimeout(() => CheckGoCqhttpUpdate(), 10000);
+  });
+}
 
 /**
  * 异步结巴 thanks@ssp97
@@ -1885,7 +1900,7 @@ async function ChatProcess(ask) {
  * @returns {Promise<object>} { question, answer }
  */
 async function ECYWenDa() {
-  const data = await axios.get("https://api.oddfar.com/yl/q.php?c=2001&encode=json");
+  const data = (await axios.get("https://api.oddfar.com/yl/q.php?c=2001&encode=json")).data;
   const keyWord = jieba.extract(data.text, CHAT_JIEBA_LIMIT); // 分词出关键词
   if (keyWord.length == 0) {
     // 如果分词不了，那就直接夜爹牛逼
