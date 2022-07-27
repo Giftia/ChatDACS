@@ -1013,7 +1013,6 @@ async function StartQQBot() {
 
               // 金手指
               axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${event.user_id}&card=${encodeURI(wenDa.answer)}`);
-              console.log("击鼓传雷金手指已启动".log);
 
               // 丢出问题
               setTimeout(() => {
@@ -1123,7 +1122,6 @@ async function StartQQBot() {
 
                   // 金手指
                   axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${event.user_id}&card=${encodeURI(wenDa.answer)}`);
-                  console.log("击鼓传雷金手指已启动".log);
 
                   // 丢出问题
                   setTimeout(() => {
