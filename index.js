@@ -36,6 +36,7 @@ const http = require("http").Server(app);
 const io = require("socket.io")(http);
 const request = require("request");
 const axios = require("axios").default;
+const https = require("https");
 const colors = require("colors"); // Console日志染色颜色配置
 colors.setTheme({
   alert: "inverse",
@@ -1775,12 +1776,14 @@ function StartHttpServer() {
   });
 };
 
+const UnauthorizedHttpsAgent = new https.Agent({ rejectUnauthorized: false }); // #303，Watt Toolkit(Steam++)的自签证书问题
+
 /**
  * 检查本体更新
  */
 function CheckUpdate() {
   axios.get(
-    "https://api.github.com/repos/Giftia/ChatDACS/releases/latest",
+    "https://api.github.com/repos/Giftia/ChatDACS/releases/latest", { UnauthorizedHttpsAgent }
   ).then((res) => {
     if (res.data.tag_name !== versionNumber) {
       logger.info(`当前小夜版本 ${versionNumber}，检测到小夜最新发行版本是 ${res.data.tag_name}，请前往 https://github.com/Giftia/ChatDACS/releases 更新小夜吧`.alert);
@@ -1798,7 +1801,7 @@ function CheckUpdate() {
  */
 function CheckGoCqhttpUpdate() {
   axios.get(
-    "https://api.github.com/repos/Mrs4s/go-cqhttp/releases/latest",
+    "https://api.github.com/repos/Mrs4s/go-cqhttp/releases/latest", { UnauthorizedHttpsAgent }
   ).then((latestRes) => {
     // 获取当前使用的 go-cqhttp 版本号
     axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_version_info`)
