@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "r18色图插件",
   指令: "^[/!]?r18$|(可以|能)?色色|[色涩瑟]图",
-  版本: "3.0",
+  版本: "3.1",
   作者: "Giftina",
   描述: "在危险的尺度下发送一张非法的 r18 二次元色图，图片来源api.lolicon.app。",
   使用示例: "可以色色",
@@ -29,7 +29,7 @@ module.exports = {
 
       await axios.post(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_forward_msg`, requestData);
 
-      return "";
+      return { type: "text", data: "你不对劲，我去问问小冰有没有r18图" };
     }
 
     return { type: "picture", content: { file: filePath } };

@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "淘宝买家秀色图插件",
   指令: "买家秀|福利姬",
-  版本: "3.0",
+  版本: "3.1",
   作者: "Giftina",
   描述: "在危险的尺度下发送一张非法的淘宝买家秀福利图。",
   使用示例: "买家秀",
@@ -30,7 +30,7 @@ module.exports = {
 
       await axios.post(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_forward_msg`, requestData);
 
-      return "";
+      return { type: "text", data: "你不对劲，我去问问小冰有没有买家秀" };
     }
 
     return { type: "picture", content: { file: fileURL } };

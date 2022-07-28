@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "本地随机图插件",
   指令: "[让给]我[看康]{1,3}|^[/!]?图来$",
-  版本: "3.0",
+  版本: "3.1",
   作者: "Giftina",
   描述: "从本地图片文件夹随机发送一张图片，默认使用其他插件自动下载保存的图库文件夹。",
   使用示例: "让我康康",
@@ -29,7 +29,7 @@ module.exports = {
 
       await axios.post(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_forward_msg`, requestData);
 
-      return "";
+      return { type: "text", data: "杰哥不要！" };
     }
 
     return { type: "directPicture", content: { file: filePath } };

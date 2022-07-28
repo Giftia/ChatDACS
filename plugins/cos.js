@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "cos图片插件",
   指令: "^[/!]?(cos图|cosplay)$",
-  版本: "3.0",
+  版本: "3.1",
   作者: "Giftina",
   描述: "在普通限度的尺度下发送一张合法的 cos 三次元图, 图片来源哔哩哔哩cos专栏。",
   使用示例: "cos图",
@@ -29,7 +29,7 @@ module.exports = {
 
       await axios.post(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_forward_msg`, requestData);
 
-      return "";
+      return { type: "text", data: "你等等，我去问问小冰有没有cos图" };
     }
 
     return { type: "picture", content: { file: filePath } };
@@ -68,11 +68,12 @@ function RandomCos() {
           var count = Object.keys(obj).length;
           var picUrl = obj[Math.floor(Math.random() * count)].img_src;
           console.log(`cos总数：${cos_total_count}页，当前选择：${rand_page_num}页，发送图片：${picUrl}`.log);
+          // 绕过防盗链，保存为本地图片
           request(picUrl).pipe(
             fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (_err) => {
               resolve(`/images/${picUrl.split("/").pop()}`);
             })
-          ); // 绕过防盗链，保存为本地图片
+          );
         } else {
           reject("获取随机cos错误，是B站的锅。错误原因：" + JSON.stringify(response.body));
         }

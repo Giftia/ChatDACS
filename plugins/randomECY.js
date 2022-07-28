@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "随机二次元图插件",
   指令: "^[/!]?(随机)二次元(图)$|^[/!]?二次元$",
-  版本: "3.0",
+  版本: "3.1",
   作者: "Giftina",
   描述: "发送一张正常尺度的二次元图。",
   使用示例: "二次元",
@@ -29,7 +29,7 @@ module.exports = {
 
       await axios.post(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_forward_msg`, requestData);
 
-      return "";
+      return { type: "text", data: "你等等，我去问问小冰有没有二次元" };
     }
 
     return { type: "picture", content: { file: filePath } };
