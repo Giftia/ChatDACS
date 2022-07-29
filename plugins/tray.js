@@ -54,6 +54,7 @@ async function runTray() {
 
   const quit = newTray.item("退出", () => {
     newTray.kill();
+    // eslint-disable-next-line no-process-exit
     process.exit(0);
   });
 

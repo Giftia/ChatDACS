@@ -1,7 +1,6 @@
 <!-- Giftina：https://giftia.moe -->
 <!DOCTYPE html>
 <html lang="zh-Hans">
-
   <head>
     <meta charset="utf-8" />
     <link rel="preload" href="/socket.io/socket.io.js" as="script" />
@@ -9,7 +8,10 @@
     <link rel="preload" href="/huaji.webp" as="image" />
     <link rel="preload" href="/xiaoye.webp" as="image" />
     <link rel="icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, height=device-height, user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, height=device-height, user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"
+    />
     <meta name="format-detection" content="telephone=no" />
     <title>ChatDACS</title>
     <link rel="stylesheet" href="/layim/css/layui.mobile.css" />
@@ -27,7 +29,7 @@
       layui
         .config({
           version: false,
-          base: '/layim/plugin/'
+          base: "/layim/plugin/",
         })
         // .use(["mobile", "form", 'live2dbundle', 'live2dcore'], function () {
         .use(["mobile", "form"], function () {
@@ -36,10 +38,10 @@
             $ = mobile.jquery,
             form = mobile.form,
             layer = mobile.layer,
-            myCID = "",
-            resourcesPath = '/live2d/assets/', // 指定资源文件（模型）保存的路径
-            backImageName = '', // 指定背景图片 ,默认为空
-            modelDir = ['xiaoye']; // 指定需要加载的模型
+            myCID = "";
+          // resourcesPath = "/live2d/assets/", // 指定资源文件（模型）保存的路径
+          // backImageName = "", // 指定背景图片 ,默认为空
+          // modelDir = ["xiaoye"]; // 指定需要加载的模型
 
           // initDefine(resourcesPath, backImageName, modelDir); // 初始化模型
 
@@ -386,10 +388,7 @@
                 window.open("https://docs.giftia.moe/");
                 break;
               case "thanks":
-                layer.open({
-                  title: ["致谢：", "background-color: #50CB93; color:#fff;"],
-                  content: "致谢（排名不分先后）: https://niconi.co.ni/、https://www.layuion.com/、https://lceda.cn/、https://www.dnspod.cn/、Daisy_Liu、http://blog.luckly-mjw.cn/tool-show/iconfont-preview/index.html、https://ihateregex.io/、https://www.maoken.com/、https://www.ngrok.cc/、https://uptimerobot.com/、https://shields.io/、https://ctf.bugku.com/、https://blog.squix.org/、https://hostker.com/、https://www.tianapi.com/、https://api.sumt.cn/、https://github.com/Mrs4s/go-cqhttp、https://colorhunt.co/、https://github.com/、https://gitee.com/、https://github.com/windrises/dialogue.moe、https://api.lolicon.app/、https://bww.lolicon.app/、https://iw233.cn/main.html、https://blog.csdn.net/jia20003/article/details/7228464、还有我的朋友们，以及倾心分享知识的各位",
-                });
+                window.open("https://docs.giftia.moe/thanks/");
                 break;
               default:
                 break;
@@ -416,7 +415,7 @@
                 break;
               case myCID: // 自己发送的消息
                 break;
-              default:  // 其他人发送的消息
+              default: // 其他人发送的消息
                 username = message.name;
                 layim.getMessage({
                   username: username,
@@ -574,7 +573,30 @@
               superplaceholder({
                 el: document.querySelector("input"),
                 sentences: [
-                  "画师算命", "说不出话 ？", "推送我晚上要手冲", "问：HELLO 答：WORLD", "cp 小夜 小雫", "赛博朋克", "名场面 不能逃避", "报错 插件爆炸了", "最新本子", "黑白图 当你凝望神圣手雷的时候，神圣手雷也在凝望你 あなたが神圣手雷を見つめるとき、神圣手雷もあなたを見つめています[图片]", "人生重开", "今天不带套", "喵嗷嗷嗷嗷呜~嗷呜喵嗷喵嗷嗷~嗷嗷嗷~", "/ping", "/迫害 上原步梦 是我，是我先，明明都是我先来的……接吻也好，拥抱也好，还是喜欢上那家伙也好。", "/prpr 嘉然", "/qr 114514", "让我康康", "[某条消息重复了2次]", "/roll", "提醒我晚上要手冲", "系统状态", "弹窗 您可能是盗版软件的受害者", "/吠 太好听了吧啊，你唱歌真的好嗷好听啊，简直就是天岸籁，我刚才听到你唱歌了，我们以后一起唱好不好，一起唱昂，一起做学园偶像昂", "个人信息"
+                  "画师算命",
+                  "说不出话 ？",
+                  "推送我晚上要手冲",
+                  "问：HELLO 答：WORLD",
+                  "cp 小夜 小雫",
+                  "赛博朋克",
+                  "名场面 不能逃避",
+                  "报错 插件爆炸了",
+                  "最新本子",
+                  "人生重开",
+                  "今天不带套",
+                  "喵嗷嗷嗷嗷呜~嗷呜喵嗷喵嗷嗷~嗷嗷嗷~",
+                  "/ping",
+                  "/迫害 寄 寄啦",
+                  "prpr 嘉然",
+                  "qr 114514",
+                  "让我康康",
+                  "[某条消息重复了2次]",
+                  "roll",
+                  "提醒我晚上要手冲",
+                  "系统状态",
+                  "弹窗 您可能是盗版软件的受害者",
+                  "吠 你好谢谢小笼包再见",
+                  "个人信息",
                 ],
                 options: {
                   letterDelay: 100,
@@ -588,11 +610,11 @@
           });
         });
 
-      function switchLive2DVisible() {
-        const live2d = document.getElementById("live2d");
-        live2d.style.visibility = live2d.style.visibility == "hidden" ? "visible" : "hidden";
-      };
+      // function switchLive2DVisible() {
+      //   const live2d = document.getElementById("live2d");
+      //   live2d.style.visibility =
+      //     live2d.style.visibility == "hidden" ? "visible" : "hidden";
+      // }
     </script>
   </body>
-
 </html>
