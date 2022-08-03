@@ -18,7 +18,7 @@ module.exports = Object.freeze({
   open_ju_reg: new RegExp(/张菊/), // 匹配张菊指令
   close_ju_reg: new RegExp(/闭菊/), // 匹配闭菊指令
   gu_gua_reg: new RegExp(/^\/孤寡.*/), // 匹配孤寡指令
-  fake_forward_reg: new RegExp(/^\/强制迫害.*/), // 匹配伪造转发指令
+  fake_forward_reg: new RegExp(/^强制迫害.*/), // 匹配伪造转发指令
   approve_group_invite_reg: new RegExp(/^\/批准 (.*)/), // 匹配批准加群指令
   reply_reg: new RegExp(/\[CQ:reply,id=.*复读/), // 匹配回复测试指令
 

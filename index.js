@@ -693,7 +693,7 @@ async function StartQQBot() {
               text,
               xiaoye_say,
               requestData;
-            if (event.message == "/强制迫害") {
+            if (event.message == "强制迫害") {
               who = event.sender.user_id; // 如果没有要求迫害谁，那就是迫害自己
             } else {
               let msg = event.message + " "; // 结尾加一个空格防爆
@@ -706,8 +706,8 @@ async function StartQQBot() {
               who = msg[1].trim(); // 谁
               text = msg[2].trim(); // 说啥
               xiaoye_say = msg[3].trim(); // 小夜说啥
-              who = who.replace("/强制迫害 ", "");
-              who = who.replace("/强制迫害", "");
+              who = who.replace("强制迫害 ", "");
+              who = who.replace("强制迫害", "");
               who = who.replace("[CQ:at,qq=", "");
               who = who.replace("]", "");
               who = who.trim();
