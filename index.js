@@ -665,8 +665,7 @@ async function StartQQBot() {
 
           // 嘴臭，小夜的回复转化为语音
           if (Constants.come_yap_reg.test(event.message)) {
-            let message = event.message.replace("/嘴臭 ", "");
-            message = message.replace("/嘴臭", "");
+            const message = event.message.match(Constants.come_yap_reg)[1];
             console.log(`有人对线说 ${message}，小夜要嘴臭了`.log);
             io.emit(
               "system message",
@@ -706,11 +705,8 @@ async function StartQQBot() {
               who = msg[1].trim(); // 谁
               text = msg[2].trim(); // 说啥
               xiaoye_say = msg[3].trim(); // 小夜说啥
-              who = who.replace("强制迫害 ", "");
-              who = who.replace("强制迫害", "");
-              who = who.replace("[CQ:at,qq=", "");
-              who = who.replace("]", "");
-              who = who.trim();
+              who = event.message.match(Constants.fake_forward_reg)[1];
+              who = who.replace("[CQ:at,qq=", "").replace("]", "").trim();
               if (Constants.is_qq_reg.test(who)) {
                 console.log(
                   `群 ${event.group_id} 的 群员 ${event.user_id} 强制迫害 ${who}`
@@ -1230,18 +1226,15 @@ async function StartQQBot() {
 
           // 孤寡
           if (Constants.gu_gua_reg.test(event.message)) {
-            if (event.message == "/孤寡") {
+            if (event.message == "孤寡") {
               res.send({
                 reply: "小夜收到了你的孤寡订单，现在就开始孤寡你了噢孤寡~",
               });
               utils.GuGua(event.user_id);
               return 0;
             }
-            let who = event.message.replace("/孤寡 ", "");
-            who = who.replace("/孤寡", "");
-            who = who.replace("[CQ:at,qq=", "");
-            who = who.replace("]", "");
-            who = who.trim();
+            let who = event.message.match(Constants.gu_gua_reg)[1];
+            who = who.replace("[CQ:at,qq=", "").replace("]", "").trim();
             if (Constants.is_qq_reg.test(who)) {
               axios.get(
                 `http://${GO_CQHTTP_SERVICE_API_URL}/get_friend_list`,
@@ -1300,10 +1293,10 @@ async function StartQQBot() {
           ) {
             for (let i in QQBOT_ADMIN_LIST) {
               if (event.user_id == QQBOT_ADMIN_LIST[i]) {
-                const msg = event.message.replace("/回复率 ", "");
-                QQBOT_REPLY_PROBABILITY = msg;
+                const replyPercentage = event.message.match(Constants.change_reply_probability_reg)[1];
+                QQBOT_REPLY_PROBABILITY = replyPercentage;
                 res.send({
-                  reply: `小夜回复率已修改为${msg}%`,
+                  reply: `小夜回复率已修改为${replyPercentage}%`,
                 });
                 return 0;
               }
@@ -1320,10 +1313,10 @@ async function StartQQBot() {
           ) {
             for (let i in QQBOT_ADMIN_LIST) {
               if (event.user_id == QQBOT_ADMIN_LIST[i]) {
-                let msg = event.message.replace("/复读率 ", "");
-                QQBOT_FUDU_PROBABILITY = msg;
+                const fuduPercentage = event.message.match(Constants.change_fudu_probability_reg)[1];
+                QQBOT_FUDU_PROBABILITY = fuduPercentage;
                 res.send({
-                  reply: `小夜复读率已修改为${msg}%`,
+                  reply: `小夜复读率已修改为${fuduPercentage}%`,
                 });
                 return 0;
               }
