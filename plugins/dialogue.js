@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "名场面插件",
   指令: "^[/!]?名场面 (.*)",
-  版本: "1.1",
+  版本: "1.2",
   作者: "Giftina",
   描述: "根据字幕台词搜索名场面出处，原作：https://github.com/windrises/dialogue.moe",
   使用示例: "名场面 不能逃避",
@@ -22,8 +22,8 @@ module.exports = {
         duplicate: true,
       },
     }).then(res => {
-      if (res.data.length == 0) {
-        return "没有找到结果";
+      if (res.data.total == 0) {
+        return "没有找到这样的名场面，换个名场面试试吧！";
       } else {
         // 随机从 res.data.dialogues 数组中取一组对话
         const dialogue = res.data.dialogues[Math.floor(Math.random() * res.data.dialogues.length)];
