@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "状态栏提示插件",
   指令: "^[/!]?弹窗 (.*)",
-  版本: "2.1",
+  版本: "2.2",
   作者: "Giftina",
   描述: "自动在任务栏显示一个常驻托盘，仅在Windows系统下有效。弹窗指令会在小夜宿主电脑上弹出一条消息通知。",
   使用示例: "弹窗 您可能是盗版软件的受害者",
@@ -20,7 +20,7 @@ module.exports = {
 const trayicon = require("trayicon");
 const path = require("path");
 const fs = require("fs");
-const ChildProcess = require("child_process");
+const { exec } = require("child_process");
 
 const icon = path.resolve(__dirname, "..", "static", "favicon.ico");
 let tray;
@@ -38,7 +38,7 @@ async function runTray() {
     const configFile = path.join(`${process.cwd()}`, "config", "config.yml");
     if (fs.existsSync(configFile)) {
       console.log(`打开配置文件：${configFile}`);
-      ChildProcess.exec(`notepad ${configFile}`, {
+      exec(`notepad ${configFile}`, {
         cwd: path.join(process.cwd(), "config")
       });
     } else {
@@ -50,6 +50,20 @@ async function runTray() {
     // 用插件模板新建插件，之后再写
   });
 
+  const reloadGoCqhttp = newTray.item("重启 go-cqhttp", async () => {
+    exec("go-cqhttp.bat", {
+      cwd: path.join(process.cwd(), "plugins", "go-cqhttp"),
+      windowsHide: true,
+    }, (error) => {
+      if (error) {
+        console.log(`go-cqhttp启动失败，错误原因: ${error}`.error);
+        return;
+      }
+      console.log("go-cqhttp窗口意外退出，小夜将无法正常使用，请尝试重新启动".error);
+      return;
+    });
+  });
+
   const separator = newTray.separator();
 
   const quit = newTray.item("退出", () => {
@@ -58,9 +72,9 @@ async function runTray() {
     process.exit(0);
   });
 
-  newTray.setMenu(openConfigFile, separator, quit);
+  newTray.setMenu(reloadGoCqhttp, openConfigFile, separator, quit);
 
-  newTray.notify("world.execute(me);", "=> 小夜已启动。");
+  newTray.notify("world.execute(me);", "=> Master，小夜已启动。");
 
   return newTray;
 }
