@@ -18,7 +18,8 @@ module.exports = {
       if (options.type === "qq") {
         await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI(`你等等，我去问问小冰有没有${tag}`)}`);
 
-        const fileDirectPath = url.pathToFileURL(path.resolve(`./static${await SearchTag(searchTag, searchType)}`));
+        const fileDirectPath = `./static${await SearchTag(searchTag, searchType)}`;
+        const fileModifiedPath = url.pathToFileURL(path.resolve(await utils.ModifyPic(fileDirectPath)));
 
         const requestData = {
           group_id: groupId,
@@ -28,7 +29,7 @@ module.exports = {
               data: {
                 name: userName,
                 uin: 2854196306, // 对不起，QQ小冰
-                content: `[CQ:image,file=${fileDirectPath}]`,
+                content: `[CQ:image,file=${fileModifiedPath}]`,
               },
             },
           ],
@@ -54,6 +55,7 @@ const fs = require("fs");
 const path = require("path");
 const yaml = require("yaml"); // 使用yaml解析配置文件
 const url = require("url");
+const utils = require("./system/utils.js");
 let GO_CQHTTP_SERVICE_API_URL;
 
 //搜索tag
@@ -63,18 +65,20 @@ function SearchTag(tag, type) {
       body = JSON.parse(body);
       if (!err && body.data[0] != null) {
         const picUrl = body.data[0].urls.original.replace("pixiv.cat", "pixiv.re");
-        console.log(`发送 ${tag} 图片：${picUrl}`.log);
+        console.log(`准备保存 ${tag} 图片：${picUrl}`.log);
         // 绕过防盗链，保存为本地图片
         request(picUrl, (err) => {
           if (err) {
-            reject(`${tag}太大了，下不下来，错误原因：${err}`);
+            reject(err);
           }
         }).pipe(
           fs.createWriteStream(`./static/images/${picUrl.split("/").pop()}`).on("close", (err) => {
             if (!err) {
+              console.log(`${tag} 图片保存成功`.log);
               resolve(`/images/${picUrl.split("/").pop()}`);
             } else {
-              reject(`${tag}太大了，下不下来，错误原因：${err}`);
+              console.log(`${tag} 图片保存失败`.log);
+              reject(err);
             }
           })
         );
