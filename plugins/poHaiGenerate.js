@@ -3,8 +3,8 @@ module.exports = {
   指令: "^[/!]?迫害 (.*)",
   版本: "2.2",
   作者: "Giftina",
-  描述: "让小夜来制作缺德的迫害表情包吧。现在可以迫害的对象：唐可可，上原步梦，猛男狗，令和，鸭鸭，陈睿，寄，流星。",
-  使用示例: "迫害 上原步梦 是我，是我先，明明都是我先来的……接吻也好，拥抱也好，还是喜欢上那家伙也好。",
+  描述: "让小夜来制作缺德的迫害表情包吧。现在可以迫害的对象：唐可可，上原步梦，猛男狗，令和，鸭鸭，陈睿，寄。",
+  使用示例: "/迫害 上原步梦 是我，是我先，明明都是我先来的……接吻也好，拥抱也好，还是喜欢上那家伙也好。",
   预期返回: "[一张迫害生草图]",
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
@@ -19,7 +19,6 @@ module.exports = {
       鸭鸭: { pictureName: "yaya.gif", textPosition: { textAlign: "center", left: "30", top: "30", rotate: "0", wordPerLine: "2", fontsize: "30" } },
       陈睿: { pictureName: "bilibili.png", textPosition: { textAlign: "center", left: "92", top: "385", rotate: "-0.01", wordPerLine: "12", fontsize: "14" } },
       寄: { pictureName: "ji.jpg", textPosition: { textAlign: "center", left: "-3", top: "150", rotate: "-0.3", wordPerLine: "1", fontsize: "50" } },
-      流星: { pictureName: "star.jpg", textPosition: { textAlign: "center", left: "0", top: "0", rotate: "0", wordPerLine: "0", fontsize: "30" } },
     };
 
     const defaultPohaiTarget = pohaiList.唐可可;
