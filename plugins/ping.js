@@ -16,7 +16,7 @@ module.exports = {
    * @param {String} groupName 群名
    * @param {Any} options 其他可选参数
    * @returns {Object} { type: "返回类型", content: "返回内容" }
-   * ### 插件处理完成后需要返回处理结果，若无需回复则返回空： `return ""`
+   * ### 插件处理完成后需要返回处理结果，若无需回复则返回空文本： { type: "text", content: "" }
    * ### 返回值是一个对象，包含以下属性: `{ type: "返回类型", content: "返回内容" }`
    * ### 返回值的 返回类型 目前有 5 种类型： "text", "picture", "audio", "video", "file":
    * - text 为文本回复；

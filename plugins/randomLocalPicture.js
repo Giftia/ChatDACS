@@ -8,10 +8,10 @@ module.exports = {
   预期返回: "[一张本地的随机图]",
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
-    const filePath = `${图片文件夹}${await RandomLocalPicture()}`;
-
     if (options.type === "qq") {
-      const fileDirectPath = url.pathToFileURL(path.resolve(`${filePath}`));
+      await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI("杰哥不要！")}`);
+
+      const fileDirectPath = url.pathToFileURL(path.resolve(`${图片文件夹}${await RandomLocalPicture()}`));
 
       const requestData = {
         group_id: groupId,
@@ -29,9 +29,10 @@ module.exports = {
 
       await axios.post(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_forward_msg`, requestData);
 
-      return { type: "text", data: "杰哥不要！" };
+      return { type: "text", content: "" };
     }
 
+    const filePath = `${图片文件夹}${await RandomLocalPicture()}`;
     return { type: "directPicture", content: { file: filePath } };
   },
 };

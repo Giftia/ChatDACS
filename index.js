@@ -358,7 +358,7 @@ async function StartQQBot() {
     // 加群请求发送给管理员
     if (event.request_type == "group" && event.sub_type == "invite") {
       const msg = `用户 ${event.user_id} 邀请小夜加入群 ${event.group_id}，批准请发送
-/批准 ${event.flag}`;
+批准 ${event.flag}`;
       logger.info(
         `小夜收到加群请求，请求人：${event.user_id}，请求内容：${event.comment}，发送小夜管理员审核`.log,
       );

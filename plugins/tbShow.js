@@ -11,9 +11,12 @@ module.exports = {
     if (!SUMT_API_KEY) {
       return { type: "text", content: `${this.插件名} 的接口密钥未配置，请通知小夜主人及时配置接口密钥。方法：在状态栏右键小夜头像，点击 打开配置文件，按接口密钥配置说明进行操作` };
     }
-    const fileURL = await RandomTbShow() ?? "";
 
     if (options.type === "qq") {
+      await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI("你不对劲，我去问问小冰有没有买家秀")}`);
+
+      const fileURL = await RandomTbShow();
+
       const requestData = {
         group_id: groupId,
         messages: [
@@ -30,9 +33,10 @@ module.exports = {
 
       await axios.post(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_forward_msg`, requestData);
 
-      return { type: "text", data: "你不对劲，我去问问小冰有没有买家秀" };
+      return { type: "text", content: "" };
     }
 
+    const fileURL = await RandomTbShow();
     return { type: "picture", content: { file: fileURL } };
   },
 };

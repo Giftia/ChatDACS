@@ -15,10 +15,10 @@ module.exports = {
     console.log(`搜索 ${searchType ? "r18" : "正常"} tag：${searchTag}`.log);
 
     try {
-      const filePath = await SearchTag(searchTag, searchType);
-
       if (options.type === "qq") {
-        const fileDirectPath = url.pathToFileURL(path.resolve(`./static${filePath}`));
+        await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI(`你等等，我去问问小冰有没有${tag}`)}`);
+
+        const fileDirectPath = url.pathToFileURL(path.resolve(`./static${await SearchTag(searchTag, searchType)}`));
 
         const requestData = {
           group_id: groupId,
@@ -36,11 +36,13 @@ module.exports = {
 
         await axios.post(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_forward_msg`, requestData);
 
-        return { type: "text", data: `你等等，我去问问小冰有没有${tag}` };
+        return { type: "text", content: "" };
       }
 
+      const filePath = await SearchTag(searchTag, searchType);
       return { type: "picture", content: { file: filePath } };
-    } catch (error) {
+    }
+    catch (error) {
       return { type: "text", content: `你要的${tag}发送失败啦：${error}` };
     }
   },

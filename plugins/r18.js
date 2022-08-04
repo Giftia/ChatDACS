@@ -8,10 +8,10 @@ module.exports = {
   预期返回: "[一张r18图]",
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
-    const filePath = await RandomR18();
-
     if (options.type === "qq") {
-      const fileDirectPath = url.pathToFileURL(path.resolve(`./static${filePath}`));
+      await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI("你不对劲，我去问问小冰有没有r18图")}`);
+
+      const fileDirectPath = url.pathToFileURL(path.resolve(`./static${await RandomR18()}`));
 
       const requestData = {
         group_id: groupId,
@@ -29,9 +29,10 @@ module.exports = {
 
       await axios.post(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_forward_msg`, requestData);
 
-      return { type: "text", data: "你不对劲，我去问问小冰有没有r18图" };
+      return { type: "text", content: "" };
     }
 
+    const filePath = await RandomR18();
     return { type: "picture", content: { file: filePath } };
   },
 };
