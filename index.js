@@ -1233,40 +1233,47 @@ async function StartQQBot() {
               utils.GuGua(event.user_id);
               return 0;
             }
-            let who = event.message.match(Constants.gu_gua_reg)[1];
-            who = who.replace("[CQ:at,qq=", "").replace("]", "").trim();
+
+            const who = Constants.has_qq_reg.exec(event.message)[1];
+            console.log(`孤寡对象：${who}`.log);
             if (Constants.is_qq_reg.test(who)) {
               axios.get(
                 `http://${GO_CQHTTP_SERVICE_API_URL}/get_friend_list`,
-              ).then((res) => {
-                if (res.length != 0) {
-                  for (let i in res) {
-                    if (who == res[i].user_id) {
-                      console.log(
-                        `群 ${event.group_id} 的 群员 ${event.user_id} 孤寡了 ${who}`
-                          .log,
-                      );
-                      res.send({
-                        reply: `小夜收到了你的孤寡订单，现在就开始孤寡[CQ:at,qq=${who}]了噢孤寡~`,
-                      });
-                      axios.get(
-                        `http://${GO_CQHTTP_SERVICE_API_URL}/send_private_msg?user_id=${who}&message=${encodeURI(
-                          `您好，我是孤寡小夜，您的好友 ${event.user_id} 给您点了一份孤寡套餐，请查收`,
-                        )}`
-                      );
-                      utils.GuGua(who);
-                      return 0;
-                    }
+              ).then((response) => {
+                if (response.length != 0) {
+                  // 判断 who 是否在 response.data.data 数组里
+                  const userExist = response.data.data.some((item) => {
+                    return item.user_id == who;
+                  });
+
+                  if (userExist) {
+                    console.log(
+                      `群 ${event.group_id} 的 群员 ${event.user_id} 孤寡了 ${who}`.log,
+                    );
+                    res.send({
+                      reply: `小夜收到了你的孤寡订单，现在就开始孤寡[CQ:at,qq=${who}]了噢孤寡~`,
+                    });
+                    axios.get(
+                      `http://${GO_CQHTTP_SERVICE_API_URL}/send_private_msg?user_id=${who}&message=${encodeURI(
+                        `您好，我是孤寡小夜，您的好友 ${event.user_id} 给您点了一份孤寡套餐，请查收`,
+                      )}`
+                    );
+                    utils.GuGua(who);
+                    return 0;
                   }
                   // 没有加好友，不能私聊孤寡
-                  res.send({
-                    reply: `小夜没有加[CQ:at,qq=${who}]为好友，没有办法孤寡ta呢，请先让ta加小夜为好友吧，为了补偿，小夜就在群里孤寡大家吧`,
-                  });
-                  utils.QunGuGua(event.group_id);
+                  else {
+                    res.send({
+                      reply: `小夜没有加[CQ:at,qq=${who}]为好友，没有办法孤寡ta呢，请先让ta加小夜为好友吧，为了补偿，小夜就在群里孤寡大家吧`,
+                    });
+                    utils.QunGuGua(event.group_id);
+                    return 0;
+                  }
                 }
               });
             } else {
               // 目标不是qq号
+              console.log("孤寡对象目标不是qq号");
               res.send({
                 reply: `你想孤寡谁啊，目标不可以是${who}，不要乱孤寡，小心孤寡你一辈子啊`,
               });

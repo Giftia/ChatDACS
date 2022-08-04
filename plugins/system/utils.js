@@ -618,6 +618,6 @@ const guGuaPicList = [
   "1.jpg",
   "2.jpg",
   "3.jpg",
-  "4.png",
+  "4.jpg",
   "5.gif",
 ];
