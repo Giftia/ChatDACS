@@ -567,18 +567,36 @@ module.exports = {
     return perfunctoryWords[Math.floor(Math.random() * perfunctoryWords.length)].content ?? null;
   },
 
+  /**
+   * 魔改图片的一个随机像素点为随机颜色
+   * @param {string} picPath 原始图片的路径
+   * @returns {Promise<string>} 修改后图片的路径
+   */
+  async ModifyPic(picPath) {
+    const pic = await Jimp.read(picPath);
+    const x = Math.floor(Math.random() * pic.bitmap.width);
+    const y = Math.floor(Math.random() * pic.bitmap.height);
+    const color = Math.floor(Math.random() * 0xffffff);
+    console.log(`小夜将会修改图片 ${picPath} 的像素点 (${x}, ${y}) 为颜色 ${color}`.log);
+    pic.setPixelColor(color, x, y);
+    const modifiedPicPath = `./static/images/modified/${Date.now()}.png`;
+    console.log(`小夜将会保存修改后的图片到 ${modifiedPicPath}`.log);
+    await pic.writeAsync(modifiedPicPath);
+    return modifiedPicPath;
+  },
 };
 
 const request = require("request");
 const fs = require("fs");
 const path = require("path");
-const yaml = require("yaml"); // 使用yaml解析配置文件
+const yaml = require("yaml");
 const url = require("url");
 const crypto = require("crypto");
 const axios = require("axios").default;
 const mp3Duration = require("mp3-duration");
 const sequelize = require("sequelize");
 const Op = sequelize.Op;
+const Jimp = require("jimp");
 
 // models
 const UserModel = require(path.join(process.cwd(), "plugins", "system", "model", "userModel.js"));
@@ -618,6 +636,6 @@ const guGuaPicList = [
   "1.jpg",
   "2.jpg",
   "3.jpg",
-  "4.png",
+  "4.jpg",
   "5.gif",
 ];

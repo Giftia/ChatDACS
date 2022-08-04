@@ -1,17 +1,17 @@
 module.exports = {
   插件名: "随机二次元图插件",
   指令: "^[/!]?(随机)二次元(图)$|^[/!]?二次元$",
-  版本: "3.0",
+  版本: "3.1",
   作者: "Giftina",
   描述: "发送一张正常尺度的二次元图。",
   使用示例: "二次元",
   预期返回: "[一张随机二次元图]",
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
-    const filePath = await RandomECY();
-
     if (options.type === "qq") {
-      const fileDirectPath = url.pathToFileURL(path.resolve(`./static${filePath}`));
+      await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI("你等等，我去问问小冰有没有二次元")}`);
+
+      const fileDirectPath = url.pathToFileURL(path.resolve(`./static${await RandomECY()}`));
 
       const requestData = {
         group_id: groupId,
@@ -29,9 +29,10 @@ module.exports = {
 
       await axios.post(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_forward_msg`, requestData);
 
-      return "";
+      return { type: "text", content: "" };
     }
 
+    const filePath = await RandomECY();
     return { type: "picture", content: { file: filePath } };
   },
 };
