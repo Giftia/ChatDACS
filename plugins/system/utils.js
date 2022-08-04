@@ -597,6 +597,11 @@ const mp3Duration = require("mp3-duration");
 const sequelize = require("sequelize");
 const Op = sequelize.Op;
 const Jimp = require("jimp");
+const cachedJpegDecoder = Jimp.decoders["image/jpeg"];
+Jimp.decoders["image/jpeg"] = (data) => {
+  const userOpts = { maxMemoryUsageInMB: 1024 };
+  return cachedJpegDecoder(data, userOpts);
+};
 
 // models
 const UserModel = require(path.join(process.cwd(), "plugins", "system", "model", "userModel.js"));
