@@ -31,7 +31,7 @@ jobs:
           architecture: ${{ matrix.architecture }}
           cache: "npm"
           cache-dependency-path: |
-            ./packages-lock.json
+            ./package-lock.json
             plugins/package-lock.json
 
       - name: Remove go-cqhttp On Windows
