@@ -21,7 +21,8 @@ jobs:
           cache-dependency-path: ./package-lock.json
 
       - name: Remove conflicting files
-        run: rm ./plugins/go-cqhttp
+        shell: bash
+        run: rm -rf ./plugins/go-cqhttp/
 
       - name: Clean Install Modules
         run: npm ci --production
