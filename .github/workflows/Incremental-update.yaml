@@ -16,9 +16,8 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 14
-          architecture: x64
           cache: "npm"
-          cache-dependency-path: packages-lock.json
+          cache-dependency-path: ./packages-lock.json
 
       - name: Remove conflicting files
         run: rm ./plugins/go-cqhttp/
