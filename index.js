@@ -462,7 +462,7 @@ async function StartQQBot() {
             axios.get(
               `http://${GO_CQHTTP_SERVICE_API_URL}/get_group_member_info?group_id=${event.group_id}&user_id=${event.user_id}`
             ).then(async (response) => {
-              if (response.role === "owner" || response.role === "admin") {
+              if (response.data.data.role === "owner" || response.data.data.role === "admin") {
                 logger.info(
                   `群 ${event.group_id} 启用了小夜服务`.log
                 );
