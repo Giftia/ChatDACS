@@ -31,7 +31,7 @@ jobs:
         run: npm i pkg -g
 
       - name: Use pkg To Package
-        run: pkg -t . --compress Brotli
+        run: pkg -t node14-windows . --compress Brotli
 
       - name: Declare VERSION
         shell: bash
