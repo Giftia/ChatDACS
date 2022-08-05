@@ -1,10 +1,10 @@
 module.exports = {
   插件名: "迫害生草图生成器插件",
   指令: "^[/!]?迫害 (.*)",
-  版本: "2.2",
+  版本: "2.3",
   作者: "Giftina",
-  描述: "让小夜来制作缺德的迫害表情包吧。现在可以迫害的对象：唐可可，上原步梦，猛男狗，令和，鸭鸭，陈睿，寄。",
-  使用示例: "/迫害 上原步梦 是我，是我先，明明都是我先来的……接吻也好，拥抱也好，还是喜欢上那家伙也好。",
+  描述: "让小夜来制作缺德的迫害表情包吧。现在可以迫害的对象：唐可可，上原步梦，猛男狗，令和，鸭鸭，陈睿，寄，吴京，星星，安详。",
+  使用示例: "迫害 上原步梦 是我，是我先，明明都是我先来的……接吻也好，拥抱也好，还是喜欢上那家伙也好。",
   预期返回: "[一张迫害生草图]",
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
@@ -19,6 +19,9 @@ module.exports = {
       鸭鸭: { pictureName: "yaya.gif", textPosition: { textAlign: "center", left: "30", top: "30", rotate: "0", wordPerLine: "2", fontsize: "30" } },
       陈睿: { pictureName: "bilibili.png", textPosition: { textAlign: "center", left: "92", top: "385", rotate: "-0.01", wordPerLine: "12", fontsize: "14" } },
       寄: { pictureName: "ji.jpg", textPosition: { textAlign: "center", left: "-3", top: "150", rotate: "-0.3", wordPerLine: "1", fontsize: "50" } },
+      吴京: { pictureName: "wujing.jpg", textPosition: { textAlign: "center", left: "111", top: "150", rotate: "0", wordPerLine: "14", fontsize: "15" } },
+      星星: { pictureName: "star.jpg", textPosition: { textAlign: "center", left: "200", top: "345", rotate: "0", wordPerLine: "15", fontsize: "20" } },
+      安详: { pictureName: "sleep.jpg", textPosition: { textAlign: "left", left: "300", top: "350", rotate: "-0.2", wordPerLine: "20", fontsize: "20" } },
     };
 
     const defaultPohaiTarget = pohaiList.唐可可;

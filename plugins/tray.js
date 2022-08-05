@@ -34,22 +34,6 @@ async function runTray() {
     icon: fs.readFileSync(icon),
   });
 
-  const openConfigFile = newTray.item("打开配置文件", async () => {
-    const configFile = path.join(`${process.cwd()}`, "config", "config.yml");
-    if (fs.existsSync(configFile)) {
-      console.log(`打开配置文件：${configFile}`);
-      exec(`notepad ${configFile}`, {
-        cwd: path.join(process.cwd(), "config")
-      });
-    } else {
-      newTray.notify("配置文件不存在", "是不是哪里出问题了, 建议重开");
-    }
-  });
-
-  const newPlugin = newTray.item("新建插件", async () => {
-    // 用插件模板新建插件，之后再写
-  });
-
   const reloadGoCqhttp = newTray.item("重启 go-cqhttp", async () => {
     exec("go-cqhttp.bat", {
       cwd: path.join(process.cwd(), "plugins", "go-cqhttp"),
@@ -64,6 +48,22 @@ async function runTray() {
     });
   });
 
+  const openConfigFile = newTray.item("打开配置文件", async () => {
+    const configFile = path.join(`${process.cwd()}`, "config", "config.yml");
+    if (fs.existsSync(configFile)) {
+      console.log(`打开配置文件：${configFile}`);
+      exec(`notepad ${configFile}`, {
+        cwd: path.join(process.cwd(), "config")
+      });
+    } else {
+      newTray.notify("配置文件不存在", "是不是哪里出问题了, 建议重开");
+    }
+  });
+
+  const checkUpdate = newTray.item("检查更新", async () => {
+    newTray.notify("还没写，等等吧");
+  });
+
   const separator = newTray.separator();
 
   const quit = newTray.item("退出", () => {
@@ -72,7 +72,7 @@ async function runTray() {
     process.exit(0);
   });
 
-  newTray.setMenu(reloadGoCqhttp, openConfigFile, separator, quit);
+  newTray.setMenu(reloadGoCqhttp, openConfigFile, checkUpdate, separator, quit);
 
   newTray.notify("world.execute(me);", "=> Master，小夜已启动。");
 

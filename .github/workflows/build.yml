@@ -34,8 +34,13 @@ jobs:
             ./packages-lock.json
             plugins/package-lock.json
 
-      - name: Remove Other Platforms go-cqhttp
+      - name: Remove go-cqhttp On Windows
+        if: runner.os == 'Windows'
         run: rm ./plugins/go-cqhttp/go-cqhttp
+
+      - name: Remove go-cqhttp.exe On Linux
+        if: runner.os == 'Linux'
+        run: rm ./plugins/go-cqhttp/go-cqhttp_windows_amd64.exe
 
       - name: Clean Install Modules
         run: |

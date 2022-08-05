@@ -243,7 +243,7 @@ module.exports = {
       });
 
     if (!groupList) {
-      setTimeout(() => this.InitGroupList(), 10000);
+      setTimeout(() => this.InitGroupList(), 20000);
       return;
     } else {
       const groupIdList = groupList.map((group) => group.group_id);
