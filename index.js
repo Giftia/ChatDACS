@@ -1768,13 +1768,13 @@ function StartHttpServer() {
       `服务启动完毕，访问 127.0.0.1:${WEB_PORT} 即可进入本地web端\n`,
     );
   });
-
-  http.on("error", (err) => {
-    http.close();
-    logger.error(`本机${WEB_PORT}端口被其他应用程序占用，稍后会自动重试，请尝试关闭占用${WEB_PORT}端口的其他程序 或 修改配置文件的 WEB_PORT 配置项。错误代码：${err.code}`.error);
-    setTimeout(() => StartHttpServer(), 10000);
-  });
 };
+
+http.on("error", (err) => {
+  http.close();
+  logger.error(`本机${WEB_PORT}端口被其他应用程序占用，稍后会自动重试，请尝试关闭占用${WEB_PORT}端口的其他程序 或 修改配置文件的 WEB_PORT 配置项。错误代码：${err.code}`.error);
+  setTimeout(() => StartHttpServer(), 10000);
+});
 
 const UnauthorizedHttpsAgent = new https.Agent({ rejectUnauthorized: false }); // #303，Watt Toolkit(Steam++)的自签证书问题
 
@@ -1791,8 +1791,7 @@ function CheckUpdate() {
       logger.info(`当前小夜已经是最新发行版本 ${versionNumber}`.log);
     }
   }).catch((err) => {
-    logger.error(`检查小夜更新失败，稍后会自动重试，错误原因: ${err}`.error);
-    setTimeout(() => CheckUpdate(), 10000);
+    logger.error(`检查小夜更新失败，错误原因: ${err}`.error);
   });
 }
 
@@ -1814,12 +1813,10 @@ function CheckGoCqhttpUpdate() {
         }
       })
       .catch((err) => {
-        logger.error(`检查 go-cqhttp 更新失败，稍后会自动重试，错误原因: ${err}`.error);
-        setTimeout(() => CheckGoCqhttpUpdate(), 10000);
+        logger.error(`检查 go-cqhttp 更新失败，错误原因: ${err}`.error);
       });
   }).catch((err) => {
-    logger.error(`检查 go-cqhttp 更新失败，稍后会自动重试，错误原因: ${err}`.error);
-    setTimeout(() => CheckGoCqhttpUpdate(), 10000);
+    logger.error(`检查 go-cqhttp 更新失败，错误原因: ${err}`.error);
   });
 }
 
