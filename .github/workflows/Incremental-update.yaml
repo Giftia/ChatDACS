@@ -1,0 +1,72 @@
+name: Build Incremental Update Package On Windows (Windows 增量更新包)
+on:
+  push:
+    branches:
+      - master
+
+env:
+  GITHUB_TOKEN: ${{ github.token }}
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js v14
+        uses: actions/setup-node@v3
+        with:
+          node-version: 14
+          architecture: x64
+          cache: "npm"
+          cache-dependency-path: ./packages-lock.json
+
+      - name: Remove conflicting files
+        run: rm ./plugins/go-cqhttp/
+
+      - name: Clean Install Modules
+        run: npm ci --production
+
+      - name: Install pkg Tool
+        run: npm i pkg -g
+
+      - name: Use pkg To Package
+        run: pkg -t . --compress Brotli
+
+      - name: Declare VERSION
+        shell: bash
+        run: |
+          node -e "
+            const fs = require('fs');
+            const version = require('./version.json');
+            fs.writeFileSync('version-number', 'VERSION_NUMBER=' + version.versionNumber);
+          "
+          cat ./version-number >> $GITHUB_ENV
+
+      - name: Pre-compress
+        shell: bash
+        run: |
+          npm i archiver
+          node -e "
+            const archiver = require('archiver');
+            const fs = require('fs');
+            const path = require('path');
+            const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-${{ env.VERSION_NUMBER }}_Incremental-Update-Package.zip'));
+            const archive = archiver('zip', {
+              zlib: { level: 9 } // Sets the compression level. 9 is the max compression.
+            });
+            archive.pipe(output);
+            archive.directory('./plugins/', 'plugins');
+            archive.file('./chatdacs.exe', { name: 'chatdacs.exe' });
+            archive.finalize();
+          "
+
+      - name: Get Current Time
+        id: time
+        run: echo "::set-output name=now::$(date +'%Y-%m-%d-%H-%M-%S')"
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ChatDACS-${{ env.VERSION_NUMBER }}_Incremental-Update-Package-${{ steps.time.outputs.now }}
+          path: ChatDACS-${{ env.VERSION_NUMBER }}_Incremental-Update-Package.zip
+          if-no-files-found: error
