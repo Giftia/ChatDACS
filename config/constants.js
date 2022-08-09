@@ -14,7 +14,6 @@ module.exports = Object.freeze({
   loop_bomb_reg: new RegExp(/^击鼓传雷(.*)/), // 匹配击鼓传雷
   is_qq_reg: new RegExp(/^[1-9][0-9]{4,9}$/), // 校验是否是合法的qq号
   has_qq_reg: new RegExp(/\[CQ:at,qq=(\d*)\]/), // 匹配是否有@qq
-  i_have_a_friend_reg: new RegExp(/我有.?个朋友说(.*)/), // 匹配我有个朋友指令
   open_ju_reg: new RegExp(/张菊/), // 匹配张菊指令
   close_ju_reg: new RegExp(/闭菊/), // 匹配闭菊指令
   gu_gua_reg: new RegExp(/^孤寡(.*)/), // 匹配孤寡指令

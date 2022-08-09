@@ -48,7 +48,6 @@ colors.setTheme({
 });
 const fs = require("fs");
 const path = require("path");
-const { createCanvas, loadImage } = require("canvas"); // 用于绘制文字图像，迫害p图
 require.all = require("require.all"); // 插件加载器
 const { KeepLiveTCP } = require("bilibili-live-ws");
 const yaml = require("yaml"); // 使用yaml解析配置文件
@@ -625,7 +624,9 @@ async function StartQQBot() {
             event.user_id,
             event?.sender?.nickname,
             event.group_id,
-            "", // 群名还挺麻烦的，先不搞了
+            (await axios.get(
+              `http://${GO_CQHTTP_SERVICE_API_URL}/get_group_info?group_id=${event.group_id}&no_cache=1`
+            )).data.data.group_name,
             {
               selfId: event.self_id,
               targetId: event.sub_type == "poke" ? event.target_id : null,
@@ -1166,64 +1167,6 @@ async function StartQQBot() {
             }
           }
 
-          // 我有个朋友
-          if (Constants.i_have_a_friend_reg.test(event.message)) {
-            let msg, sources;
-            // 指定目标的话
-            if (Constants.has_qq_reg.test(event.message)) {
-              var msg_in = event.message.split("说")[1];
-              msg = msg_in.split("[CQ:at,qq=")[0].trim();
-              var who = msg_in.split("[CQ:at,qq=")[1];
-              who = who.replace("]", "").trim();
-              if (Constants.is_qq_reg.test(who)) {
-                sources = `https://api.sumt.cn/api/qq.logo.php?qq=${who}`; // 载入头像
-              }
-              // 没指定目标
-            } else {
-              msg = event.message.split("说")[1];
-              sources = `https://api.sumt.cn/api/qq.logo.php?qq=${event.user_id}`; // 没有指定谁，那这个朋友就是ta自己
-            }
-
-            loadImage(sources).then((image) => {
-              let canvas = createCanvas(350, 80);
-              let ctx = canvas.getContext("2d");
-              ctx.fillStyle = "WHITE";
-              ctx.fillRect(0, 0, 350, 80);
-              ctx.font = "20px SimHei";
-              ctx.textAlign = "left";
-              ctx.fillStyle = "#000000";
-              ctx.fillText("沙雕网友群", 90.5, 35.5);
-              ctx.font = "16px SimHei";
-              ctx.fillStyle = "#716F81";
-              ctx.fillText(`沙雕网友: ${msg}`, 90.5, 55.5);
-              ctx.font = "13px SimHei";
-              ctx.fillText(utils.GetTimes().Clock, 280.5, 35.5);
-
-              ctx.beginPath();
-              ctx.arc(40, 40, 28, 0, 2 * Math.PI);
-              ctx.fill();
-              ctx.clip();
-              ctx.drawImage(image, 10, 10, 60, 60);
-              ctx.closePath();
-
-              const fileLocalPath = path.join(
-                process.cwd(), "static", "xiaoye", "images",
-                `${utils.sha1(canvas.toBuffer())}.jpg`,
-              );
-              fs.writeFileSync(fileLocalPath, canvas.toBuffer());
-              const fileURL = `http://127.0.0.1:${WEB_PORT}/xiaoye/images/${utils.sha1(
-                canvas.toBuffer(),
-              )}.jpg`;
-              console.log(
-                `我有个朋友合成成功，图片发送: ${fileURL}`.log,
-              );
-              res.send({
-                reply: `[CQ:image,file=${fileURL},url=${fileURL}]`,
-              });
-            });
-            return 0;
-          }
-
           // 孤寡
           if (Constants.gu_gua_reg.test(event.message)) {
             if (event.message == "孤寡") {
@@ -1277,7 +1220,6 @@ async function StartQQBot() {
               res.send({
                 reply: `你想孤寡谁啊，目标不可以是${who}，不要乱孤寡，小心孤寡你一辈子啊`,
               });
-              return 0;
             }
             return 0;
           }
@@ -1944,6 +1886,12 @@ async function ECYWenDa() {
 
 /**
  * 插件系统核心
+ * @param {string} msg 传入消息
+ * @param {string} userId 消息发送者id
+ * @param {string} userName 消息发送者昵称
+ * @param {string} groupId 消息所属群id
+ * @param {string} groupName 消息所属群昵称
+ * @param {string} options 其他参数
  * @returns {Promise<string>} 插件回复
  */
 async function ProcessExecute(msg, userId, userName, groupId, groupName, options) {
