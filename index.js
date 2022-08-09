@@ -1102,8 +1102,8 @@ async function StartQQBot() {
                 setTimeout(async () => {
                   // 随机选一位幸运群友
                   const randomMember = await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_group_member_list?group_id=${event.group_id}`)
-                    .then(async (res) => {
-                      const members = res.data.data;
+                    .then(async (response) => {
+                      const members = response.data.data;
                       const randomMember = members[Math.floor(Math.random() * members.length)].user_id;
                       console.log(
                         `随机选取一个群友 ${randomMember} 给他下一题`.log
