@@ -1230,9 +1230,9 @@ async function StartQQBot() {
             const msgID = event.message.split("id=")[1].split("]")[0].trim();
             logger.info(`收到手动复读指令，消息id: ${msgID}`.log);
 
-            const historyMessage = await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_msg?message_id=${msgID}`);
-            logger.info(`复读历史消息: ${historyMessage.message}`.log);
-            res.send({ reply: historyMessage.message });
+            const historyMessage = (await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_msg?message_id=${msgID}`)).data.data.message;
+            logger.info(`复读历史消息: ${historyMessage}`.log);
+            res.send({ reply: historyMessage });
             return 0;
           }
 
