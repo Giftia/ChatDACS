@@ -89,7 +89,7 @@ module.exports = {
 
     // 开始p图
     const pohaiPicturePath = path.join(process.cwd(), "static", "xiaoye", "ps", pohaiPicture);
-    console.log(pohaiPicturePath);
+
     const fileURL = await loadImage(pohaiPicturePath)
       .then((image) => {
         // 根据迫害图尺寸创建画布
