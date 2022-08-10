@@ -33,7 +33,7 @@ const QQGroupModel = sequelize.define("qqGroup", {
     type: DataTypes.INTEGER(10),
   },
 }, {
-  tableName: "qq_group",
+  tableName: "qqGroups",
 });
 
 module.exports = QQGroupModel;

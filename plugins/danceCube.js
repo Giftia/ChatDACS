@@ -456,7 +456,7 @@ async function Geocoding(userId, address) {
   const { lng, lat, error } = await BaiduGeocoding(address);
 
   if (!lng || !lat) {
-    return `插眼失败：${error}，可能是这个地名不太好找，请换个地名再试试`;
+    return `插眼失败：${error}`;
   }
 
   await DanceCubeModel.update({
