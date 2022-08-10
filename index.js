@@ -816,80 +816,6 @@ async function StartQQBot() {
             return 0;
           }
 
-          // 一个手雷
-          if (Constants.hand_grenade_reg.test(event.message)) {
-            let who;
-            const isHollyHandGrenade = Math.floor(Math.random() * 100) < 1; // 神圣手雷的概率为1%
-            const successfullyThrown = Math.floor(Math.random() * 100) < 50; // 50%几率成功丢出，50%几率被自己炸伤
-            const boomTime = Math.floor(Math.random() * 60 * 2); // 造成伤害时间，2分钟内
-
-            // 判断是否神圣手雷
-            if (isHollyHandGrenade) {
-              axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_whole_ban?group_id=${event.group_id}&enable=1`);
-
-              console.log(
-                `${event.user_id} 在群 ${event.group_id} 触发了神圣地雷`.error,
-              );
-              res.send({
-                reply: "噢，该死，我的上帝啊，真是不敢相信，瞧瞧我发现了什么，我发誓我没有看错，这竟然是一颗出现率为千分之一的神圣手雷!我是说，这是一颗毁天灭地的神圣手雷啊!哈利路亚!麻烦管理员解除一下",
-              });
-              return 0;
-            }
-            // 是常规手雷
-            else {
-              if (event.message === "一个手雷") {
-                who = event.user_id; // 如果没有要求炸谁，那就是炸自己
-                console.log(
-                  `群 ${event.group_id} 的群员 ${event.user_id} 朝自己丢出一颗手雷`
-                    .log,
-                );
-              }
-              // 炸目标
-              else {
-                who = Constants.has_qq_reg.exec(event.message)[1];
-                if (Constants.is_qq_reg.test(who)) {
-                  console.log(
-                    `群 ${event.group_id} 的 群员 ${event.user_id} 尝试向 ${who} 丢出一颗手雷`.log,
-                  );
-                }
-                // 没有正确的目标，也炸自己
-                else {
-                  who = event.user_id;
-                  console.log(
-                    `群 ${event.group_id} 的群员 ${event.user_id} 朝自己丢出一颗手雷`
-                      .log,
-                  );
-                }
-              }
-
-              // 判断手雷是否成功丢出
-              if (successfullyThrown || who === event.user_id) {
-                console.log(
-                  `群 ${event.group_id} 的 群员 ${event.user_id} 的手雷炸到了自己`
-                    .log,
-                );
-                res.send({
-                  reply: `[CQ:at,qq=${event.user_id}] 小手一滑，被自己丢出的手雷炸伤，造成了${boomTime}秒的伤害，苍天有轮回，害人终害己，祝你下次好运`,
-                  ban: 1,
-                  ban_duration: boomTime,
-                });
-              }
-              // 成功丢出手雷
-              else {
-                axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${event.group_id}&user_id=${who}&duration=${boomTime}`);
-
-                console.log(
-                  `群 ${event.group_id} 的 群员 ${event.user_id} 的手雷炸到了 ${who}`
-                    .log,
-                );
-                res.send({
-                  reply: `恭喜[CQ:at,qq=${who}]被[CQ:at,qq=${event.user_id}]丢出的手雷炸伤，造成了${boomTime}秒的伤害，祝你下次好运`,
-                });
-              }
-            }
-            return 0;
-          }
-
           // 埋地雷
           if (Constants.mine_reg.test(event.message)) {
             // 搜索地雷库中现有地雷
@@ -1051,9 +977,6 @@ async function StartQQBot() {
 
                 // 游戏结束，清空数据
                 await utils.EndGroupLoopBombGame(event.group_id);
-
-                // 金手指关闭
-                axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${bombHolder}&card=`);
 
                 return 0;
               }, 1000 * 60);
