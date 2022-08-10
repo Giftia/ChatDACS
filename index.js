@@ -822,7 +822,7 @@ async function StartQQBot() {
             const mines = await utils.GetGroupAllMines(event.group_id);
 
             // 该群是否已经达到最大共存地雷数
-            if (mines.length <= QQBOT_MAX_MINE_AT_MOST) {
+            if (mines.length < QQBOT_MAX_MINE_AT_MOST) {
               // 地雷还没满，增加群地雷
               await utils.AddOneGroupMine(event.group_id, event.user_id);
 
