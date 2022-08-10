@@ -23,7 +23,7 @@ module.exports = {
     );
 
     // 检测语料合法性
-    const teachMsgCheck = CheckTeachMsg(ask, answer);
+    const teachMsgCheck = CheckTeachMsg(ask, answer, userId, groupId);
     if (teachMsgCheck !== true) {
       console.log(`教学指令：非法的违禁词${teachMsgCheck}，退出教学`.error);
       return { type: "text", content: teachMsgCheck };

@@ -574,8 +574,8 @@ module.exports = {
    * @param {string} answer 回复内容
    * @returns {Promise<void>} void
    */
-  async CreateOneConversation(ask, answer) {
-    await ChatModel.create({ ask, answer });
+  async CreateOneConversation(ask, answer, teacherUserId, teacherGroupId) {
+    await ChatModel.create({ ask, answer, teacherUserId, teacherGroupId });
   },
 
   /**
