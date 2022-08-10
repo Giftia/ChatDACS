@@ -569,6 +569,16 @@ module.exports = {
   },
 
   /**
+   * 学习问答
+   * @param {string} ask 关键词
+   * @param {string} answer 回复内容
+   * @returns {Promise<void>} void
+   */
+  async CreateOneConversation(ask, answer) {
+    await ChatModel.create({ ask, answer });
+  },
+
+  /**
    * 魔改图片的一个随机像素点为随机颜色
    * @param {string} picPath 原始图片的路径
    * @returns {Promise<string>} 修改后图片的路径
