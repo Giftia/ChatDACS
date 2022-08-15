@@ -884,7 +884,7 @@ async function StartQQBot() {
                   .log,
               );
               res.send({
-                reply: "团长，你在做什么啊!团长!希望的花，不要乱丢啊啊啊啊",
+                reply: "团长，你在做什么啊！团长！希望的花，不要乱丢啊啊啊啊",
               });
               return 0;
             } else {
@@ -897,7 +897,7 @@ async function StartQQBot() {
               } else {
                 // 目标不是qq号
                 res.send({
-                  reply: `团长，你在做什么啊!团长!希望的花目标不可以是${who}，不要乱丢啊啊啊啊`,
+                  reply: `团长，你在做什么啊！团长！希望的花目标不可以是${who}，不要乱丢啊啊啊啊`,
                 });
                 return 0;
               }
@@ -909,7 +909,7 @@ async function StartQQBot() {
               `群 ${event.group_id} 的 群员 ${event.user_id} 救活了 ${who}`.log,
             );
             res.send({
-              reply: `团长，团长你在做什么啊团长，团长!为什么要救他啊，哼，呃，啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊!!!团长救下了[CQ:at,qq=${who}]，但自己被炸飞了，休养生息${boomTime}秒!不要停下来啊!`,
+              reply: `团长，团长你在做什么啊团长，团长！为什么要救他啊，哼，呃，啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊！！！团长救下了[CQ:at,qq=${who}]，但自己被炸飞了，休养生息${boomTime}秒！不要停下来啊！`,
             });
 
             // 再禁言团长
@@ -1217,7 +1217,7 @@ async function StartQQBot() {
               .replace(`[CQ:at,qq=${event.self_id}]`, "")
               .trim(); // 去除@小夜
           }
-          // 触发回复，那就由小夜来表演嘴臭
+          // 根据权重回复
           if (replyFlag < QQBOT_REPLY_PROBABILITY) {
             let replyMsg = await ChatProcess(atReplacedMsg);
 
