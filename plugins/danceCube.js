@@ -4,7 +4,7 @@ const baiduAk = "";
 module.exports = {
   插件名: "舞立方信息查询插件",
   指令: "^[/!]?(绑定|个人信息|战绩|插眼|我要出勤)(.*)",
-  版本: "2.1",
+  版本: "2.2",
   作者: "Giftina",
   描述: "舞立方信息查询，可以查询玩家信息以及机台状态。数据来源以及素材版权归属 胜骅科技 https://www.arccer.com/ ，如有侵权请联系作者删除。",
   使用示例: "个人信息",
@@ -153,9 +153,11 @@ async function BindUser(userId, playerId) {
   let location = {};
   const { lng, lat } = await BaiduGeocoding(playerInfo.CityName);
   if (!lng || !lat) {
-    console.log("获取玩家坐标失败，置为空".error);
+    console.log("获取玩家坐标失败，默认给个北京坐标".error);
+    location = { lng: 116, lat: 39.9 };
+  } else {
+    location = { lng, lat };
   }
-  location = { lng, lat };
 
   await DanceCubeModel.upsert({
     userId,
