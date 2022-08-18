@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "r18色图插件",
   指令: "^[/!]?r18$|(可以|能)?色色|[色涩瑟]图",
-  版本: "3.1",
+  版本: "3.2",
   作者: "Giftina",
   描述: "在危险的尺度下发送一张非法的 r18 二次元色图，图片来源api.lolicon.app。",
   使用示例: "可以色色",
@@ -20,7 +20,7 @@ module.exports = {
           {
             type: "node",
             data: {
-              name: userName,
+              name: `${userName}的r18图`,
               uin: 2854196306, // 对不起，QQ小冰
               content: `[CQ:image,file=${fileModifiedPath}]`,
             },

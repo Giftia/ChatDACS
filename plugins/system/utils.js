@@ -458,6 +458,7 @@ module.exports = {
    * @returns {Promise<void>} void
    */
   async DelayAlert() {
+    console.log("开始随机延时提醒闭菊的群".log);
     const alertMsg = [
       // 提醒文本列表
       "呜呜呜，把人家冷落了那么久，能不能让小夜张菊了呢...",
@@ -471,7 +472,7 @@ module.exports = {
       where: {
         serviceEnabled: false,
       },
-    });
+    }).then(groups => groups.map(group => group.groupId));
 
     if (!serviceStoppedGroupsList) {
       console.log("目前没有群是关闭服务的，挺好".log);
@@ -568,6 +569,16 @@ module.exports = {
   },
 
   /**
+   * 学习问答
+   * @param {string} ask 关键词
+   * @param {string} answer 回复内容
+   * @returns {Promise<void>} void
+   */
+  async CreateOneConversation(ask, answer, teacherUserId, teacherGroupId) {
+    await ChatModel.create({ ask, answer, teacherUserId, teacherGroupId });
+  },
+
+  /**
    * 魔改图片的一个随机像素点为随机颜色
    * @param {string} picPath 原始图片的路径
    * @returns {Promise<string>} 修改后图片的路径
@@ -583,6 +594,40 @@ module.exports = {
     console.log(`小夜将会保存修改后的图片到 ${modifiedPicPath}`.log);
     await pic.writeAsync(modifiedPicPath);
     return modifiedPicPath;
+  },
+
+  /**
+   * 玩家的手雷次数+1
+   * @param {string} userId 玩家QQ号
+   * @returns {Promise<void>} void
+   */
+  async IncreaseHandGrenadePlayedTimes(userId, times) {
+    await HandGrenadeModel.update({ times: times }, { where: { userId } });
+  },
+
+  /**
+   * 查询玩家的当日手雷次数，当日有效
+   * @param {string} userId 玩家QQ号
+   * @returns {Promise<number>} 当日手雷次数
+   */
+  async GetUserHandGrenadeTimesToday(userId) {
+    const handGrenade = await HandGrenadeModel.findOrCreate({
+      where: {
+        userId,
+        updatedAt: {
+          [Op.gte]: dayjs().startOf("day").toDate(),
+          [Op.lte]: dayjs().endOf("day").toDate(),
+        },
+      },
+      defaults: { userId }
+    });
+
+    // handGrenade[1] 表示是否新建了记录
+    if (handGrenade[1]) {
+      return 0;
+    } else {
+      return handGrenade[0].times;
+    }
   },
 };
 
@@ -602,14 +647,21 @@ Jimp.decoders["image/jpeg"] = (data) => {
   const userOpts = { maxMemoryUsageInMB: 1024 };
   return cachedJpegDecoder(data, userOpts);
 };
+const dayjs = require("dayjs");
+const utc = require("dayjs/plugin/utc");
+const timezone = require("dayjs/plugin/timezone");
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.tz.setDefault("Asia/Shanghai");
 
 // models
-const UserModel = require(path.join(process.cwd(), "plugins", "system", "model", "userModel.js"));
-const MessageModel = require(path.join(process.cwd(), "plugins", "system", "model", "messageModel.js"));
-const QQGroupModel = require(path.join(process.cwd(), "plugins", "system", "model", "qqGroupModel.js"));
-const MineModel = require(path.join(process.cwd(), "plugins", "system", "model", "mineModel.js"));
-const ChatModel = require(path.join(process.cwd(), "plugins", "system", "model", "chatModel.js"));
-const PerfunctoryModel = require(path.join(process.cwd(), "plugins", "system", "model", "perfunctoryModel.js"));
+const UserModel = require("./model/userModel.js");
+const MessageModel = require("./model/messageModel.js");
+const QQGroupModel = require("./model/qqGroupModel.js");
+const MineModel = require("./model/mineModel.js");
+const ChatModel = require("./model/chatModel.js");
+const PerfunctoryModel = require("./model/perfunctoryModel.js");
+const HandGrenadeModel = require("./model/handGrenadeModel.js");
 
 let WEB_PORT, GO_CQHTTP_SERVICE_API_URL, TIAN_XING_API_KEY;
 

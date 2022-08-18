@@ -19,6 +19,12 @@ const ChatModel = sequelize.define("chat", {
   answer: {
     type: DataTypes.CHAR,
   },
+  teacherUserId: {
+    type: DataTypes.INTEGER(12),
+  },
+  teacherGroupId: {
+    type: DataTypes.INTEGER(10),
+  },
 }, {
   tableName: "chat",
 });

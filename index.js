@@ -48,7 +48,6 @@ colors.setTheme({
 });
 const fs = require("fs");
 const path = require("path");
-const { createCanvas, loadImage } = require("canvas"); // 用于绘制文字图像，迫害p图
 require.all = require("require.all"); // 插件加载器
 const { KeepLiveTCP } = require("bilibili-live-ws");
 const yaml = require("yaml"); // 使用yaml解析配置文件
@@ -625,7 +624,9 @@ async function StartQQBot() {
             event.user_id,
             event?.sender?.nickname,
             event.group_id,
-            "", // 群名还挺麻烦的，先不搞了
+            (await axios.get(
+              `http://${GO_CQHTTP_SERVICE_API_URL}/get_group_info?group_id=${event.group_id}&no_cache=1`
+            )).data.data.group_name,
             {
               selfId: event.self_id,
               targetId: event.sub_type == "poke" ? event.target_id : null,
@@ -815,87 +816,13 @@ async function StartQQBot() {
             return 0;
           }
 
-          // 一个手雷
-          if (Constants.hand_grenade_reg.test(event.message)) {
-            let who;
-            const isHollyHandGrenade = Math.floor(Math.random() * 100) < 1; // 神圣手雷的概率为1%
-            const successfullyThrown = Math.floor(Math.random() * 100) < 50; // 50%几率成功丢出，50%几率被自己炸伤
-            const boomTime = Math.floor(Math.random() * 60 * 2); // 造成伤害时间，2分钟内
-
-            // 判断是否神圣手雷
-            if (isHollyHandGrenade) {
-              axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_whole_ban?group_id=${event.group_id}&enable=1`);
-
-              console.log(
-                `${event.user_id} 在群 ${event.group_id} 触发了神圣地雷`.error,
-              );
-              res.send({
-                reply: "噢，该死，我的上帝啊，真是不敢相信，瞧瞧我发现了什么，我发誓我没有看错，这竟然是一颗出现率为千分之一的神圣手雷!我是说，这是一颗毁天灭地的神圣手雷啊!哈利路亚!麻烦管理员解除一下",
-              });
-              return 0;
-            }
-            // 是常规手雷
-            else {
-              if (event.message === "一个手雷") {
-                who = event.user_id; // 如果没有要求炸谁，那就是炸自己
-                console.log(
-                  `群 ${event.group_id} 的群员 ${event.user_id} 朝自己丢出一颗手雷`
-                    .log,
-                );
-              }
-              // 炸目标
-              else {
-                who = Constants.has_qq_reg.exec(event.message)[1];
-                if (Constants.is_qq_reg.test(who)) {
-                  console.log(
-                    `群 ${event.group_id} 的 群员 ${event.user_id} 尝试向 ${who} 丢出一颗手雷`.log,
-                  );
-                }
-                // 没有正确的目标，也炸自己
-                else {
-                  who = event.user_id;
-                  console.log(
-                    `群 ${event.group_id} 的群员 ${event.user_id} 朝自己丢出一颗手雷`
-                      .log,
-                  );
-                }
-              }
-
-              // 判断手雷是否成功丢出
-              if (successfullyThrown || who === event.user_id) {
-                console.log(
-                  `群 ${event.group_id} 的 群员 ${event.user_id} 的手雷炸到了自己`
-                    .log,
-                );
-                res.send({
-                  reply: `[CQ:at,qq=${event.user_id}] 小手一滑，被自己丢出的手雷炸伤，造成了${boomTime}秒的伤害，苍天有轮回，害人终害己，祝你下次好运`,
-                  ban: 1,
-                  ban_duration: boomTime,
-                });
-              }
-              // 成功丢出手雷
-              else {
-                axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${event.group_id}&user_id=${who}&duration=${boomTime}`);
-
-                console.log(
-                  `群 ${event.group_id} 的 群员 ${event.user_id} 的手雷炸到了 ${who}`
-                    .log,
-                );
-                res.send({
-                  reply: `恭喜[CQ:at,qq=${who}]被[CQ:at,qq=${event.user_id}]丢出的手雷炸伤，造成了${boomTime}秒的伤害，祝你下次好运`,
-                });
-              }
-            }
-            return 0;
-          }
-
           // 埋地雷
           if (Constants.mine_reg.test(event.message)) {
             // 搜索地雷库中现有地雷
             const mines = await utils.GetGroupAllMines(event.group_id);
 
             // 该群是否已经达到最大共存地雷数
-            if (mines.length <= QQBOT_MAX_MINE_AT_MOST) {
+            if (mines.length < QQBOT_MAX_MINE_AT_MOST) {
               // 地雷还没满，增加群地雷
               await utils.AddOneGroupMine(event.group_id, event.user_id);
 
@@ -957,7 +884,7 @@ async function StartQQBot() {
                   .log,
               );
               res.send({
-                reply: "团长，你在做什么啊!团长!希望的花，不要乱丢啊啊啊啊",
+                reply: "团长，你在做什么啊！团长！希望的花，不要乱丢啊啊啊啊",
               });
               return 0;
             } else {
@@ -970,7 +897,7 @@ async function StartQQBot() {
               } else {
                 // 目标不是qq号
                 res.send({
-                  reply: `团长，你在做什么啊!团长!希望的花目标不可以是${who}，不要乱丢啊啊啊啊`,
+                  reply: `团长，你在做什么啊！团长！希望的花目标不可以是${who}，不要乱丢啊啊啊啊`,
                 });
                 return 0;
               }
@@ -982,7 +909,7 @@ async function StartQQBot() {
               `群 ${event.group_id} 的 群员 ${event.user_id} 救活了 ${who}`.log,
             );
             res.send({
-              reply: `团长，团长你在做什么啊团长，团长!为什么要救他啊，哼，呃，啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊!!!团长救下了[CQ:at,qq=${who}]，但自己被炸飞了，休养生息${boomTime}秒!不要停下来啊!`,
+              reply: `团长，团长你在做什么啊团长，团长！为什么要救他啊，哼，呃，啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊！！！团长救下了[CQ:at,qq=${who}]，但自己被炸飞了，休养生息${boomTime}秒！不要停下来啊！`,
             });
 
             // 再禁言团长
@@ -1051,9 +978,6 @@ async function StartQQBot() {
                 // 游戏结束，清空数据
                 await utils.EndGroupLoopBombGame(event.group_id);
 
-                // 金手指关闭
-                axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${bombHolder}&card=`);
-
                 return 0;
               }, 1000 * 60);
             }
@@ -1101,8 +1025,8 @@ async function StartQQBot() {
                 setTimeout(async () => {
                   // 随机选一位幸运群友
                   const randomMember = await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_group_member_list?group_id=${event.group_id}`)
-                    .then(async (res) => {
-                      const members = res.data.data;
+                    .then(async (response) => {
+                      const members = response.data.data;
                       const randomMember = members[Math.floor(Math.random() * members.length)].user_id;
                       console.log(
                         `随机选取一个群友 ${randomMember} 给他下一题`.log
@@ -1166,64 +1090,6 @@ async function StartQQBot() {
             }
           }
 
-          // 我有个朋友
-          if (Constants.i_have_a_friend_reg.test(event.message)) {
-            let msg, sources;
-            // 指定目标的话
-            if (Constants.has_qq_reg.test(event.message)) {
-              var msg_in = event.message.split("说")[1];
-              msg = msg_in.split("[CQ:at,qq=")[0].trim();
-              var who = msg_in.split("[CQ:at,qq=")[1];
-              who = who.replace("]", "").trim();
-              if (Constants.is_qq_reg.test(who)) {
-                sources = `https://api.sumt.cn/api/qq.logo.php?qq=${who}`; // 载入头像
-              }
-              // 没指定目标
-            } else {
-              msg = event.message.split("说")[1];
-              sources = `https://api.sumt.cn/api/qq.logo.php?qq=${event.user_id}`; // 没有指定谁，那这个朋友就是ta自己
-            }
-
-            loadImage(sources).then((image) => {
-              let canvas = createCanvas(350, 80);
-              let ctx = canvas.getContext("2d");
-              ctx.fillStyle = "WHITE";
-              ctx.fillRect(0, 0, 350, 80);
-              ctx.font = "20px SimHei";
-              ctx.textAlign = "left";
-              ctx.fillStyle = "#000000";
-              ctx.fillText("沙雕网友群", 90.5, 35.5);
-              ctx.font = "16px SimHei";
-              ctx.fillStyle = "#716F81";
-              ctx.fillText(`沙雕网友: ${msg}`, 90.5, 55.5);
-              ctx.font = "13px SimHei";
-              ctx.fillText(utils.GetTimes().Clock, 280.5, 35.5);
-
-              ctx.beginPath();
-              ctx.arc(40, 40, 28, 0, 2 * Math.PI);
-              ctx.fill();
-              ctx.clip();
-              ctx.drawImage(image, 10, 10, 60, 60);
-              ctx.closePath();
-
-              const fileLocalPath = path.join(
-                process.cwd(), "static", "xiaoye", "images",
-                `${utils.sha1(canvas.toBuffer())}.jpg`,
-              );
-              fs.writeFileSync(fileLocalPath, canvas.toBuffer());
-              const fileURL = `http://127.0.0.1:${WEB_PORT}/xiaoye/images/${utils.sha1(
-                canvas.toBuffer(),
-              )}.jpg`;
-              console.log(
-                `我有个朋友合成成功，图片发送: ${fileURL}`.log,
-              );
-              res.send({
-                reply: `[CQ:image,file=${fileURL},url=${fileURL}]`,
-              });
-            });
-            return 0;
-          }
-
           // 孤寡
           if (Constants.gu_gua_reg.test(event.message)) {
             if (event.message == "孤寡") {
@@ -1277,7 +1143,6 @@ async function StartQQBot() {
               res.send({
                 reply: `你想孤寡谁啊，目标不可以是${who}，不要乱孤寡，小心孤寡你一辈子啊`,
               });
-              return 0;
             }
             return 0;
           }
@@ -1288,9 +1153,9 @@ async function StartQQBot() {
             const msgID = event.message.split("id=")[1].split("]")[0].trim();
             logger.info(`收到手动复读指令，消息id: ${msgID}`.log);
 
-            const historyMessage = await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_msg?message_id=${msgID}`);
-            logger.info(`复读历史消息: ${historyMessage.message}`.log);
-            res.send({ reply: historyMessage.message });
+            const historyMessage = (await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_msg?message_id=${msgID}`)).data.data.message;
+            logger.info(`复读历史消息: ${historyMessage}`.log);
+            res.send({ reply: historyMessage });
             return 0;
           }
 
@@ -1352,7 +1217,7 @@ async function StartQQBot() {
               .replace(`[CQ:at,qq=${event.self_id}]`, "")
               .trim(); // 去除@小夜
           }
-          // 触发回复，那就由小夜来表演嘴臭
+          // 根据权重回复
           if (replyFlag < QQBOT_REPLY_PROBABILITY) {
             let replyMsg = await ChatProcess(atReplacedMsg);
 
@@ -1944,6 +1809,12 @@ async function ECYWenDa() {
 
 /**
  * 插件系统核心
+ * @param {string} msg 传入消息
+ * @param {string} userId 消息发送者id
+ * @param {string} userName 消息发送者昵称
+ * @param {string} groupId 消息所属群id
+ * @param {string} groupName 消息所属群昵称
+ * @param {string} options 其他参数
  * @returns {Promise<string>} 插件回复
  */
 async function ProcessExecute(msg, userId, userName, groupId, groupName, options) {

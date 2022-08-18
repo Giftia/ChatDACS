@@ -1,13 +1,17 @@
 module.exports = {
   插件名: "今日老婆插件",
   指令: "^[/!]?今日老婆$",
-  版本: "1.2",
+  版本: "1.3",
   作者: "Giftina",
-  描述: "将随机一对群友组成一对cp。",
+  描述: "仅在qq端生效。将随机一名群友和你组成一对cp。",
   使用示例: "今日老婆",
   预期返回: "[cp头]",
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
+    if (options.type != "qq") {
+      return 0;
+    }
+
     const selfHeadImgBuffer = await loadImage(`https://api.sumt.cn/api/qq.logo.php?qq=${userId}`);
     const randomCp = await getRandomOne(groupId);
     const targetHeadImgBuffer = await loadImage(`https://api.sumt.cn/api/qq.logo.php?qq=${randomCp}`);

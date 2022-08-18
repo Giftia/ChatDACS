@@ -14,7 +14,7 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 
-//日志染色颜色配置
+// 日志染色颜色配置
 colors.setTheme({
   alert: "inverse",
   on: "brightMagenta",
@@ -24,7 +24,7 @@ colors.setTheme({
   log: "brightBlue",
 });
 
-//载入插件
+// 载入插件
 console.log("插件测试器 v1.6，用于快速验证插件功能".alert);
 console.log("开始加载插件……".log);
 let plugins = require.all({
@@ -46,14 +46,18 @@ rl.on("line", (input) => {
 });
 
 async function run(msg) {
-  const defaultUserId = 0, defaultUserName = "", defaultGroupId = 0, defaultGroupName = "", defaultOptions = {};
+  const defaultUserId = 114514,
+    defaultUserName = "野兽前辈",
+    defaultGroupId = 1919810,
+    defaultGroupName = "测试群名",
+    defaultOptions = { type: "test" };
   const result = await ProcessExecute(msg, defaultUserId, defaultUserName, defaultGroupId, defaultGroupName, defaultOptions);
   if (result != "") {
     console.log(result);
   }
 }
 
-//插件遍历器，每条消息遍历一遍插件
+// 插件遍历器，每条消息遍历一遍插件
 async function ProcessExecute(msg, userId, userName, groupId, groupName, options) {
   let pluginReturn = "";
   for (const i in plugins) {

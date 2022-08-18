@@ -1,10 +1,7 @@
-// 用于插眼所需要的百度地理编码密钥，需要自己去申请：https://lbsyun.baidu.com/index.php?title=webapi/guide/webservice-geocoding
-const baiduAk = "";
-
 module.exports = {
   插件名: "舞立方信息查询插件",
   指令: "^[/!]?(绑定|个人信息|战绩|插眼|我要出勤)(.*)",
-  版本: "2.1",
+  版本: "2.3",
   作者: "Giftina",
   描述: "舞立方信息查询，可以查询玩家信息以及机台状态。数据来源以及素材版权归属 胜骅科技 https://www.arccer.com/ ，如有侵权请联系作者删除。",
   使用示例: "个人信息",
@@ -107,17 +104,10 @@ const path = require("path");
 const fs = require("fs");
 const axios = require("axios").default;
 /**
- * authorization.token 文件内容为玩家账户密钥，向服务器请求数据时会携带该参数鉴权，具有修改账户的最高权限，需要自行抓包获取，请勿透露给不信任的他人，否则最糟糕的情况可能会导致游戏账户被恶意注销
+ * authorization.json 的 authorization 为玩家账户密钥，向服务器请求数据时会携带该参数鉴权，具有修改账户的最高权限，需要自行抓包获取，请勿透露给不信任的他人，否则最糟糕的情况可能会导致游戏账户被恶意注销
+ * baiduGeocodingAk 是百度地理编码密钥，用于舞立方插件，申请地址 https://lbsyun.baidu.com/index.php?title=webapi/guide/webservice-geocoding
  */
-const authorization = fs.readFileSync(
-  path.join(__dirname, "danceCube", "authorization.token"),
-  "utf-8",
-  function (err, data) {
-    if (!err) {
-      return data;
-    }
-  },
-);
+const { authorization, baiduGeocodingAk } = require(path.join(__dirname, "danceCube", "authorization.json"));
 const baseURL = "https://dancedemo.shenghuayule.com/";
 const headers = {
   "Authorization": authorization,
@@ -147,15 +137,17 @@ registerFont(path.join(__dirname, "danceCube", "assets", "JiangChengZhiYingTi600
 async function BindUser(userId, playerId) {
   const playerInfo = await GetPlayerInfo(playerId);
   if (playerInfo.error) {
-    return `获取玩家资料失败：${playerInfo.error}`;
+    return `获取玩家资料失败：${playerInfo.error}，可能是authorization.token已经过期，需 @机器人管理员 重新获取`;
   }
 
   let location = {};
   const { lng, lat } = await BaiduGeocoding(playerInfo.CityName);
   if (!lng || !lat) {
-    console.log("获取玩家坐标失败，置为空".error);
+    console.log("获取玩家坐标失败，默认给个北京坐标".error);
+    location = { lng: 116, lat: 39.9 };
+  } else {
+    location = { lng, lat };
   }
-  location = { lng, lat };
 
   await DanceCubeModel.upsert({
     userId,
@@ -177,7 +169,7 @@ async function BindUser(userId, playerId) {
 async function AnalysisPlayerInfo(playerId) {
   const playerInfo = await GetPlayerInfo(playerId);
   if (playerInfo.error) {
-    return { type: "text", content: `获取玩家资料失败：${playerInfo.error}` };
+    return `获取玩家资料失败：${playerInfo.error}，可能是authorization.token已经过期，需 @机器人管理员 重新获取`;
   }
 
   const headImg = playerInfo.HeadimgURL;
@@ -279,9 +271,10 @@ async function GetPlayerInfo(playerId) {
     },
     validateStatus: (status) => status < 500,
   })
-    .then(async function (response) {
+    .then(async (response) => {
       if (response.status !== 200) {
-        return { error: response.data.Message };
+        console.log(`获取玩家资料失败: ${response.statusText}`.error);
+        return { error: response.statusText };
       }
       return response.data;
     })
@@ -325,7 +318,7 @@ async function GetPlayerRank(playerId, musicIndex) {
 
   const playerInfo = await GetPlayerInfo(playerId);
   if (playerInfo.error) {
-    return `获取玩家资料失败：${playerInfo.error}`;
+    return `获取玩家资料失败：${playerInfo.error}，可能是authorization.token已经过期，需 @机器人管理员 重新获取`;
   }
 
   const headImg = playerInfo.HeadimgURL;
@@ -428,7 +421,7 @@ async function BaiduGeocoding(address) {
   const { lng, lat, error } = await axios.get(api.geocoding, {
     params: {
       address: address,
-      ak: baiduAk,
+      ak: baiduGeocodingAk,
       output: "json",
     },
   })
@@ -456,7 +449,7 @@ async function Geocoding(userId, address) {
   const { lng, lat, error } = await BaiduGeocoding(address);
 
   if (!lng || !lat) {
-    return `插眼失败：${error}，可能是这个地名不太好找，请换个地名再试试`;
+    return `插眼失败：${error}`;
   }
 
   await DanceCubeModel.update({

@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "cos图片插件",
   指令: "^[/!]?(cos图|cosplay)$",
-  版本: "3.1",
+  版本: "3.2",
   作者: "Giftina",
   描述: "在普通限度的尺度下发送一张合法的 cos 三次元图, 图片来源哔哩哔哩cos专栏。",
   使用示例: "cos图",
@@ -19,7 +19,7 @@ module.exports = {
           {
             type: "node",
             data: {
-              name: userName,
+              name: `${userName}的cos图`,
               uin: 2854196306, // 对不起，QQ小冰
               content: `[CQ:image,file=${fileDirectPath}]`,
             },
