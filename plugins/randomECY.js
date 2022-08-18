@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "随机二次元图插件",
   指令: "^[/!]?(随机)二次元(图)$|^[/!]?二次元$",
-  版本: "3.1",
+  版本: "3.2",
   作者: "Giftina",
   描述: "发送一张正常尺度的二次元图。",
   使用示例: "二次元",
@@ -19,7 +19,7 @@ module.exports = {
           {
             type: "node",
             data: {
-              name: userName,
+              name: `${userName}的二次元图`,
               uin: 2854196306, // 对不起，QQ小冰
               content: `[CQ:image,file=${fileDirectPath}]`,
             },

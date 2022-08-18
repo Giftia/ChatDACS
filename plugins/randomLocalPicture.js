@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "本地随机图插件",
   指令: "[让给]我[看康]{1,3}|^[/!]?图来$",
-  版本: "3.1",
+  版本: "3.2",
   作者: "Giftina",
   描述: "从本地图片文件夹随机发送一张图片，默认使用其他插件自动下载保存的图库文件夹。",
   使用示例: "让我康康",
@@ -19,7 +19,7 @@ module.exports = {
           {
             type: "node",
             data: {
-              name: userName,
+              name: `${userName}的本地随机图`,
               uin: 2854196306, // 对不起，QQ小冰
               content: `[CQ:image,file=${fileDirectPath}]`,
             },

@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "淘宝买家秀色图插件",
   指令: "买家秀|福利姬",
-  版本: "3.1",
+  版本: "3.2",
   作者: "Giftina",
   描述: "在危险的尺度下发送一张非法的淘宝买家秀福利图。",
   使用示例: "买家秀",
@@ -24,7 +24,7 @@ module.exports = {
           {
             type: "node",
             data: {
-              name: userName,
+              name: `${userName}的福利姬图`,
               uin: 2854196306, // 对不起，QQ小冰
               content: `[CQ:image,file=${fileModifiedPath}]`,
             },
