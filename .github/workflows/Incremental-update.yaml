@@ -57,6 +57,7 @@ jobs:
             });
             archive.pipe(output);
             archive.directory('./plugins/', 'plugins');
+            archive.file('./version.json', { name: 'version.json' });
             archive.file('./chatdacs.exe', { name: 'chatdacs.exe' });
             archive.finalize();
           "
