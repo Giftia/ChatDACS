@@ -125,16 +125,11 @@ module.exports = {
   /**
    * 获取tts语音时长
    * @param {buffer} dataBuffer 音频buffer
-   * @returns {number} "xxx"(单位为毫秒)
+   * @returns {Promise<number>} "xxx"(单位为毫秒)
    */
-  getMP3Duration(dataBuffer) {
-    return new Promise((resolve, reject) => {
-      mp3Duration(dataBuffer, (err, duration) => {
-        if (err) {
-          reject(err.message);
-        }
-        resolve(duration);
-      });
+  async getMP3Duration(dataBuffer) {
+    mp3Duration(dataBuffer, (err, duration) => {
+      return err ? 0 : duration;
     });
   },
 
