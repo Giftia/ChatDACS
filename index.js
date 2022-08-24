@@ -10,7 +10,7 @@
 const { exec } = require("child_process");
 const _cn_reg = new RegExp("[\u4e00-\u9fa5]");
 if (_cn_reg.test(process.cwd())) {
-  const warnMessage = `因为Unicode的兼容性问题，程序所在路劲不能有汉字日语韩语表情包之类的奇奇怪怪的字符，请使用常规的ASCII字符!如有疑问，请加QQ群 120243247 咨询。当前路径含有不对劲的字符: ${process.cwd()}`;
+  const warnMessage = `因为Unicode的兼容性问题，程序所在路劲不能有汉字日语韩语表情包之类的奇奇怪怪的字符，请使用常规的ASCII字符!如有疑问，请加QQ群 157311946 咨询。当前路径含有不对劲的字符: ${process.cwd()}`;
   console.log(warnMessage);
   exec(`msg %username% ${warnMessage}`);
 }
@@ -365,7 +365,7 @@ async function StartQQBot() {
         `http://${GO_CQHTTP_SERVICE_API_URL}/send_private_msg?user_id=${QQBOT_ADMIN_LIST[0]}&message=${encodeURI(msg)}`,
       );
       // 发送给邀请者批准提醒
-      const inviteReplyContent = `你好呀，谢谢你邀请小夜，请联系这只小夜的主人 ${QQBOT_ADMIN_LIST[0]} 来批准入群邀请噢。也欢迎来小夜开发群120243247聊聊你对小夜的想法噢。小夜永久免费开源于 https://github.com/Giftia/ChatDACS ，开发组欢迎你的加入！`;
+      const inviteReplyContent = `你好呀，谢谢你邀请小夜，请联系这只小夜的主人 ${QQBOT_ADMIN_LIST[0]} 来批准入群邀请噢。小夜开源于 https://github.com/Giftia/ChatDACS ，开发组欢迎你的加入！`;
       axios.get(
         `http://${GO_CQHTTP_SERVICE_API_URL}/send_private_msg?user_id=${event.user_id}&message=${encodeURI(inviteReplyContent)}`,
       );

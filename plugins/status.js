@@ -20,7 +20,7 @@ async function CheckoutStatus() {
 正常运行时间：${Math.round(process.uptime() / 60 / 60)}小时
 小夜吃掉了 ${Math.round(process.memoryUsage().rss / 1024 / 1024)}MB/${Math.round(os.totalmem() / 1024 / 1024)}MB 内存
 如果该小夜出现故障，请联系该小夜领养员 ${QQBOT_ADMIN_LIST[0]}
-或开发群 120243247 报错
+或开发群 157311946 报错
 小夜开源于: https://github.com/Giftia/ChatDACS`;
   return stat;
 }

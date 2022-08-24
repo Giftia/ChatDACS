@@ -1,4 +1,4 @@
-const devGroupNumber = "120243247"; // 小夜开发群
+const devGroupNumber = "157311946"; // 小夜开发群
 
 module.exports = {
   插件名: "报错插件",
