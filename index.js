@@ -306,8 +306,6 @@ io.on("connection", async (socket) => {
  * 小夜核心代码，对接go-cqhttp
  */
 async function StartQQBot() {
-  CheckGoCqhttpUpdate();
-
   /**
    * go-cqhttp 启动后加载当前所有群，写入数据库进行群服务初始化
    */
@@ -1657,31 +1655,6 @@ function CheckUpdate() {
     }
   }).catch((err) => {
     logger.error(`检查小夜更新失败，错误原因: ${err}`.error);
-  });
-}
-
-/**
- * 检查 go-cqhttp 更新
- */
-function CheckGoCqhttpUpdate() {
-  axios.get(
-    "https://api.github.com/repos/Mrs4s/go-cqhttp/releases/latest", { UnauthorizedHttpsAgent }
-  ).then((latestRes) => {
-    // 获取当前使用的 go-cqhttp 版本号
-    axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_version_info`)
-      .then((res) => {
-        // 和最新release比对
-        if (latestRes.data.tag_name !== res.data.data.app_version) {
-          logger.info(`当前小夜使用的 go-cqhttp 版本 ${res.data.data.app_version}，检测到 go-cqhttp 最新发行版本是 ${latestRes.data.tag_name}，请前往 https://github.com/Mrs4s/go-cqhttp/releases 更新 go-cqhttp 吧`.alert);
-        } else {
-          logger.info(`当前小夜使用的 go-cqhttp 已经是最新发行版本 ${res.data.data.app_version}`.log);
-        }
-      })
-      .catch((err) => {
-        logger.error(`检查 go-cqhttp 更新失败，错误原因: ${err}`.error);
-      });
-  }).catch((err) => {
-    logger.error(`检查 go-cqhttp 更新失败，错误原因: ${err}`.error);
   });
 }
 
