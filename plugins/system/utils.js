@@ -607,20 +607,24 @@ module.exports = {
    */
   async GetUserHandGrenadeTimesToday(userId) {
     const handGrenade = await HandGrenadeModel.findOrCreate({
-      where: {
-        userId,
-        updatedAt: {
-          [Op.gte]: dayjs().startOf("day").toDate(),
-          [Op.lte]: dayjs().endOf("day").toDate(),
-        },
-      },
-      defaults: { userId }
+      where: { userId },
+      defaults: { userId },
     });
 
-    // handGrenade[1] 表示是否新建了记录
+    // handGrenade[1] 表示是否是新建记录
     if (handGrenade[1]) {
       return 0;
-    } else {
+    }
+    // 如果玩家这一天没有丢过手雷，则手雷次数初始化为0
+    else if (
+      dayjs(handGrenade[0].updatedAt).endOf("day").toDate()
+      <
+      dayjs().endOf("day").toDate()
+    ) {
+      await this.IncreaseHandGrenadePlayedTimes(userId, 1);
+      return 0;
+    }
+    else {
       return handGrenade[0].times;
     }
   },
