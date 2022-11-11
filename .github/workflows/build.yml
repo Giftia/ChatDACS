@@ -3,7 +3,7 @@ name: Build ChatDACS One-Click-To-Deploy Package (ChatDACS一键运行包构建)
 on:
   push:
     branches:
-      - master
+      - cancel
 
 env:
   GITHUB_TOKEN: ${{ github.token }}
