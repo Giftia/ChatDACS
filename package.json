@@ -30,7 +30,7 @@
     "require.all": "2.0.5",
     "rss-parser": "3.12.0",
     "sequelize": "6.25.5",
-    "socket.io": "4.5.1",
+    "socket.io": "4.5.3",
     "sqlite3": "5.1.2",
     "trayicon": "1.2.2",
     "winston": "3.8.2",
