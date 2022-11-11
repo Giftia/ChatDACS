@@ -26,9 +26,9 @@ async function getOriginalRandomCPStory(story, tops, bottoms) {
   for (let i in story) {
     if (tops == story[i].roles.gong || bottoms == story[i].roles.shou) {
       // 从待选cp文中选择一条
-      const storyLenth = story[i].stories.length - 1;
+      const storyLength = story[i].stories.length - 1;
       const storyIndex = Math.round(
-        Math.random() * storyLenth,
+        Math.random() * storyLength,
       );
       // 选择一条cp文
       return story[i].stories[storyIndex];
@@ -36,9 +36,9 @@ async function getOriginalRandomCPStory(story, tops, bottoms) {
   }
   // 如果没有完全匹配的cp文，则发送位于cp文数组最后的随机cp文
   const lastIndex = story.length - 1;
-  const storyLenth = story[lastIndex].stories.length - 1;
+  const storyLength = story[lastIndex].stories.length - 1;
   const storyIndex = Math.round(
-    Math.random() * storyLenth,
+    Math.random() * storyLength,
   );
   // 选择一条cp文
   return story[lastIndex].stories[storyIndex];

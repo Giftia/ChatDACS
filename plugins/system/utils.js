@@ -628,6 +628,54 @@ module.exports = {
       return handGrenade[0].times;
     }
   },
+
+  /**
+   * 切换群插件开关
+   * @param {number} groupId 群id
+   * @param {string} pluginName 插件名
+   * @returns {Promise<boolean>} 插件开关状态
+   */
+  async ToggleGroupPlugin(groupId, pluginName) {
+    const group = await QQGroupModel.findOne({ where: { groupId } });
+    if (!group.pluginsList || !Object.prototype.hasOwnProperty.call(group.pluginsList, pluginName)) {
+
+      console.log(`该群没有初始化 ${pluginName} ，给一个初始开`.log);
+
+      group.pluginsList = {
+        ...group.pluginsList,
+        [pluginName]: true
+      };
+    }
+
+    const pluginStatus = group.pluginsList[pluginName];
+    console.log(`小夜将会将群 ${groupId} 的 ${pluginName} 插件状态从 ${pluginStatus} 变为 ${!pluginStatus}`.log);
+    await QQGroupModel.update(
+      { pluginsList: { ...group.pluginsList, [pluginName]: !pluginStatus } },
+      { where: { groupId } }
+    );
+    return !pluginStatus;
+  },
+
+  /**
+   * 获取群插件开关
+   * @param {number} groupId 群id
+   * @param {string} pluginName 插件名
+   * @returns {Promise<boolean>} 插件开关状态
+   */
+  async GetGroupPluginStatus(groupId, pluginName) {
+    const group = await QQGroupModel.findOne({ where: { groupId } });
+    if (!group.pluginsList || !Object.prototype.hasOwnProperty.call(group.pluginsList, pluginName)) {
+
+      console.log(`该群没有初始化 ${pluginName} ，给一个初始开`.log);
+
+      group.pluginsList = {
+        ...group.pluginsList,
+        [pluginName]: true
+      };
+      await group.save();
+    }
+    return group.pluginsList[pluginName];
+  },
 };
 
 const request = require("request");

@@ -75,7 +75,6 @@ jieba.load({
  */
 const winston = require("winston");
 const { format, transports } = require("winston");
-const { isUndefined } = require("util");
 const { printf } = format;
 
 const myFormat = printf(({ level, message, timestamp }) => {
@@ -1794,23 +1793,45 @@ async function ECYWenDa() {
  */
 async function ProcessExecute(msg, userId, userName, groupId, groupName, options) {
   let pluginReturn = "";
-  for (const i in plugins) {
-    const reg = new RegExp(plugins[i].指令);
-    if (reg.test(msg)) {
-      try {
-        pluginReturn = await plugins[i].execute(msg, userId, userName, groupId, groupName, options);
-      } catch (e) {
-        logger.error(
-          `插件 ${plugins[i].插件名} ${plugins[i].版本} 爆炸啦: ${e.stack}`.error,
-        );
-        return `插件 ${plugins[i].插件名} ${plugins[i].版本} 爆炸啦: ${e.stack}`;
+  // 插件开关
+  if (Constants.plugins_switch_reg.test(msg)) {
+    const pluginName = msg.match(Constants.plugins_switch_reg)[1];
+    if (!pluginName) return "插件名获取有误";
+    for (const i in plugins) {
+      if (plugins[i].插件名 == pluginName) {
+        const pluginStatus = await utils.ToggleGroupPlugin(groupId, pluginName);
+
+        console.log(`群${groupId} 的插件 ${pluginName} 状态切换为 ${pluginStatus}`.log);
+
+        return { type: "text", content: `${pluginName} 已${pluginStatus ? "开启" : "关闭"}` };
       }
-      if (pluginReturn) {
-        logger.info(
-          `插件 ${plugins[i].插件名} ${plugins[i].版本} 响应了消息：`.log,
-        );
-        logger.info(JSON.stringify(pluginReturn).log);
-        return pluginReturn;
+    }
+  }
+  else {
+    for (const i in plugins) {
+      const reg = new RegExp(plugins[i].指令);
+      if (reg.test(msg)) {
+        const pluginStatus = await utils.GetGroupPluginStatus(groupId, plugins[i].插件名);
+        if (!pluginStatus) {
+          console.log(`群${groupId} 的插件 ${plugins[i].插件名} 已关闭，不响应`.log);
+          return { type: "text", content: `群内的 ${plugins[i].插件名} 已关闭，不响应` }
+        };
+
+        try {
+          pluginReturn = await plugins[i].execute(msg, userId, userName, groupId, groupName, options);
+        } catch (e) {
+          logger.error(
+            `插件 ${plugins[i].插件名} ${plugins[i].版本} 爆炸啦: ${e.stack}`.error,
+          );
+          return `插件 ${plugins[i].插件名} ${plugins[i].版本} 爆炸啦: ${e.stack}`;
+        }
+        if (pluginReturn) {
+          logger.info(
+            `插件 ${plugins[i].插件名} ${plugins[i].版本} 响应了消息：`.log,
+          );
+          logger.info(JSON.stringify(pluginReturn).log);
+          return pluginReturn;
+        }
       }
     }
   }
