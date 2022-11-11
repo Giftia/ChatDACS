@@ -125,16 +125,11 @@ module.exports = {
   /**
    * 获取tts语音时长
    * @param {buffer} dataBuffer 音频buffer
-   * @returns {number} "xxx"(单位为毫秒)
+   * @returns {Promise<number>} "xxx"(单位为毫秒)
    */
-  getMP3Duration(dataBuffer) {
-    return new Promise((resolve, reject) => {
-      mp3Duration(dataBuffer, (err, duration) => {
-        if (err) {
-          reject(err.message);
-        }
-        resolve(duration);
-      });
+  async getMP3Duration(dataBuffer) {
+    mp3Duration(dataBuffer, (err, duration) => {
+      return err ? 0 : duration;
     });
   },
 
@@ -612,22 +607,74 @@ module.exports = {
    */
   async GetUserHandGrenadeTimesToday(userId) {
     const handGrenade = await HandGrenadeModel.findOrCreate({
-      where: {
-        userId,
-        updatedAt: {
-          [Op.gte]: dayjs().startOf("day").toDate(),
-          [Op.lte]: dayjs().endOf("day").toDate(),
-        },
-      },
-      defaults: { userId }
+      where: { userId },
+      defaults: { userId },
     });
 
-    // handGrenade[1] 表示是否新建了记录
+    // handGrenade[1] 表示是否是新建记录
     if (handGrenade[1]) {
       return 0;
-    } else {
+    }
+    // 如果玩家这一天没有丢过手雷，则手雷次数初始化为0
+    else if (
+      dayjs(handGrenade[0].updatedAt).endOf("day").toDate()
+      <
+      dayjs().endOf("day").toDate()
+    ) {
+      await this.IncreaseHandGrenadePlayedTimes(userId, 1);
+      return 0;
+    }
+    else {
       return handGrenade[0].times;
     }
+  },
+
+  /**
+   * 切换群插件开关
+   * @param {number} groupId 群id
+   * @param {string} pluginName 插件名
+   * @returns {Promise<boolean>} 插件开关状态
+   */
+  async ToggleGroupPlugin(groupId, pluginName) {
+    const group = await QQGroupModel.findOne({ where: { groupId } });
+    if (!group.pluginsList || !Object.prototype.hasOwnProperty.call(group.pluginsList, pluginName)) {
+
+      console.log(`该群没有初始化 ${pluginName} ，给一个初始开`.log);
+
+      group.pluginsList = {
+        ...group.pluginsList,
+        [pluginName]: true
+      };
+    }
+
+    const pluginStatus = group.pluginsList[pluginName];
+    console.log(`小夜将会将群 ${groupId} 的 ${pluginName} 插件状态从 ${pluginStatus} 变为 ${!pluginStatus}`.log);
+    await QQGroupModel.update(
+      { pluginsList: { ...group.pluginsList, [pluginName]: !pluginStatus } },
+      { where: { groupId } }
+    );
+    return !pluginStatus;
+  },
+
+  /**
+   * 获取群插件开关
+   * @param {number} groupId 群id
+   * @param {string} pluginName 插件名
+   * @returns {Promise<boolean>} 插件开关状态
+   */
+  async GetGroupPluginStatus(groupId, pluginName) {
+    const group = await QQGroupModel.findOne({ where: { groupId } });
+    if (!group.pluginsList || !Object.prototype.hasOwnProperty.call(group.pluginsList, pluginName)) {
+
+      console.log(`该群没有初始化 ${pluginName} ，给一个初始开`.log);
+
+      group.pluginsList = {
+        ...group.pluginsList,
+        [pluginName]: true
+      };
+      await group.save();
+    }
+    return group.pluginsList[pluginName];
   },
 };
 

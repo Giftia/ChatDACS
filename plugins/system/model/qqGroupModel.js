@@ -32,6 +32,15 @@ const QQGroupModel = sequelize.define("qqGroup", {
   loopBombStartTime: {
     type: DataTypes.INTEGER(10),
   },
+  pluginsList: {
+    type: DataTypes.CHAR,
+    set: function (value) {
+      return this.setDataValue("pluginsList", JSON.stringify(value));
+    },
+    get: function () {
+      return JSON.parse(this.getDataValue("pluginsList"));
+    },
+  },
 }, {
   tableName: "qqGroups",
 });

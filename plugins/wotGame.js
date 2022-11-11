@@ -8,7 +8,7 @@
  */
 module.exports = {
   插件名: "坦克世界RPG游戏插件",
-  指令: "^[/!]?开始战斗$|^[/!]?更新数据$",
+  指令: "^[/!]?加入战斗$|^[/!]?更新数据$",
   版本: "0.1",
   作者: "Giftina",
   描述: "坦克世界模拟器，文字RPG游戏，玩法是依据玩家车辆进行计算伤害，回合制对战。",
@@ -24,7 +24,7 @@ module.exports = {
     // 更新游戏数据，只有管理员可以执行此指令
     else if (updateDataCommand.test(msg)) {
       for (let i in QQBOT_ADMIN_LIST) {
-        if (userId == QQBOT_ADMIN_LIST[i]) {
+        if (userId == QQBOT_ADMIN_LIST[i] || userName == QQBOT_ADMIN_LIST[i]) {
           if (options.type === "qq") {
             axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI("开始更新坦克世界基础数据...")}`);
           }

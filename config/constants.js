@@ -19,6 +19,7 @@ module.exports = Object.freeze({
   fake_forward_reg: new RegExp(/^强制迫害(.*)/), // 匹配伪造转发指令
   approve_group_invite_reg: new RegExp(/^批准 (.*)/), // 匹配批准加群指令
   reply_reg: new RegExp(/\[CQ:reply,id=.*复读/), // 匹配回复测试指令
+  plugins_switch_reg: new RegExp(/^插件[开关] (.*)/), // 匹配插件开关指令
 
   // 全局常量
   TTS_FILE_RECV_PATH: "./static/xiaoye/live_latest_reply.txt", // 哔哩哔哩字幕文件存储路径

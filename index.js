@@ -10,7 +10,7 @@
 const { exec } = require("child_process");
 const _cn_reg = new RegExp("[\u4e00-\u9fa5]");
 if (_cn_reg.test(process.cwd())) {
-  const warnMessage = `因为Unicode的兼容性问题，程序所在路劲不能有汉字日语韩语表情包之类的奇奇怪怪的字符，请使用常规的ASCII字符!如有疑问，请加QQ群 120243247 咨询。当前路径含有不对劲的字符: ${process.cwd()}`;
+  const warnMessage = `因为Unicode的兼容性问题，程序所在路劲不能有汉字日语韩语表情包之类的奇奇怪怪的字符，请使用常规的ASCII字符!如有疑问，请加QQ群 157311946 咨询。当前路径含有不对劲的字符: ${process.cwd()}`;
   console.log(warnMessage);
   exec(`msg %username% ${warnMessage}`);
 }
@@ -35,7 +35,7 @@ const cookie = require("cookie");
 const http = require("http").Server(app);
 const io = require("socket.io")(http);
 const request = require("request");
-const axios = require("axios").default;
+const axios = require("axios");
 const https = require("https");
 const colors = require("colors"); // Console日志染色颜色配置
 colors.setTheme({
@@ -56,6 +56,7 @@ const voicePlayer = require("play-sound")({
 }); // mp3静默播放工具，用于直播时播放语音
 const ipTranslator = require("lib-qqwry")(true); // lib-qqwry是一个高效纯真IP库(qqwry.dat)引擎，传参 true 是将IP库文件读入内存中以提升效率
 const { createOpenAPI, createWebsocket } = require("qq-guild-bot"); // QQ频道SDK
+const semverDiff = require("semver-diff");
 
 /**
  * 中文分词器
@@ -306,8 +307,6 @@ io.on("connection", async (socket) => {
  * 小夜核心代码，对接go-cqhttp
  */
 async function StartQQBot() {
-  CheckGoCqhttpUpdate();
-
   /**
    * go-cqhttp 启动后加载当前所有群，写入数据库进行群服务初始化
    */
@@ -365,7 +364,7 @@ async function StartQQBot() {
         `http://${GO_CQHTTP_SERVICE_API_URL}/send_private_msg?user_id=${QQBOT_ADMIN_LIST[0]}&message=${encodeURI(msg)}`,
       );
       // 发送给邀请者批准提醒
-      const inviteReplyContent = `你好呀，谢谢你邀请小夜，请联系这只小夜的主人 ${QQBOT_ADMIN_LIST[0]} 来批准入群邀请噢。也欢迎来小夜开发群120243247聊聊你对小夜的想法噢。小夜永久免费开源于 https://github.com/Giftia/ChatDACS ，开发组欢迎你的加入！`;
+      const inviteReplyContent = `你好呀，谢谢你邀请小夜，请联系这只小夜的主人 ${QQBOT_ADMIN_LIST[0]} 来批准入群邀请噢。小夜开源于 https://github.com/Giftia/ChatDACS ，开发组欢迎你的加入！`;
       axios.get(
         `http://${GO_CQHTTP_SERVICE_API_URL}/send_private_msg?user_id=${event.user_id}&message=${encodeURI(inviteReplyContent)}`,
       );
@@ -1650,38 +1649,13 @@ function CheckUpdate() {
   axios.get(
     "https://api.github.com/repos/Giftia/ChatDACS/releases/latest", { UnauthorizedHttpsAgent }
   ).then((res) => {
-    if (res.data.tag_name !== versionNumber) {
+    if (semverDiff(versionNumber, res.data.tag_name) !== undefined) {
       logger.info(`当前小夜版本 ${versionNumber}，检测到小夜最新发行版本是 ${res.data.tag_name}，请前往 https://github.com/Giftia/ChatDACS/releases 更新小夜吧`.alert);
     } else {
       logger.info(`当前小夜已经是最新发行版本 ${versionNumber}`.log);
     }
   }).catch((err) => {
     logger.error(`检查小夜更新失败，错误原因: ${err}`.error);
-  });
-}
-
-/**
- * 检查 go-cqhttp 更新
- */
-function CheckGoCqhttpUpdate() {
-  axios.get(
-    "https://api.github.com/repos/Mrs4s/go-cqhttp/releases/latest", { UnauthorizedHttpsAgent }
-  ).then((latestRes) => {
-    // 获取当前使用的 go-cqhttp 版本号
-    axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_version_info`)
-      .then((res) => {
-        // 和最新release比对
-        if (latestRes.data.tag_name !== res.data.data.app_version) {
-          logger.info(`当前小夜使用的 go-cqhttp 版本 ${res.data.data.app_version}，检测到 go-cqhttp 最新发行版本是 ${latestRes.data.tag_name}，请前往 https://github.com/Mrs4s/go-cqhttp/releases 更新 go-cqhttp 吧`.alert);
-        } else {
-          logger.info(`当前小夜使用的 go-cqhttp 已经是最新发行版本 ${res.data.data.app_version}`.log);
-        }
-      })
-      .catch((err) => {
-        logger.error(`检查 go-cqhttp 更新失败，错误原因: ${err}`.error);
-      });
-  }).catch((err) => {
-    logger.error(`检查 go-cqhttp 更新失败，错误原因: ${err}`.error);
   });
 }
 
@@ -1819,23 +1793,45 @@ async function ECYWenDa() {
  */
 async function ProcessExecute(msg, userId, userName, groupId, groupName, options) {
   let pluginReturn = "";
-  for (const i in plugins) {
-    const reg = new RegExp(plugins[i].指令);
-    if (reg.test(msg)) {
-      try {
-        pluginReturn = await plugins[i].execute(msg, userId, userName, groupId, groupName, options);
-      } catch (e) {
-        logger.error(
-          `插件 ${plugins[i].插件名} ${plugins[i].版本} 爆炸啦: ${e.stack}`.error,
-        );
-        return `插件 ${plugins[i].插件名} ${plugins[i].版本} 爆炸啦: ${e.stack}`;
+  // 插件开关
+  if (Constants.plugins_switch_reg.test(msg)) {
+    const pluginName = msg.match(Constants.plugins_switch_reg)[1];
+    if (!pluginName) return "插件名获取有误";
+    for (const i in plugins) {
+      if (plugins[i].插件名 == pluginName) {
+        const pluginStatus = await utils.ToggleGroupPlugin(groupId, pluginName);
+
+        console.log(`群${groupId} 的插件 ${pluginName} 状态切换为 ${pluginStatus}`.log);
+
+        return { type: "text", content: `${pluginName} 已${pluginStatus ? "开启" : "关闭"}` };
       }
-      if (pluginReturn) {
-        logger.info(
-          `插件 ${plugins[i].插件名} ${plugins[i].版本} 响应了消息：`.log,
-        );
-        logger.info(JSON.stringify(pluginReturn).log);
-        return pluginReturn;
+    }
+  }
+  else {
+    for (const i in plugins) {
+      const reg = new RegExp(plugins[i].指令);
+      if (reg.test(msg)) {
+        const pluginStatus = await utils.GetGroupPluginStatus(groupId, plugins[i].插件名);
+        if (!pluginStatus) {
+          console.log(`群${groupId} 的插件 ${plugins[i].插件名} 已关闭，不响应`.log);
+          return { type: "text", content: `群内的 ${plugins[i].插件名} 已关闭，不响应` }
+        };
+
+        try {
+          pluginReturn = await plugins[i].execute(msg, userId, userName, groupId, groupName, options);
+        } catch (e) {
+          logger.error(
+            `插件 ${plugins[i].插件名} ${plugins[i].版本} 爆炸啦: ${e.stack}`.error,
+          );
+          return `插件 ${plugins[i].插件名} ${plugins[i].版本} 爆炸啦: ${e.stack}`;
+        }
+        if (pluginReturn) {
+          logger.info(
+            `插件 ${plugins[i].插件名} ${plugins[i].版本} 响应了消息：`.log,
+          );
+          logger.info(JSON.stringify(pluginReturn).log);
+          return pluginReturn;
+        }
       }
     }
   }
