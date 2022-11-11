@@ -35,7 +35,7 @@ const cookie = require("cookie");
 const http = require("http").Server(app);
 const io = require("socket.io")(http);
 const request = require("request");
-const axios = require("axios").default;
+const axios = require("axios");
 const https = require("https");
 const colors = require("colors"); // Console日志染色颜色配置
 colors.setTheme({
@@ -56,6 +56,7 @@ const voicePlayer = require("play-sound")({
 }); // mp3静默播放工具，用于直播时播放语音
 const ipTranslator = require("lib-qqwry")(true); // lib-qqwry是一个高效纯真IP库(qqwry.dat)引擎，传参 true 是将IP库文件读入内存中以提升效率
 const { createOpenAPI, createWebsocket } = require("qq-guild-bot"); // QQ频道SDK
+const semverDiff = require("semver-diff");
 
 /**
  * 中文分词器
@@ -74,6 +75,7 @@ jieba.load({
  */
 const winston = require("winston");
 const { format, transports } = require("winston");
+const { isUndefined } = require("util");
 const { printf } = format;
 
 const myFormat = printf(({ level, message, timestamp }) => {
@@ -1648,7 +1650,7 @@ function CheckUpdate() {
   axios.get(
     "https://api.github.com/repos/Giftia/ChatDACS/releases/latest", { UnauthorizedHttpsAgent }
   ).then((res) => {
-    if (res.data.tag_name !== versionNumber) {
+    if (semverDiff(versionNumber, res.data.tag_name) !== undefined) {
       logger.info(`当前小夜版本 ${versionNumber}，检测到小夜最新发行版本是 ${res.data.tag_name}，请前往 https://github.com/Giftia/ChatDACS/releases 更新小夜吧`.alert);
     } else {
       logger.info(`当前小夜已经是最新发行版本 ${versionNumber}`.log);
