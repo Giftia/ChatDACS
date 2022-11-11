@@ -2,7 +2,7 @@ name: Build Incremental Update Package On Windows (Windows 增量更新包)
 on:
   push:
     branches:
-      - master
+      - cancel
 
 env:
   GITHUB_TOKEN: ${{ github.token }}
