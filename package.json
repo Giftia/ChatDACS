@@ -31,7 +31,7 @@
     "rss-parser": "3.12.0",
     "sequelize": "6.21.3",
     "socket.io": "4.5.1",
-    "sqlite3": "5.0.10",
+    "sqlite3": "5.1.2",
     "trayicon": "1.2.2",
     "winston": "3.8.1",
     "yaml": "2.1.1"
