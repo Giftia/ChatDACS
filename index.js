@@ -592,7 +592,7 @@ async function StartQQBot() {
             if (Constants.is_qq_reg.test(who)) {
               // 如果是自己要被闭菊，那么闭菊
               if (event.self_id == who) {
-                logger.error(
+                console.log(
                   `群 ${event.group_id} 停止了小夜服务`.error,
                 );
                 await utils.DisableGroupService(event.group_id);
@@ -607,7 +607,7 @@ async function StartQQBot() {
             }
             // 没指定小夜
           } else if (event.message === "闭菊") {
-            logger.error(
+            console.log(
               `群 ${event.group_id} 停止了小夜服务`.error
             );
             await utils.DisableGroupService(event.group_id);
