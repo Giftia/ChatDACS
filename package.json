@@ -53,7 +53,8 @@
       "node_modules/sqlite3/lib/binding/napi-v6-win32-unknown-x64/node_sqlite3.node",
       "node_modules/sqlite3/lib/binding/napi-v6-linux-glibc-x64/node_sqlite3.node",
       "node_modules/nodejieba/build/Release/nodejieba.node",
-      "node_modules/socket.io/client-dist/*"
+      "node_modules/socket.io/client-dist/*",
+      "node_modules/axios/dist/*"
     ],
     "targets": [
       "node14-win-x64"
