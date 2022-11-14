@@ -1814,7 +1814,7 @@ async function ProcessExecute(msg, userId, userName, groupId, groupName, options
         const pluginStatus = await utils.GetGroupPluginStatus(groupId, plugins[i].插件名);
         if (!pluginStatus) {
           console.log(`群${groupId} 的插件 ${plugins[i].插件名} 已关闭，不响应`.log);
-          return { type: "text", content: `群内的 ${plugins[i].插件名} 已关闭，不响应` }
+          return { type: "text", content: `群内的 ${plugins[i].插件名} 已关闭，不响应` };
         };
 
         try {
