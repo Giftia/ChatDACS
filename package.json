@@ -6,7 +6,7 @@
   "scripts": {
     "run": "node index.js",
     "pkg": "pkg .",
-    "docker": "docker build . -t giftina/chatdacs"
+    "docker": "docker build -t giftina/chatdacs:v3.6.7-fix ."
   },
   "dependencies": {
     "axios": "0.27.2",

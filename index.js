@@ -1579,7 +1579,7 @@ async function InitConfig() {
           logger.error(`go-cqhttp启动失败，错误原因: ${error}`.error);
           return;
         }
-        logger.error("go-cqhttp窗口意外退出，小夜将无法正常使用，请尝试重新启动".error);
+        logger.error("go-cqhttp窗口意外退出，qq小夜将无法正常使用，请在右下角托盘区右键小夜头像，选择 重启go-cqhttp".error);
         return;
       });
 
