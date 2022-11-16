@@ -136,7 +136,7 @@ module.exports = {
   /**
    * 将插件回复转为 web前端 能解析的格式
    * @param {string} answer 插件回复
-   * @returns {object} { type: "picture | directPicture | audio | video | file", content: "内容" }
+   * @returns {string} 转换结果
    */
   PluginAnswerToWebStyle(answer) {
     if (!answer.content?.file) {
@@ -155,7 +155,7 @@ module.exports = {
   /**
    * 将插件回复转为 go-cqhttp 能解析的格式
    * @param {string} answer 插件回复
-   * @returns {object} { type: "picture | directPicture | audio | video | file", content: "内容" }
+   * @returns {string} 转换结果
    */
   PluginAnswerToGoCqhttpStyle(answer) {
     if (!answer.content?.file) {
@@ -173,7 +173,7 @@ module.exports = {
   /**
    * 将插件回复转为 QQ频道 能解析的格式
    * @param {string} answer 插件回复
-   * @returns {object} { type: "picture | directPicture | audio | video | file", content: "内容" }
+   * @returns {object} { image, audio, text }
    */
   PluginAnswerToQQGuildStyle(answer) {
     switch (answer.type) {
@@ -195,7 +195,34 @@ module.exports = {
           text: answer.content,
         };
     }
+  },
 
+  /**
+   * 将插件回复转为 Telegram 能解析的格式
+   * @param {string} answer 插件回复
+   * @returns {object} { image, audio, text }
+   */
+  PluginAnswerToTelegramStyle(answer) {
+    switch (answer.type) {
+      case "picture":
+        return {
+          image: `./static${answer.content?.file}`,
+        };
+      case "directPicture":
+        return {
+          image: answer.content?.file,
+        };
+      case "audio":
+        return {
+          text: answer.content.filename,
+          audio: `./static${answer.content?.file}`,
+          duration: answer.content.duration,
+        };
+      default:
+        return {
+          text: answer.content,
+        };
+    }
   },
 
   /**
@@ -251,7 +278,7 @@ module.exports = {
         await QQGroupModel.bulkCreate(groupIdListToAdd.map((groupId) => ({ groupId })));
       }
 
-      console.log(`群服务初始化完毕，新加载了${groupIdListToAdd.length}个群，共${groupIdListInDB.length}个群`.log);
+      console.log(`群服务初始化完毕，新加载了${groupIdListToAdd.length}个群，共${groupIdListInDB.length + groupIdListToAdd.length}个群`.log);
     }
   },
 
@@ -663,17 +690,30 @@ module.exports = {
    * @returns {Promise<boolean>} 插件开关状态
    */
   async GetGroupPluginStatus(groupId, pluginName) {
-    const group = await QQGroupModel.findOne({ where: { groupId } });
-    if (!group.pluginsList || !Object.prototype.hasOwnProperty.call(group.pluginsList, pluginName)) {
+    const group = (await QQGroupModel.findOrCreate({ where: { groupId } }))[0];
+    if (!group.pluginsList) {
+
+      console.log("该群没有初始化插件列表，初始化一下".log);
+
+      await QQGroupModel.update(
+        { pluginsList: { [pluginName]: true } },
+        { where: { groupId } }
+      );
+      return true;
+    }
+
+    const pluginExists = Object.prototype.hasOwnProperty.call(group.pluginsList, pluginName);
+    if (!pluginExists) {
 
       console.log(`该群没有初始化 ${pluginName} ，给一个初始开`.log);
 
-      group.pluginsList = {
-        ...group.pluginsList,
-        [pluginName]: true
-      };
-      await group.save();
+      await QQGroupModel.update(
+        { pluginsList: { ...group.pluginsList, [pluginName]: true } },
+        { where: { groupId } }
+      );
+      return true;
     }
+
     return group.pluginsList[pluginName];
   },
 };
