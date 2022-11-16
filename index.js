@@ -56,7 +56,8 @@ const voicePlayer = require("play-sound")({
 }); // mp3静默播放工具，用于直播时播放语音
 const ipTranslator = require("lib-qqwry")(true); // lib-qqwry是一个高效纯真IP库(qqwry.dat)引擎，传参 true 是将IP库文件读入内存中以提升效率
 const { createOpenAPI, createWebsocket } = require("qq-guild-bot"); // QQ频道SDK
-const semverDiff = require("semver-diff");
+const semverDiff = require("semver-diff"); // 版本比较
+const TelegramBot = require("node-telegram-bot-api"); // Telegram机器人SDK
 
 /**
  * 中文分词器
@@ -148,7 +149,9 @@ var onlineUsers = 0, // 预定义
   c1c_count = 0,
   CONNECT_QQ_GUILD_SWITCH,
   QQ_GUILD_APP_ID,
-  QQ_GUILD_TOKEN;
+  QQ_GUILD_TOKEN,
+  CONNECT_TELEGRAM_SWITCH,
+  TELEGRAM_BOT_TOKEN;
 
 /**
  * 声明结束，开始初始化
@@ -170,11 +173,11 @@ logger.info("插件加载完毕√\n".log);
 InitConfig();
 
 /**
- * 下面是三大核心功能: web端、qq端、直播间端
+ * 下面是各种功能实现
  */
 
 /**
- * web端，前端使用layim框架
+ * web端消息处理，前端使用layim框架
  */
 io.on("connection", async (socket) => {
   socket.emit("getCookie");
@@ -304,7 +307,7 @@ io.on("connection", async (socket) => {
 });
 
 /**
- * 小夜核心代码，对接go-cqhttp
+ * qq端消息处理，对接go-cqhttp
  */
 async function StartQQBot() {
   /**
@@ -592,7 +595,7 @@ async function StartQQBot() {
             if (Constants.is_qq_reg.test(who)) {
               // 如果是自己要被闭菊，那么闭菊
               if (event.self_id == who) {
-                logger.error(
+                console.log(
                   `群 ${event.group_id} 停止了小夜服务`.error,
                 );
                 await utils.DisableGroupService(event.group_id);
@@ -607,7 +610,7 @@ async function StartQQBot() {
             }
             // 没指定小夜
           } else if (event.message === "闭菊") {
-            logger.error(
+            console.log(
               `群 ${event.group_id} 停止了小夜服务`.error
             );
             await utils.DisableGroupService(event.group_id);
@@ -1259,7 +1262,7 @@ async function StartQQBot() {
 }
 
 /**
- * qq内嵌的频道的消息处理，并非独立的qq频道
+ * qq内嵌频道的消息处理，并非独立的qq频道
  */
 async function ProcessGuildMessage(event) {
   // qq内嵌频道插件应答器
@@ -1283,9 +1286,9 @@ async function ProcessGuildMessage(event) {
 }
 
 /**
- * 虚拟主播星野夜蝶核心代码，星野夜蝶上线!
+ * b站直播端消息处理，虚拟主播星野夜蝶上线!
  */
-function StartLive() {
+async function StartLive() {
   const live = new KeepLiveTCP(BILIBILI_LIVE_ROOM_ID);
   live.on("open", () => logger.info(`哔哩哔哩直播间 ${BILIBILI_LIVE_ROOM_ID} 连接成功`.log));
 
@@ -1356,9 +1359,9 @@ function StartLive() {
 }
 
 /**
- * 接入QQ频道
+ * qq频道消息处理，需要注册独立的qq频道bot号
  */
-function StartQQGuild() {
+async function StartQQGuild() {
   const testConfig = {
     appID: QQ_GUILD_APP_ID,
     token: QQ_GUILD_TOKEN,
@@ -1455,7 +1458,51 @@ function StartQQGuild() {
 
     }
   });
+}
 
+/**
+ * Telegram端消息处理
+ */
+async function StartTelegram() {
+  const telegramClient = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
+  telegramClient.on("message", async (data) => {
+    const chatId = data.chat.id;
+    const content = data.text;
+    const userName = data.from.username;
+    logger.info(`[Telegram] 收到用户 ${userName} 的消息: ${content}`);
+
+    // Telegram插件应答器
+    const pluginsReply = await ProcessExecute(
+      content,
+      data.from.id,
+      userName,
+      chatId,
+      "",
+      {
+        type: "telegram",
+      }
+    );
+
+    if (pluginsReply) {
+      const replyToTelegram = utils.PluginAnswerToTelegramStyle(pluginsReply);
+      if (pluginsReply.type == "text") {
+        telegramClient.sendMessage(chatId, replyToTelegram.text);
+      }
+      else if (pluginsReply.type == "picture" || pluginsReply.type == "directPicture") {
+        telegramClient.sendPhoto(chatId, replyToTelegram.image, {}, {
+          contentType: "image/jpeg",
+        });
+      }
+      else if (pluginsReply.type == "audio") {
+        telegramClient.sendAudio(chatId, replyToTelegram.audio, {
+          title: replyToTelegram.text,
+          duration: replyToTelegram.duration,
+        }, {
+          contentType: "audio/mpeg",
+        });
+      }
+    }
+  });
 }
 
 /**
@@ -1534,12 +1581,15 @@ async function InitConfig() {
   CONNECT_GO_CQHTTP_SWITCH = config.System.CONNECT_GO_CQHTTP_SWITCH ?? false;
   CONNECT_BILIBILI_LIVE_SWITCH = config.System.CONNECT_BILIBILI_LIVE_SWITCH ?? false;
   CONNECT_QQ_GUILD_SWITCH = config.System.CONNECT_QQ_GUILD_SWITCH ?? false;
+  CONNECT_TELEGRAM_SWITCH = config.System.CONNECT_TELEGRAM_SWITCH ?? false;
   WEB_PORT = config.System.WEB_PORT ?? 80;
   GO_CQHTTP_SERVICE_ANTI_POST_API = config.System.GO_CQHTTP_SERVICE_ANTI_POST_API ?? "/bot";
   GO_CQHTTP_SERVICE_API_URL = config.System.GO_CQHTTP_SERVICE_API_URL ?? "127.0.0.1:5700";
 
   QQ_GUILD_APP_ID = config.ApiKey.QQ_GUILD_APP_ID ?? "";
   QQ_GUILD_TOKEN = config.ApiKey.QQ_GUILD_TOKEN ?? "";
+
+  TELEGRAM_BOT_TOKEN = config.ApiKey.TELEGRAM_BOT_TOKEN ?? "";
 
   QQBOT_ADMIN_LIST = config.qqBot.QQBOT_ADMIN_LIST; // 小夜的管理员列表
   QQ_GROUP_WELCOME_MESSAGE = config.qqBot.QQ_GROUP_WELCOME_MESSAGE; // qq入群欢迎语
@@ -1579,7 +1629,7 @@ async function InitConfig() {
           logger.error(`go-cqhttp启动失败，错误原因: ${error}`.error);
           return;
         }
-        logger.error("go-cqhttp窗口意外退出，小夜将无法正常使用，请尝试重新启动".error);
+        logger.error("go-cqhttp窗口意外退出，qq小夜将无法正常使用，请在右下角托盘区右键小夜头像，选择 重启go-cqhttp".error);
         return;
       });
 
@@ -1615,6 +1665,13 @@ async function InitConfig() {
     StartQQGuild();
   } else {
     logger.info("小夜QQ频道接入关闭\n".off);
+  }
+
+  if (CONNECT_TELEGRAM_SWITCH) {
+    logger.info("小夜Telegram接入开启\n".on);
+    StartTelegram();
+  } else {
+    logger.info("小夜Telegram接入关闭\n".off);
   }
 
   StartHttpServer();

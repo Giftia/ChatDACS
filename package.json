@@ -6,7 +6,7 @@
   "scripts": {
     "run": "node index.js",
     "pkg": "pkg .",
-    "docker": "docker build . -t giftina/chatdacs"
+    "docker": "docker build -t giftina/chatdacs:v3.6.7-fix ."
   },
   "dependencies": {
     "axios": "0.27.2",
@@ -22,6 +22,7 @@
     "mp3-duration": "1.1.0",
     "multer": "1.4.4",
     "node-schedule": "2.1.0",
+    "node-telegram-bot-api": "0.60.0",
     "nodejieba": "2.5.2",
     "play-sound": "1.1.5",
     "qq-guild-bot": "2.9.5",
