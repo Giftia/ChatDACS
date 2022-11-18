@@ -1265,9 +1265,10 @@ async function StartQQBot() {
  * qq内嵌频道的消息处理，并非独立的qq频道
  */
 async function ProcessGuildMessage(event) {
+  const content = event.message;
   // qq内嵌频道插件应答器
   const pluginsReply = await ProcessExecute(
-    event.message,
+    content,
     event.user_id,
     event?.sender?.nickname,
     event.channel_id,
@@ -1277,8 +1278,18 @@ async function ProcessGuildMessage(event) {
     }
   );
 
-  if (pluginsReply != "") {
-    const replyToGuild = utils.PluginAnswerToGoCqhttpStyle(pluginsReply);
+  let replyToGuild = "";
+  if (pluginsReply) {
+    replyToGuild = utils.PluginAnswerToGoCqhttpStyle(pluginsReply);
+  } else {
+    // 交给聊天函数处理
+    const chatReply = await ChatProcess(content);
+    if (chatReply) {
+      replyToGuild = chatReply;
+    }
+  }
+
+  if (replyToGuild) {
     axios.get(
       `http://${GO_CQHTTP_SERVICE_API_URL}/send_guild_channel_msg?guild_id=${event.guild_id}&channel_id=${event.channel_id}&message=${encodeURI(replyToGuild)}`
     );
@@ -1420,10 +1431,11 @@ async function StartQQGuild() {
       }
     );
 
+    const channelID = data.msg.channel_id;
+    const replyMsgID = data.msg.id;
+
     if (pluginsReply) {
       const replyToQQGuild = utils.PluginAnswerToQQGuildStyle(pluginsReply);
-      const channelID = data.msg.channel_id;
-      const replyMsgID = data.msg.id;
 
       if (replyToQQGuild?.audio) {
         const message = {
@@ -1435,10 +1447,10 @@ async function StartQQGuild() {
 
         qqGuildClient.audioApi.postAudio(channelID, message)
           .then((res) => {
-            console.log("[GUILD_MESSAGES] 应答成功 :", res);
+            console.log("[GUILD_MESSAGES] 语音应答成功 :", res);
           })
           .catch((err) => {
-            console.log("[GUILD_MESSAGES] 应答失败 :", err);
+            console.log("[GUILD_MESSAGES] 语音应答失败 :", err);
           });
       } else {
         const message = {
@@ -1449,13 +1461,29 @@ async function StartQQGuild() {
 
         qqGuildClient.messageApi.postMessage(channelID, message)
           .then((res) => {
-            console.log("[GUILD_MESSAGES] 应答成功 :", res.data);
+            console.log("[GUILD_MESSAGES] 插件应答成功 :", res.data);
           })
           .catch((err) => {
-            console.log("[GUILD_MESSAGES] 应答失败 :", err);
+            console.log("[GUILD_MESSAGES] 插件应答失败 :", err);
           });
       }
+    } else {
+      // 交给聊天函数处理
+      const chatReply = await ChatProcess(content);
+      if (chatReply) {
+        const message = {
+          content: chatReply,
+          msg_id: replyMsgID,
+        };
 
+        qqGuildClient.messageApi.postMessage(channelID, message)
+          .then((res) => {
+            console.log("[GUILD_MESSAGES] 聊天应答成功 :", res.data);
+          })
+          .catch((err) => {
+            console.log("[GUILD_MESSAGES] 聊天应答失败 :", err);
+          });
+      }
     }
   });
 }
@@ -1500,6 +1528,12 @@ async function StartTelegram() {
         }, {
           contentType: "audio/mpeg",
         });
+      }
+    } else {
+      // 交给聊天函数处理
+      const chatReply = await ChatProcess(content);
+      if (chatReply) {
+        telegramClient.sendMessage(chatId, chatReply);
       }
     }
   });
