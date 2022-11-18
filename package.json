@@ -6,7 +6,11 @@
   "scripts": {
     "run": "node index.js",
     "pkg": "pkg .",
-    "docker": "docker build -t giftina/chatdacs:v3.6.7-fix ."
+    "docker": "docker build -t giftina/chatdacs:v3.7.0 .",
+    "migrate-generate": "npx sequelize-cli migration:generate --name migration",
+    "migrate-dev": "npx sequelize-cli db:migrate",
+    "migrate": "npx sequelize-cli db:migrate --env production",
+    "migrate:undo": "npx sequelize-cli db:migrate:undo --env production"
   },
   "dependencies": {
     "axios": "0.27.2",
@@ -40,7 +44,8 @@
   "devDependencies": {
     "eslint": "8.27.0",
     "eslint-config-prettier": "8.5.0",
-    "eslint-plugin-node": "11.1.0"
+    "eslint-plugin-node": "11.1.0",
+    "sequelize-cli": "^6.5.2"
   },
   "repository": {
     "type": "git",

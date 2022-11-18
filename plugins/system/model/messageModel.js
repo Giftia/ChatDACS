@@ -13,11 +13,11 @@ const MessageModel = sequelize.define("message", {
     primaryKey: true,
   },
   CID: {
-    type: DataTypes.CHAR(13),
+    type: DataTypes.STRING,
     unique: true,
   },
   message: {
-    type: DataTypes.CHAR,
+    type: DataTypes.STRING,
   },
 }, {
   tableName: "messages",

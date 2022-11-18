@@ -13,17 +13,16 @@ const ChatModel = sequelize.define("chat", {
     primaryKey: true,
   },
   ask: {
-    type: DataTypes.CHAR,
-    unique: true,
+    type: DataTypes.STRING,
   },
   answer: {
-    type: DataTypes.CHAR,
+    type: DataTypes.STRING,
   },
   teacherUserId: {
-    type: DataTypes.INTEGER(12),
+    type: DataTypes.INTEGER,
   },
   teacherGroupId: {
-    type: DataTypes.INTEGER(10),
+    type: DataTypes.INTEGER,
   },
 }, {
   tableName: "chat",

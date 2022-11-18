@@ -3,7 +3,7 @@ const repeatStartTimes = 2; // 当消息重复几次时，复读消息
 module.exports = {
   插件名: "复读机插件",
   指令: "",
-  版本: "2.1",
+  版本: "2.2",
   作者: "Giftina",
   描述: `特殊插件，没有主动触发指令。当某条消息重复 ${repeatStartTimes} 次时，'小夜牌高保真复读机' 会跟风复读一次。`,
   使用示例: "[某条消息重复了2次]",
@@ -36,6 +36,8 @@ module.exports = {
     // 当某条消息重复特定次数时复读一次
     if (repeatMap[groupId].repeatCount == repeatStartTimes) {
       return { type: "text", content: repeatMap[groupId].latestMessage };
+    } else if (repeatMap[groupId].repeatCount == repeatStartTimes * 3) {
+      return { type: "text", content: "你🐎死了是吧发这么多遍" };
     }
     return "";
   },

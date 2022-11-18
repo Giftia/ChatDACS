@@ -6,6 +6,8 @@ WORKDIR /opt/chatdacs
 COPY . .
 
 RUN npm ci --production \
+  && rm package.json \
+  && rm package-lock.json \
   && rm ./plugins/go-cqhttp/go-cqhttp_windows_amd64.exe \
   && rm ./plugins/go-cqhttp/go-cqhttp.bat \
   && cd ./plugins/ \

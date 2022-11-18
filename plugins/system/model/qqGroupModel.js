@@ -13,7 +13,8 @@ const QQGroupModel = sequelize.define("qqGroup", {
     primaryKey: true,
   },
   groupId: {
-    type: DataTypes.INTEGER(10),
+    type: DataTypes.INTEGER,
+    unique: true,
   },
   serviceEnabled: {
     type: DataTypes.BOOLEAN,
@@ -24,16 +25,16 @@ const QQGroupModel = sequelize.define("qqGroup", {
     defaultValue: false,
   },
   loopBombAnswer: {
-    type: DataTypes.CHAR,
+    type: DataTypes.STRING,
   },
   loopBombHolder: {
-    type: DataTypes.INTEGER(12),
+    type: DataTypes.INTEGER,
   },
   loopBombStartTime: {
-    type: DataTypes.INTEGER(10),
+    type: DataTypes.INTEGER,
   },
   pluginsList: {
-    type: DataTypes.CHAR,
+    type: DataTypes.STRING,
     set: function (value) {
       return this.setDataValue("pluginsList", JSON.stringify(value));
     },

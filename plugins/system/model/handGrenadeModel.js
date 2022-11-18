@@ -13,11 +13,11 @@ const HandGrenadeModel = sequelize.define("handGrenade", {
     primaryKey: true,
   },
   userId: {
-    type: DataTypes.INTEGER(12),
+    type: DataTypes.INTEGER,
     unique: true,
   },
   times: {
-    type: DataTypes.INTEGER(3),
+    type: DataTypes.INTEGER,
     defaultValue: 0,
   },
 }, {

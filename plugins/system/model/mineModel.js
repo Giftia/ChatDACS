@@ -13,10 +13,10 @@ const MineModel = sequelize.define("mine", {
     primaryKey: true,
   },
   groupId: {
-    type: DataTypes.INTEGER(10),
+    type: DataTypes.INTEGER,
   },
   owner: {
-    type: DataTypes.INTEGER(12),
+    type: DataTypes.INTEGER,
   },
 }, {
   tableName: "mine",
