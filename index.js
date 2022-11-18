@@ -10,7 +10,7 @@
 const { exec } = require("child_process");
 const _cn_reg = new RegExp("[\u4e00-\u9fa5]");
 if (_cn_reg.test(process.cwd())) {
-  const warnMessage = `因为Unicode的兼容性问题，程序所在路劲不能有汉字日语韩语表情包之类的奇奇怪怪的字符，请使用常规的ASCII字符!如有疑问，请加QQ群 157311946 咨询。当前路径含有不对劲的字符: ${process.cwd()}`;
+  const warnMessage = `因为Unicode字符的兼容性问题，本程序所在路径不能存在非ASCII字符。如有疑问，请加QQ群 157311946 咨询。当前路径含有非ASCII字符: ${process.cwd()}`;
   console.log(warnMessage);
   exec(`msg %username% ${warnMessage}`);
 }
@@ -1930,5 +1930,5 @@ async function ProcessExecute(msg, userId, userName, groupId, groupName, options
 }
 
 /**
- * 我正在听：🎧 Tiny Stars —— LoveLive! Superstar!!
+ * 我正在听：🎧 Over The Next Rainbow —— Aqours
  */

@@ -13,7 +13,7 @@ const PerfunctoryModel = sequelize.define("perfunctory", {
     primaryKey: true,
   },
   content: {
-    type: DataTypes.CHAR,
+    type: DataTypes.STRING,
   }
 }, {
   tableName: "perfunctory",

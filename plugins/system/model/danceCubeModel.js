@@ -13,17 +13,17 @@ const DanceCubeModel = sequelize.define("danceCube", {
     primaryKey: true,
   },
   userId: {
-    type: DataTypes.INTEGER(12),
+    type: DataTypes.INTEGER,
     unique: true,
   },
   playerId: {
-    type: DataTypes.INTEGER(10),
+    type: DataTypes.INTEGER,
   },
   playerName: {
-    type: DataTypes.CHAR(20),
+    type: DataTypes.STRING,
   },
   location: {
-    type: DataTypes.CHAR,
+    type: DataTypes.STRING,
     set: function (value) {
       return this.setDataValue("location", JSON.stringify(value));
     },

@@ -13,14 +13,14 @@ const UserModel = sequelize.define("user", {
     primaryKey: true,
   },
   CID: {
-    type: DataTypes.CHAR(13),
+    type: DataTypes.STRING,
     unique: true,
   },
   nickname: {
-    type: DataTypes.CHAR(20),
+    type: DataTypes.STRING,
   },
   logintimes: {
-    type: DataTypes.INTEGER(6),
+    type: DataTypes.INTEGER,
     defaultValue: 1,
   },
 }, {
