@@ -35,7 +35,7 @@ const cookie = require("cookie");
 const http = require("http").Server(app);
 const io = require("socket.io")(http);
 const request = require("request");
-const axios = require("axios");
+const axios = require("axios").default;
 const https = require("https");
 const colors = require("colors"); // Console日志染色颜色配置
 colors.setTheme({
