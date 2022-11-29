@@ -11,7 +11,7 @@
     "request": "2.88.2",
     "require.all": "2.0.5",
     "rss-parser": "3.12.0",
-    "sequelize": "6.25.5",
+    "sequelize": "6.26.0",
     "sqlite3": "5.1.2",
     "trayicon": "1.2.2",
     "yaml": "2.1.3"
