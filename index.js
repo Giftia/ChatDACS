@@ -1230,7 +1230,7 @@ async function StartQQBot() {
                 .replace("&#91;name&#93;", `[CQ:at,qq=${event.user_id}]`,); // 替换[name]为正确的@
             }
 
-            console.log(`对于聊天 ${atReplacedMsg} ，小夜回复 ${replyMsg}`.log);
+            console.log(`对于QQ聊天 ${atReplacedMsg} ，小夜回复 ${replyMsg}`.log);
             res.send({ reply: replyMsg });
             return 0;
 
@@ -1283,9 +1283,13 @@ async function ProcessGuildMessage(event) {
     replyToGuild = utils.PluginAnswerToGoCqhttpStyle(pluginsReply);
   } else {
     // 交给聊天函数处理
-    const chatReply = await ChatProcess(content);
-    if (chatReply) {
-      replyToGuild = chatReply;
+    const replyFlag = Math.floor(Math.random() * 100);
+    if (replyFlag < QQBOT_REPLY_PROBABILITY) {
+      const chatReply = await ChatProcess(content);
+      if (chatReply) {
+        console.log(`对于QQ频道聊天 ${content} ，小夜回复 ${chatReply}`.log);
+        replyToGuild = chatReply;
+      }
     }
   }
 
@@ -1469,20 +1473,24 @@ async function StartQQGuild() {
       }
     } else {
       // 交给聊天函数处理
-      const chatReply = await ChatProcess(content);
-      if (chatReply) {
-        const message = {
-          content: chatReply,
-          msg_id: replyMsgID,
-        };
+      const replyFlag = Math.floor(Math.random() * 100);
+      if (replyFlag < QQBOT_REPLY_PROBABILITY) {
+        const chatReply = await ChatProcess(content);
+        if (chatReply) {
+          console.log(`对于QQ频道Bot端聊天 ${content} ，小夜回复 ${chatReply}`.log);
+          const message = {
+            content: chatReply,
+            msg_id: replyMsgID,
+          };
 
-        qqGuildClient.messageApi.postMessage(channelID, message)
-          .then((res) => {
-            console.log("[GUILD_MESSAGES] 聊天应答成功 :", res.data);
-          })
-          .catch((err) => {
-            console.log("[GUILD_MESSAGES] 聊天应答失败 :", err);
-          });
+          qqGuildClient.messageApi.postMessage(channelID, message)
+            .then((res) => {
+              console.log("[GUILD_MESSAGES] 聊天应答成功 :", res.data);
+            })
+            .catch((err) => {
+              console.log("[GUILD_MESSAGES] 聊天应答失败 :", err);
+            });
+        }
       }
     }
   });
@@ -1531,9 +1539,13 @@ async function StartTelegram() {
       }
     } else {
       // 交给聊天函数处理
-      const chatReply = await ChatProcess(content);
-      if (chatReply) {
-        telegramClient.sendMessage(chatId, chatReply);
+      const replyFlag = Math.floor(Math.random() * 100);
+      if (replyFlag < QQBOT_REPLY_PROBABILITY) {
+        const chatReply = await ChatProcess(content);
+        if (chatReply) {
+          console.log(`对于Telegram端聊天 ${content} ，小夜回复 ${chatReply}`.log);
+          telegramClient.sendMessage(chatId, chatReply);
+        }
       }
     }
   });
