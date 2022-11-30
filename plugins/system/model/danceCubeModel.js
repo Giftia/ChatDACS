@@ -24,6 +24,7 @@ const DanceCubeModel = sequelize.define("danceCube", {
   },
   location: {
     type: DataTypes.STRING,
+    defaultValue: "{}",
     set: function (value) {
       return this.setDataValue("location", JSON.stringify(value));
     },

@@ -35,6 +35,7 @@ const QQGroupModel = sequelize.define("qqGroup", {
   },
   pluginsList: {
     type: DataTypes.STRING,
+    defaultValue: "{}",
     set: function (value) {
       return this.setDataValue("pluginsList", JSON.stringify(value));
     },
