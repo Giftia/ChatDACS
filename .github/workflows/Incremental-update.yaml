@@ -70,6 +70,7 @@ jobs:
           "
 
       - name: Get Current Time
+        shell: bash
         id: time
         # set-output is deprecated: https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
         run: echo "now=$(date +'%Y-%m-%d-%H-%M-%S')" >> $GITHUB_OUTPUT
