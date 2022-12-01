@@ -78,6 +78,6 @@ jobs:
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ChatDACS-${{ env.VERSION_NUMBER }}-Update-Package-${{ steps.time.outputs.now }}
-          path: ChatDACS-${{ env.VERSION_NUMBER }}-Update-Package.zip
+          name: ChatDACS-${{ env.VERSION_NUMBER }}_Update-Package-${{ steps.time.outputs.now }}
+          path: ChatDACS-${{ env.VERSION_NUMBER }}_Update-Package.zip
           if-no-files-found: error
