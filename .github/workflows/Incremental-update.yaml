@@ -44,8 +44,8 @@ jobs:
         run: |
           node -e "
             const fs = require('fs');
-            const version = require('./version.json');
-            fs.writeFileSync('version-number', 'VERSION_NUMBER=' + version.versionNumber);
+            const package = require('./package.json');
+            fs.writeFileSync('version-number', 'VERSION_NUMBER=v' + package.version);
           "
           cat ./version-number >> $GITHUB_ENV
 
@@ -63,7 +63,7 @@ jobs:
             });
             archive.pipe(output);
             archive.directory('./plugins/', 'plugins');
-            archive.file('./version.json', { name: 'version.json' });
+            archive.file('./package.json', { name: 'package.json' });
             archive.file('./chatdacs.exe', { name: 'chatdacs.exe' });
             archive.finalize();
           "
@@ -76,6 +76,6 @@ jobs:
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ChatDACS-${{ env.VERSION_NUMBER }}_Incremental-Update-Package-${{ steps.time.outputs.now }}
-          path: ChatDACS-${{ env.VERSION_NUMBER }}_Incremental-Update-Package.zip
+          name: ChatDACS-${{ env.VERSION_NUMBER }}-Update-Package-${{ steps.time.outputs.now }}
+          path: ChatDACS-${{ env.VERSION_NUMBER }}-Update-Package.zip
           if-no-files-found: error

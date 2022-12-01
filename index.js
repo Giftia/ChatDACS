@@ -18,7 +18,7 @@ if (_cn_reg.test(process.cwd())) {
 /**
  * 声明依赖与配置
  */
-const versionNumber = require("./version.json").versionNumber; // 版本号
+const versionNumber = `v${require("./package.json").version}`; // 版本号
 const version = `ChatDACS ${versionNumber}`; // 系统版本，会显示在web端标题栏
 const utils = require("./plugins/system/utils.js"); // 载入系统通用模块
 const Constants = require("./config/constants.js"); // 系统常量

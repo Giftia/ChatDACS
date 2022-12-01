@@ -69,8 +69,8 @@ jobs:
         run: |
           node -e "
             const fs = require('fs');
-            const version = require('./version.json');
-            fs.writeFileSync('version-number', 'VERSION_NUMBER=' + version.versionNumber);
+            const package = require('./package.json');
+            fs.writeFileSync('version-number', 'VERSION_NUMBER=v' + package.version);
           "
           cat ./version-number >> $GITHUB_ENV
 
@@ -92,7 +92,7 @@ jobs:
             archive.directory('./plugins/', 'plugins');
             archive.file('./README.md', { name: 'README.md' });
             archive.file('./LICENSE', { name: 'LICENSE' });
-            archive.file('./version.json', { name: 'version.json' });
+            archive.file('./package.json', { name: 'package.json' });
             archive.file('./chatdacs.exe', { name: 'chatdacs.exe' });
             archive.file('./chatdacs', { name: 'chatdacs' });
             archive.finalize();
