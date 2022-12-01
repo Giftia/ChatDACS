@@ -156,6 +156,10 @@ var onlineUsers = 0, // 预定义
 /**
  * 声明结束，开始初始化
  */
+console.log("_______________________________________\n".rainbow);
+console.log(`\n|          ${version}           |`.alert);
+console.log(" Giftina: https://github.com/Giftia/ \n".alert);
+console.log("_______________________________________\n".rainbow);
 logger.info("开始加载插件……".log);
 const plugins = require.all({
   dir: path.join(process.cwd(), "plugins"),
@@ -167,8 +171,12 @@ const plugins = require.all({
     plugins.all.load();
   },
 });
-console.log(plugins);
-logger.info("插件加载完毕√\n".log);
+let pluginsMap = ["当前安装的插件列表："];
+for (const i in plugins) {
+  pluginsMap.push(plugins[i].插件名);
+}
+console.log(pluginsMap);
+logger.info("插件加载完毕√".log);
 
 InitConfig();
 
@@ -1651,13 +1659,10 @@ async function InitConfig() {
 
   BILIBILI_LIVE_ROOM_ID = config.Others.BILIBILI_LIVE_ROOM_ID ?? 49148; // 哔哩哔哩直播间id
 
-  console.log("_______________________________________\n".rainbow);
-  console.log(`\n|          ${version}           |\n`.alert);
-
   if (CHAT_SWITCH) {
-    logger.info("小夜web端自动聊天开启\n".on);
+    logger.info("小夜web端自动聊天开启".on);
   } else {
-    logger.info("小夜web端自动聊天关闭\n".off);
+    logger.info("小夜web端自动聊天关闭".off);
   }
 
   if (CONNECT_GO_CQHTTP_SWITCH) {
@@ -1690,39 +1695,41 @@ async function InitConfig() {
     }
 
     logger.info(
-      `小夜QQ接入开启，配置: \n  ·对接go-cqhttp接口 ${GO_CQHTTP_SERVICE_API_URL}\n  ·监听反向post于 127.0.0.1:${WEB_PORT}${GO_CQHTTP_SERVICE_ANTI_POST_API}\n  ·私聊服务${QQBOT_PRIVATE_CHAT_SWITCH ? "开启" : "关闭"}\n`.on,
+      `小夜QQ接入开启，配置: \n  ·对接go-cqhttp接口 ${GO_CQHTTP_SERVICE_API_URL}\n  ·监听反向post于 127.0.0.1:${WEB_PORT}${GO_CQHTTP_SERVICE_ANTI_POST_API}\n  ·私聊服务${QQBOT_PRIVATE_CHAT_SWITCH ? "开启" : "关闭"}`.on,
     );
     await StartQQBot();
   } else {
-    logger.info("小夜QQ接入关闭\n".off);
+    logger.info("小夜QQ接入关闭".off);
   }
 
   if (CONNECT_BILIBILI_LIVE_SWITCH) {
     logger.info(
-      `小夜哔哩哔哩直播接入开启，直播间id为 ${BILIBILI_LIVE_ROOM_ID}\n`.on,
+      `小夜哔哩哔哩直播接入开启，直播间id为 ${BILIBILI_LIVE_ROOM_ID}`.on,
     );
     StartLive();
   } else {
-    logger.info("小夜哔哩哔哩直播接入关闭\n".off);
+    logger.info("小夜哔哩哔哩直播接入关闭".off);
   }
 
   if (CONNECT_QQ_GUILD_SWITCH) {
-    logger.info("小夜QQ频道接入开启\n".on);
+    logger.info("小夜QQ频道接入开启".on);
     StartQQGuild();
   } else {
-    logger.info("小夜QQ频道接入关闭\n".off);
+    logger.info("小夜QQ频道接入关闭".off);
   }
 
   if (CONNECT_TELEGRAM_SWITCH) {
-    logger.info("小夜Telegram接入开启\n".on);
+    logger.info("小夜Telegram接入开启".on);
     StartTelegram();
   } else {
-    logger.info("小夜Telegram接入关闭\n".off);
+    logger.info("小夜Telegram接入关闭".off);
   }
 
   StartHttpServer();
 
   CheckUpdate();
+
+  RunMigration();
 }
 
 /**
@@ -1730,10 +1737,7 @@ async function InitConfig() {
  */
 function StartHttpServer() {
   http.listen(WEB_PORT, () => {
-    console.log("_______________________________________\n".rainbow);
-    logger.info(
-      `服务启动完毕，访问 127.0.0.1:${WEB_PORT} 即可进入本地web端\n`,
-    );
+    logger.info(`HTTP服务启动完毕，访问 127.0.0.1:${WEB_PORT} 即可进入本地web端√`.log);
   });
 };
 
@@ -1759,6 +1763,30 @@ function CheckUpdate() {
     }
   }).catch((err) => {
     logger.error(`检查小夜更新失败，错误原因: ${err}`.error);
+  });
+}
+
+/**
+ * 数据库migration
+ */
+function RunMigration() {
+  const migration = exec("npm run migrate");
+  logger.info("正在检查数据库迁移".log);
+  let migrationLog = "";
+  migration.stdout.on("data", (data) => {
+    migrationLog += data;
+  });
+
+  migration.on("close", (code) => {
+    if (code === 0) {
+      if (migrationLog.includes("database schema was already up to date")) {
+        logger.info("数据库迁移检查完毕，无需迁移√".log);
+      } else {
+        logger.info("数据库迁移检查完毕，迁移完毕√".log);
+      }
+    } else {
+      logger.error(`数据库迁移失败，错误原因: ${migrationLog}`.error);
+    }
   });
 }
 

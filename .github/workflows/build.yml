@@ -84,12 +84,13 @@ jobs:
             const path = require('path');
             const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}.zip'));
             const archive = archiver('zip', {
-              zlib: { level: 9 } // Sets the compression level. 9 is the max compression.
+              zlib: { level: 9 }
             });
             archive.pipe(output);
             archive.directory('./config/', 'config');
             archive.directory('./static/', 'static');
             archive.directory('./plugins/', 'plugins');
+            archive.directory('./migrations/', 'migrations');
             archive.file('./README.md', { name: 'README.md' });
             archive.file('./LICENSE', { name: 'LICENSE' });
             archive.file('./package.json', { name: 'package.json' });
