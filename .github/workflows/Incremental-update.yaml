@@ -57,7 +57,7 @@ jobs:
             const archiver = require('archiver');
             const fs = require('fs');
             const path = require('path');
-            const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-${{ env.VERSION_NUMBER }}_Incremental-Update-Package.zip'));
+            const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-${{ env.VERSION_NUMBER }}_Update-Package.zip'));
             const archive = archiver('zip', {
               zlib: { level: 9 }
             });
@@ -70,6 +70,7 @@ jobs:
           "
 
       - name: Get Current Time
+        shell: bash
         id: time
         # set-output is deprecated: https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
         run: echo "now=$(date +'%Y-%m-%d-%H-%M-%S')" >> $GITHUB_OUTPUT
