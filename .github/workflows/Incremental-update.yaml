@@ -28,7 +28,6 @@ jobs:
         run: |
           npm ci --production
           cd ./plugins/
-          npm ci --production
           rm package.json
           rm package-lock.json
           cd ..
