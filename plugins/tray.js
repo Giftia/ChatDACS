@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "状态栏提示插件",
   指令: "^[/!]?弹窗 (.*)",
-  版本: "2.3",
+  版本: "2.4",
   作者: "Giftina",
   描述: "自动在任务栏显示一个常驻托盘，仅在Windows系统下有效。弹窗指令会在小夜宿主电脑上弹出一条消息通知。",
   使用示例: "弹窗 您可能是盗版软件的受害者",
@@ -14,7 +14,7 @@ module.exports = {
       await tray.notify(`来自${userId}(${userName})的消息`, text);
       exec(`msg %username% ${text}`);
     }
-    return { type: "text", content: "已经在宿主电脑弹出了一个消息通知，请查收" };
+    return { type: "text", content: "已经在宿主桌面弹出了一个消息通知，请查收" };
   },
 };
 
@@ -22,7 +22,7 @@ const trayicon = require("trayicon");
 const path = require("path");
 const fs = require("fs");
 const { exec } = require("child_process");
-const versionNumber = require(path.join(process.cwd(), "version.json")).versionNumber;
+const versionNumber = `v${require(path.join(process.cwd(), "package.json")).version}`;
 const icon = path.resolve(process.cwd(), "static", "favicon.ico");
 const os = require("os");
 let tray;

@@ -25,7 +25,13 @@ jobs:
         run: rm -rf ./plugins/go-cqhttp/
 
       - name: Clean Install Modules
-        run: npm ci --production
+        run: |
+          npm ci --production
+          cd ./plugins/
+          npm ci --production
+          rm package.json
+          rm package-lock.json
+          cd ..
 
       - name: Install pkg Tool
         run: npm i pkg -g
@@ -38,8 +44,8 @@ jobs:
         run: |
           node -e "
             const fs = require('fs');
-            const version = require('./version.json');
-            fs.writeFileSync('version-number', 'VERSION_NUMBER=' + version.versionNumber);
+            const package = require('./package.json');
+            fs.writeFileSync('version-number', 'VERSION_NUMBER=v' + package.version);
           "
           cat ./version-number >> $GITHUB_ENV
 
@@ -53,22 +59,24 @@ jobs:
             const path = require('path');
             const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-${{ env.VERSION_NUMBER }}_Incremental-Update-Package.zip'));
             const archive = archiver('zip', {
-              zlib: { level: 9 } // Sets the compression level. 9 is the max compression.
+              zlib: { level: 9 }
             });
             archive.pipe(output);
             archive.directory('./plugins/', 'plugins');
-            archive.file('./version.json', { name: 'version.json' });
+            archive.directory('./migrations/', 'migrations');
+            archive.file('./package.json', { name: 'package.json' });
             archive.file('./chatdacs.exe', { name: 'chatdacs.exe' });
             archive.finalize();
           "
 
       - name: Get Current Time
         id: time
-        run: echo "::set-output name=now::$(date +'%Y-%m-%d-%H-%M-%S')"
+        # set-output is deprecated: https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
+        run: echo "now=$(date +'%Y-%m-%d-%H-%M-%S')" >> $GITHUB_OUTPUT
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ChatDACS-${{ env.VERSION_NUMBER }}_Incremental-Update-Package-${{ steps.time.outputs.now }}
-          path: ChatDACS-${{ env.VERSION_NUMBER }}_Incremental-Update-Package.zip
+          name: ChatDACS-${{ env.VERSION_NUMBER }}-Update-Package-${{ steps.time.outputs.now }}
+          path: ChatDACS-${{ env.VERSION_NUMBER }}-Update-Package.zip
           if-no-files-found: error

@@ -69,8 +69,8 @@ jobs:
         run: |
           node -e "
             const fs = require('fs');
-            const version = require('./version.json');
-            fs.writeFileSync('version-number', 'VERSION_NUMBER=' + version.versionNumber);
+            const package = require('./package.json');
+            fs.writeFileSync('version-number', 'VERSION_NUMBER=v' + package.version);
           "
           cat ./version-number >> $GITHUB_ENV
 
@@ -84,15 +84,16 @@ jobs:
             const path = require('path');
             const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}.zip'));
             const archive = archiver('zip', {
-              zlib: { level: 9 } // Sets the compression level. 9 is the max compression.
+              zlib: { level: 9 }
             });
             archive.pipe(output);
             archive.directory('./config/', 'config');
             archive.directory('./static/', 'static');
             archive.directory('./plugins/', 'plugins');
+            archive.directory('./migrations/', 'migrations');
             archive.file('./README.md', { name: 'README.md' });
             archive.file('./LICENSE', { name: 'LICENSE' });
-            archive.file('./version.json', { name: 'version.json' });
+            archive.file('./package.json', { name: 'package.json' });
             archive.file('./chatdacs.exe', { name: 'chatdacs.exe' });
             archive.file('./chatdacs', { name: 'chatdacs' });
             archive.finalize();
@@ -100,7 +101,8 @@ jobs:
 
       - name: Get Current Time
         id: time
-        run: echo "::set-output name=now::$(date +'%Y-%m-%d-%H-%M-%S')"
+        # set-output is deprecated: https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
+        run: echo "now=$(date +'%Y-%m-%d-%H-%M-%S')" >> $GITHUB_OUTPUT
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3

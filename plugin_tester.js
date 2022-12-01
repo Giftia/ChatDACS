@@ -25,7 +25,7 @@ colors.setTheme({
 });
 
 // 载入插件
-console.log("插件测试器 v1.6，用于快速验证插件功能".alert);
+console.log("插件测试器 v1.7，用于快速验证插件功能".alert);
 console.log("开始加载插件……".log);
 let plugins = require.all({
   dir: path.join(process.cwd(), "plugins"),
@@ -39,7 +39,7 @@ let plugins = require.all({
 });
 console.log(plugins);
 console.log("插件加载完毕√".log);
-console.log("现在可以在命令行中输入指令来验证插件功能，按回车提交\n".warn);
+console.log("现在可以在命令行中输入指令来验证插件功能，按回车提交，按 Ctrl + c 2次退出\n".warn);
 
 rl.on("line", (input) => {
   run(input);
@@ -47,9 +47,9 @@ rl.on("line", (input) => {
 
 async function run(msg) {
   const defaultUserId = 114514,
-    defaultUserName = "野兽前辈",
+    defaultUserName = "测试用户",
     defaultGroupId = 1919810,
-    defaultGroupName = "测试群名",
+    defaultGroupName = "测试群组",
     defaultOptions = { type: "test" };
   const result = await ProcessExecute(msg, defaultUserId, defaultUserName, defaultGroupId, defaultGroupName, defaultOptions);
   if (result != "") {
