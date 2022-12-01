@@ -100,7 +100,8 @@ jobs:
 
       - name: Get Current Time
         id: time
-        run: echo "::set-output name=now::$(date +'%Y-%m-%d-%H-%M-%S')"
+        # set-output is deprecated: https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
+        run: echo "now=$(date +'%Y-%m-%d-%H-%M-%S')" >> $GITHUB_OUTPUT
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3

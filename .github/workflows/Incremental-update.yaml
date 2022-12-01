@@ -25,7 +25,13 @@ jobs:
         run: rm -rf ./plugins/go-cqhttp/
 
       - name: Clean Install Modules
-        run: npm ci --production
+        run: |
+          npm ci --production
+          cd ./plugins/
+          npm ci --production
+          rm package.json
+          rm package-lock.json
+          cd ..
 
       - name: Install pkg Tool
         run: npm i pkg -g
@@ -64,7 +70,8 @@ jobs:
 
       - name: Get Current Time
         id: time
-        run: echo "::set-output name=now::$(date +'%Y-%m-%d-%H-%M-%S')"
+        # set-output is deprecated: https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
+        run: echo "now=$(date +'%Y-%m-%d-%H-%M-%S')" >> $GITHUB_OUTPUT
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v3
