@@ -80,9 +80,10 @@
 - [x] 与 go-cqhttp 对接，实现了 qq 机器人小夜 `Connectable with go-cqhttp`
 - [x] 简单好用的插件系统 `Easy-to-use plugin system`
 - [x] 支持接入哔哩哔哩直播间 `Support Bilibili Live-Room`
+- [x] 支持接入 QQ `Support QQ`
 - [x] 支持接入 QQ 频道 和 QQ 频道机器人 `Support QQ Guild and QQ Guild Bot`
 - [x] 支持接入 Telegram Bot `Support Telegram Bot`
-- [ ] 即将发布哔哩哔哩直播互动游戏 `Bilibili Live Game (Coming Soon)`
+- [ ] 哔哩哔哩直播互动游戏(工事中) `Bilibili Live Game (Coming Soon)`
 
 ---
 
