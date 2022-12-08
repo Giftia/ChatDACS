@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "搜图插件",
   指令: "来点(好.*的.*|坏的.*)|来点.*",
-  版本: "3.2",
+  版本: "4.0",
   作者: "Giftina",
   描述: "搜索一张指定tag的二次元图。`好的` 代表正常尺度，`坏的` 代表🔞。图片来源api.lolicon.app。注：经测试，本插件启用后较容易被风控封号，请酌量使用。",
   使用示例: "来点好的白丝",
@@ -49,13 +49,13 @@ module.exports = {
   },
 };
 
-const request = require("request");
-const axios = require("axios").default;
-const fs = require("fs");
 const path = require("path");
-const yaml = require("yaml"); // 使用yaml解析配置文件
+const fs = require("fs");
 const url = require("url");
 const utils = require("./system/utils.js");
+const request = require(path.join(process.cwd(), "node_modules/request"));
+const axios = require(path.join(process.cwd(), "node_modules/axios")).default;
+const yaml = require(path.join(process.cwd(), "node_modules/yaml"));
 let GO_CQHTTP_SERVICE_API_URL;
 
 //搜索tag
@@ -92,16 +92,10 @@ function SearchTag(tag, type) {
 Init();
 
 // 读取配置文件
-function ReadConfig() {
-  return new Promise((resolve, reject) => {
-    fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", function (err, data) {
-      if (!err) {
-        resolve(yaml.parse(data));
-      } else {
-        reject("读取配置文件错误。错误原因：" + err);
-      }
-    });
-  });
+async function ReadConfig() {
+  return await yaml.parse(
+    fs.readFileSync(path.join(process.cwd(), "config", "config.yml"), "utf-8")
+  );
 }
 
 // 初始化

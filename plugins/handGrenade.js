@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "一个手雷插件",
   指令: "^[/!]?一[个颗]手雷(.*)",
-  版本: "2.1",
+  版本: "3.0",
   作者: "Giftina",
   描述: "QQ群专有功能。向被害者丢出一个手雷，一位幸运玩家将会被炸伤 0 到 120 秒（禁言）。有千分之一的概率手雷会转化为神圣手雷（Holly Hand Grenade），将会炸伤所有无辜群友（全体禁言）。手雷有60%几率成功丢出，40%几率被自己炸伤。玩家当日投掷次数每增加1，自雷概率增加10%，当日有效。",
   使用示例: "一个手雷 @被害者",
@@ -57,8 +57,8 @@ module.exports = {
         reply = `[CQ:at,qq=${userId}]面无表情地朝自己丢出一颗手雷，造成了${boomTime}秒的伤害`;
       }
       // 炸目标
-      else if (Constants.has_qq_reg.exec(msg)) {
-        const specifiedTarget = Constants.has_qq_reg.exec(msg)[1];
+      else if (constants.has_qq_reg.exec(msg)) {
+        const specifiedTarget = constants.has_qq_reg.exec(msg)[1];
         target = specifiedTarget;
         console.log(`群 ${groupId} 的群员 ${userId} 尝试向 ${target} 丢出一颗手雷`.log);
       }
@@ -87,12 +87,12 @@ module.exports = {
   }
 };
 
-const axios = require("axios").default;
-const yaml = require("yaml");
-const fs = require("fs");
 const path = require("path");
-const Constants = require("../config/constants.js");
+const fs = require("fs");
 const utils = require("./system/utils.js");
+const constants = require("../config/constants.js");
+const axios = require(path.join(process.cwd(), "node_modules/axios")).default;
+const yaml = require(path.join(process.cwd(), "node_modules/yaml"));
 let GO_CQHTTP_SERVICE_API_URL;
 
 Init();

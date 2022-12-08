@@ -1,5 +1,5 @@
 const path = require("path");
-const { Sequelize, DataTypes } = require("sequelize");
+const { Sequelize, DataTypes } = require(path.join(process.cwd(), "node_modules/sequelize"));
 const sequelize = new Sequelize({
   dialect: "sqlite",
   storage: path.join(process.cwd(), "config", "db.db"),
@@ -23,6 +23,9 @@ const ChatModel = sequelize.define("chat", {
   },
   teacherGroupId: {
     type: DataTypes.INTEGER,
+  },
+  teacherType: {
+    type: DataTypes.STRING,
   },
 }, {
   tableName: "chat",

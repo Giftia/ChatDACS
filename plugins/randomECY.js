@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "随机二次元图插件",
   指令: "^[/!]?(随机)二次元(图)$|^[/!]?二次元$",
-  版本: "3.2",
+  版本: "4.0",
   作者: "Giftina",
   描述: "发送一张正常尺度的二次元图。",
   使用示例: "二次元",
@@ -37,13 +37,13 @@ module.exports = {
   },
 };
 
-const request = require("request");
-const fs = require("fs");
-const axios = require("axios").default;
-const url = require("url");
-let GO_CQHTTP_SERVICE_API_URL;
-const yaml = require("yaml");
 const path = require("path");
+const fs = require("fs");
+const url = require("url");
+const request = require(path.join(process.cwd(), "node_modules/request"));
+const axios = require(path.join(process.cwd(), "node_modules/axios")).default;
+const yaml = require(path.join(process.cwd(), "node_modules/yaml"));
+let GO_CQHTTP_SERVICE_API_URL;
 
 //随机二次元图
 function RandomECY() {
@@ -67,16 +67,10 @@ function RandomECY() {
 Init();
 
 // 读取配置文件
-function ReadConfig() {
-  return new Promise((resolve, reject) => {
-    fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", function (err, data) {
-      if (!err) {
-        resolve(yaml.parse(data));
-      } else {
-        reject("读取配置文件错误。错误原因：" + err);
-      }
-    });
-  });
+async function ReadConfig() {
+  return await yaml.parse(
+    fs.readFileSync(path.join(process.cwd(), "config", "config.yml"), "utf-8")
+  );
 }
 
 // 初始化

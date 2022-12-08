@@ -1,30 +1,29 @@
 module.exports = {
   插件名: "黑白生草图生成器插件",
   指令: "^[/!]?黑白图 (.*)",
-  版本: "2.1",
+  版本: "3.0",
   作者: "Giftina",
   描述: "生成一张黑白生草图。",
-  使用示例: "黑白图 当你凝望神圣手雷的时候，神圣手雷也在凝望你 あなたが神圣手雷を見つめるとき、神圣手雷もあなたを見つめています[图片]",
+  使用示例: "黑白图 语段1 语段2[图片]",
   预期返回: "[一张黑白生草图]",
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
-    // 获取第一行字符串
-    const mainContent = msg.split("[")[0].replace(/^[/!]?黑白图 /g, "") ?? "当你凝望神圣手雷的时候，神圣手雷也在凝望你";
-    const pictureSources = Constants.img_url_reg.exec(msg)[0] ?? "https://gchat.qpic.cn/gchatpic_new/1005056803/2063243247-2847024251-657109635D3492BDB455DEFA8936AD96/0?term=3"; // 取图片链接
+    const mainContent = msg.split("[")[0].replace(/^[/!]?黑白图 /g, "") ?? "智械危机 オムニッククライシス";
+    const pictureSources = constants.img_url_reg.exec(msg)[0] ?? "https://gchat.qpic.cn/gchatpic_new/1005056803/2147311946-3104545614-E3DCA7F57C09808B2AFAAB22172197B8/0"; // 取图片链接
 
-    const firstContent = mainContent?.split(" ")[0]?.trim() ?? "当你凝望神圣手雷的时候，神圣手雷也在凝望你"; // 第一行内容
-    const secondContent = mainContent?.split(" ")[1]?.trim() ?? ""; // 第二行内容, 替代"あなたが神圣手雷を見つめるとき、神圣手雷もあなたを見つめています";
+    const firstContent = mainContent?.split(" ")[0]?.trim() ?? "智械危机"; // 第一行内容
+    const secondContent = mainContent?.split(" ")[1]?.trim() ?? "オムニッククライシス"; // 第二行内容
 
     const fileURL = await generatePicture(pictureSources, firstContent, secondContent);
     return { type: "picture", content: { file: fileURL } };
   },
 };
 
-const { createCanvas, loadImage } = require("canvas"); // 用于绘制文字图像，迫害p图
-const utils = require("./system/utils.js");
 const path = require("path");
 const fs = require("fs");
-const Constants = require("../config/constants.js");
+const utils = require("./system/utils.js");
+const constants = require("../config/constants.js");
+const { createCanvas, loadImage } = require(path.join(process.cwd(), "node_modules/canvas"));
 
 async function generatePicture(pictureSources, firstContent, secondContent) {
   return new Promise((resolve, reject) => {

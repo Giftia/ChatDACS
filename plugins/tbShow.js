@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "淘宝买家秀色图插件",
   指令: "买家秀|福利姬",
-  版本: "3.2",
+  版本: "4.0",
   作者: "Giftina",
   描述: "在危险的尺度下发送一张非法的淘宝买家秀福利图。",
   使用示例: "买家秀",
@@ -42,28 +42,22 @@ module.exports = {
   },
 };
 
-const request = require("request");
-const fs = require("fs");
-const axios = require("axios").default;
 const path = require("path");
-const yaml = require("yaml");
+const fs = require("fs");
 const url = require("url");
 const utils = require("./system/utils.js");
+const request = require(path.join(process.cwd(), "node_modules/request"));
+const axios = require(path.join(process.cwd(), "node_modules/axios")).default;
+const yaml = require(path.join(process.cwd(), "node_modules/yaml"));
 let SUMT_API_KEY, GO_CQHTTP_SERVICE_API_URL;
 
 Init();
 
 // 读取配置文件
-function ReadConfig() {
-  return new Promise((resolve, reject) => {
-    fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", function (err, data) {
-      if (!err) {
-        resolve(yaml.parse(data));
-      } else {
-        reject("读取配置文件错误。错误原因：" + err);
-      }
-    });
-  });
+async function ReadConfig() {
+  return await yaml.parse(
+    fs.readFileSync(path.join(process.cwd(), "config", "config.yml"), "utf-8")
+  );
 }
 
 // 初始化SUMT_API_KEY
