@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "最新本子插件",
   指令: "^[/!]?(最新本子|最新投稿|绅士仓库)$",
-  版本: "1.0",
+  版本: "2.0",
   作者: "Giftina",
   描述: "从 https://cangku.icu/feed 获取最新投稿",
   使用示例: "最新本子",
@@ -12,7 +12,8 @@ module.exports = {
   },
 };
 
-const Parser = require("rss-parser");
+const path = require("path");
+const Parser = require(path.join(process.cwd(), "node_modules/rss-parser"));
 const rssParser = new Parser({
   headers: {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.67 Safari/537.36",

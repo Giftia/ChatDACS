@@ -1,11 +1,11 @@
 module.exports = {
   插件名: "疯狂星期四插件",
   指令: "疯狂星期四",
-  版本: "1.2",
+  版本: "2.0",
   作者: "Giftina",
   描述: "全自动学习关于 `疯狂星期四` 的语料。只要聊天对话中包含了 `疯狂星期四` ，就会自动学习之，并且回复一段其他的语料。",
-  使用示例: "世上77亿人，有253亿只鸡，是人数量三倍。如果鸡与人类开战，你必须要对抗3只鸡，就算它死了，又会有同类补上，就算你一个朋友都没有，你还有三只鸡做敌。今天是肯德基疯狂星期四，V我50，我帮你杀敌",
-  预期返回: "我本是显赫世家的大少，却被诡计多端的奸人所害！家人弃我！师门逐我！甚至断我灵脉!重生一世，今天肯德基疯狂星期四!谁请我吃？家人们，别他*垂头丧气了 知道今天是什么日子吗？ 今天是肯德基fucking crazy Thursday！大鸡腿29.9两块 ，家人们v我299，我他*要吃20个。",
+  使用示例: "今天是肯德基疯狂星期四，V我50。",
+  预期返回: "今天是肯德基fucking crazy Thursday！大鸡腿29.9两块 ，家人们v我299，我他*要吃20个。",
 
   execute: async function (msg, userId, userName, groupId, groupName, options) {
     const teachMsgChecked = msg.replace(/'/g, ""); //防爆
@@ -51,26 +51,20 @@ module.exports = {
   },
 };
 
-const fs = require("fs");
 const path = require("path");
-const yaml = require("yaml"); // 使用yaml解析配置文件
+const fs = require("fs");
 const utils = require("./system/utils.js");
+const yaml = require(path.join(process.cwd(), "node_modules/yaml"));
 const ChatModel = require(path.join(process.cwd(), "plugins", "system", "model", "chatModel.js"));
 let CHAT_BAN_WORDS;
 
 Init();
 
 // 读取配置文件
-function ReadConfig() {
-  return new Promise((resolve, reject) => {
-    fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", function (err, data) {
-      if (!err) {
-        resolve(yaml.parse(data));
-      } else {
-        reject("读取配置文件错误。错误原因：" + err);
-      }
-    });
-  });
+async function ReadConfig() {
+  return await yaml.parse(
+    fs.readFileSync(path.join(process.cwd(), "config", "config.yml"), "utf-8")
+  );
 }
 
 // 初始化CHAT_BAN_WORDS

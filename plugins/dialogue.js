@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "名场面插件",
   指令: "^[/!]?名场面 (.*)",
-  版本: "1.2",
+  版本: "2.0",
   作者: "Giftina",
   描述: "根据字幕台词搜索名场面出处，原作：https://github.com/windrises/dialogue.moe",
   使用示例: "名场面 不能逃避",
@@ -49,4 +49,5 @@ module.exports = {
   },
 };
 
-const axios = require("axios").default;
+const path = require("path");
+const axios = require(path.join(process.cwd(), "node_modules/axios")).default;

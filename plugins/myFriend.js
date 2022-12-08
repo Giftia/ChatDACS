@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "我有个朋友插件",
   指令: "^我有个朋友说(.*)",
-  版本: "2.0",
+  版本: "3.0",
   作者: "Giftina",
   描述: "QQ群专有功能。小夜会P一张你朋友说的图。",
   使用示例: "我有个朋友说我好了@朋友",
@@ -12,7 +12,7 @@ module.exports = {
       return 0;
     }
 
-    let target = Constants.has_qq_reg.exec(msg);
+    let target = constants.has_qq_reg.exec(msg);
     target = !target ? userId : target[1];
     const headIcon = `https://api.sumt.cn/api/qq.logo.php?qq=${target}`; // 载入朋友头像
     msg = msg.split("说")[1].split("[CQ:at,qq=")[0].trim();
@@ -61,13 +61,13 @@ module.exports = {
   },
 };
 
-const { createCanvas, loadImage } = require("canvas");
 const path = require("path");
-const Constants = require("../config/constants.js");
-const utils = require("./system/utils.js");
 const fs = require("fs");
-const axios = require("axios").default;
-const yaml = require("yaml");
+const utils = require("./system/utils.js");
+const constants = require("../config/constants.js");
+const { createCanvas, loadImage } = require(path.join(process.cwd(), "node_modules/canvas"));
+const axios = require(path.join(process.cwd(), "node_modules/axios")).default;
+const yaml = require(path.join(process.cwd(), "node_modules/yaml"));
 let GO_CQHTTP_SERVICE_API_URL;
 
 Init();

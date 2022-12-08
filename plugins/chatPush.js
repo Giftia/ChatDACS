@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "微信息知频道消息推送插件",
   指令: "^推送",
-  版本: "2.3",
+  版本: "3.0",
   作者: "Giftina",
   描述: "将指定格式的消息推送至微信息知指定频道，适合传送消息至微信。",
   使用示例: "推送我晚上要手冲",
@@ -20,25 +20,19 @@ module.exports = {
   },
 };
 
-const axios = require("axios").default;
-const fs = require("fs");
 const path = require("path");
-const yaml = require("yaml"); // 使用yaml解析配置文件
+const fs = require("fs");
+const axios = require(path.join(process.cwd(), "node_modules/axios")).default;
+const yaml = require(path.join(process.cwd(), "node_modules/yaml"));
 let XIZHI_CHANNEL_KEY;
 
 Init();
 
 // 读取配置文件
-function ReadConfig() {
-  return new Promise((resolve, reject) => {
-    fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", function (err, data) {
-      if (!err) {
-        resolve(yaml.parse(data));
-      } else {
-        reject("读取配置文件错误。错误原因：" + err);
-      }
-    });
-  });
+async function ReadConfig() {
+  return await yaml.parse(
+    fs.readFileSync(path.join(process.cwd(), "config", "config.yml"), "utf-8")
+  );
 }
 
 // 初始化WEB_PORT

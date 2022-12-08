@@ -21,7 +21,7 @@ if (_cn_reg.test(process.cwd())) {
 const versionNumber = `v${require("./package.json").version}`; // 版本号
 const version = `ChatDACS ${versionNumber}`; // 系统版本，会显示在web端标题栏
 const utils = require("./plugins/system/utils.js"); // 载入系统通用模块
-const Constants = require("./config/constants.js"); // 系统常量
+const constants = require("./config/constants.js"); // 系统常量
 const compression = require("compression"); // 用于gzip压缩
 const express = require("express"); // 轻巧的express框架
 const app = require("express")();
@@ -82,10 +82,10 @@ const myFormat = printf(({ level, message, timestamp }) => {
   return `[${level}] [${timestamp}]: ${message}`;
 });
 
-winston.addColors(Constants.LOG_LEVELS.colors);
+winston.addColors(constants.LOG_LEVELS.colors);
 
 const logger = winston.createLogger({
-  levels: Constants.LOG_LEVELS.levels,
+  levels: constants.LOG_LEVELS.levels,
   format: winston.format.combine(
     format.timestamp({ format: "YYYY-MM-DD HH:mm:ss.SSS" }),
     format.errors({ stack: true }),
@@ -158,7 +158,7 @@ var onlineUsers = 0, // 预定义
  */
 console.log("_______________________________________\n".rainbow);
 console.log(`\n|          ${version}           |`.alert);
-console.log(" Giftina: https://github.com/Giftia/ \n".alert);
+console.log("  Giftina: https://github.com/Giftia  \n".alert);
 console.log("_______________________________________\n".rainbow);
 logger.info("开始加载插件……".log);
 const plugins = require.all({
@@ -171,9 +171,9 @@ const plugins = require.all({
     plugins.all.load();
   },
 });
-let pluginsMap = ["当前安装的插件列表："];
+let pluginsMap = ["当前系统安装的插件列表："];
 for (const i in plugins) {
-  pluginsMap.push(plugins[i].插件名);
+  pluginsMap.push(`${plugins[i].插件名} v${plugins[i].版本}`);
 }
 console.log(pluginsMap);
 logger.info("插件加载完毕√".log);
@@ -243,7 +243,7 @@ io.on("connection", async (socket) => {
 
     socket.emit("message", {
       CID: "0",
-      msg: Constants.HELP_CONTENT,
+      msg: constants.HELP_CONTENT,
     });
   }
 
@@ -387,9 +387,9 @@ async function StartQQBot() {
     if (
       event.message_type == "private" &&
       event.user_id == QQBOT_ADMIN_LIST[0] &&
-      Constants.approve_group_invite_reg.test(event.message)
+      constants.approve_group_invite_reg.test(event.message)
     ) {
-      const flag = event.message.match(Constants.approve_group_invite_reg)[1];
+      const flag = event.message.match(constants.approve_group_invite_reg)[1];
 
       axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_add_request?flag=${encodeURI(flag)}&type=invite&approve=1`);
 
@@ -429,8 +429,8 @@ async function StartQQBot() {
 
     // 转发图片到web端，按需启用
     if (QQBOT_SAVE_ALL_IMAGE_TO_LOCAL_SWITCH) {
-      if (Constants.isImage_reg.test(event.message)) {
-        const url = Constants.img_url_reg.exec(event.message);
+      if (constants.isImage_reg.test(event.message)) {
+        const url = constants.img_url_reg.exec(event.message);
         utils.SaveQQimg(url)
           .then((resolve) => {
             io.emit("qqImage", resolve);
@@ -444,8 +444,8 @@ async function StartQQBot() {
     }
 
     // 转发视频到web端
-    if (Constants.isVideo_reg.test(event.message)) {
-      const url = Constants.video_url_reg.exec(event.message)[0];
+    if (constants.isVideo_reg.test(event.message)) {
+      const url = constants.video_url_reg.exec(event.message)[0];
       io.emit("qqVideo", { file: url, filename: "qq视频" });
       res.send();
       return 0;
@@ -461,11 +461,11 @@ async function StartQQBot() {
       // 服务启用开关
       // 指定小夜的话
       if (
-        Constants.open_ju_reg.test(event.message) &&
-        Constants.has_qq_reg.test(event.message)
+        constants.open_ju_reg.test(event.message) &&
+        constants.has_qq_reg.test(event.message)
       ) {
-        const who = Constants.has_qq_reg.exec(event.message)[1];
-        if (Constants.is_qq_reg.test(who)) {
+        const who = constants.has_qq_reg.exec(event.message)[1];
+        if (constants.is_qq_reg.test(who)) {
           // 如果是自己要被张菊，那么张菊
           if (event.self_id == who) {
             axios.get(
@@ -596,11 +596,11 @@ async function StartQQBot() {
           // 服务停用开关
           // 指定小夜的话
           if (
-            Constants.close_ju_reg.test(event.message) &&
-            Constants.has_qq_reg.test(event.message)
+            constants.close_ju_reg.test(event.message) &&
+            constants.has_qq_reg.test(event.message)
           ) {
-            const who = Constants.has_qq_reg.exec(event.message)[1];
-            if (Constants.is_qq_reg.test(who)) {
+            const who = constants.has_qq_reg.exec(event.message)[1];
+            if (constants.is_qq_reg.test(who)) {
               // 如果是自己要被闭菊，那么闭菊
               if (event.self_id == who) {
                 console.log(
@@ -675,8 +675,8 @@ async function StartQQBot() {
           }
 
           // 嘴臭，小夜的回复转化为语音
-          if (Constants.come_yap_reg.test(event.message)) {
-            const message = event.message.match(Constants.come_yap_reg)[1];
+          if (constants.come_yap_reg.test(event.message)) {
+            const message = event.message.match(constants.come_yap_reg)[1];
             console.log(`有人对线说 ${message}，小夜要嘴臭了`.log);
             io.emit(
               "system message",
@@ -697,7 +697,7 @@ async function StartQQBot() {
           }
 
           // 伪造转发
-          if (Constants.fake_forward_reg.test(event.message)) {
+          if (constants.fake_forward_reg.test(event.message)) {
             let who,
               name = event.sender.nickname,
               text,
@@ -716,9 +716,9 @@ async function StartQQBot() {
               who = msg[1].trim(); // 谁
               text = msg[2].trim(); // 说啥
               xiaoye_say = msg[3].trim(); // 小夜说啥
-              who = event.message.match(Constants.fake_forward_reg)[1];
+              who = event.message.match(constants.fake_forward_reg)[1];
               who = who.replace("[CQ:at,qq=", "").replace("]", "").trim();
-              if (Constants.is_qq_reg.test(who)) {
+              if (constants.is_qq_reg.test(who)) {
                 console.log(
                   `群 ${event.group_id} 的 群员 ${event.user_id} 强制迫害 ${who}`
                     .log,
@@ -827,7 +827,7 @@ async function StartQQBot() {
           }
 
           // 埋地雷
-          if (Constants.mine_reg.test(event.message)) {
+          if (constants.mine_reg.test(event.message)) {
             // 搜索地雷库中现有地雷
             const mines = await utils.GetGroupAllMines(event.group_id);
 
@@ -856,7 +856,7 @@ async function StartQQBot() {
           }
 
           // 踩地雷
-          if (Constants.fuck_mine_reg.test(event.message)) {
+          if (constants.fuck_mine_reg.test(event.message)) {
             // 搜索地雷库中现有地雷
             const mine = await utils.GetGroupMine(event.group_id);
 
@@ -885,7 +885,7 @@ async function StartQQBot() {
           }
 
           // 希望的花
-          if (Constants.hope_flower_reg.test(event.message)) {
+          if (constants.hope_flower_reg.test(event.message)) {
             let who;
             let boomTime = Math.floor(Math.random() * 30); // 造成0-30伤害时间
             if (event.message === "希望的花") {
@@ -898,8 +898,8 @@ async function StartQQBot() {
               });
               return 0;
             } else {
-              who = Constants.has_qq_reg.exec(event.message)[1];
-              if (Constants.is_qq_reg.test(who)) {
+              who = constants.has_qq_reg.exec(event.message)[1];
+              if (constants.is_qq_reg.test(who)) {
                 console.log(
                   `群 ${event.group_id} 的 群员 ${event.user_id} 向 ${who} 丢出一朵希望的花`
                     .log,
@@ -931,7 +931,7 @@ async function StartQQBot() {
           }
 
           // 击鼓传雷
-          if (Constants.loop_bomb_reg.test(event.message)) {
+          if (constants.loop_bomb_reg.test(event.message)) {
             // 先检查群有没有开始游戏
             const loopBombGame = await utils.GetGroupLoopBombGameStatus(event.group_id);
 
@@ -1101,7 +1101,7 @@ async function StartQQBot() {
           }
 
           // 孤寡
-          if (Constants.gu_gua_reg.test(event.message)) {
+          if (constants.gu_gua_reg.test(event.message)) {
             if (event.message == "孤寡") {
               res.send({
                 reply: "小夜收到了你的孤寡订单，现在就开始孤寡你了噢孤寡~",
@@ -1110,9 +1110,9 @@ async function StartQQBot() {
               return 0;
             }
 
-            const who = Constants.has_qq_reg.exec(event.message)[1];
+            const who = constants.has_qq_reg.exec(event.message)[1];
             console.log(`孤寡对象：${who}`.log);
-            if (Constants.is_qq_reg.test(who)) {
+            if (constants.is_qq_reg.test(who)) {
               axios.get(
                 `http://${GO_CQHTTP_SERVICE_API_URL}/get_friend_list`,
               ).then((response) => {
@@ -1158,7 +1158,7 @@ async function StartQQBot() {
           }
 
           // 手动复读，复读回复中指定的消息
-          if (Constants.reply_reg.test(event.message)) {
+          if (constants.reply_reg.test(event.message)) {
             // 从 [CQ:reply,id=-1982767585][CQ:at,qq=1005056803] 复读 消息里获取id
             const msgID = event.message.split("id=")[1].split("]")[0].trim();
             logger.info(`收到手动复读指令，消息id: ${msgID}`.log);
@@ -1171,11 +1171,11 @@ async function StartQQBot() {
 
           // 管理员功能: 修改聊天回复率
           if (
-            Constants.change_reply_probability_reg.test(event.message)
+            constants.change_reply_probability_reg.test(event.message)
           ) {
             for (let i in QQBOT_ADMIN_LIST) {
               if (event.user_id == QQBOT_ADMIN_LIST[i]) {
-                const replyPercentage = event.message.match(Constants.change_reply_probability_reg)[1];
+                const replyPercentage = event.message.match(constants.change_reply_probability_reg)[1];
                 QQBOT_REPLY_PROBABILITY = replyPercentage;
                 res.send({
                   reply: `小夜回复率已修改为${replyPercentage}%`,
@@ -1191,11 +1191,11 @@ async function StartQQBot() {
 
           // 管理员功能: 修改聊天随机复读率
           if (
-            Constants.change_fudu_probability_reg.test(event.message)
+            constants.change_fudu_probability_reg.test(event.message)
           ) {
             for (let i in QQBOT_ADMIN_LIST) {
               if (event.user_id == QQBOT_ADMIN_LIST[i]) {
-                const fuduPercentage = event.message.match(Constants.change_fudu_probability_reg)[1];
+                const fuduPercentage = event.message.match(constants.change_fudu_probability_reg)[1];
                 QQBOT_FUDU_PROBABILITY = fuduPercentage;
                 res.send({
                   reply: `小夜复读率已修改为${fuduPercentage}%`,
@@ -1350,7 +1350,7 @@ async function StartLive() {
         }
       }
 
-      fs.writeFileSync(Constants.TTS_FILE_RECV_PATH, `@${danmu.userName} ${replyToBiliBili}`);
+      fs.writeFileSync(constants.TTS_FILE_RECV_PATH, `@${danmu.userName} ${replyToBiliBili}`);
       const chatReplyToTTS = await plugins.tts.execute(`吠 ${replyToBiliBili}`);
 
       // 如果语音合成成功的话，直接播放
@@ -1454,7 +1454,7 @@ async function StartQQGuild() {
           audio_url: replyToQQGuild.audio,
           msg_id: replyMsgID,
           text: replyToQQGuild.text,
-          state: Constants.AUDIO_START,
+          state: constants.AUDIO_START,
         };
 
         qqGuildClient.audioApi.postAudio(channelID, message)
@@ -1564,7 +1564,7 @@ async function StartTelegram() {
  */
 app.get("/profile", async (req, res) => {
   await utils.UpdateNickname(req.query.CID, req.query.name);
-  res.sendFile(process.cwd() + Constants.HTML_PATH);
+  res.sendFile(process.cwd() + constants.HTML_PATH);
 });
 
 /**
@@ -1608,22 +1608,11 @@ app.post("/upload/file", upload.single("file"), function (req) {
 /**
  * 读取配置文件 config.yml
  */
-function ReadConfig() {
-  return new Promise((resolve, reject) => {
-    logger.info("开始加载配置……".log);
-    fs.readFile(
-      path.join(process.cwd(), "config", "config.yml"),
-      "utf-8",
-      function (err, data) {
-        if (!err) {
-          logger.info("配置加载完毕√".log);
-          resolve(yaml.parse(data));
-        } else {
-          reject("读取配置文件错误，尝试以默认配置启动。错误原因: " + err);
-        }
-      },
-    );
-  });
+async function ReadConfig() {
+  logger.info("开始加载配置……".log);
+  return await yaml.parse(
+    fs.readFileSync(path.join(process.cwd(), "config", "config.yml"), "utf-8")
+  );
 }
 
 /**
@@ -1631,6 +1620,7 @@ function ReadConfig() {
  */
 async function InitConfig() {
   const config = await ReadConfig();
+  logger.info("配置加载完毕√".log);
   CHAT_SWITCH = config.System.CHAT_SWITCH ?? true;
   CONNECT_GO_CQHTTP_SWITCH = config.System.CONNECT_GO_CQHTTP_SWITCH ?? false;
   CONNECT_BILIBILI_LIVE_SWITCH = config.System.CONNECT_BILIBILI_LIVE_SWITCH ?? false;
@@ -1747,12 +1737,11 @@ http.on("error", (err) => {
   setTimeout(() => StartHttpServer(), 10000);
 });
 
-const UnauthorizedHttpsAgent = new https.Agent({ rejectUnauthorized: false }); // #303，Watt Toolkit(Steam++)的自签证书问题
-
 /**
  * 检查本体更新
  */
 function CheckUpdate() {
+  const UnauthorizedHttpsAgent = new https.Agent({ rejectUnauthorized: false }); // #303，Watt Toolkit(Steam++)的自签证书问题
   axios.get(
     "https://api.github.com/repos/Giftia/ChatDACS/releases/latest", { UnauthorizedHttpsAgent }
   ).then((res) => {
@@ -1925,8 +1914,8 @@ async function ECYWenDa() {
 async function ProcessExecute(msg, userId, userName, groupId, groupName, options) {
   let pluginReturn = "";
   // 插件开关
-  if (Constants.plugins_switch_reg.test(msg)) {
-    const pluginName = msg.match(Constants.plugins_switch_reg)[1];
+  if (constants.plugins_switch_reg.test(msg)) {
+    const pluginName = msg.match(constants.plugins_switch_reg)[1];
     if (!pluginName) return "插件名获取有误";
     for (const i in plugins) {
       if (plugins[i].插件名 == pluginName) {

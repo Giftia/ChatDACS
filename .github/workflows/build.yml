@@ -30,9 +30,7 @@ jobs:
           node-version: ${{ matrix.node_version }}
           architecture: ${{ matrix.architecture }}
           cache: "npm"
-          cache-dependency-path: |
-            ./package-lock.json
-            plugins/package-lock.json
+          cache-dependency-path: ./package-lock.json
 
       - name: Remove go-cqhttp On Windows
         if: runner.os == 'Windows'
@@ -43,13 +41,7 @@ jobs:
         run: rm ./plugins/go-cqhttp/go-cqhttp_windows_amd64.exe
 
       - name: Clean Install Modules
-        run: |
-          npm ci --production
-          cd ./plugins/
-          npm ci --production
-          rm package.json
-          rm package-lock.json
-          cd ..
+        run: npm ci --production
 
       - name: Install pkg Tool
         run: npm i pkg -g
