@@ -594,10 +594,13 @@ module.exports = {
    * 学习问答
    * @param {string} ask 关键词
    * @param {string} answer 回复内容
+   * @param {string} teacherUserId 教学者
+   * @param {string} teacherGroupId 教学者所处群
+   * @param {string} teacherType 教学者平台类型
    * @returns {Promise<void>} void
    */
-  async CreateOneConversation(ask, answer, teacherUserId, teacherGroupId) {
-    await ChatModel.create({ ask, answer, teacherUserId, teacherGroupId });
+  async CreateOneConversation(ask, answer, teacherUserId, teacherGroupId, teacherType) {
+    await ChatModel.create({ ask, answer, teacherUserId, teacherGroupId, teacherType });
   },
 
   /**

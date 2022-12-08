@@ -24,6 +24,9 @@ const ChatModel = sequelize.define("chat", {
   teacherGroupId: {
     type: DataTypes.INTEGER,
   },
+  teacherType: {
+    type: DataTypes.STRING,
+  },
 }, {
   tableName: "chat",
 });
