@@ -35,7 +35,7 @@
     "require.all": "2.0.5",
     "rss-parser": "3.12.0",
     "semver-diff": "3.1.1",
-    "sequelize": "6.26.0",
+    "sequelize": "6.28.2",
     "sequelize-cli": "6.5.2",
     "socket.io": "4.5.4",
     "sqlite3": "5.1.2",
