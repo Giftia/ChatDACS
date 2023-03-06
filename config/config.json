@@ -5,6 +5,6 @@
   },
   "development": {
     "dialect": "sqlite",
-    "storage": "./dev.db"
+    "storage": "./config/dev.db"
   }
 }
