@@ -41,9 +41,9 @@ module.exports = {
 
 const path = require("path");
 const fs = require("fs");
-const axios = require(path.join(process.cwd(), "node_modules/axios")).default;
+const axios = require("axios").default;
 const gameData = require(path.join(process.cwd(), "config", "wot.json"));
-const yaml = require(path.join(process.cwd(), "node_modules/yaml"));
+const yaml = require("yaml");
 let GO_CQHTTP_SERVICE_API_URL, QQBOT_ADMIN_LIST;
 const baseURL = "https://api.worldoftanks.eu/wot/encyclopedia/vehicles/?application_id=0a833f3e275be2c9b458c61d6cedf644";
 const battleCommand = new RegExp(/[/!]?加入战斗$/);
@@ -52,10 +52,16 @@ const tankType = { 轻坦: "lightTank", 中坦: "mediumTank", 重坦: "heavyTank
 
 Init();
 
-async function ReadConfig() {
-  return await yaml.parse(
-    fs.readFileSync(path.join(process.cwd(), "config", "config.yml"), "utf-8")
-  );
+function ReadConfig() {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", function (err, data) {
+      if (!err) {
+        resolve(yaml.parse(data));
+      } else {
+        reject("读取配置文件错误。错误原因：" + err);
+      }
+    });
+  });
 }
 
 async function Init() {
@@ -63,6 +69,7 @@ async function Init() {
   GO_CQHTTP_SERVICE_API_URL = resolve.System.GO_CQHTTP_SERVICE_API_URL;
   QQBOT_ADMIN_LIST = resolve.qqBot.QQBOT_ADMIN_LIST;
 }
+
 
 /**
  * 更新游戏数据

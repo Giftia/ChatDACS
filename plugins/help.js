@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "帮助插件",
   指令: "^[/!]?(help|帮助|菜单|说明书|指令|命令|小夜怎么用|docs|command)$",
-  版本: "3.0",
+  版本: "2.4",
   作者: "Giftina",
   描述: "会回复系统当前可用插件列表，描述插件版本和对应的使用示例。",
   使用示例: "/help",
@@ -70,8 +70,8 @@ QQ地雷战：
   },
 };
 
+require.all = require("require.all");
 const path = require("path");
-require.all = require(path.join(process.cwd(), "node_modules/require.all"));
 
 //将生成的插件对象转换为markdown表格
 function Object2Markdown(docsMap) {

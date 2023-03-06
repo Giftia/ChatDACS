@@ -3,7 +3,7 @@ const devGroupNumber = "157311946"; // 小夜开发群
 module.exports = {
   插件名: "报错插件",
   指令: "^[/!]?报错 (.*)",
-  版本: "3.0",
+  版本: "2.0",
   作者: "Giftina",
   描述: "向小夜开发组报错消息，消息会实时转达到小夜开发成员",
   使用示例: "报错 插件爆炸了",
@@ -23,19 +23,25 @@ module.exports = {
   },
 };
 
-const path = require("path");
+const axios = require("axios").default;
 const fs = require("fs");
-const axios = require(path.join(process.cwd(), "node_modules/axios")).default;
-const yaml = require(path.join(process.cwd(), "node_modules/yaml"));
+const path = require("path");
+const yaml = require("yaml"); // 使用yaml解析配置文件
 let GO_CQHTTP_SERVICE_API_URL, CONNECT_GO_CQHTTP_SWITCH;
 
 Init();
 
 // 读取配置文件
-async function ReadConfig() {
-  return await yaml.parse(
-    fs.readFileSync(path.join(process.cwd(), "config", "config.yml"), "utf-8")
-  );
+function ReadConfig() {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", function (err, data) {
+      if (!err) {
+        resolve(yaml.parse(data));
+      } else {
+        reject("读取配置文件错误。错误原因：" + err);
+      }
+    });
+  });
 }
 
 // 初始化

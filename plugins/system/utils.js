@@ -721,25 +721,25 @@ module.exports = {
   },
 };
 
-const path = require("path");
+const request = require("request");
 const fs = require("fs");
+const path = require("path");
+const yaml = require("yaml");
 const url = require("url");
 const crypto = require("crypto");
-const request = require(path.join(process.cwd(), "node_modules/request"));
-const yaml = require(path.join(process.cwd(), "node_modules/yaml"));
-const axios = require(path.join(process.cwd(), "node_modules/axios")).default;
-const mp3Duration = require(path.join(process.cwd(), "node_modules/mp3-duration"));
-const sequelize = require(path.join(process.cwd(), "node_modules/sequelize"));
+const axios = require("axios").default;
+const mp3Duration = require("mp3-duration");
+const sequelize = require("sequelize");
 const Op = sequelize.Op;
-const Jimp = require(path.join(process.cwd(), "node_modules/jimp"));
+const Jimp = require("jimp");
 const cachedJpegDecoder = Jimp.decoders["image/jpeg"];
 Jimp.decoders["image/jpeg"] = (data) => {
   const userOpts = { maxMemoryUsageInMB: 1024 };
   return cachedJpegDecoder(data, userOpts);
 };
-const dayjs = require(path.join(process.cwd(), "node_modules/dayjs"));
-const utc = require(path.join(process.cwd(), "node_modules/dayjs/plugin/utc"));
-const timezone = require(path.join(process.cwd(), "node_modules/dayjs/plugin/timezone"));
+const dayjs = require("dayjs");
+const utc = require("dayjs/plugin/utc");
+const timezone = require("dayjs/plugin/timezone");
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.tz.setDefault("Asia/Shanghai");
@@ -758,10 +758,16 @@ let WEB_PORT, GO_CQHTTP_SERVICE_API_URL, TIAN_XING_API_KEY;
 Init();
 
 // 读取配置文件
-async function ReadConfig() {
-  return await yaml.parse(
-    fs.readFileSync(path.join(process.cwd(), "config", "config.yml"), "utf-8")
-  );
+function ReadConfig() {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", (err, data) => {
+      if (!err) {
+        resolve(yaml.parse(data));
+      } else {
+        reject("读取配置文件错误。错误原因：" + err);
+      }
+    });
+  });
 }
 
 // 初始化WEB_PORT和TIAN_XING_API_KEY

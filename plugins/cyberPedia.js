@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "赛博百科问答插件",
   指令: "^[/!]?赛博朋克(.*)",
-  版本: "3.0",
+  版本: "2.0",
   作者: "Giftina",
   描述: "非常赛博朋克的百科知识问答题",
   使用示例: "赛博朋克",
@@ -32,19 +32,25 @@ function SaveAnswer(cyberPediaAnswer) {
 }
 
 
-const path = require("path");
+const request = require("request");
 const fs = require("fs");
-const request = require(path.join(process.cwd(), "node_modules/request"));
-const yaml = require(path.join(process.cwd(), "node_modules/yaml"));
+const path = require("path");
+const yaml = require("yaml"); // 使用yaml解析配置文件
 let TIAN_XING_API_KEY, answer;
 
 Init();
 
 // 读取配置文件
-async function ReadConfig() {
-  return await yaml.parse(
-    fs.readFileSync(path.join(process.cwd(), "config", "config.yml"), "utf-8")
-  );
+function ReadConfig() {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", function (err, data) {
+      if (!err) {
+        resolve(yaml.parse(data));
+      } else {
+        reject("读取配置文件错误。错误原因：" + err);
+      }
+    });
+  });
 }
 
 // 初始化TIAN_XING_API_KEY

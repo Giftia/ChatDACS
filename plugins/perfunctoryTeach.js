@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "敷衍语料教学插件",
   指令: "^[/!]?说不出话 (.*)",
-  版本: "3.0",
+  版本: "2.2",
   作者: "Giftina",
   描述: "敷衍语料教学，教给小夜一些比较通用的回复。对于一些难以回复的对话，小夜的词库中没有搜索到回复的时候，小夜会随机回复这些回复作为敷衍，回复了，但完全没有回复的意义。",
   使用示例: "说不出话 ？",
@@ -39,19 +39,25 @@ module.exports = {
   },
 };
 
-const path = require("path");
 const fs = require("fs");
-const yaml = require(path.join(process.cwd(), "node_modules/yaml"));
+const path = require("path");
+const yaml = require("yaml"); // 使用yaml解析配置文件
 let CHAT_BAN_WORDS;
 const PerfunctoryModel = require(path.join(process.cwd(), "plugins", "system", "model", "perfunctoryModel.js"));
 
 Init();
 
 // 读取配置文件
-async function ReadConfig() {
-  return await yaml.parse(
-    fs.readFileSync(path.join(process.cwd(), "config", "config.yml"), "utf-8")
-  );
+function ReadConfig() {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", function (err, data) {
+      if (!err) {
+        resolve(yaml.parse(data));
+      } else {
+        reject("读取配置文件错误。错误原因：" + err);
+      }
+    });
+  });
 }
 
 // 初始化CHAT_BAN_WORDS

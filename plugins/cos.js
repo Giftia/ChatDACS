@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "cos图片插件",
   指令: "^[/!]?(cos图|cosplay)$",
-  版本: "4.0",
+  版本: "3.2",
   作者: "Giftina",
   描述: "在普通限度的尺度下发送一张合法的 cos 三次元图, 图片来源哔哩哔哩cos专栏。",
   使用示例: "cos图",
@@ -37,13 +37,13 @@ module.exports = {
   },
 };
 
-const path = require("path");
+const request = require("request");
 const fs = require("fs");
+const axios = require("axios").default;
 const url = require("url");
-const request = require(path.join(process.cwd(), "node_modules/request"));
-const axios = require(path.join(process.cwd(), "node_modules/axios")).default;
 let GO_CQHTTP_SERVICE_API_URL;
-const yaml = require(path.join(process.cwd(), "node_modules/yaml"));
+const path = require("path");
+const yaml = require("yaml");
 const cos_total_count = 2000; // 初始化随机cos上限，可以自己调整
 
 /**
@@ -86,10 +86,16 @@ function RandomCos() {
 Init();
 
 // 读取配置文件
-async function ReadConfig() {
-  return await yaml.parse(
-    fs.readFileSync(path.join(process.cwd(), "config", "config.yml"), "utf-8")
-  );
+function ReadConfig() {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", function (err, data) {
+      if (!err) {
+        resolve(yaml.parse(data));
+      } else {
+        reject("读取配置文件错误。错误原因：" + err);
+      }
+    });
+  });
 }
 
 // 初始化

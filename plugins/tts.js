@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "语音合成插件",
   指令: "^[/!]?吠(.*)",
-  版本: "3.0",
+  版本: "2.1",
   作者: "Giftina",
   描述: "让小夜开口说话吧。小夜使用基于大数据的情感幼女语音合成技术，能吠出更自然的发音、更丰富的情感和更强大的表现力。可以插入一些棒读音以提高生草效果。",
   使用示例: "/吠 太好听了吧啊，你唱歌真的好嗷好听啊，简直就是天岸籁，我刚才听到你唱歌了，我们以后一起唱好不好，一起唱昂，一起做学园偶像昂",
@@ -11,7 +11,7 @@ module.exports = {
     const ttsContextFromIncomingMessage = new RegExp(module.exports.指令).exec(msg)[1];
     const ttsContent = ttsContextFromIncomingMessage || "你好谢谢小笼包再见!";
     // 如果有图片回复，则不合成语音
-    if (constants.isImage_reg.test(ttsContent)) {
+    if (Constants.isImage_reg.test(ttsContent)) {
       return "";
     }
 
@@ -20,11 +20,10 @@ module.exports = {
   },
 };
 
-const path = require("path");
+const axios = require("axios").default;
 const fs = require("fs");
 const utils = require("./system/utils.js");
-const constants = require("../config/constants.js");
-const axios = require(path.join(process.cwd(), "node_modules/axios")).default;
+const Constants = require("../config/constants.js");
 
 //扒的百度臻品音库-度米朵
 async function TTS(ttsContent) {
