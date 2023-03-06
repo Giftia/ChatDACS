@@ -54,6 +54,9 @@ jobs:
       - name: Install pkg Tool
         run: npm i pkg -g
 
+      - name: Install sequelize-cli
+        run: npm i sequelize-cli
+
       # https://docs.github.com/en/actions/learn-github-actions/environment-variables#detecting-the-operating-system
       - name: Use pkg To Package On Windows
         if: runner.os == 'Windows'
@@ -91,6 +94,7 @@ jobs:
             archive.directory('./static/', 'static');
             archive.directory('./plugins/', 'plugins');
             archive.directory('./migrations/', 'migrations');
+            archive.directory('./node_modules', 'node_modules');
             archive.file('./README.md', { name: 'README.md' });
             archive.file('./LICENSE', { name: 'LICENSE' });
             archive.file('./package.json', { name: 'package.json' });
