@@ -1,10 +1,10 @@
 {
   "production": {
     "dialect": "sqlite",
-    "storage": "./config/db.db"
+    "storage": "./config/db1.db"
   },
   "development": {
     "dialect": "sqlite",
-    "storage": "./dev.db"
+    "storage": "./config/dev.db"
   }
 }
