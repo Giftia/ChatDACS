@@ -1,5 +1,5 @@
 const path = require("path");
-const { Sequelize, DataTypes } = require(path.join(process.cwd(), "node_modules/sequelize"));
+const { Sequelize, DataTypes } = require("sequelize");
 const sequelize = new Sequelize({
   dialect: "sqlite",
   storage: path.join(process.cwd(), "config", "db.db"),

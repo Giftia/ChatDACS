@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "人生重开模拟器插件",
   指令: "^[/!]?人生重开$|^[/!]?选择天赋 (.*)|^[/!]?分配属性 (.*)|^[/!]?人生总结$",
-  版本: "2.0",
+  版本: "1.0",
   作者: "Giftina",
   描述: "一个人生重开模拟器，区别于原作，该版本非常真实。原作 https://github.com/VickScarlet/lifeRestart",
   使用示例: "人生重开",
@@ -33,7 +33,13 @@ module.exports = {
 async function LifeRestart(userId, userName) {
   // 抽选天赋
   const talents = fs.readFileSync(
-    path.join(process.cwd(), "config", "talents.json"), "utf-8"
+    path.join(process.cwd(), "config", "talents.json"),
+    "utf-8",
+    function (err, data) {
+      if (!err) {
+        return data;
+      }
+    },
   );
 
   const reply = await Talents10x(talents)
@@ -103,7 +109,13 @@ async function SelectTalents(msg, userId, userName) {
 
   // 挨个去查对应的效果作为回复
   const data = fs.readFileSync(
-    path.join(process.cwd(), "config", "talents.json"), "utf-8"
+    path.join(process.cwd(), "config", "talents.json"),
+    "utf-8",
+    function (err, data) {
+      if (!err) {
+        return data;
+      }
+    },
   );
 
   const talents = JSON.parse(data);
@@ -192,27 +204,29 @@ async function LifeSummary(userId, userName) {
  * @returns 
  */
 async function Talents10x(data) {
-  const talents = JSON.parse(data);
-  const talentsLength = Object.keys(talents).length;
+  return new Promise((resolve, _reject) => {
+    const talents = JSON.parse(data);
+    const talentsLength = Object.keys(talents).length;
 
-  let randomTalents = "",
-    talentsList = [];
-  for (let i = 0; i < 10; i++) {
-    // 随机选天赋index
-    const randomTalentIndex = Math.floor(Math.random() * talentsLength);
-    // 把index转换为天赋id，取出天赋数据
-    const talent = talents[Object.keys(talents)[randomTalentIndex]];
-    const talentName = talent.name, talentDescription = talent.description;
+    let randomTalents = "",
+      talentsList = [];
+    for (let i = 0; i < 10; i++) {
+      // 随机选天赋index
+      const randomTalentIndex = Math.floor(Math.random() * talentsLength);
+      // 把index转换为天赋id，取出天赋数据
+      const talent = talents[Object.keys(talents)[randomTalentIndex]];
+      const talentName = talent.name, talentDescription = talent.description;
 
-    // 按天赋稀有度 grade 增加图标
-    const grade = gradeIconMaps[talent?.grade || 0];
+      // 按天赋稀有度 grade 增加图标
+      const grade = gradeIconMaps[talent?.grade || 0];
 
-    // 把天赋名称和描述拼接成一个字符串
-    const talentsDescription = `\n${i} ${grade}${talentName}（${talentDescription}）`;
-    randomTalents += talentsDescription;
-    talentsList.push(randomTalentIndex);
-  }
-  return { randomTalents: randomTalents, talentsList: talentsList };
+      // 把天赋名称和描述拼接成一个字符串
+      const talentsDescription = `\n${i} ${grade}${talentName}（${talentDescription}）`;
+      randomTalents += talentsDescription;
+      talentsList.push(randomTalentIndex);
+    }
+    resolve({ randomTalents: randomTalents, talentsList: talentsList });
+  });
 }
 
 const fs = require("fs");

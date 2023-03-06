@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "日程计划提醒插件",
   指令: "^[/!]?提醒(.*)",
-  版本: "2.0",
+  版本: "1.0",
   作者: "Giftina",
   描述: "计划提醒功能，会在指定时刻提醒你。",
   使用示例: "提醒我晚上要手冲",
@@ -37,27 +37,33 @@ module.exports = {
   },
 };
 
-const path = require("path");
-const fs = require("fs");
-const axios = require(path.join(process.cwd(), "node_modules/axios")).default;
-const yaml = require(path.join(process.cwd(), "node_modules/yaml"));
-let GO_CQHTTP_SERVICE_API_URL, CONNECT_GO_CQHTTP_SWITCH;
-
-const schedule = require(path.join(process.cwd(), "node_modules/node-schedule"));
-const dayjs = require(path.join(process.cwd(), "node_modules/dayjs"));
-const utc = require(path.join(process.cwd(), "node_modules/dayjs/plugin/utc"));
-const timezone = require(path.join(process.cwd(), "node_modules/dayjs/plugin/timezone"));
+const schedule = require("node-schedule");
+const dayjs = require("dayjs");
+const utc = require("dayjs/plugin/utc");
+const timezone = require("dayjs/plugin/timezone");
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.tz.setDefault("Asia/Shanghai");
 
+const axios = require("axios").default;
+const fs = require("fs");
+const path = require("path");
+const yaml = require("yaml"); // 使用yaml解析配置文件
+let GO_CQHTTP_SERVICE_API_URL, CONNECT_GO_CQHTTP_SWITCH;
+
 Init();
 
 // 读取配置文件
-async function ReadConfig() {
-  return await yaml.parse(
-    fs.readFileSync(path.join(process.cwd(), "config", "config.yml"), "utf-8")
-  );
+function ReadConfig() {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", function (err, data) {
+      if (!err) {
+        resolve(yaml.parse(data));
+      } else {
+        reject("读取配置文件错误。错误原因：" + err);
+      }
+    });
+  });
 }
 
 // 初始化

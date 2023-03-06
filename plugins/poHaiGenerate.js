@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "迫害生草图生成器插件",
   指令: "^[/!]?迫害 (.*)",
-  版本: "3.0",
+  版本: "2.3",
   作者: "Giftina",
   描述: "让小夜来制作缺德的迫害表情包吧。现在可以迫害的对象：唐可可，上原步梦，猛男狗，令和，鸭鸭，陈睿，寄，吴京，星星，安详。",
   使用示例: "迫害 上原步梦 是我，是我先，明明都是我先来的……接吻也好，拥抱也好，还是喜欢上那家伙也好。",
@@ -48,16 +48,16 @@ module.exports = {
     }
 
     // 如果迫害文字里有@某人，将[CQ:at,qq=QQ号]转为昵称
-    if (constants.has_qq_reg.test(pohaiText)) {
+    if (Constants.has_qq_reg.test(pohaiText)) {
       console.log("存在@内容，将替换为昵称");
       const at_start = pohaiText.indexOf("[CQ:at,qq="); // 取@开始
       const at_end = pohaiText.indexOf("]"); // 取@结束
       const tex_top = pohaiText.substr(0, at_start); // 取除了@外的字符串头
       const tex_bottom = pohaiText.substr(at_end + 1); // 取除了@外的字符串尾
       // 获取qq
-      const who = constants.has_qq_reg.exec(msg)[1];
+      const who = Constants.has_qq_reg.exec(msg)[1];
       // 如果是正确的qq号则替换
-      if (constants.is_qq_reg.test(who)) {
+      if (Constants.is_qq_reg.test(who)) {
         // 获取qq号在群内的昵称
         const userNickname = await axios(
           `http://${GO_CQHTTP_SERVICE_API_URL}/get_group_member_info?group_id=${groupId}&user_id=${who}&no_cache=0`,
@@ -143,22 +143,28 @@ module.exports = {
   },
 };
 
+const { createCanvas, loadImage } = require("canvas"); // 用于绘制文字图像，迫害p图
+const utils = require("./system/utils.js");
 const path = require("path");
 const fs = require("fs");
-const utils = require("./system/utils.js");
-const constants = require("../config/constants.js");
-const { createCanvas, loadImage } = require(path.join(process.cwd(), "node_modules/canvas"));
-const axios = require(path.join(process.cwd(), "node_modules/axios")).default;
-const yaml = require(path.join(process.cwd(), "node_modules/yaml"));
+const Constants = require("../config/constants.js");
+const axios = require("axios").default;
+const yaml = require("yaml"); // 使用yaml解析配置文件
 let GO_CQHTTP_SERVICE_API_URL;
 
 Init();
 
 // 读取配置文件
-async function ReadConfig() {
-  return await yaml.parse(
-    fs.readFileSync(path.join(process.cwd(), "config", "config.yml"), "utf-8")
-  );
+function ReadConfig() {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", function (err, data) {
+      if (!err) {
+        resolve(yaml.parse(data));
+      } else {
+        reject("读取配置文件错误。错误原因：" + err);
+      }
+    });
+  });
 }
 
 // 初始化

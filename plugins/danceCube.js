@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "舞立方信息查询插件",
   指令: "^[/!]?(绑定|个人信息|战绩|插眼|我要出勤)(.*)",
-  版本: "3.0",
+  版本: "2.3",
   作者: "Giftina",
   描述: "舞立方信息查询，可以查询玩家信息以及机台状态。数据来源以及素材版权归属 胜骅科技 https://www.arccer.com/ ，如有侵权请联系作者删除。",
   使用示例: "个人信息",
@@ -99,10 +99,10 @@ const goGoGOCommand = new RegExp(/^[/!]?我要出勤/);
 const defaultMusicIndex = 6; // 音乐类型，1 最新，2 国语，3 粤语，4 韩文，5 欧美，6 其他
 const errorNoData = "你还没有绑定舞立方账号呢，请使用指令 绑定 玩家ID 来绑定你的舞立方账号";
 
+const { createCanvas, loadImage, registerFont } = require("canvas"); // 用于绘制文字图像，迫害p图
 const path = require("path");
 const fs = require("fs");
-const { createCanvas, loadImage, registerFont } = require(path.join(process.cwd(), "node_modules/canvas"));
-const axios = require(path.join(process.cwd(), "node_modules/axios")).default;
+const axios = require("axios").default;
 /**
  * authorization.json 的 authorization 为玩家账户密钥，向服务器请求数据时会携带该参数鉴权，具有修改账户的最高权限，需要自行抓包获取，请勿透露给不信任的他人，否则最糟糕的情况可能会导致游戏账户被恶意注销
  * baiduGeocodingAk 是百度地理编码密钥，用于舞立方插件，申请地址 https://lbsyun.baidu.com/index.php?title=webapi/guide/webservice-geocoding

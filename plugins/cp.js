@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "cp文生成插件",
   指令: "^[/!]?cp(.*)",
-  版本: "3.0",
+  版本: "2.0",
   作者: "Giftina",
   描述: "cp文生成器，生成一段简单的 cp 文。简简单单，就是最好的爱。语料来自 https://github.com/mxhcpstories/mxh-cp-stories/blob/master/src/assets/story.json",
   使用示例: "cp 小夜 小雫",
@@ -46,7 +46,12 @@ async function getOriginalRandomCPStory(story, tops, bottoms) {
 
 async function getReplacedCPStory(tops, bottoms) {
   const story = fs.readFileSync(
-    path.join(process.cwd(), "config", "1and0story.json"), "utf-8");
+    path.join(process.cwd(), "config", "1and0story.json"), "utf-8",
+    function (err, data) {
+      if (!err) {
+        return data;
+      }
+    });
 
   const originalRandomCPStory = await getOriginalRandomCPStory(JSON.parse(story), tops, bottoms);
   // 替换角色

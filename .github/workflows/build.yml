@@ -30,7 +30,9 @@ jobs:
           node-version: ${{ matrix.node_version }}
           architecture: ${{ matrix.architecture }}
           cache: "npm"
-          cache-dependency-path: ./package-lock.json
+          cache-dependency-path: |
+            ./package-lock.json
+            plugins/package-lock.json
 
       - name: Remove go-cqhttp On Windows
         if: runner.os == 'Windows'
@@ -41,10 +43,19 @@ jobs:
         run: rm ./plugins/go-cqhttp/go-cqhttp_windows_amd64.exe
 
       - name: Clean Install Modules
-        run: npm ci --production
+        run: |
+          npm ci --production
+          cd ./plugins/
+          npm ci --production
+          rm package.json
+          rm package-lock.json
+          cd ..
 
       - name: Install pkg Tool
         run: npm i pkg -g
+
+      - name: Install sequelize-cli
+        run: npm i sequelize-cli
 
       # https://docs.github.com/en/actions/learn-github-actions/environment-variables#detecting-the-operating-system
       - name: Use pkg To Package On Windows
@@ -83,6 +94,7 @@ jobs:
             archive.directory('./static/', 'static');
             archive.directory('./plugins/', 'plugins');
             archive.directory('./migrations/', 'migrations');
+            archive.directory('./node_modules', 'node_modules');
             archive.file('./README.md', { name: 'README.md' });
             archive.file('./LICENSE', { name: 'LICENSE' });
             archive.file('./package.json', { name: 'package.json' });

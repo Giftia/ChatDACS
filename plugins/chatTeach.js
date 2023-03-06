@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "聊天教学插件",
   指令: "^问：(?<ask>.*)答：(?<answer>.*)",
-  版本: "3.0",
+  版本: "2.4",
   作者: "Giftina",
   描述: "来调教小夜说话吧！帮助小夜养成由数万用户调教练就的嘴臭词库。当小夜收到含有 `关键词` 的语句时便会有几率触发回复。若该关键词有多个回复，将会随机选择一个回复。支持图片问答。",
   使用示例: "问：HELLO 答：WORLD",
@@ -37,19 +37,25 @@ module.exports = {
   },
 };
 
-const path = require("path");
 const fs = require("fs");
-const yaml = require(path.join(process.cwd(), "node_modules/yaml"));
+const path = require("path");
+const yaml = require("yaml"); // 使用yaml解析配置文件
 const utils = require("./system/utils");
 let CHAT_BAN_WORDS;
 
 Init();
 
 // 读取配置文件
-async function ReadConfig() {
-  return await yaml.parse(
-    fs.readFileSync(path.join(process.cwd(), "config", "config.yml"), "utf-8")
-  );
+function ReadConfig() {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", function (err, data) {
+      if (!err) {
+        resolve(yaml.parse(data));
+      } else {
+        reject("读取配置文件错误。错误原因：" + err);
+      }
+    });
+  });
 }
 
 // 初始化CHAT_BAN_WORDS

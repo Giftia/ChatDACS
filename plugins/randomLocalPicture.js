@@ -1,7 +1,7 @@
 module.exports = {
   插件名: "本地随机图插件",
   指令: "[让给]我[看康]{1,3}|^[/!]?图来$",
-  版本: "4.0",
+  版本: "3.2",
   作者: "Giftina",
   描述: "从本地图片文件夹随机发送一张图片，默认使用其他插件自动下载保存的图库文件夹。",
   使用示例: "让我康康",
@@ -11,7 +11,7 @@ module.exports = {
     if (options.type === "qq") {
       await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI("杰哥不要！")}`);
 
-      const fileDirectPath = url.pathToFileURL(path.resolve(`${图片文件夹}${await RandomLocalPicture()}`));
+      const fileDirectPath = url.pathToFileURL(path.resolve(`${图片文件夹}${await RandomLocalPicture(图片文件夹)}`));
 
       const requestData = {
         group_id: groupId,
@@ -32,23 +32,26 @@ module.exports = {
       return { type: "text", content: "" };
     }
 
-    const filePath = `${图片文件夹}${await RandomLocalPicture()}`;
-    return { type: "directPicture", content: { file: filePath } };
+    // web端的非网站目录图片需要返回 base64
+    const filePath = `${图片文件夹}${await RandomLocalPicture(图片文件夹)}`;
+    const base64Img = `data:image/png;base64,${Buffer.from(fs.readFileSync(filePath)).toString("base64")}`;
+    return { type: "directPicture", content: { file: base64Img } };
   },
 };
 
 const 图片文件夹 = "./static/images/"; // 修改为自己的图库文件夹，绝对路径和相对路径都可以，绝对路径类似 D:\\色图\\贫乳\\ ，记得要像这样 \\ 多加一个反斜杠
 const path = require("path");
 const fs = require("fs");
+const axios = require("axios").default;
 const url = require("url");
-const axios = require(path.join(process.cwd(), "node_modules/axios")).default;
-const yaml = require(path.join(process.cwd(), "node_modules/yaml"));
+const randomFile = require("select-random-file");
 let GO_CQHTTP_SERVICE_API_URL;
+const yaml = require("yaml");
 
 //随机图
 function RandomLocalPicture() {
   return new Promise((resolve, reject) => {
-    selectRandomFile(图片文件夹, (err, file) => {
+    randomFile(图片文件夹, (err, file) => {
       if (err) {
         reject(err);
       }
@@ -57,41 +60,19 @@ function RandomLocalPicture() {
   });
 }
 
-//select-random-file: https://github.com/jfix/npm-random-file
-function selectRandomFile(dir, callback) {
-  fs.readdir(dir, (err, files) => {
-    if (err) return callback(err);
-
-    function checkRandom() {
-      if (!files.length) {
-        // callback with an empty string to indicate there are no files
-        return callback(null, undefined);
-      }
-      const randomIndex = Math.floor(Math.random() * files.length);
-      const file = files[randomIndex];
-      fs.stat(path.join(dir, file), (err, stats) => {
-        if (err) return callback(err);
-        if (stats.isFile()) {
-          return callback(null, file);
-        }
-        // remove this file from the array because for some reason it's not a file
-        files.splice(randomIndex, 1);
-
-        // try another random one
-        checkRandom();
-      });
-    }
-    checkRandom();
-  });
-}
-
 Init();
 
 // 读取配置文件
-async function ReadConfig() {
-  return await yaml.parse(
-    fs.readFileSync(path.join(process.cwd(), "config", "config.yml"), "utf-8")
-  );
+function ReadConfig() {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", function (err, data) {
+      if (!err) {
+        resolve(yaml.parse(data));
+      } else {
+        reject("读取配置文件错误。错误原因：" + err);
+      }
+    });
+  });
 }
 
 // 初始化

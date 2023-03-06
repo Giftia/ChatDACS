@@ -38,14 +38,14 @@ module.exports = {
   },
 };
 
-const path = require("path");
+const request = require("request");
 const fs = require("fs");
+const axios = require("axios").default;
 const url = require("url");
-const utils = require("./system/utils.js");
-const request = require(path.join(process.cwd(), "node_modules/request"));
-const axios = require(path.join(process.cwd(), "node_modules/axios")).default;
-const yaml = require(path.join(process.cwd(), "node_modules/yaml"));
 let GO_CQHTTP_SERVICE_API_URL;
+const yaml = require("yaml");
+const path = require("path");
+const utils = require("./system/utils.js");
 
 //随机r18
 function RandomR18() {
@@ -80,10 +80,16 @@ function RandomR18() {
 Init();
 
 // 读取配置文件
-async function ReadConfig() {
-  return await yaml.parse(
-    fs.readFileSync(path.join(process.cwd(), "config", "config.yml"), "utf-8")
-  );
+function ReadConfig() {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", function (err, data) {
+      if (!err) {
+        resolve(yaml.parse(data));
+      } else {
+        reject("读取配置文件错误。错误原因：" + err);
+      }
+    });
+  });
 }
 
 // 初始化
