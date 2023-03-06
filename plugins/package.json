@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "dependencies": {
     "axios": "0.27.2",
-    "canvas": "2.10.2",
+    "canvas": "2.11.0",
     "dayjs": "1.11.6",
     "jimp": "0.16.2",
     "mp3-duration": "1.1.0",
