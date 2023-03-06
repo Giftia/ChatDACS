@@ -37,9 +37,9 @@ module.exports = Object.freeze({
       silly: 6,
     },
     colors: {
-      error: "red",
-      warn: "orange",
-      info: "yellow",
+      error: "brightRed",
+      warn: "brightYellow",
+      info: "brightBlue",
       http: "green",
       verbose: "blue",
       debug: "gray",
