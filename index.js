@@ -321,6 +321,7 @@ async function StartQQBot() {
   /**
    * go-cqhttp 启动后加载当前所有群，写入数据库进行群服务初始化
    */
+  logger.info("正在进行群服务初始化……".log);
   await utils.InitGroupList();
 
   app.post(GO_CQHTTP_SERVICE_ANTI_POST_API, async (req, res) => {
@@ -1743,7 +1744,7 @@ function StartHttpServer() {
 
 http.on("error", (err) => {
   http.close();
-  logger.error(`本机${WEB_PORT}端口被其他应用程序占用，稍后会自动重试，请尝试关闭占用${WEB_PORT}端口的其他程序 或 修改配置文件的 WEB_PORT 配置项。错误代码：${err.code}`.error);
+  logger.error(`本机${WEB_PORT}端口被其他应用程序占用，请尝试关闭占用${WEB_PORT}端口的其他程序 或 修改配置文件的 WEB_PORT 配置项。错误代码：${err.code}`.error);
   setTimeout(() => StartHttpServer(), 10000);
 });
 
@@ -1757,12 +1758,14 @@ function CheckUpdate() {
     "https://api.github.com/repos/Giftia/ChatDACS/releases/latest", { UnauthorizedHttpsAgent }
   ).then((res) => {
     if (semverDiff(versionNumber, res.data.tag_name) !== undefined) {
-      logger.info(`当前小夜版本 ${versionNumber}，检测到小夜最新发行版本是 ${res.data.tag_name}，请前往 https://github.com/Giftia/ChatDACS/releases 更新小夜吧`.alert);
+      logger.info(`当前小夜版本 ${versionNumber}，检测到小夜最新发行版本是 ${res.data.tag_name}，请前往 https://github.com/Giftia/ChatDACS/releases 更新小夜吧
+${res.data.tag_name}更新日志：
+${res.data.body}`.alert);
     } else {
       logger.info(`当前小夜已经是最新发行版本 ${versionNumber}`.log);
     }
   }).catch((err) => {
-    logger.error(`检查小夜更新失败，错误原因: ${err}`.error);
+    logger.error(`检查小夜更新失败，错误原因: ${err}，可能是网络原因`.error);
   });
 }
 
