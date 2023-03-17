@@ -255,17 +255,16 @@ module.exports = {
    * @returns {Promise<void>} void
    */
   async InitGroupList() {
-    console.log("正在进行群服务初始化……".log);
     const groupList = await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_group_list`)
       .then((response) => {
         return response.data.data;
       })
       .catch((err) => {
-        console.log(`go-cqhttp 还没启动，无法获取群信息，稍后会自动重试，错误原因: ${err}`.error);
+        return null;
       });
 
     if (!groupList) {
-      setTimeout(() => this.InitGroupList(), 20000);
+      setTimeout(() => this.InitGroupList(), 1000);
       return;
     } else {
       const groupIdList = groupList.map((group) => group.group_id);
