@@ -12,11 +12,6 @@
         "digest"
       ],
       "automerge": true,
-      "automergeType": "branch",
-      "matchDatasources": [
-        "npm"
-      ],
-      "stabilityDays": 3,
       "groupName": "dependencies"
     }
   ],
