@@ -12,7 +12,7 @@
     "require.all": "2.0.5",
     "rss-parser": "3.12.0",
     "select-random-file": "1.2.4",
-    "sequelize": "6.26.0",
+    "sequelize": "6.29.0",
     "sqlite3": "5.1.2",
     "trayicon": "1.2.2",
     "wallpaper": "5.0.1",
