@@ -40,7 +40,9 @@ jobs:
 
       - name: Remove go-cqhttp.exe On Linux
         if: runner.os == 'Linux'
-        run: rm ./plugins/go-cqhttp/go-cqhttp_windows_amd64.exe
+        run: |
+          rm ./plugins/go-cqhttp/go-cqhttp_windows_amd64.exe
+          rm ./plugins/go-cqhttp/go-cqhttp.bat
 
       - name: Clean Install Modules
         run: |
