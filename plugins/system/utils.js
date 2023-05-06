@@ -226,28 +226,25 @@ module.exports = {
   },
 
   /**
-   * 保存qq侧传来的图 TODO：换成axios
+   * 保存qq侧传来的图
    * @param {string} imgUrl 源链接
-   * @returns {string} "/xiaoye/images/xxx.jpg"
+   * @returns {Promise<string>} "/xiaoye/images/xxx.jpg"
    */
-  SaveQQimg(imgUrl) {
-    return new Promise((resolve, reject) => {
-      const filePath = "/xiaoye/images/";
-      const fileName = `${imgUrl[0].split("/")[imgUrl[0].split("/").length - 2]}.jpg`;
-      request(imgUrl[0]).pipe(
-        fs.createWriteStream(
-          `./static${filePath}${fileName}`,
-        ).on("close", (err) => {
-          if (!err) {
-            resolve(
-              `${filePath}${fileName}`,
-            );
-          } else {
-            reject("保存qq侧传来的图错误。错误原因: " + err);
-          }
-        }),
-      );
+  async SaveQQimg(imgUrl) {
+    const filePath = "/xiaoye/images/";
+    const fileName = `${imgUrl[0].split("/")[imgUrl[0].split("/").length - 2]}.jpg`;
+    // 使用axios下载图片
+    const result = await axios.get(imgUrl[0], {
+      responseType: "stream",
+    }).then((response) => {
+      fs.createWriteStream(`./static${filePath}${fileName}`)
+        .on("close", () => {
+          return `${filePath}${fileName}`;
+        }).write(response.data);
+    }).catch((err) => {
+      return "保存 qq 侧传来的图错误。错误原因：" + err;
     });
+    return result;
   },
 
   /**
