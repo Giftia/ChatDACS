@@ -41,6 +41,8 @@
   <img src="https://img.shields.io/github/license/Giftia/ChatDACS?label=%E5%BC%80%E6%BA%90%E8%AE%B8%E5%8F%AF&style=for-the-badge" alt="License" />
   &nbsp;
   <img src="https://img.shields.io/github/languages/code-size/Giftia/ChatDACS?label=%E4%BB%A3%E7%A0%81%E5%A4%A7%E5%B0%8F&style=for-the-badge" alt="Code size" />
+  &nbsp;
+  <img src="https://wakatime.com/badge/user/f99347b4-b512-4148-ad75-ec1d4a1c3712/project/497778d6-79f8-4f7f-b299-5e75d106f6d6.svg?style=for-the-badge" alt="Code size" />
 </p>
 
 ---
