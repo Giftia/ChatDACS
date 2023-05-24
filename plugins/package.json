@@ -16,7 +16,7 @@
     "sqlite3": "5.1.2",
     "trayicon": "1.2.2",
     "wallpaper": "5.0.1",
-    "yaml": "2.1.3"
+    "yaml": "2.2.2"
   },
   "engines": {
     "node": "~14"
