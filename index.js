@@ -483,18 +483,16 @@ async function StartQQBot() {
               }
               // 申请人不是管理，再看看是不是qqBot管理员
               else {
-                for (let i in QQBOT_ADMIN_LIST) {
-                  if (event.user_id == QQBOT_ADMIN_LIST[i]) {
-                    logger.info(
-                      `群 ${event.group_id} 启用了小夜服务`.log
-                    );
-                    await utils.EnableGroupService(event.group_id);
-                    res.send({
-                      reply:
-                        "小夜的菊花被主人张开了，这只小夜在本群的所有服务已经启用，要停用请发 闭菊",
-                    });
-                    return 0;
-                  }
+                if (QQBOT_ADMIN_LIST.includes(event.user_id)) {
+                  logger.info(
+                    `群 ${event.group_id} 启用了小夜服务`.log
+                  );
+                  await utils.EnableGroupService(event.group_id);
+                  res.send({
+                    reply:
+                      "小夜的菊花被主人张开了，这只小夜在本群的所有服务已经启用，要停用请发 闭菊",
+                  });
+                  return 0;
                 }
                 // 看来真不是管理员呢
                 res.send({
@@ -1173,15 +1171,13 @@ async function StartQQBot() {
           if (
             Constants.change_reply_probability_reg.test(event.message)
           ) {
-            for (let i in QQBOT_ADMIN_LIST) {
-              if (event.user_id == QQBOT_ADMIN_LIST[i]) {
-                const replyPercentage = event.message.match(Constants.change_reply_probability_reg)[1];
-                QQBOT_REPLY_PROBABILITY = replyPercentage;
-                res.send({
-                  reply: `小夜回复率已修改为${replyPercentage}%`,
-                });
-                return 0;
-              }
+            if (QQBOT_ADMIN_LIST.includes(event.user_id)) {
+              const replyPercentage = event.message.match(Constants.change_reply_probability_reg)[1];
+              QQBOT_REPLY_PROBABILITY = replyPercentage;
+              res.send({
+                reply: `小夜回复率已修改为${replyPercentage}%`,
+              });
+              return 0;
             }
             res.send({
               reply: "你不是狗管理噢，不能让小夜这样那样的",
@@ -1193,15 +1189,13 @@ async function StartQQBot() {
           if (
             Constants.change_fudu_probability_reg.test(event.message)
           ) {
-            for (let i in QQBOT_ADMIN_LIST) {
-              if (event.user_id == QQBOT_ADMIN_LIST[i]) {
-                const fuduPercentage = event.message.match(Constants.change_fudu_probability_reg)[1];
-                QQBOT_FUDU_PROBABILITY = fuduPercentage;
-                res.send({
-                  reply: `小夜复读率已修改为${fuduPercentage}%`,
-                });
-                return 0;
-              }
+            if (QQBOT_ADMIN_LIST.includes(event.user_id)) {
+              const fuduPercentage = event.message.match(Constants.change_fudu_probability_reg)[1];
+              QQBOT_FUDU_PROBABILITY = fuduPercentage;
+              res.send({
+                reply: `小夜复读率已修改为${fuduPercentage}%`,
+              });
+              return 0;
             }
             res.send({
               reply: "你不是狗管理噢，不能让小夜这样那样的",
