@@ -7,13 +7,11 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "inlineSourceMap": true,
-    "outDir": "./dist",
     "incremental": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "importHelpers": true,
-    "noUnusedLocals": true,
-    "noImplicitAny": true
+    "noUnusedLocals": true
   },
   "exclude": ["node_modules", "**/node_modules/*"]
 }
