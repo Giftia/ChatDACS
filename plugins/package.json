@@ -2,21 +2,21 @@
   "name": "plugins",
   "version": "1.0.0",
   "dependencies": {
-    "axios": "0.27.2",
+    "axios": "0.28.0",
     "canvas": "2.11.2",
-    "dayjs": "1.11.9",
-    "jimp": "0.22.10",
+    "dayjs": "1.11.10",
+    "jimp": "0.22.12",
     "mp3-duration": "1.1.0",
     "node-schedule": "2.1.1",
     "request": "2.88.2",
     "require.all": "2.0.5",
     "rss-parser": "3.13.0",
     "select-random-file": "1.2.4",
-    "sequelize": "6.32.1",
-    "sqlite3": "5.1.6",
+    "sequelize": "6.37.1",
+    "sqlite3": "5.1.7",
     "trayicon": "1.2.2",
     "wallpaper": "5.0.1",
-    "yaml": "2.3.2"
+    "yaml": "2.4.1"
   },
   "engines": {
     "node": "~18"
