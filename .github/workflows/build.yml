@@ -112,7 +112,7 @@ jobs:
         run: echo "now=$(date +'%Y-%m-%d-%H-%M-%S')" >> $GITHUB_OUTPUT
 
       - name: Upload Build Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}-${{ steps.time.outputs.now }}
           path: ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}.zip
