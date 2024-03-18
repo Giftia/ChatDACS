@@ -8,28 +8,28 @@ module.exports = {
    * @returns {object} { YearMonthDay: "yyyy-mm-dd", Clock: "hh:mm:ss" }
    */
   GetTimes() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1;
-    const day = now.getDate();
-    let yearMonthDay = year + "-";
-    if (month < 10) yearMonthDay += "0";
-    yearMonthDay += month + "-";
-    if (day < 10) yearMonthDay += "0";
-    yearMonthDay += day;
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = now.getMonth() + 1
+    const day = now.getDate()
+    let yearMonthDay = year + '-'
+    if (month < 10) yearMonthDay += '0'
+    yearMonthDay += month + '-'
+    if (day < 10) yearMonthDay += '0'
+    yearMonthDay += day
 
-    const hh = now.getHours();
-    const mm = now.getMinutes();
-    const ss = now.getSeconds();
-    let clock = " ";
-    if (hh < 10) clock += "0";
-    clock += hh + ":";
-    if (mm < 10) clock += "0";
-    clock += mm + ":";
-    if (ss < 10) clock += "0";
-    clock += ss + " ";
+    const hh = now.getHours()
+    const mm = now.getMinutes()
+    const ss = now.getSeconds()
+    let clock = ' '
+    if (hh < 10) clock += '0'
+    clock += hh + ':'
+    if (mm < 10) clock += '0'
+    clock += mm + ':'
+    if (ss < 10) clock += '0'
+    clock += ss + ' '
 
-    return { YearMonthDay: yearMonthDay, Clock: clock };
+    return {YearMonthDay: yearMonthDay, Clock: clock}
   },
 
   /**
@@ -38,7 +38,7 @@ module.exports = {
    * @returns {string} "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
    */
   sha1(buf) {
-    return crypto.createHash("sha1").update(buf).digest("hex");
+    return crypto.createHash('sha1').update(buf).digest('hex')
   },
 
   /**
@@ -47,13 +47,12 @@ module.exports = {
    * @returns {Promise<object>} { "nickname", "logintimes", "lastlogintime" }
    */
   async GetUserData(CID) {
-    const user = await UserModel.findOne({ where: { CID } })
-      .then((user) => ({
-        nickname: user?.nickname ?? null,
-        loginTimes: user?.logintimes ?? null,
-        updatedAt: user?.updatedAt ?? null,
-      }));
-    return user;
+    const user = await UserModel.findOne({where: {CID}}).then((user) => ({
+      nickname: user?.nickname ?? null,
+      loginTimes: user?.logintimes ?? null,
+      updatedAt: user?.updatedAt ?? null,
+    }))
+    return user
   },
 
   /**
@@ -62,14 +61,13 @@ module.exports = {
    * @returns {void} void
    */
   UpdateLoginTimes(CID) {
-    UserModel.findOne({ where: { CID } })
-      .then((user) => {
-        if (user) {
-          user.update({
-            logintimes: ++user.logintimes,
-          });
-        };
-      });
+    UserModel.findOne({where: {CID}}).then((user) => {
+      if (user) {
+        user.update({
+          logintimes: ++user.logintimes,
+        })
+      }
+    })
   },
 
   /**
@@ -79,7 +77,7 @@ module.exports = {
    * @returns {void} void
    */
   AddUser(CID, nickname) {
-    UserModel.create({ CID, nickname });
+    UserModel.create({CID, nickname})
   },
 
   /**
@@ -89,7 +87,7 @@ module.exports = {
    * @returns {void} void
    */
   AddMessage(CID, message) {
-    MessageModel.create({ CID, message });
+    MessageModel.create({CID, message})
   },
 
   /**
@@ -97,15 +95,16 @@ module.exports = {
    * @returns {Promise<string>} "昵称" ?? "匿名"
    */
   async RandomNickname() {
-    const nickname = await axios.get(`http://api.tianapi.com/txapi/cname/index?key=${TIAN_XING_API_KEY}`)
+    const nickname = await axios
+      .get(`http://api.tianapi.com/txapi/cname/index?key=${TIAN_XING_API_KEY}`)
       .then((response) => {
         if (response.data.code === 200) {
-          return response.data.newslist[0].naming;
+          return response.data.newslist[0].naming
         } else {
-          return "匿名";
+          return '匿名'
         }
-      });
-    return nickname;
+      })
+    return nickname
   },
 
   /**
@@ -115,10 +114,10 @@ module.exports = {
    * @returns {Promise<void>} void
    */
   async UpdateNickname(CID, nickname) {
-    const userExists = await UserModel.findOne({ where: { CID } });
+    const userExists = await UserModel.findOne({where: {CID}})
 
     if (userExists) {
-      userExists.update({ nickname });
+      userExists.update({nickname})
     }
   },
 
@@ -129,8 +128,8 @@ module.exports = {
    */
   async getMP3Duration(dataBuffer) {
     mp3Duration(dataBuffer, (err, duration) => {
-      return err ? 0 : duration;
-    });
+      return err ? 0 : duration
+    })
   },
 
   /**
@@ -140,7 +139,7 @@ module.exports = {
    */
   PluginAnswerToWebStyle(answer) {
     if (!answer.content?.file) {
-      return answer.content;
+      return answer.content
     }
     const styleMap = {
       picture: `img[${answer.content?.file}]`,
@@ -148,8 +147,8 @@ module.exports = {
       audio: `audio[${answer.content?.file}](${answer.content?.filename})`,
       video: `video[${answer.content?.file}](${answer.content?.filename})`,
       file: `file(${answer.content?.file})[${answer.content?.filename}]`,
-    };
-    return styleMap[answer.type];
+    }
+    return styleMap[answer.type]
   },
 
   /**
@@ -159,15 +158,19 @@ module.exports = {
    */
   PluginAnswerToGoCqhttpStyle(answer) {
     if (!answer.content?.file) {
-      return answer.content;
+      return answer.content
     }
     const styleMap = {
-      picture: `[CQ:image,file=${answer.content?.file.indexOf("http") === -1 ? `http://127.0.0.1:${WEB_PORT}${answer.content?.file}` : answer.content?.file}]`,
+      picture: `[CQ:image,file=${
+        answer.content?.file.indexOf('http') === -1
+          ? `http://127.0.0.1:${WEB_PORT}${answer.content?.file}`
+          : answer.content?.file
+      }]`,
       directPicture: `[CQ:image,file=${url.pathToFileURL(path.resolve(answer.content?.file))}]`,
       audio: `[CQ:record,file=http://127.0.0.1:${WEB_PORT}${answer.content?.file}]`,
       video: `[CQ:video,file=http://127.0.0.1:${WEB_PORT}${answer.content?.file}]`,
-    };
-    return styleMap[answer.type];
+    }
+    return styleMap[answer.type]
   },
 
   /**
@@ -177,23 +180,23 @@ module.exports = {
    */
   PluginAnswerToQQGuildStyle(answer) {
     switch (answer.type) {
-      case "picture":
+      case 'picture':
         return {
           image: `http://127.0.0.1:${WEB_PORT}${answer.content?.file}`,
-        };
-      case "directPicture":
+        }
+      case 'directPicture':
         return {
-          image: `http://127.0.0.1:${WEB_PORT}${answer.content?.file.replace("./static", "")}`,
-        };
-      case "audio":
+          image: `http://127.0.0.1:${WEB_PORT}${answer.content?.file.replace('./static', '')}`,
+        }
+      case 'audio':
         return {
           text: answer.content.filename,
           audio: `http://127.0.0.1:${WEB_PORT}${answer.content?.file}`,
-        };
+        }
       default:
         return {
           text: answer.content,
-        };
+        }
     }
   },
 
@@ -204,24 +207,24 @@ module.exports = {
    */
   PluginAnswerToTelegramStyle(answer) {
     switch (answer.type) {
-      case "picture":
+      case 'picture':
         return {
           image: `./static${answer.content?.file}`,
-        };
-      case "directPicture":
+        }
+      case 'directPicture':
         return {
           image: answer.content?.file,
-        };
-      case "audio":
+        }
+      case 'audio':
         return {
           text: answer.content.filename,
           audio: `./static${answer.content?.file}`,
           duration: answer.content.duration,
-        };
+        }
       default:
         return {
           text: answer.content,
-        };
+        }
     }
   },
 
@@ -231,20 +234,24 @@ module.exports = {
    * @returns {Promise<string>} "/xiaoye/images/xxx.jpg"
    */
   async SaveQQimg(imgUrl) {
-    const filePath = "/xiaoye/images/";
-    const fileName = `${imgUrl[0].split("/")[imgUrl[0].split("/").length - 2]}.jpg`;
+    const filePath = '/xiaoye/images/'
+    const fileName = `${imgUrl[0].split('/')[imgUrl[0].split('/').length - 2]}.jpg`
     // 使用axios下载图片
-    const result = await axios.get(imgUrl[0], {
-      responseType: "stream",
-    }).then((response) => {
-      fs.createWriteStream(`./static${filePath}${fileName}`)
-        .on("close", () => {
-          return `${filePath}${fileName}`;
-        }).write(response.data);
-    }).catch((err) => {
-      return "保存 qq 侧传来的图错误。错误原因：" + err;
-    });
-    return result;
+    const result = await axios
+      .get(imgUrl[0], {
+        responseType: 'stream',
+      })
+      .then((response) => {
+        fs.createWriteStream(`./static${filePath}${fileName}`)
+          .on('close', () => {
+            return `${filePath}${fileName}`
+          })
+          .write(response.data)
+      })
+      .catch((err) => {
+        return '保存 qq 侧传来的图错误。错误原因：' + err
+      })
+    return result
   },
 
   /**
@@ -252,29 +259,34 @@ module.exports = {
    * @returns {Promise<void>} void
    */
   async InitGroupList() {
-    const groupList = await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_group_list`)
+    const groupList = await axios
+      .get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_group_list`)
       .then((response) => {
-        return response.data.data;
+        return response.data.data
       })
       .catch((err) => {
-        return null;
-      });
+        return null
+      })
 
     if (!groupList) {
-      setTimeout(() => this.InitGroupList(), 1000);
-      return;
+      setTimeout(() => this.InitGroupList(), 1000)
+      return
     } else {
-      const groupIdList = groupList.map((group) => group.group_id);
+      const groupIdList = groupList.map((group) => group.group_id)
 
       // 如果在数据库中已经存在，则不再重复添加
-      const groupListInDB = await QQGroupModel.findAll();
-      const groupIdListInDB = groupListInDB.map((group) => group.groupId);
-      const groupIdListToAdd = groupIdList.filter((groupId) => !groupIdListInDB.includes(groupId));
+      const groupListInDB = await QQGroupModel.findAll()
+      const groupIdListInDB = groupListInDB.map((group) => group.groupId)
+      const groupIdListToAdd = groupIdList.filter((groupId) => !groupIdListInDB.includes(groupId))
       if (groupIdListToAdd.length > 0) {
-        await QQGroupModel.bulkCreate(groupIdListToAdd.map((groupId) => ({ groupId })));
+        await QQGroupModel.bulkCreate(groupIdListToAdd.map((groupId) => ({groupId})))
       }
 
-      console.log(`群服务初始化完毕，新加载了${groupIdListToAdd.length}个群，共${groupIdListInDB.length + groupIdListToAdd.length}个群`.log);
+      console.log(
+        `群服务初始化完毕，新加载了${groupIdListToAdd.length}个群，共${
+          groupIdListInDB.length + groupIdListToAdd.length
+        }个群`.log,
+      )
     }
   },
 
@@ -284,10 +296,10 @@ module.exports = {
    * @returns {Promise<void>} void
    */
   async AddNewGroup(groupId) {
-    const groupExist = await QQGroupModel.findOne({ where: { groupId } });
+    const groupExist = await QQGroupModel.findOne({where: {groupId}})
     if (!groupExist) {
-      await QQGroupModel.create({ groupId });
-      console.log(`初始化小夜新加入的群的群服务：${groupId}`.log);
+      await QQGroupModel.create({groupId})
+      console.log(`初始化小夜新加入的群的群服务：${groupId}`.log)
     }
   },
 
@@ -297,13 +309,16 @@ module.exports = {
    * @returns {Promise<void>} void
    */
   async EnableGroupService(groupId) {
-    await QQGroupModel.update({
-      serviceEnabled: true,
-    }, {
-      where: {
-        groupId,
-      }
-    });
+    await QQGroupModel.update(
+      {
+        serviceEnabled: true,
+      },
+      {
+        where: {
+          groupId,
+        },
+      },
+    )
   },
 
   /**
@@ -312,13 +327,16 @@ module.exports = {
    * @returns {Promise<void>} void
    */
   async DisableGroupService(groupId) {
-    await QQGroupModel.update({
-      serviceEnabled: false,
-    }, {
-      where: {
-        groupId,
-      }
-    });
+    await QQGroupModel.update(
+      {
+        serviceEnabled: false,
+      },
+      {
+        where: {
+          groupId,
+        },
+      },
+    )
   },
 
   /**
@@ -329,16 +347,16 @@ module.exports = {
   async GetGroupServiceSwitch(groupId) {
     // 偶发性找不到groupId，无害化处理
     if (!groupId) {
-      return true;
+      return true
     }
-    const group = await QQGroupModel.findOne({ where: { groupId } });
+    const group = await QQGroupModel.findOne({where: {groupId}})
 
     // 如果没有获取到群，应该是小夜刚刚加入群，默认开启群服务
     if (!group) {
-      return true;
+      return true
     }
 
-    return group.serviceEnabled;
+    return group.serviceEnabled
   },
 
   /**
@@ -347,9 +365,9 @@ module.exports = {
    * @returns {Promise<object | false>} 地雷的信息 或 false
    */
   async GetGroupMine(groupId) {
-    const mine = await MineModel.findOne({ where: { groupId } });
+    const mine = await MineModel.findOne({where: {groupId}})
 
-    return mine ?? false;
+    return mine ?? false
   },
 
   /**
@@ -358,9 +376,9 @@ module.exports = {
    * @returns {Promise<object | false>} 地雷的信息 或 false
    */
   async GetGroupAllMines(groupId) {
-    const mine = await MineModel.findAll({ where: { groupId } });
+    const mine = await MineModel.findAll({where: {groupId}})
 
-    return mine ?? false;
+    return mine ?? false
   },
 
   /**
@@ -369,11 +387,14 @@ module.exports = {
    * @returns {Promise<void>} void
    */
   async DeleteGroupMine(id) {
-    await MineModel.destroy({
-      where: { id }
-    }, {
-      force: true
-    });
+    await MineModel.destroy(
+      {
+        where: {id},
+      },
+      {
+        force: true,
+      },
+    )
   },
 
   /**
@@ -383,7 +404,7 @@ module.exports = {
    * @returns {Promise<void>} void
    */
   async AddOneGroupMine(groupId, owner) {
-    await MineModel.create({ groupId, owner });
+    await MineModel.create({groupId, owner})
   },
 
   /**
@@ -392,9 +413,9 @@ module.exports = {
    * @returns {Promise<object | false>} 状态信息 或 false
    */
   async GetGroupLoopBombGameStatus(groupId) {
-    const group = await QQGroupModel.findOne({ where: { groupId } });
+    const group = await QQGroupModel.findOne({where: {groupId}})
 
-    return group.toJSON() ?? false;
+    return group.toJSON() ?? false
   },
 
   /**
@@ -405,19 +426,20 @@ module.exports = {
    * @param {string} loopBombStartTime 开始时间
    * @returns {Promise<void>} void
    */
-  async StartGroupLoopBombGame(
-    groupId, loopBombAnswer, loopBombHolder, loopBombStartTime
-  ) {
-    await QQGroupModel.update({
-      loopBombEnabled: true,
-      loopBombAnswer,
-      loopBombHolder,
-      loopBombStartTime,
-    }, {
-      where: {
-        groupId,
-      }
-    });
+  async StartGroupLoopBombGame(groupId, loopBombAnswer, loopBombHolder, loopBombStartTime) {
+    await QQGroupModel.update(
+      {
+        loopBombEnabled: true,
+        loopBombAnswer,
+        loopBombHolder,
+        loopBombStartTime,
+      },
+      {
+        where: {
+          groupId,
+        },
+      },
+    )
   },
 
   /**
@@ -428,14 +450,17 @@ module.exports = {
    * @returns {Promise<void>} void
    */
   async UpdateGroupLoopBombGame(groupId, loopBombAnswer, loopBombHolder) {
-    await QQGroupModel.update({
-      loopBombAnswer,
-      loopBombHolder,
-    }, {
-      where: {
-        groupId,
-      }
-    });
+    await QQGroupModel.update(
+      {
+        loopBombAnswer,
+        loopBombHolder,
+      },
+      {
+        where: {
+          groupId,
+        },
+      },
+    )
   },
 
   /**
@@ -444,13 +469,13 @@ module.exports = {
    * @returns {Promise<object>} { 持有人, 答案, 开始时间 }
    */
   async GetGroupLoopBomb(groupId) {
-    const group = await QQGroupModel.findOne({ where: { groupId } });
+    const group = await QQGroupModel.findOne({where: {groupId}})
 
     return {
       bombHolder: group.loopBombHolder,
       bombAnswer: group.loopBombAnswer,
       bombStartTime: group.loopBombStartTime,
-    };
+    }
   },
 
   /**
@@ -459,16 +484,19 @@ module.exports = {
    * @returns {Promise<void>} void
    */
   async EndGroupLoopBombGame(groupId) {
-    await QQGroupModel.update({
-      loopBombEnabled: false,
-      loopBombAnswer: null,
-      loopBombHolder: null,
-      loopBombStartTime: null,
-    }, {
-      where: {
-        groupId,
-      }
-    });
+    await QQGroupModel.update(
+      {
+        loopBombEnabled: false,
+        loopBombAnswer: null,
+        loopBombHolder: null,
+        loopBombStartTime: null,
+      },
+      {
+        where: {
+          groupId,
+        },
+      },
+    )
   },
 
   /**
@@ -476,44 +504,44 @@ module.exports = {
    * @returns {Promise<void>} void
    */
   async DelayAlert() {
-    console.log("开始随机延时提醒闭菊的群".log);
+    console.log('开始随机延时提醒闭菊的群'.log)
     const alertMsg = [
       // 提醒文本列表
-      "呜呜呜，把人家冷落了那么久，能不能让小夜张菊了呢...",
-      "闭菊那么久了，朕的菊花痒了!还不快让小夜张菊!",
-      "小夜也想为大家带来快乐，所以让小夜张菊，好吗？",
-      "欧尼酱，不要再无视我了，小夜那里很舒服的，让小夜张菊试试吧~",
-    ];
+      '呜呜呜，把人家冷落了那么久，能不能让小夜张菊了呢...',
+      '闭菊那么久了，朕的菊花痒了!还不快让小夜张菊!',
+      '小夜也想为大家带来快乐，所以让小夜张菊，好吗？',
+      '欧尼酱，不要再无视我了，小夜那里很舒服的，让小夜张菊试试吧~',
+    ]
 
     // 获取停用服务的群列表
     const serviceStoppedGroupsList = await QQGroupModel.findAll({
       where: {
         serviceEnabled: false,
       },
-    }).then(groups => groups.map(group => group.groupId));
+    }).then((groups) => groups.map((group) => group.groupId))
 
     if (!serviceStoppedGroupsList) {
-      console.log("目前没有群是关闭服务的，挺好".log);
+      console.log('目前没有群是关闭服务的，挺好'.log)
     } else {
-      console.log(`以下群未启用小夜服务: ${serviceStoppedGroupsList} ，现在开始随机延时提醒`.log);
+      console.log(`以下群未启用小夜服务: ${serviceStoppedGroupsList} ，现在开始随机延时提醒`.log)
     }
 
-    serviceStoppedGroupsList.forEach(groupId => {
-      const delayTime = Math.floor(Math.random() * 60); // 随机延时0到60秒
-      const randomAlertMsg =
-        alertMsg[Math.floor(Math.random() * alertMsg.length)];
-      console.log(
-        `小夜将会延时 ${delayTime} 秒后提醒群 ${groupId} 张菊，提醒文本为: ${randomAlertMsg}`,
-      );
+    serviceStoppedGroupsList.forEach((groupId) => {
+      const delayTime = Math.floor(Math.random() * 60) // 随机延时0到60秒
+      const randomAlertMsg = alertMsg[Math.floor(Math.random() * alertMsg.length)]
+      console.log(`小夜将会延时 ${delayTime} 秒后提醒群 ${groupId} 张菊，提醒文本为: ${randomAlertMsg}`)
       setTimeout(async () => {
-        await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI(randomAlertMsg)}`)
+        await axios
+          .get(
+            `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI(
+              randomAlertMsg,
+            )}`,
+          )
           .then(() => {
-            console.log(
-              `小夜提醒了群 ${groupId} 张菊，提醒文本为: ${randomAlertMsg}`,
-            );
-          });
-      }, 1000 * delayTime);
-    });
+            console.log(`小夜提醒了群 ${groupId} 张菊，提醒文本为: ${randomAlertMsg}`)
+          })
+      }, 1000 * delayTime)
+    })
   },
 
   /**
@@ -522,14 +550,16 @@ module.exports = {
    * @returns {void} void
    */
   GuGua(qqId) {
-    console.log(`小夜孤寡了 ${qqId}`.log);
+    console.log(`小夜孤寡了 ${qqId}`.log)
 
     guGuaPicList.forEach((pic, index) => {
-      const picUrl = `[CQ:image,file=http://127.0.0.1:${WEB_PORT}/xiaoye/ps/${pic}]`;
+      const picUrl = `[CQ:image,file=http://127.0.0.1:${WEB_PORT}/xiaoye/ps/${pic}]`
       setTimeout(async () => {
-        await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/send_private_msg?user_id=${qqId}&message=${encodeURI(picUrl)}`);
-      }, 1000 * 5 * index);
-    });
+        await axios.get(
+          `http://${GO_CQHTTP_SERVICE_API_URL}/send_private_msg?user_id=${qqId}&message=${encodeURI(picUrl)}`,
+        )
+      }, 1000 * 5 * index)
+    })
   },
 
   /**
@@ -538,14 +568,16 @@ module.exports = {
    * @returns {void} void
    */
   QunGuGua(groupId) {
-    console.log(`小夜孤寡了群 ${groupId}`.log);
+    console.log(`小夜孤寡了群 ${groupId}`.log)
 
     guGuaPicList.forEach((pic, index) => {
-      const picUrl = `[CQ:image,file=http://127.0.0.1:${WEB_PORT}/xiaoye/ps/${pic}]`;
+      const picUrl = `[CQ:image,file=http://127.0.0.1:${WEB_PORT}/xiaoye/ps/${pic}]`
       setTimeout(async () => {
-        await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI(picUrl)}`);
-      }, 1000 * 5 * index);
-    });
+        await axios.get(
+          `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI(picUrl)}`,
+        )
+      }, 1000 * 5 * index)
+    })
   },
 
   /**
@@ -554,9 +586,9 @@ module.exports = {
    * @returns {Promise<string>} 回复内容
    */
   async FullContentSearchAnswer(ask) {
-    const answers = await ChatModel.findAll({ where: { ask } });
+    const answers = await ChatModel.findAll({where: {ask}})
 
-    return answers[Math.floor(Math.random() * answers.length)]?.answer ?? null;
+    return answers[Math.floor(Math.random() * answers.length)]?.answer ?? null
   },
 
   /**
@@ -568,12 +600,12 @@ module.exports = {
     const answers = await ChatModel.findAll({
       where: {
         ask: {
-          [Op.like]: `%${ask}%`
-        }
-      }
-    });
+          [Op.like]: `%${ask}%`,
+        },
+      },
+    })
 
-    return answers[Math.floor(Math.random() * answers.length)]?.answer ?? null;
+    return answers[Math.floor(Math.random() * answers.length)]?.answer ?? null
   },
 
   /**
@@ -581,9 +613,9 @@ module.exports = {
    * @returns {Promise<string>} 敷衍回复
    */
   async PerfunctoryAnswer() {
-    const perfunctoryWords = await PerfunctoryModel.findAll();
+    const perfunctoryWords = await PerfunctoryModel.findAll()
 
-    return perfunctoryWords[Math.floor(Math.random() * perfunctoryWords.length)].content ?? null;
+    return perfunctoryWords[Math.floor(Math.random() * perfunctoryWords.length)].content ?? null
   },
 
   /**
@@ -596,7 +628,7 @@ module.exports = {
    * @returns {Promise<void>} void
    */
   async CreateOneConversation(ask, answer, teacherUserId, teacherGroupId, teacherType) {
-    await ChatModel.create({ ask, answer, teacherUserId, teacherGroupId, teacherType });
+    await ChatModel.create({ask, answer, teacherUserId, teacherGroupId, teacherType})
   },
 
   /**
@@ -605,16 +637,16 @@ module.exports = {
    * @returns {Promise<string>} 修改后图片的路径
    */
   async ModifyPic(picPath) {
-    const pic = await Jimp.read(picPath);
-    const x = Math.floor(Math.random() * pic.bitmap.width);
-    const y = Math.floor(Math.random() * pic.bitmap.height);
-    const color = Math.floor(Math.random() * 0xffffff);
-    console.log(`小夜将会修改图片 ${picPath} 的像素点 (${x}, ${y}) 为颜色 ${color}`.log);
-    pic.setPixelColor(color, x, y);
-    const modifiedPicPath = `./static/images/modified/${Date.now()}.png`;
-    console.log(`小夜将会保存修改后的图片到 ${modifiedPicPath}`.log);
-    await pic.writeAsync(modifiedPicPath);
-    return modifiedPicPath;
+    const pic = await Jimp.read(picPath)
+    const x = Math.floor(Math.random() * pic.bitmap.width)
+    const y = Math.floor(Math.random() * pic.bitmap.height)
+    const color = Math.floor(Math.random() * 0xffffff)
+    console.log(`小夜将会修改图片 ${picPath} 的像素点 (${x}, ${y}) 为颜色 ${color}`.log)
+    pic.setPixelColor(color, x, y)
+    const modifiedPicPath = `./static/images/modified/${Date.now()}.png`
+    console.log(`小夜将会保存修改后的图片到 ${modifiedPicPath}`.log)
+    await pic.writeAsync(modifiedPicPath)
+    return modifiedPicPath
   },
 
   /**
@@ -623,7 +655,7 @@ module.exports = {
    * @returns {Promise<void>} void
    */
   async IncreaseHandGrenadePlayedTimes(userId, times) {
-    await HandGrenadeModel.update({ times: times }, { where: { userId } });
+    await HandGrenadeModel.update({times: times}, {where: {userId}})
   },
 
   /**
@@ -633,25 +665,20 @@ module.exports = {
    */
   async GetUserHandGrenadeTimesToday(userId) {
     const handGrenade = await HandGrenadeModel.findOrCreate({
-      where: { userId },
-      defaults: { userId },
-    });
+      where: {userId},
+      defaults: {userId},
+    })
 
     // handGrenade[1] 表示是否是新建记录
     if (handGrenade[1]) {
-      return 0;
+      return 0
     }
     // 如果玩家这一天没有丢过手雷，则手雷次数初始化为0
-    else if (
-      dayjs(handGrenade[0].updatedAt).endOf("day").toDate()
-      <
-      dayjs().endOf("day").toDate()
-    ) {
-      await this.IncreaseHandGrenadePlayedTimes(userId, 1);
-      return 0;
-    }
-    else {
-      return handGrenade[0].times;
+    else if (dayjs(handGrenade[0].updatedAt).endOf('day').toDate() < dayjs().endOf('day').toDate()) {
+      await this.IncreaseHandGrenadePlayedTimes(userId, 1)
+      return 0
+    } else {
+      return handGrenade[0].times
     }
   },
 
@@ -662,24 +689,20 @@ module.exports = {
    * @returns {Promise<boolean>} 插件开关状态
    */
   async ToggleGroupPlugin(groupId, pluginName) {
-    const group = await QQGroupModel.findOne({ where: { groupId } });
+    const group = await QQGroupModel.findOne({where: {groupId}})
     if (!group.pluginsList || !Object.prototype.hasOwnProperty.call(group.pluginsList, pluginName)) {
-
-      console.log(`该群没有初始化 ${pluginName} ，给一个初始开`.log);
+      console.log(`该群没有初始化 ${pluginName} ，给一个初始开`.log)
 
       group.pluginsList = {
         ...group.pluginsList,
-        [pluginName]: true
-      };
+        [pluginName]: true,
+      }
     }
 
-    const pluginStatus = group.pluginsList[pluginName];
-    console.log(`小夜将会将群 ${groupId} 的 ${pluginName} 插件状态从 ${pluginStatus} 变为 ${!pluginStatus}`.log);
-    await QQGroupModel.update(
-      { pluginsList: { ...group.pluginsList, [pluginName]: !pluginStatus } },
-      { where: { groupId } }
-    );
-    return !pluginStatus;
+    const pluginStatus = group.pluginsList[pluginName]
+    console.log(`小夜将会将群 ${groupId} 的 ${pluginName} 插件状态从 ${pluginStatus} 变为 ${!pluginStatus}`.log)
+    await QQGroupModel.update({pluginsList: {...group.pluginsList, [pluginName]: !pluginStatus}}, {where: {groupId}})
+    return !pluginStatus
   },
 
   /**
@@ -689,96 +712,82 @@ module.exports = {
    * @returns {Promise<boolean>} 插件开关状态
    */
   async GetGroupPluginStatus(groupId, pluginName) {
-    const group = (await QQGroupModel.findOrCreate({ where: { groupId } }))[0];
+    const group = (await QQGroupModel.findOrCreate({where: {groupId}}))[0]
     if (!group.pluginsList) {
+      console.log('该群没有初始化插件列表，初始化一下'.log)
 
-      console.log("该群没有初始化插件列表，初始化一下".log);
-
-      await QQGroupModel.update(
-        { pluginsList: { [pluginName]: true } },
-        { where: { groupId } }
-      );
-      return true;
+      await QQGroupModel.update({pluginsList: {[pluginName]: true}}, {where: {groupId}})
+      return true
     }
 
-    const pluginExists = Object.prototype.hasOwnProperty.call(group.pluginsList, pluginName);
+    const pluginExists = Object.prototype.hasOwnProperty.call(group.pluginsList, pluginName)
     if (!pluginExists) {
+      console.log(`该群没有初始化 ${pluginName} ，给一个初始开`.log)
 
-      console.log(`该群没有初始化 ${pluginName} ，给一个初始开`.log);
-
-      await QQGroupModel.update(
-        { pluginsList: { ...group.pluginsList, [pluginName]: true } },
-        { where: { groupId } }
-      );
-      return true;
+      await QQGroupModel.update({pluginsList: {...group.pluginsList, [pluginName]: true}}, {where: {groupId}})
+      return true
     }
 
-    return group.pluginsList[pluginName];
+    return group.pluginsList[pluginName]
   },
-};
+}
 
-const request = require("request");
-const fs = require("fs");
-const path = require("path");
-const yaml = require("yaml");
-const url = require("url");
-const crypto = require("crypto");
-const axios = require("axios").default;
-const mp3Duration = require("mp3-duration");
-const sequelize = require("sequelize");
-const Op = sequelize.Op;
-const Jimp = require("jimp");
-const cachedJpegDecoder = Jimp.decoders["image/jpeg"];
-Jimp.decoders["image/jpeg"] = (data) => {
-  const userOpts = { maxMemoryUsageInMB: 1024 };
-  return cachedJpegDecoder(data, userOpts);
-};
-const dayjs = require("dayjs");
-const utc = require("dayjs/plugin/utc");
-const timezone = require("dayjs/plugin/timezone");
-dayjs.extend(utc);
-dayjs.extend(timezone);
-dayjs.tz.setDefault("Asia/Shanghai");
+const request = require('request')
+const fs = require('fs')
+const path = require('path')
+const yaml = require('yaml')
+const url = require('url')
+const crypto = require('crypto')
+const axios = require('axios').default
+const mp3Duration = require('mp3-duration')
+const sequelize = require('sequelize')
+const Op = sequelize.Op
+const Jimp = require('jimp')
+const cachedJpegDecoder = Jimp.decoders['image/jpeg']
+Jimp.decoders['image/jpeg'] = (data) => {
+  const userOpts = {maxMemoryUsageInMB: 1024}
+  return cachedJpegDecoder(data, userOpts)
+}
+const dayjs = require('dayjs')
+const utc = require('dayjs/plugin/utc')
+const timezone = require('dayjs/plugin/timezone')
+dayjs.extend(utc)
+dayjs.extend(timezone)
+dayjs.tz.setDefault('Asia/Shanghai')
 
 // models
-const UserModel = require("./model/userModel.js");
-const MessageModel = require("./model/messageModel.js");
-const QQGroupModel = require("./model/qqGroupModel.js");
-const MineModel = require("./model/mineModel.js");
-const ChatModel = require("./model/chatModel.js");
-const PerfunctoryModel = require("./model/perfunctoryModel.js");
-const HandGrenadeModel = require("./model/handGrenadeModel.js");
+const UserModel = require('./model/userModel.js')
+const MessageModel = require('./model/messageModel.js')
+const QQGroupModel = require('./model/qqGroupModel.js')
+const MineModel = require('./model/mineModel.js')
+const ChatModel = require('./model/chatModel.js')
+const PerfunctoryModel = require('./model/perfunctoryModel.js')
+const HandGrenadeModel = require('./model/handGrenadeModel.js')
 
-let WEB_PORT, GO_CQHTTP_SERVICE_API_URL, TIAN_XING_API_KEY;
+let WEB_PORT, GO_CQHTTP_SERVICE_API_URL, TIAN_XING_API_KEY
 
-Init();
+Init()
 
 // 读取配置文件
 function ReadConfig() {
   return new Promise((resolve, reject) => {
-    fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", (err, data) => {
+    fs.readFile(path.join(process.cwd(), 'config', 'config.yml'), 'utf-8', (err, data) => {
       if (!err) {
-        resolve(yaml.parse(data));
+        resolve(yaml.parse(data))
       } else {
-        reject("读取配置文件错误。错误原因：" + err);
+        reject('读取配置文件错误。错误原因：' + err)
       }
-    });
-  });
+    })
+  })
 }
 
 // 初始化WEB_PORT和TIAN_XING_API_KEY
 async function Init() {
-  const resolve = await ReadConfig();
-  WEB_PORT = resolve.System.WEB_PORT;
-  GO_CQHTTP_SERVICE_API_URL = resolve.System.GO_CQHTTP_SERVICE_API_URL;
-  TIAN_XING_API_KEY = resolve.ApiKey.TIAN_XING_API_KEY;
+  const resolve = await ReadConfig()
+  WEB_PORT = resolve.System.WEB_PORT
+  GO_CQHTTP_SERVICE_API_URL = resolve.System.GO_CQHTTP_SERVICE_API_URL
+  TIAN_XING_API_KEY = resolve.ApiKey.TIAN_XING_API_KEY
 }
 
 // 孤寡图序列
-const guGuaPicList = [
-  "1.jpg",
-  "2.jpg",
-  "3.jpg",
-  "4.jpg",
-  "5.gif",
-];
+const guGuaPicList = ['1.jpg', '2.jpg', '3.jpg', '4.jpg', '5.gif']
