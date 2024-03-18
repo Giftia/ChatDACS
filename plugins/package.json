@@ -15,7 +15,7 @@
     "sequelize": "6.37.1",
     "sqlite3": "5.1.7",
     "trayicon": "1.2.2",
-    "wallpaper": "5.0.1",
+    "wallpaper": "7.2.0",
     "yaml": "2.4.1"
   },
   "engines": {
