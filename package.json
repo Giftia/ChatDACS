@@ -1,10 +1,10 @@
 {
   "name": "chatdacs",
-  "version": "3.7.3-dev",
+  "version": "3.8.0-dev",
   "decription": "Chatbot : shaDiao Ai Chat System",
   "license": "GPL-3.0",
   "scripts": {
-    "run": "node index.js",
+    "dev": "node index.js",
     "pkg": "pkg .",
     "docker-build": "docker build . -t giftina/chatdacs:",
     "migrate-generate": "npx sequelize-cli migration:generate --name",
@@ -27,7 +27,7 @@
     "multer": "1.4.4",
     "node-schedule": "2.1.1",
     "node-telegram-bot-api": "0.61.0",
-    "nodejieba": "2.6.0",
+    "nodejs-jieba": "0.1.2",
     "play-sound": "1.1.6",
     "qq-guild-bot": "2.9.5",
     "request": "2.88.2",
@@ -57,7 +57,6 @@
       "node_modules/canvas/build/Release/*",
       "node_modules/sqlite3/lib/binding/napi-v6-win32-unknown-x64/node_sqlite3.node",
       "node_modules/sqlite3/lib/binding/napi-v6-linux-glibc-x64/node_sqlite3.node",
-      "node_modules/nodejieba/build/Release/nodejieba.node",
       "node_modules/socket.io/client-dist/*"
     ],
     "targets": [
@@ -66,6 +65,6 @@
     "outputPath": "."
   },
   "engines": {
-    "node": "~14"
+    "node": "~18"
   }
 }

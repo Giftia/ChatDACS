@@ -62,7 +62,7 @@ const TelegramBot = require('node-telegram-bot-api') // Telegram机器人SDK
 /**
  * 中文分词器
  */
-const jieba = require('nodejieba')
+const jieba = require('nodejs-jieba')
 jieba.load({
   dict: path.join(process.cwd(), 'config', 'jieba.dict.utf8'),
   hmmDict: path.join(process.cwd(), 'config', 'hmm_model.utf8'),
@@ -280,7 +280,7 @@ io.on('connection', async (socket) => {
 
     // web端插件应答器
     const pluginsReply =
-      (await ProcessExecute(msg, CID, socket.username, '', '', {
+      (await ProcessExecute(msg, CID, socket.username, '1145141919810', '', {
         type: 'web',
       })) ?? ''
     if (pluginsReply) {
@@ -1875,7 +1875,7 @@ async function ECYWenDa() {
  */
 async function ProcessExecute(msg, userId, userName, groupId, groupName, options) {
   if (!msg || !userId || !userName || !groupId || !groupName) {
-    throw new Error('Invalid input')
+    throw new Error('调用插件时缺少入参')
   }
   let pluginReturn = ''
   // 插件开关
@@ -1924,5 +1924,5 @@ async function ProcessExecute(msg, userId, userName, groupId, groupName, options
 }
 
 /**
- * 我正在听：🎧 Eutopia - 法元明菜
+ * 我正在听：🎧 ALIVE - ClariS
  */
