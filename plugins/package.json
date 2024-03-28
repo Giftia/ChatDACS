@@ -2,7 +2,7 @@
   "name": "plugins",
   "version": "1.0.0",
   "dependencies": {
-    "axios": "0.28.0",
+    "axios": "0.28.1",
     "canvas": "2.11.2",
     "dayjs": "1.11.10",
     "jimp": "0.22.12",
