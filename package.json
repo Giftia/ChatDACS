@@ -18,7 +18,7 @@
     "colors": "1.4.0",
     "compression": "1.7.4",
     "cookie": "0.6.0",
-    "dayjs": "1.11.10",
+    "dayjs": "1.11.11",
     "diff": "5.2.0",
     "express": "4.19.2",
     "jimp": "0.22.12",
@@ -39,7 +39,7 @@
     "sqlite3": "5.1.7",
     "trayicon": "1.2.2",
     "winston": "3.13.0",
-    "yaml": "2.4.1"
+    "yaml": "2.4.2"
   },
   "devDependencies": {
     "eslint": "8.57.0",
