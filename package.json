@@ -38,7 +38,7 @@
     "socket.io": "4.7.5",
     "sqlite3": "5.1.7",
     "trayicon": "1.2.2",
-    "winston": "3.13.0",
+    "winston": "3.13.1",
     "yaml": "2.4.5"
   },
   "devDependencies": {
