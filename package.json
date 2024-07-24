@@ -39,7 +39,7 @@
     "sqlite3": "5.1.7",
     "trayicon": "1.2.2",
     "winston": "3.13.1",
-    "yaml": "2.4.5"
+    "yaml": "2.5.0"
   },
   "devDependencies": {
     "eslint": "8.57.0",
