@@ -42,7 +42,7 @@
     "yaml": "2.5.1"
   },
   "devDependencies": {
-    "eslint": "8.57.0",
+    "eslint": "8.57.1",
     "eslint-config-prettier": "9.1.0",
     "eslint-plugin-node": "11.1.0",
     "sequelize-cli": "^6.5.2"
