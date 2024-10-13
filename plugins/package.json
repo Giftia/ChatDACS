@@ -5,7 +5,7 @@
     "axios": "0.28.1",
     "canvas": "2.11.2",
     "dayjs": "1.11.13",
-    "jimp": "0.22.12",
+    "jimp": "1.6.0",
     "mp3-duration": "1.1.0",
     "node-schedule": "2.1.1",
     "request": "2.88.2",
