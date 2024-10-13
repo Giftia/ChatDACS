@@ -27,7 +27,7 @@
     "multer": "1.4.4",
     "node-schedule": "2.1.1",
     "node-telegram-bot-api": "0.66.0",
-    "nodejs-jieba": "0.1.2",
+    "nodejs-jieba": "0.2.1",
     "play-sound": "1.1.6",
     "qq-guild-bot": "2.9.5",
     "request": "2.88.2",
@@ -39,7 +39,7 @@
     "sqlite3": "5.1.7",
     "trayicon": "1.2.2",
     "winston": "3.15.0",
-    "yaml": "2.5.1"
+    "yaml": "2.6.0"
   },
   "devDependencies": {
     "eslint": "8.57.1",
