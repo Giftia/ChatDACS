@@ -35,7 +35,7 @@
     "rss-parser": "3.13.0",
     "semver-diff": "3.1.1",
     "sequelize": "6.37.4",
-    "socket.io": "4.8.0",
+    "socket.io": "4.8.1",
     "sqlite3": "5.1.7",
     "trayicon": "1.2.2",
     "winston": "3.15.0",
