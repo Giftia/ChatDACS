@@ -13,7 +13,7 @@
     "migrate:undo": "npx sequelize-cli db:migrate:undo --env production"
   },
   "dependencies": {
-    "axios": "0.29.0",
+    "axios": "0.30.0",
     "bilibili-live-ws": "6.3.1",
     "colors": "1.4.0",
     "compression": "1.8.0",
