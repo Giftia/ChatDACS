@@ -500,19 +500,11 @@ module.exports = {
   },
 
   /**
-   * 随机延时提醒闭菊的群
+   * 自动为停用服务的群启用服务
    * @returns {Promise<void>} void
    */
-  async DelayAlert() {
-    console.log('开始随机延时提醒闭菊的群'.log)
-    const alertMsg = [
-      // 提醒文本列表
-      '呜呜呜，把人家冷落了那么久，能不能让小夜张菊了呢...',
-      '闭菊那么久了，朕的菊花痒了!还不快让小夜张菊!',
-      '小夜也想为大家带来快乐，所以让小夜张菊，好吗？',
-      '欧尼酱，不要再无视我了，小夜那里很舒服的，让小夜张菊试试吧~',
-    ]
-
+  async AutoEnableQQGroupService() {
+    console.log('开始自动为停用服务的群启用服务'.log)
     // 获取停用服务的群列表
     const serviceStoppedGroupsList = await QQGroupModel.findAll({
       where: {
@@ -522,26 +514,26 @@ module.exports = {
 
     if (!serviceStoppedGroupsList) {
       console.log('目前没有群是关闭服务的，挺好'.log)
+      return
     } else {
-      console.log(`以下群未启用小夜服务: ${serviceStoppedGroupsList} ，现在开始随机延时提醒`.log)
+      console.log(`以下群未启用小夜服务: ${serviceStoppedGroupsList} ，自动启用服务`.log)
+      serviceStoppedGroupsList.forEach((groupId) => {
+        const delayTime = Math.floor(Math.random() * 60) // 随机延时0到60秒
+        console.log(`小夜将会延时 ${delayTime} 秒后提醒群 ${groupId} 小夜已自动张菊`)
+        setTimeout(async () => {
+          await axios
+            .get(
+              `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI(
+                '害害嗨，小夜自动张菊了',
+              )}`,
+            )
+            .then(async () => {
+              await this.EnableGroupService(groupId)
+              console.log(`小夜提醒了群 ${groupId} 服务已经自动启用`)
+            })
+        }, 1000 * delayTime)
+      })
     }
-
-    serviceStoppedGroupsList.forEach((groupId) => {
-      const delayTime = Math.floor(Math.random() * 60) // 随机延时0到60秒
-      const randomAlertMsg = alertMsg[Math.floor(Math.random() * alertMsg.length)]
-      console.log(`小夜将会延时 ${delayTime} 秒后提醒群 ${groupId} 张菊，提醒文本为: ${randomAlertMsg}`)
-      setTimeout(async () => {
-        await axios
-          .get(
-            `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI(
-              randomAlertMsg,
-            )}`,
-          )
-          .then(() => {
-            console.log(`小夜提醒了群 ${groupId} 张菊，提醒文本为: ${randomAlertMsg}`)
-          })
-      }, 1000 * delayTime)
-    })
   },
 
   /**
