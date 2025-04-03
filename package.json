@@ -60,7 +60,7 @@
       "node_modules/socket.io/client-dist/*"
     ],
     "targets": [
-      "node14-win-x64"
+      "node18-win-x64"
     ],
     "outputPath": "."
   },
