@@ -19,7 +19,7 @@ module.exports = {
     const feedback = new RegExp(this.指令).exec(msg)[1]
     const feedbackContext = `用户 ${userId}(${userName}) 报告了错误：${feedback}`
 
-    if (this.config.CONNECT_GO_CQHTTP_SWITCH) {
+    if (this.config.CONNECT_ONE_BOT_SWITCH) {
       try {
         await this.sendMessageToQQGroup(feedbackContext, {group_id: 157311946})
         this.logger.info(`报错信息已发送到开发群: ${feedbackContext}`)

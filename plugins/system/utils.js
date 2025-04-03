@@ -260,7 +260,7 @@ module.exports = {
    */
   async InitGroupList() {
     const groupList = await axios
-      .get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_group_list`)
+      .get(`http://${ONE_BOT_API_URL}/get_group_list`)
       .then((response) => {
         return response.data.data
       })
@@ -523,7 +523,7 @@ module.exports = {
         setTimeout(async () => {
           await axios
             .get(
-              `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI(
+              `http://${ONE_BOT_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI(
                 '害害嗨，小夜自动张菊了',
               )}`,
             )
@@ -547,9 +547,7 @@ module.exports = {
     guGuaPicList.forEach((pic, index) => {
       const picUrl = `[CQ:image,file=http://127.0.0.1:${WEB_PORT}/xiaoye/ps/${pic}]`
       setTimeout(async () => {
-        await axios.get(
-          `http://${GO_CQHTTP_SERVICE_API_URL}/send_private_msg?user_id=${qqId}&message=${encodeURI(picUrl)}`,
-        )
+        await axios.get(`http://${ONE_BOT_API_URL}/send_private_msg?user_id=${qqId}&message=${encodeURI(picUrl)}`)
       }, 1000 * 5 * index)
     })
   },
@@ -565,9 +563,7 @@ module.exports = {
     guGuaPicList.forEach((pic, index) => {
       const picUrl = `[CQ:image,file=http://127.0.0.1:${WEB_PORT}/xiaoye/ps/${pic}]`
       setTimeout(async () => {
-        await axios.get(
-          `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI(picUrl)}`,
-        )
+        await axios.get(`http://${ONE_BOT_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI(picUrl)}`)
       }, 1000 * 5 * index)
     })
   },
@@ -756,7 +752,7 @@ const ChatModel = require('./model/chatModel.js')
 const PerfunctoryModel = require('./model/perfunctoryModel.js')
 const HandGrenadeModel = require('./model/handGrenadeModel.js')
 
-let WEB_PORT, GO_CQHTTP_SERVICE_API_URL, TIAN_XING_API_KEY
+let WEB_PORT, ONE_BOT_API_URL, TIAN_XING_API_KEY
 
 Init()
 
@@ -777,7 +773,7 @@ function ReadConfig() {
 async function Init() {
   const resolve = await ReadConfig()
   WEB_PORT = resolve.System.WEB_PORT
-  GO_CQHTTP_SERVICE_API_URL = resolve.System.GO_CQHTTP_SERVICE_API_URL
+  ONE_BOT_API_URL = resolve.System.ONE_BOT_API_URL
   TIAN_XING_API_KEY = resolve.ApiKey.TIAN_XING_API_KEY
 }
 
