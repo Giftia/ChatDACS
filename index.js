@@ -161,20 +161,55 @@ console.log(`\n|          ${version}           |`.alert)
 console.log(' Giftina: https://github.com/Giftia/ \n'.alert)
 console.log('_______________________________________\n'.rainbow)
 logger.info('开始加载插件……'.log)
-const plugins = require.all({
-  dir: path.join(process.cwd(), 'plugins'),
-  match: /\.js$/,
-  require: /\.js$/,
-  recursive: false,
-  encoding: 'utf-8',
-  resolve: function (plugins) {
-    plugins.all.load()
-  },
-})
-let pluginsMap = ['当前安装的插件列表：']
-for (const i in plugins) {
-  pluginsMap.push(plugins[i].插件名)
+const plugins = []
+try {
+  const loadedPlugins = require.all({
+    dir: path.join(process.cwd(), 'plugins'),
+    match: /\.js$/,
+    require: /\.js$/,
+    recursive: false,
+    encoding: 'utf-8',
+    resolve: function (plugins) {
+      try {
+        plugins.all.load()
+      } catch (error) {
+        logger.error(`插件 ${plugins.name} 加载失败: ${error.message}`.error)
+      }
+    },
+  })
+  plugins.push(...loadedPlugins)
+} catch (error) {
+  logger.error(`插件加载失败: ${error.message}`.error)
 }
+
+let pluginNameMap = new Map(),
+  pluginCommandMap = new Map()
+// 初始化插件哈希表并预编译正则表达式
+for (const plugin of plugins) {
+  pluginNameMap.set(plugin.插件名, plugin)
+  pluginCommandMap.set(plugin.指令, {
+    plugin,
+    compiledReg: new RegExp(plugin.指令), // 预编译正则表达式
+  })
+}
+
+// 插件状态缓存
+const pluginStatusCache = new Map()
+async function getPluginStatus(groupId, pluginName) {
+  const cacheKey = `${groupId}-${pluginName}`
+  const cacheEntry = pluginStatusCache.get(cacheKey)
+
+  if (cacheEntry && Date.now() - cacheEntry.timestamp < 60000) {
+    // 缓存1分钟
+    return cacheEntry.status
+  }
+
+  const status = await utils.GetGroupPluginStatus(groupId, pluginName)
+  pluginStatusCache.set(cacheKey, {status, timestamp: Date.now()})
+  return status
+}
+
+const pluginsMap = ['当前安装的插件列表：', ...plugins.map((plugin) => plugin.插件名)]
 console.log(pluginsMap)
 logger.info('插件加载完毕√'.log)
 
@@ -1877,42 +1912,42 @@ async function ECYWenDa() {
  * @returns {Promise<string>} 插件回复
  */
 async function ProcessExecute(msg, userId, userName, groupId, groupName, options) {
-  if (!msg || !userId || !userName || !groupId || !groupName) {
-    throw new Error('调用插件时缺少入参')
-  }
+  // if (!msg || !userId || !userName || !groupId || !groupName) {
+  //   throw new Error('调用插件时缺少入参')
+  // }
   let pluginReturn = ''
-  // 插件开关
+
   try {
+    // 插件开关逻辑
     if (Constants.plugins_switch_reg.test(msg)) {
       const pluginName = msg.match(Constants.plugins_switch_reg)[1]
       if (!pluginName) return '插件名获取有误'
-      for (const i in plugins) {
-        if (plugins[i].插件名 == pluginName) {
-          const pluginStatus = await utils.ToggleGroupPlugin(groupId, pluginName)
 
-          console.log(`群${groupId} 的插件 ${pluginName} 状态切换为 ${pluginStatus}`.log)
-
-          return {type: 'text', content: `${pluginName} 已${pluginStatus ? '开启' : '关闭'}`}
-        }
+      const plugin = pluginNameMap.get(pluginName)
+      if (plugin) {
+        const pluginStatus = await utils.ToggleGroupPlugin(groupId, pluginName)
+        logger.info(`群${groupId} 的插件 ${plugin.插件名} 状态切换为 ${pluginStatus}`.log)
+        return {type: 'text', content: `${pluginName} 已${pluginStatus ? '开启' : '关闭'}`}
       }
     } else {
-      for (const i in plugins) {
-        const reg = new RegExp(plugins[i].指令)
-        if (reg.test(msg)) {
-          const pluginStatus = await utils.GetGroupPluginStatus(groupId, plugins[i].插件名)
+      // 指令匹配逻辑
+      for (const {compiledReg, plugin} of pluginCommandMap.values()) {
+        if (compiledReg.test(msg)) {
+          const pluginStatus = await getPluginStatus(groupId, plugin.插件名)
           if (!pluginStatus) {
-            console.log(`群${groupId} 的插件 ${plugins[i].插件名} 已关闭，不响应`.log)
-            return {type: 'text', content: `群内的 ${plugins[i].插件名} 已关闭，不响应`}
+            logger.warn(`群${groupId} 的插件 ${plugin.插件名} 已关闭，不响应`.log)
+            return {type: 'text', content: `群内的 ${plugin.插件名} 已关闭，不响应`}
           }
 
           try {
-            pluginReturn = await plugins[i].execute(msg, userId, userName, groupId, groupName, options)
+            pluginReturn = await plugin.execute(msg, userId, userName, groupId, groupName, options)
           } catch (e) {
-            logger.error(`插件 ${plugins[i].插件名} ${plugins[i].版本} 爆炸啦: ${e.stack}`.error)
-            return `插件 ${plugins[i].插件名} ${plugins[i].版本} 爆炸啦: ${e.stack}`
+            logger.error(`插件 ${plugin.插件名} ${plugin.版本} 爆炸啦: ${e.stack}`.error)
+            return `插件 ${plugin.插件名} ${plugin.版本} 爆炸啦: ${e.stack}`
           }
+
           if (pluginReturn) {
-            logger.info(`插件 ${plugins[i].插件名} ${plugins[i].版本} 响应了消息：`.log)
+            logger.info(`插件 ${plugin.插件名} ${plugin.版本} 响应了消息：`.log)
             logger.info(JSON.stringify(pluginReturn).log)
             return pluginReturn
           }
