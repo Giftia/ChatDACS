@@ -126,32 +126,10 @@ process.on('unhandledRejection', (err) => {
 /**
  * 系统配置和开关，以及固定变量
  */
-var boomTimer // 60s计时器
-var onlineUsers = 0, // 预定义
-  QQBOT_ADMIN_LIST,
-  QQ_GROUP_WELCOME_MESSAGE,
-  QQ_GROUP_POKE_REPLY_MESSAGE,
-  QQ_GROUP_POKE_BOOM_REPLY_MESSAGE,
-  BILIBILI_LIVE_ROOM_ID,
-  CHAT_SWITCH,
-  CONNECT_GO_CQHTTP_SWITCH,
-  CONNECT_BILIBILI_LIVE_SWITCH,
-  WEB_PORT,
-  GO_CQHTTP_SERVICE_ANTI_POST_API,
-  GO_CQHTTP_SERVICE_API_URL,
-  CHAT_JIEBA_LIMIT,
-  QQBOT_REPLY_PROBABILITY,
-  QQBOT_FUDU_PROBABILITY,
-  QQBOT_SAVE_ALL_IMAGE_TO_LOCAL_SWITCH,
-  QQBOT_MAX_MINE_AT_MOST,
-  QQBOT_PRIVATE_CHAT_SWITCH,
-  AUTO_APPROVE_QQ_FRIEND_REQUEST_SWITCH,
-  c1c_count = 0,
-  CONNECT_QQ_GUILD_SWITCH,
-  QQ_GUILD_APP_ID,
-  QQ_GUILD_TOKEN,
-  CONNECT_TELEGRAM_SWITCH,
-  TELEGRAM_BOT_TOKEN
+let boomTimer // 60s计时器
+const globalConfig = {} // 全局配置对象
+let onlineUsers = 0, // 预定义
+  c1c_count = 0
 
 /**
  * 声明结束，开始初始化
@@ -160,46 +138,10 @@ console.log('_______________________________________\n'.rainbow)
 console.log(`\n|          ${version}           |`.alert)
 console.log(' Giftina: https://github.com/Giftia/ \n'.alert)
 console.log('_______________________________________\n'.rainbow)
-logger.info('开始加载插件……'.log)
-const plugins = require.all({
-  dir: path.join(process.cwd(), 'plugins'),
-  match: /\.js$/,
-  require: /\.js$/,
-  recursive: false,
-  encoding: 'utf-8',
-  resolve: function (plugins) {
-    plugins.all.load()
-  },
-})
-let pluginsMap = ['当前安装的插件列表：']
-for (const i in plugins) {
-  pluginsMap.push(plugins[i].插件名)
-}
-console.log(pluginsMap)
-
-let pluginNameMap = new Map(),
+// 插件系统
+let plugins = [],
+  pluginNameMap = new Map(),
   pluginCommandMap = new Map()
-// 初始化插件哈希表并预编译正则表达式
-for (const plugin of Object.values(plugins)) {
-  pluginNameMap.set(plugin.插件名, plugin)
-  pluginCommandMap.set(plugin.指令, {
-    plugin,
-    compiledReg: new RegExp(plugin.指令), // 预编译正则表达式
-  })
-}
-
-// 插件状态缓存
-const pluginStatusCache = new Map()
-async function getPluginStatus(groupId, pluginName) {
-  const cacheKey = `${groupId}-${pluginName}`
-  if (pluginStatusCache.has(cacheKey)) {
-    return pluginStatusCache.get(cacheKey)
-  }
-  const status = await utils.GetGroupPluginStatus(groupId, pluginName)
-  pluginStatusCache.set(cacheKey, status)
-  return status
-}
-logger.info('插件加载完毕√'.log)
 
 InitConfig()
 
@@ -315,7 +257,7 @@ io.on('connection', async (socket) => {
       io.emit('message', answerMessage)
     }
 
-    if (CHAT_SWITCH) {
+    if (globalConfig.CHAT_SWITCH) {
       // 交给聊天函数处理
       const chatReply = await ChatProcess(msg)
       if (chatReply) {
@@ -335,7 +277,7 @@ async function StartQQBot() {
   logger.info('正在进行群服务初始化……'.log)
   await utils.InitGroupList()
 
-  app.post(GO_CQHTTP_SERVICE_ANTI_POST_API, async (req, res) => {
+  app.post(globalConfig.GO_CQHTTP_SERVICE_ANTI_POST_API, async (req, res) => {
     const event = req.body
 
     // 处理频道消息
@@ -350,13 +292,13 @@ async function StartQQBot() {
     // 被禁言1小时以上自动退群
     if (event.sub_type == 'ban' && event.user_id == event.self_id) {
       if (event.duration >= 3599) {
-        await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/set_group_leave?group_id=${event.group_id}`)
+        await axios.get(`http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/set_group_leave?group_id=${event.group_id}`)
         logger.info(`小夜在群 ${event.group_id} 被禁言超过1小时，自动退群`.error)
         io.emit('system', `小夜在群 ${event.group_id} 被禁言超过1小时，自动退群`)
       } else {
         // 被禁言改名
         await axios.get(
-          `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${
+          `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${
             event.self_id
           }&card=${encodeURI('你妈的，为什么 禁言我')}`,
         )
@@ -369,7 +311,7 @@ async function StartQQBot() {
     if (event.request_type == 'friend') {
       logger.info(`小夜收到好友请求，请求人：${event.user_id}，请求内容：${event.comment}，按配置自动处理`.log)
       await axios.get(
-        `http://${GO_CQHTTP_SERVICE_API_URL}/set_friend_add_request?flag=${event.flag}&approve=${AUTO_APPROVE_QQ_FRIEND_REQUEST_SWITCH}}`,
+        `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/set_friend_add_request?flag=${event.flag}&approve=${globalConfig.AUTO_APPROVE_QQ_FRIEND_REQUEST_SWITCH}}`,
       )
       return 0
     }
@@ -379,9 +321,9 @@ async function StartQQBot() {
       const msg = `用户 ${event.user_id} 邀请小夜加入群 ${event.group_id}，批准请发送
 批准 ${event.flag}`
       logger.info(`小夜收到加群请求，请求人：${event.user_id}，请求内容：${event.comment}，发送小夜管理员审核`.log)
-      await sendMessageToQQ(msg, {user_id: QQBOT_ADMIN_LIST[0]})
+      await sendMessageToQQ(msg, {user_id: globalConfig.QQBOT_ADMIN_LIST[0]})
       // 发送给邀请者批准提醒
-      const inviteReplyContent = `你好呀，谢谢你邀请小夜，请联系这只小夜的主人 ${QQBOT_ADMIN_LIST[0]} 来批准入群邀请噢。小夜开源于 https://github.com/Giftia/ChatDACS ，开发组欢迎你的加入！`
+      const inviteReplyContent = `你好呀，谢谢你邀请小夜，请联系这只小夜的主人 ${globalConfig.QQBOT_ADMIN_LIST[0]} 来批准入群邀请噢。小夜开源于 https://github.com/Giftia/ChatDACS ，开发组欢迎你的加入！`
       await sendMessageToQQ(inviteReplyContent, event)
       return 0
     }
@@ -389,12 +331,14 @@ async function StartQQBot() {
     // 管理员批准群邀请
     if (
       event.message_type == 'private' &&
-      event.user_id == QQBOT_ADMIN_LIST[0] &&
+      event.user_id == globalConfig.QQBOT_ADMIN_LIST[0] &&
       Constants.approve_group_invite_reg.test(event.message)
     ) {
       const flag = event.message.match(Constants.approve_group_invite_reg)[1]
       await axios.get(
-        `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_add_request?flag=${encodeURI(flag)}&type=invite&approve=1`,
+        `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/set_group_add_request?flag=${encodeURI(
+          flag,
+        )}&type=invite&approve=1`,
       )
       logger.info(`管理员批准了群邀请请求 ${flag}`.log)
       await sendMessageToQQ('已批准', event)
@@ -427,7 +371,7 @@ async function StartQQBot() {
     io.emit('system', notify)
 
     // 转发图片到web端
-    if (QQBOT_SAVE_ALL_IMAGE_TO_LOCAL_SWITCH) {
+    if (globalConfig.QQBOT_SAVE_ALL_IMAGE_TO_LOCAL_SWITCH) {
       if (Constants.isImage_reg.test(event.message)) {
         const url = Constants.img_url_reg.exec(event.message)
         utils
@@ -465,7 +409,7 @@ async function StartQQBot() {
           if (event.self_id == who) {
             axios
               .get(
-                `http://${GO_CQHTTP_SERVICE_API_URL}/get_group_member_info?group_id=${event.group_id}&user_id=${event.user_id}`,
+                `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/get_group_member_info?group_id=${event.group_id}&user_id=${event.user_id}`,
               )
               .then(async (response) => {
                 if (response.data.data.role === 'owner' || response.data.data.role === 'admin') {
@@ -479,7 +423,7 @@ async function StartQQBot() {
                 }
                 // 申请人不是管理，再看看是不是qqBot管理员
                 else {
-                  if (QQBOT_ADMIN_LIST.includes(event.user_id)) {
+                  if (globalConfig.QQBOT_ADMIN_LIST.includes(event.user_id)) {
                     logger.info(`群 ${event.group_id} 启用了小夜服务`.log)
                     await utils.EnableGroupService(event.group_id)
                     await sendMessageToQQGroup(
@@ -516,11 +460,14 @@ async function StartQQBot() {
           // 群欢迎
           if (event.notice_type === 'group_increase') {
             console.log(`${event.user_id} 加入了群 ${event.group_id}，小夜欢迎了ta`.log)
-            const welcomeMessage = QQ_GROUP_WELCOME_MESSAGE.replace(/@新人/g, `[CQ:at,qq=${event.user_id}]`)
+            const welcomeMessage = globalConfig.QQ_GROUP_WELCOME_MESSAGE.replace(
+              /@新人/g,
+              `[CQ:at,qq=${event.user_id}]`,
+            )
             await axios.get(
-              `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(
-                welcomeMessage,
-              )}`,
+              `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${
+                event.group_id
+              }&message=${encodeURI(welcomeMessage)}`,
             )
             // 在小夜加入新群后，将新群写入群服务表
             await utils.AddNewGroup(event.group_id)
@@ -551,7 +498,7 @@ async function StartQQBot() {
                 const isHollyMine = Math.floor(Math.random() * 100) < 1 // 神圣地雷的概率为1%
                 if (isHollyMine) {
                   await axios.get(
-                    `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_whole_ban?group_id=${event.group_id}&enable=1`,
+                    `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/set_group_whole_ban?group_id=${event.group_id}&enable=1`,
                   )
                   console.log(`${mine.owner} 在群 ${mine.groupId} 触发了神圣地雷`.error)
                   await sendMessageToQQGroup(
@@ -564,7 +511,7 @@ async function StartQQBot() {
                   const boomTime = Math.floor(Math.random() * 60 * 2) // 造成伤害时间，2分钟内
                   console.log(`${mine.owner} 在群 ${mine.groupId} 埋的地雷被引爆，伤害时间${boomTime}秒`.log)
                   await axios.get(
-                    `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${mine.groupId}&user_id=${event.user_id}&duration=${boomTime}`,
+                    `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${mine.groupId}&user_id=${event.user_id}&duration=${boomTime}`,
                   )
                   await sendMessageToQQGroup(
                     `[CQ:at,qq=${event.user_id}]恭喜你，被[CQ:at,qq=${mine.owner}]所埋地雷炸伤，休养生息${boomTime}秒!`,
@@ -614,7 +561,7 @@ async function StartQQBot() {
             event.group_id,
             (
               await axios.get(
-                `http://${GO_CQHTTP_SERVICE_API_URL}/get_group_info?group_id=${event.group_id}&no_cache=1`,
+                `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/get_group_info?group_id=${event.group_id}&no_cache=1`,
               )
             ).data.data.group_name,
             {
@@ -643,7 +590,7 @@ async function StartQQBot() {
               plugins.tts
                 .execute(`吠 ${reply}`)
                 .then(async (resolve) => {
-                  const tts_file = `[CQ:record,file=http://127.0.0.1:${WEB_PORT}${resolve.file},url=http://127.0.0.1:${WEB_PORT}${resolve.file}]`
+                  const tts_file = `[CQ:record,file=http://127.0.0.1:${globalConfig.WEB_PORT}${resolve.file},url=http://127.0.0.1:${globalConfig.WEB_PORT}${resolve.file}]`
                   await sendMessageToQQGroup(tts_file, event)
                 })
                 .catch((reject) => {
@@ -699,7 +646,7 @@ async function StartQQBot() {
             // 发送
             // 先获取昵称
             request(
-              `http://${GO_CQHTTP_SERVICE_API_URL}/get_group_member_info?group_id=${event.group_id}&user_id=${who}&no_cache=0`,
+              `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/get_group_member_info?group_id=${event.group_id}&user_id=${who}&no_cache=0`,
               function (error, _response, body) {
                 if (!error) {
                   body = JSON.parse(body)
@@ -725,7 +672,7 @@ async function StartQQBot() {
 
                   request(
                     {
-                      url: `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_forward_msg`,
+                      url: `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/send_group_forward_msg`,
                       method: 'POST',
                       json: true,
                       headers: {
@@ -760,7 +707,7 @@ async function StartQQBot() {
 
                   request(
                     {
-                      url: `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_forward_msg`,
+                      url: `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/send_group_forward_msg`,
                       method: 'POST',
                       json: true,
                       headers: {
@@ -786,7 +733,7 @@ async function StartQQBot() {
             const mines = await utils.GetGroupAllMines(event.group_id)
 
             // 该群是否已经达到最大共存地雷数
-            if (mines.length < QQBOT_MAX_MINE_AT_MOST) {
+            if (mines.length < globalConfig.QQBOT_MAX_MINE_AT_MOST) {
               // 地雷还没满，增加群地雷
               await utils.AddOneGroupMine(event.group_id, event.user_id)
 
@@ -818,7 +765,7 @@ async function StartQQBot() {
               const boomTime = Math.floor(Math.random() * 60 * 3) + 60 // 造成伤害时间，随机在60-180秒内
               console.log(`${mine.owner} 在群 ${mine.groupId} 埋的地雷被排爆`.log)
               await axios.get(
-                `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${mine.groupId}&user_id=${event.user_id}&duration=${boomTime}`,
+                `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${mine.groupId}&user_id=${event.user_id}&duration=${boomTime}`,
               )
               await sendMessageToQQGroup(
                 `[CQ:at,qq=${event.user_id}] 踩了一脚地雷，为什么要想不开呢，被[CQ:at,qq=${mine.owner}]所埋地雷炸成重伤，休养生息${boomTime}秒!`,
@@ -859,7 +806,7 @@ async function StartQQBot() {
 
             // 先救活目标
             await axios.get(
-              `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${event.group_id}&user_id=${who}&duration=0`,
+              `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${event.group_id}&user_id=${who}&duration=0`,
             )
             console.log(`群 ${event.group_id} 的 群员 ${event.user_id} 救活了 ${who}`.log)
             await sendMessageToQQGroup(
@@ -869,7 +816,7 @@ async function StartQQBot() {
 
             // 再禁言团长
             await axios.get(
-              `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${event.group_id}&user_id=${event.user_id}&duration=${boomTime}`,
+              `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${event.group_id}&user_id=${event.user_id}&duration=${boomTime}`,
             )
             console.log(`${event.user_id} 团长自己被炸伤${boomTime}秒`.log)
             return 0
@@ -885,9 +832,9 @@ async function StartQQBot() {
               // 游戏开始
               const text = '击鼓传雷游戏开始啦，这是一个只有死亡才能结束的游戏，做好准备了吗'
               await axios.get(
-                `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(
-                  text,
-                )}`,
+                `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${
+                  event.group_id
+                }&message=${encodeURI(text)}`,
               )
               console.log(`群 ${event.group_id} 开始了击鼓传雷`.log)
 
@@ -901,7 +848,7 @@ async function StartQQBot() {
 
               // 金手指
               await axios.get(
-                `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${
+                `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${
                   event.user_id
                 }&card=${encodeURI(wenDa.answer)}`,
               )
@@ -909,9 +856,9 @@ async function StartQQBot() {
               // 丢出问题
               setTimeout(async () => {
                 await axios.get(
-                  `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(
-                    question,
-                  )}`,
+                  `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${
+                    event.group_id
+                  }&message=${encodeURI(question)}`,
                 )
               }, 1000)
 
@@ -924,21 +871,21 @@ async function StartQQBot() {
                 const {bombHolder, bombAnswer} = await utils.GetGroupLoopBomb(event.group_id)
 
                 await axios.get(
-                  `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${event.group_id}&user_id=${bombHolder}&duration=${boomTime}`,
+                  `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${event.group_id}&user_id=${bombHolder}&duration=${boomTime}`,
                 )
                 console.log(`${bombHolder} 在群 ${event.group_id} 回答超时，被炸伤${boomTime}秒`.log)
 
                 // 金手指关闭
                 await axios.get(
-                  `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${bombHolder}&card=`,
+                  `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${bombHolder}&card=`,
                 )
 
                 const gameOverContent = `时间到了，pia，雷在[CQ:at,qq=${bombHolder}]手上炸了，你被炸成重伤了，休养生息${boomTime}秒！游戏结束！下次加油噢，那么答案公布：${bombAnswer}`
 
                 await axios.get(
-                  `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(
-                    gameOverContent,
-                  )}`,
+                  `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${
+                    event.group_id
+                  }&message=${encodeURI(gameOverContent)}`,
                 )
 
                 // 游戏结束，清空数据
@@ -969,12 +916,12 @@ async function StartQQBot() {
 
                   // 金手指关闭
                   await axios.get(
-                    `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${bombHolder}&card=`,
+                    `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${bombHolder}&card=`,
                   )
 
                   // 禁言这个游戏周期
                   await axios.get(
-                    `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${event.group_id}&user_id=${event.user_id}&duration=60`,
+                    `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${event.group_id}&user_id=${event.user_id}&duration=60`,
                   )
                 }
                 // 回答正确
@@ -984,22 +931,24 @@ async function StartQQBot() {
 
                   // 金手指关闭
                   await axios.get(
-                    `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${bombHolder}&card=`,
+                    `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${bombHolder}&card=`,
                   )
                 }
 
                 // 答题成功，返回消息
                 await axios.get(
-                  `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(
-                    reply,
-                  )}`,
+                  `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${
+                    event.group_id
+                  }&message=${encodeURI(reply)}`,
                 )
 
                 // 把雷传给随机幸运群友，进入下一题
                 setTimeout(async () => {
                   // 随机选一位幸运群友
                   const randomMember = await axios
-                    .get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_group_member_list?group_id=${event.group_id}`)
+                    .get(
+                      `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/get_group_member_list?group_id=${event.group_id}`,
+                    )
                     .then(async (response) => {
                       const members = response.data.data
                       const randomMember = members[Math.floor(Math.random() * members.length)].user_id
@@ -1024,15 +973,15 @@ async function StartQQBot() {
 
                   // 金手指
                   await axios.get(
-                    `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${
-                      event.user_id
-                    }&card=${encodeURI(wenDa.answer)}`,
+                    `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${
+                      event.group_id
+                    }&user_id=${event.user_id}&card=${encodeURI(wenDa.answer)}`,
                   )
 
                   // 丢出问题
                   setTimeout(async () => {
                     await axios.get(
-                      `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${
+                      `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${
                         event.group_id
                       }&message=${encodeURI(question)}`,
                     )
@@ -1050,15 +999,15 @@ async function StartQQBot() {
 
                 // 禁言
                 await axios.get(
-                  `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${event.group_id}&user_id=${event.user_id}&duration=${boomTime}`,
+                  `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${event.group_id}&user_id=${event.user_id}&duration=${boomTime}`,
                 )
 
                 clearTimeout(boomTimer)
 
                 await axios.get(
-                  `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(
-                    endGameContent,
-                  )}`,
+                  `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${
+                    event.group_id
+                  }&message=${encodeURI(endGameContent)}`,
                 )
 
                 // 游戏结束，删掉游戏记录
@@ -1066,7 +1015,7 @@ async function StartQQBot() {
 
                 // 金手指关闭
                 await axios.get(
-                  `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${bombHolder}&card=`,
+                  `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${bombHolder}&card=`,
                 )
                 return 0
               }
@@ -1084,39 +1033,41 @@ async function StartQQBot() {
             const who = Constants.has_at_qq_reg.exec(event.message)[1]
             console.log(`孤寡对象：${who}`.log)
             if (Constants.is_qq_reg.test(who)) {
-              await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_friend_list`).then(async (response) => {
-                if (response.length != 0) {
-                  // 判断 who 是否在 response.data.data 数组里
-                  const userExist = response.data.data.some((item) => {
-                    return item.user_id == who
-                  })
+              await axios
+                .get(`http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/get_friend_list`)
+                .then(async (response) => {
+                  if (response.length != 0) {
+                    // 判断 who 是否在 response.data.data 数组里
+                    const userExist = response.data.data.some((item) => {
+                      return item.user_id == who
+                    })
 
-                  if (userExist) {
-                    console.log(`群 ${event.group_id} 的 群员 ${event.user_id} 孤寡了 ${who}`.log)
-                    await sendMessageToQQGroup(
-                      `小夜收到了你的孤寡订单，现在就开始孤寡[CQ:at,qq=${who}]了噢孤寡~`,
-                      event,
-                    )
-                    await sendMessageToQQ(
-                      `您好，我是孤寡小夜，您的好友 ${event.user_id} 给您点了一份孤寡套餐，请查收`,
-                      {
-                        user_id: who,
-                      },
-                    )
-                    utils.GuGua(who)
-                    return 0
+                    if (userExist) {
+                      console.log(`群 ${event.group_id} 的 群员 ${event.user_id} 孤寡了 ${who}`.log)
+                      await sendMessageToQQGroup(
+                        `小夜收到了你的孤寡订单，现在就开始孤寡[CQ:at,qq=${who}]了噢孤寡~`,
+                        event,
+                      )
+                      await sendMessageToQQ(
+                        `您好，我是孤寡小夜，您的好友 ${event.user_id} 给您点了一份孤寡套餐，请查收`,
+                        {
+                          user_id: who,
+                        },
+                      )
+                      utils.GuGua(who)
+                      return 0
+                    }
+                    // 没有加好友，不能私聊孤寡
+                    else {
+                      await sendMessageToQQGroup(
+                        `小夜没有加[CQ:at,qq=${who}]为好友，没有办法孤寡ta呢，请先让ta加小夜为好友吧，为了补偿，小夜就在群里孤寡大家吧`,
+                        event,
+                      )
+                      utils.QunGuGua(event.group_id)
+                      return 0
+                    }
                   }
-                  // 没有加好友，不能私聊孤寡
-                  else {
-                    await sendMessageToQQGroup(
-                      `小夜没有加[CQ:at,qq=${who}]为好友，没有办法孤寡ta呢，请先让ta加小夜为好友吧，为了补偿，小夜就在群里孤寡大家吧`,
-                      event,
-                    )
-                    utils.QunGuGua(event.group_id)
-                    return 0
-                  }
-                }
-              })
+                })
             } else {
               // 目标不是qq号
               console.log('孤寡对象目标不是qq号')
@@ -1131,8 +1082,9 @@ async function StartQQBot() {
             const msgID = event.message.split('id=')[1].split(']')[0].trim()
             logger.info(`收到手动复读指令，消息id: ${msgID}`.log)
 
-            const historyMessage = (await axios.get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_msg?message_id=${msgID}`))
-              .data.data.message
+            const historyMessage = (
+              await axios.get(`http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/get_msg?message_id=${msgID}`)
+            ).data.data.message
             logger.info(`复读历史消息: ${historyMessage}`.log)
             await sendMessageToQQGroup(historyMessage, event)
             return 0
@@ -1140,9 +1092,9 @@ async function StartQQBot() {
 
           // 管理员功能: 修改聊天回复率
           if (Constants.change_reply_probability_reg.test(event.message)) {
-            if (QQBOT_ADMIN_LIST.includes(event.user_id)) {
+            if (globalConfig.QQBOT_ADMIN_LIST.includes(event.user_id)) {
               const replyPercentage = event.message.match(Constants.change_reply_probability_reg)[1]
-              QQBOT_REPLY_PROBABILITY = replyPercentage
+              globalConfig.QQBOT_REPLY_PROBABILITY = replyPercentage
               await sendMessageToQQGroup(`小夜回复率已修改为${replyPercentage}%`, event)
               return 0
             }
@@ -1152,9 +1104,9 @@ async function StartQQBot() {
 
           // 管理员功能: 修改聊天随机复读率
           if (Constants.change_fudu_probability_reg.test(event.message)) {
-            if (QQBOT_ADMIN_LIST.includes(event.user_id)) {
+            if (globalConfig.QQBOT_ADMIN_LIST.includes(event.user_id)) {
               const fuduPercentage = event.message.match(Constants.change_fudu_probability_reg)[1]
-              QQBOT_FUDU_PROBABILITY = fuduPercentage
+              globalConfig.QQBOT_FUDU_PROBABILITY = fuduPercentage
               await sendMessageToQQGroup(`小夜复读率已修改为${fuduPercentage}%`, event)
               return 0
             }
@@ -1163,7 +1115,7 @@ async function StartQQBot() {
           }
 
           // 是否触发复读
-          const couldRepeat = Math.floor(Math.random() * 100) < QQBOT_FUDU_PROBABILITY
+          const couldRepeat = Math.floor(Math.random() * 100) < globalConfig.QQBOT_FUDU_PROBABILITY
           if (couldRepeat) {
             console.log(`小夜复读 ${event.message}`.log)
             await sendMessageToQQGroup(event.message, event)
@@ -1179,7 +1131,7 @@ async function StartQQBot() {
             atReplacedMsg = event.message.replace(`[CQ:at,qq=${event.self_id}]`, '').trim() // 去除@小夜
           }
           // 根据权重回复
-          if (replyFlag < QQBOT_REPLY_PROBABILITY) {
+          if (replyFlag < globalConfig.QQBOT_REPLY_PROBABILITY) {
             let replyMsg = await ChatProcess(atReplacedMsg)
 
             if (replyMsg.indexOf('[name]') || replyMsg.indexOf('&#91;name&#93;')) {
@@ -1193,7 +1145,7 @@ async function StartQQBot() {
           }
         }
       }
-    } else if (event.message_type == 'private' && QQBOT_PRIVATE_CHAT_SWITCH == true) {
+    } else if (event.message_type == 'private' && globalConfig.QQBOT_PRIVATE_CHAT_SWITCH == true) {
       // 私聊回复
       ChatProcess(event.message).then(async (resolve) => {
         logger.info(`小夜回复 ${resolve}`.log)
@@ -1217,41 +1169,47 @@ async function StartQQBot() {
       logger.info(`小夜被戳坏了，${event.user_id} 被禁言10s`.error)
       c1c_count = 0
       await axios.get(
-        `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(
-          QQ_GROUP_POKE_BOOM_REPLY_MESSAGE,
+        `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(
+          globalConfig.QQ_GROUP_POKE_BOOM_REPLY_MESSAGE,
         )}`,
       )
       await axios.get(
-        `http://${GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${event.group_id}&user_id=${event.user_id}&duration=10`,
+        `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/set_group_ban?group_id=${event.group_id}&user_id=${event.user_id}&duration=10`,
       )
     } else {
       // 被戳的回复
       await axios.get(
-        `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(
-          QQ_GROUP_POKE_REPLY_MESSAGE,
+        `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(
+          globalConfig.QQ_GROUP_POKE_REPLY_MESSAGE,
         )}`,
       )
     }
   }
 
-  async function sendMessageToQQGroup(message, event) {
-    await axios.get(
-      `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(message)}`,
-    )
-  }
-
-  async function sendMessageToQQ(message, event) {
-    await axios.get(
-      `http://${GO_CQHTTP_SERVICE_API_URL}/send_private_msg?user_id=${event.user_id}&message=${encodeURI(message)}`,
-    )
-  }
-
   async function sendPluginsReplyToQQ(pluginsReply, event) {
     const replyToQQ = utils.PluginAnswerToGoCqhttpStyle(pluginsReply)
     await axios.get(
-      `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(replyToQQ)}`,
+      `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(
+        replyToQQ,
+      )}`,
     )
   }
+}
+
+async function sendMessageToQQGroup(message, event) {
+  await axios.get(
+    `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(
+      message,
+    )}`,
+  )
+}
+
+async function sendMessageToQQ(message, event) {
+  await axios.get(
+    `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/send_private_msg?user_id=${event.user_id}&message=${encodeURI(
+      message,
+    )}`,
+  )
 }
 
 /**
@@ -1270,7 +1228,7 @@ async function ProcessGuildMessage(event) {
   } else {
     // 交给聊天函数处理
     const replyFlag = Math.floor(Math.random() * 100)
-    if (replyFlag < QQBOT_REPLY_PROBABILITY) {
+    if (replyFlag < globalConfig.QQBOT_REPLY_PROBABILITY) {
       const chatReply = await ChatProcess(content)
       if (chatReply) {
         console.log(`对于QQ频道聊天 ${content} ，小夜回复 ${chatReply}`.log)
@@ -1281,7 +1239,7 @@ async function ProcessGuildMessage(event) {
 
   if (replyToGuild) {
     await axios.get(
-      `http://${GO_CQHTTP_SERVICE_API_URL}/send_guild_channel_msg?guild_id=${event.guild_id}&channel_id=${
+      `http://${globalConfig.GO_CQHTTP_SERVICE_API_URL}/send_guild_channel_msg?guild_id=${event.guild_id}&channel_id=${
         event.channel_id
       }&message=${encodeURI(replyToGuild)}`,
     )
@@ -1292,8 +1250,8 @@ async function ProcessGuildMessage(event) {
  * b站直播端消息处理，虚拟主播星野夜蝶上线!
  */
 async function StartLive() {
-  const live = new KeepLiveTCP(BILIBILI_LIVE_ROOM_ID)
-  live.on('open', () => logger.info(`哔哩哔哩直播间 ${BILIBILI_LIVE_ROOM_ID} 连接成功`.log))
+  const live = new KeepLiveTCP(globalConfig.BILIBILI_LIVE_ROOM_ID)
+  live.on('open', () => logger.info(`哔哩哔哩直播间 ${globalConfig.BILIBILI_LIVE_ROOM_ID} 连接成功`.log))
 
   live.on('live', () => {
     live.on('heartbeat', (online) => logger.info(`直播间在线人数: ${online}`.log))
@@ -1360,8 +1318,8 @@ async function StartLive() {
  */
 async function StartQQGuild() {
   const testConfig = {
-    appID: QQ_GUILD_APP_ID,
-    token: QQ_GUILD_TOKEN,
+    appID: globalConfig.QQ_GUILD_APP_ID,
+    token: globalConfig.QQ_GUILD_TOKEN,
     intents: ['GUILD_MESSAGES'], // 事件订阅,用于开启可接收的消息类型
     sandbox: true, // 沙箱频道
   }
@@ -1458,7 +1416,7 @@ async function StartQQGuild() {
     } else {
       // 交给聊天函数处理
       const replyFlag = Math.floor(Math.random() * 100)
-      if (replyFlag < QQBOT_REPLY_PROBABILITY) {
+      if (replyFlag < globalConfig.QQBOT_REPLY_PROBABILITY) {
         const chatReply = await ChatProcess(content)
         if (chatReply) {
           console.log(`对于QQ频道Bot端聊天 ${content} ，小夜回复 ${chatReply}`.log)
@@ -1485,7 +1443,7 @@ async function StartQQGuild() {
  * Telegram端消息处理
  */
 async function StartTelegram() {
-  const telegramClient = new TelegramBot(TELEGRAM_BOT_TOKEN, {polling: true})
+  const telegramClient = new TelegramBot(globalConfig.TELEGRAM_BOT_TOKEN, {polling: true})
   telegramClient.on('message', async (data) => {
     const chatId = data.chat.id
     const content = data.text
@@ -1526,7 +1484,7 @@ async function StartTelegram() {
     } else {
       // 交给聊天函数处理
       const replyFlag = Math.floor(Math.random() * 100)
-      if (replyFlag < QQBOT_REPLY_PROBABILITY) {
+      if (replyFlag < globalConfig.QQBOT_REPLY_PROBABILITY) {
         const chatReply = await ChatProcess(content)
         if (chatReply) {
           console.log(`对于Telegram端聊天 ${content} ，小夜回复 ${chatReply}`.log)
@@ -1606,41 +1564,42 @@ function ReadConfig() {
  */
 async function InitConfig() {
   const config = await ReadConfig()
-  CHAT_SWITCH = config.System.CHAT_SWITCH ?? true
-  CONNECT_GO_CQHTTP_SWITCH = config.System.CONNECT_GO_CQHTTP_SWITCH ?? false
-  CONNECT_BILIBILI_LIVE_SWITCH = config.System.CONNECT_BILIBILI_LIVE_SWITCH ?? false
-  CONNECT_QQ_GUILD_SWITCH = config.System.CONNECT_QQ_GUILD_SWITCH ?? false
-  CONNECT_TELEGRAM_SWITCH = config.System.CONNECT_TELEGRAM_SWITCH ?? false
-  WEB_PORT = config.System.WEB_PORT ?? 80
-  GO_CQHTTP_SERVICE_ANTI_POST_API = config.System.GO_CQHTTP_SERVICE_ANTI_POST_API ?? '/bot'
-  GO_CQHTTP_SERVICE_API_URL = config.System.GO_CQHTTP_SERVICE_API_URL ?? '127.0.0.1:5700'
 
-  QQ_GUILD_APP_ID = config.ApiKey.QQ_GUILD_APP_ID ?? ''
-  QQ_GUILD_TOKEN = config.ApiKey.QQ_GUILD_TOKEN ?? ''
+  globalConfig.CHAT_SWITCH = config.System.CHAT_SWITCH ?? true
+  globalConfig.CONNECT_GO_CQHTTP_SWITCH = config.System.CONNECT_GO_CQHTTP_SWITCH ?? false
+  globalConfig.CONNECT_BILIBILI_LIVE_SWITCH = config.System.CONNECT_BILIBILI_LIVE_SWITCH ?? false
+  globalConfig.CONNECT_QQ_GUILD_SWITCH = config.System.CONNECT_QQ_GUILD_SWITCH ?? false
+  globalConfig.CONNECT_TELEGRAM_SWITCH = config.System.CONNECT_TELEGRAM_SWITCH ?? false
+  globalConfig.WEB_PORT = config.System.WEB_PORT ?? 80
+  globalConfig.GO_CQHTTP_SERVICE_ANTI_POST_API = config.System.GO_CQHTTP_SERVICE_ANTI_POST_API ?? '/bot'
+  globalConfig.GO_CQHTTP_SERVICE_API_URL = config.System.GO_CQHTTP_SERVICE_API_URL ?? '127.0.0.1:5700'
 
-  TELEGRAM_BOT_TOKEN = config.ApiKey.TELEGRAM_BOT_TOKEN ?? ''
+  globalConfig.QQ_GUILD_APP_ID = config.ApiKey.QQ_GUILD_APP_ID ?? ''
+  globalConfig.QQ_GUILD_TOKEN = config.ApiKey.QQ_GUILD_TOKEN ?? ''
 
-  QQBOT_ADMIN_LIST = config.qqBot.QQBOT_ADMIN_LIST // 小夜的管理员列表
-  QQ_GROUP_WELCOME_MESSAGE = config.qqBot.QQ_GROUP_WELCOME_MESSAGE // qq入群欢迎语
-  QQ_GROUP_POKE_REPLY_MESSAGE = config.qqBot.QQ_GROUP_POKE_REPLY_MESSAGE // 戳一戳的文案
-  QQ_GROUP_POKE_BOOM_REPLY_MESSAGE = config.qqBot.QQ_GROUP_POKE_BOOM_REPLY_MESSAGE // 戳坏了的文案
-  AUTO_APPROVE_QQ_FRIEND_REQUEST_SWITCH = config.qqBot.AUTO_APPROVE_QQ_FRIEND_REQUEST_SWITCH // 自动批准好友请求开关
-  QQBOT_PRIVATE_CHAT_SWITCH = config.qqBot.QQBOT_PRIVATE_CHAT_SWITCH // 私聊开关
-  CHAT_JIEBA_LIMIT = config.qqBot.CHAT_JIEBA_LIMIT // qqBot限制分词数量
-  QQBOT_REPLY_PROBABILITY = config.qqBot.QQBOT_REPLY_PROBABILITY // 回复几率
-  QQBOT_FUDU_PROBABILITY = config.qqBot.QQBOT_FUDU_PROBABILITY // 复读几率
-  QQBOT_SAVE_ALL_IMAGE_TO_LOCAL_SWITCH = config.qqBot.QQBOT_SAVE_ALL_IMAGE_TO_LOCAL_SWITCH // 保存接收图片开关
-  QQBOT_MAX_MINE_AT_MOST = config.qqBot.QQBOT_MAX_MINE_AT_MOST // 最大共存地雷数
+  globalConfig.TELEGRAM_BOT_TOKEN = config.ApiKey.TELEGRAM_BOT_TOKEN ?? ''
 
-  BILIBILI_LIVE_ROOM_ID = config.Others.BILIBILI_LIVE_ROOM_ID ?? 49148 // 哔哩哔哩直播间id
+  globalConfig.QQBOT_ADMIN_LIST = config.qqBot.QQBOT_ADMIN_LIST ?? []
+  globalConfig.QQ_GROUP_WELCOME_MESSAGE = config.qqBot.QQ_GROUP_WELCOME_MESSAGE ?? '欢迎新人加入！'
+  globalConfig.QQ_GROUP_POKE_REPLY_MESSAGE = config.qqBot.QQ_GROUP_POKE_REPLY_MESSAGE ?? '别戳啦！'
+  globalConfig.QQ_GROUP_POKE_BOOM_REPLY_MESSAGE = config.qqBot.QQ_GROUP_POKE_BOOM_REPLY_MESSAGE ?? '戳坏啦！'
+  globalConfig.AUTO_APPROVE_QQ_FRIEND_REQUEST_SWITCH = config.qqBot.AUTO_APPROVE_QQ_FRIEND_REQUEST_SWITCH ?? false
+  globalConfig.QQBOT_PRIVATE_CHAT_SWITCH = config.qqBot.QQBOT_PRIVATE_CHAT_SWITCH ?? false
+  globalConfig.CHAT_JIEBA_LIMIT = config.qqBot.CHAT_JIEBA_LIMIT ?? 5
+  globalConfig.QQBOT_REPLY_PROBABILITY = config.qqBot.QQBOT_REPLY_PROBABILITY ?? 10
+  globalConfig.QQBOT_FUDU_PROBABILITY = config.qqBot.QQBOT_FUDU_PROBABILITY ?? 1
+  globalConfig.QQBOT_SAVE_ALL_IMAGE_TO_LOCAL_SWITCH = config.qqBot.QQBOT_SAVE_ALL_IMAGE_TO_LOCAL_SWITCH ?? false
+  globalConfig.QQBOT_MAX_MINE_AT_MOST = config.qqBot.QQBOT_MAX_MINE_AT_MOST ?? 5
 
-  if (CHAT_SWITCH) {
+  globalConfig.BILIBILI_LIVE_ROOM_ID = config.Others.BILIBILI_LIVE_ROOM_ID ?? 49148
+
+  if (globalConfig.CHAT_SWITCH) {
     logger.info('小夜web端自动聊天开启'.on)
   } else {
     logger.info('小夜web端自动聊天关闭'.off)
   }
 
-  if (CONNECT_GO_CQHTTP_SWITCH) {
+  if (globalConfig.CONNECT_GO_CQHTTP_SWITCH) {
     /**
      * 在 Windows、Linux 系统下自动启动go-cqhttp
      */
@@ -1676,30 +1635,32 @@ async function InitConfig() {
     }
 
     logger.info(
-      `小夜QQ接入开启，配置: \n  ·对接go-cqhttp接口 ${GO_CQHTTP_SERVICE_API_URL}\n  ·监听反向post于 127.0.0.1:${WEB_PORT}${GO_CQHTTP_SERVICE_ANTI_POST_API}\n  ·私聊服务${
-        QQBOT_PRIVATE_CHAT_SWITCH ? '开启' : '关闭'
-      }`.on,
+      `小夜QQ接入开启，配置: \n  ·对接go-cqhttp接口 ${
+        globalConfig.GO_CQHTTP_SERVICE_API_URL
+      }\n  ·监听反向post于 127.0.0.1:${globalConfig.WEB_PORT}${
+        globalConfig.GO_CQHTTP_SERVICE_ANTI_POST_API
+      }\n  ·私聊服务${globalConfig.QQBOT_PRIVATE_CHAT_SWITCH ? '开启' : '关闭'}`.on,
     )
     await StartQQBot()
   } else {
     logger.info('小夜QQ接入关闭'.off)
   }
 
-  if (CONNECT_BILIBILI_LIVE_SWITCH) {
-    logger.info(`小夜哔哩哔哩直播接入开启，直播间id为 ${BILIBILI_LIVE_ROOM_ID}`.on)
+  if (globalConfig.CONNECT_BILIBILI_LIVE_SWITCH) {
+    logger.info(`小夜哔哩哔哩直播接入开启，直播间id为 ${globalConfig.BILIBILI_LIVE_ROOM_ID}`.on)
     StartLive()
   } else {
     logger.info('小夜哔哩哔哩直播接入关闭'.off)
   }
 
-  if (CONNECT_QQ_GUILD_SWITCH) {
+  if (globalConfig.CONNECT_QQ_GUILD_SWITCH) {
     logger.info('小夜QQ频道接入开启'.on)
     StartQQGuild()
   } else {
     logger.info('小夜QQ频道接入关闭'.off)
   }
 
-  if (CONNECT_TELEGRAM_SWITCH) {
+  if (globalConfig.CONNECT_TELEGRAM_SWITCH) {
     logger.info('小夜Telegram接入开启'.on)
     StartTelegram()
   } else {
@@ -1711,21 +1672,60 @@ async function InitConfig() {
   CheckUpdate()
 
   RunMigration()
+
+  InitPluginSystem()
+}
+
+/**
+ * 全局初始化插件系统
+ */
+function InitPluginSystem() {
+  logger.info('开始加载插件……'.log)
+  plugins = require.all({
+    dir: path.join(process.cwd(), 'plugins'),
+    match: /\.js$/,
+    require: /\.js$/,
+    recursive: false,
+    encoding: 'utf-8',
+    resolve: function (plugins) {
+      plugins.all.load()
+    },
+  })
+  console.log(['当前安装的插件列表：', ...Object.values(plugins).map((plugin) => plugin.插件名)])
+
+  const pluginDependencies = {
+    sendMessageToQQGroup,
+    axios,
+    logger,
+    config: globalConfig,
+  }
+  // 初始化插件哈希表并预编译正则表达式
+  for (const plugin of Object.values(plugins)) {
+    if (typeof plugin.init === 'function') {
+      plugin.init(pluginDependencies) // 注入插件依赖
+    }
+    pluginNameMap.set(plugin.插件名, plugin)
+    pluginCommandMap.set(plugin.指令, {
+      plugin,
+      compiledReg: new RegExp(plugin.指令), // 预编译正则表达式
+    })
+  }
+  logger.info('插件加载完毕√'.log)
 }
 
 /**
  * HTTP服务器启动
  */
 function StartHttpServer() {
-  http.listen(WEB_PORT, () => {
-    logger.info(`HTTP服务启动完毕，访问 127.0.0.1:${WEB_PORT} 即可进入本地web端√`.log)
+  http.listen(globalConfig.WEB_PORT, () => {
+    logger.info(`HTTP服务启动完毕，访问 127.0.0.1:${globalConfig.WEB_PORT} 即可进入本地web端√`.log)
   })
 }
 
 http.on('error', (err) => {
   http.close()
   logger.error(
-    `本机${WEB_PORT}端口被其他应用程序占用，请尝试关闭占用${WEB_PORT}端口的其他程序 或 修改配置文件的 WEB_PORT 配置项。错误代码：${err.code}`
+    `本机${globalConfig.WEB_PORT}端口被其他应用程序占用，请尝试关闭占用${globalConfig.WEB_PORT}端口的其他程序 或 修改配置文件的 WEB_PORT 配置项。错误代码：${err.code}`
       .error,
   )
   setTimeout(() => StartHttpServer(), 10000)
@@ -1785,7 +1785,7 @@ function RunMigration() {
  */
 async function ChatJiebaFuzzy(msg) {
   msg = msg.replace('/', '')
-  msg = jieba.extract(msg, CHAT_JIEBA_LIMIT) // 按权重分词
+  msg = jieba.extract(msg, globalConfig.CHAT_JIEBA_LIMIT) // 按权重分词
 
   if (msg.length === 0) {
     return []
@@ -1881,7 +1881,7 @@ async function ChatProcess(ask) {
  */
 async function ECYWenDa() {
   const data = (await axios.get('https://api.oddfar.com/yl/q.php?c=2001&encode=json')).data
-  const keyWord = jieba.extract(data.text, CHAT_JIEBA_LIMIT) // 分词出关键词
+  const keyWord = jieba.extract(data.text, globalConfig.CHAT_JIEBA_LIMIT) // 分词出关键词
   if (keyWord.length == 0) {
     // 如果分词不了，那就直接夜爹牛逼
     return {
@@ -1955,6 +1955,18 @@ async function ProcessExecute(msg, userId, userName, groupId, groupName, options
     return `插件爆炸啦：${e.stack}`
   }
   return pluginReturn
+}
+
+// 插件状态缓存
+const pluginStatusCache = new Map()
+async function getPluginStatus(groupId, pluginName) {
+  const cacheKey = `${groupId}-${pluginName}`
+  if (pluginStatusCache.has(cacheKey)) {
+    return pluginStatusCache.get(cacheKey)
+  }
+  const status = await utils.GetGroupPluginStatus(groupId, pluginName)
+  pluginStatusCache.set(cacheKey, status)
+  return status
 }
 
 /**
