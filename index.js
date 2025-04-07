@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 'use strict'
 /**
  * Author: Giftina: https://github.com/Giftia/
@@ -37,6 +38,12 @@ const io = require('socket.io')(http)
 const request = require('request')
 const axios = require('axios').default
 const https = require('https')
+const url = require('url')
+const canvas = require('canvas')
+const wallpaper = require('wallpaper')
+const randomFile = require('select-random-file') // 随机文件选择器
+const Parser = require('rss-parser')
+const trayicon = require('trayicon')
 const colors = require('colors') // Console日志染色颜色配置
 colors.setTheme({
   alert: 'inverse',
@@ -277,7 +284,7 @@ async function StartQQBot() {
   logger.info('正在进行群服务初始化……'.log)
   await utils.InitGroupList()
 
-  app.post(globalConfig.ONE_BOT_ANTI_POST_API, async (req, res) => {
+  app.post(globalConfig.ONE_BOT_ANTI_POST_API, async (req) => {
     const event = req.body
 
     // 处理频道消息
@@ -1697,10 +1704,32 @@ function InitPluginSystem() {
   console.log(['当前安装的插件列表：', ...Object.values(plugins).map((plugin) => plugin.插件名)])
 
   const pluginDependencies = {
-    sendMessageToQQGroup,
     axios,
     logger,
     config: globalConfig,
+    utils,
+    fs,
+    path,
+    request,
+    url,
+    express,
+    compression,
+    multer,
+    cookie,
+    http,
+    io,
+    jieba,
+    yaml,
+    winston,
+    Parser,
+    randomFile,
+    wallpaper,
+    canvas,
+    trayicon,
+    Constants,
+    voicePlayer,
+    ipTranslator,
+    sendMessageToQQGroup,
   }
   // 初始化插件哈希表并预编译正则表达式
   for (const plugin of Object.values(plugins)) {

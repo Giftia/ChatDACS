@@ -1,29 +1,41 @@
 module.exports = {
   插件名: '淘宝买家秀色图插件',
   指令: '买家秀|福利姬',
-  版本: '3.2',
+  版本: '3.3', // 升级版本号
   作者: 'Giftina',
   描述: '在危险的尺度下发送一张非法的淘宝买家秀福利图。',
   使用示例: '买家秀',
   预期返回: '[一张买家秀图]',
 
+  // 初始化方法，用于依赖注入
+  init({logger, axios, path, fs, config, utils}) {
+    this.logger = logger
+    this.axios = axios
+    this.path = path
+    this.fs = fs
+    this.utils = utils
+    this.SUMT_API_KEY = config.SUMT_API_KEY
+    this.ONE_BOT_API_URL = config.ONE_BOT_API_URL
+  },
+
+  // 插件执行逻辑
   execute: async function (msg, userId, userName, groupId, groupName, options) {
-    if (!SUMT_API_KEY) {
+    if (!this.SUMT_API_KEY) {
       return {
         type: 'text',
-        content: `${this.插件名} 的接口密钥未配置，请通知小夜主人及时配置接口密钥。方法：在状态栏右键小夜头像，点击 打开配置文件，按接口密钥配置说明进行操作`,
+        content: `${this.插件名} 的接口密钥未配置，请通知小夜主人及时配置接口密钥。`,
       }
     }
 
     if (options.type === 'qq') {
-      await axios.get(
-        `http://${ONE_BOT_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI(
+      await this.axios.get(
+        `http://${this.ONE_BOT_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI(
           '你不对劲，我去问问小冰有没有买家秀',
         )}`,
       )
 
-      const fileDirectPath = `./static${await RandomTbShow()}`
-      const fileModifiedPath = url.pathToFileURL(path.resolve(await utils.ModifyPic(fileDirectPath)))
+      const fileDirectPath = `./static${await this.RandomTbShow()}`
+      const fileModifiedPath = this.path.toFileURL(this.path.resolve(await this.utils.ModifyPic(fileDirectPath)))
 
       const requestData = {
         group_id: groupId,
@@ -39,71 +51,60 @@ module.exports = {
         ],
       }
 
-      await axios.post(`http://${ONE_BOT_API_URL}/send_group_forward_msg`, requestData)
+      await this.axios.post(`http://${this.ONE_BOT_API_URL}/send_group_forward_msg`, requestData)
 
       return {type: 'text', content: ''}
     }
 
-    const fileURL = await RandomTbShow()
+    const fileURL = await this.RandomTbShow()
     return {type: 'picture', content: {file: fileURL}}
   },
-}
 
-const request = require('request')
-const fs = require('fs')
-const axios = require('axios').default
-const path = require('path')
-const yaml = require('yaml')
-const url = require('url')
-const utils = require('./system/utils.js')
-let SUMT_API_KEY, ONE_BOT_API_URL
+  // 随机买家秀
+  RandomTbShow: function () {
+    return new Promise((resolve, reject) => {
+      this.axios
+        .get(`https://api.sumt.cn/api/rand.tbimg.php?token=${this.SUMT_API_KEY}&format=json`)
+        .then((response) => {
+          const body = response.data
+          if (body.code === 200) {
+            const picUrl = body.pic_url
+            this.logger.info(`准备保存图片：${picUrl}`)
 
-Init()
+            const fileName = this.path.basename(picUrl)
+            const filePath = this.path.join(process.cwd(), 'static', 'images', fileName)
 
-// 读取配置文件
-function ReadConfig() {
-  return new Promise((resolve, reject) => {
-    fs.readFile(path.join(process.cwd(), 'config', 'config.yml'), 'utf-8', function (err, data) {
-      if (!err) {
-        resolve(yaml.parse(data))
-      } else {
-        reject('读取配置文件错误。错误原因：' + err)
-      }
-    })
-  })
-}
+            this.axios({
+              url: picUrl,
+              method: 'GET',
+              responseType: 'stream',
+            })
+              .then((res) => {
+                const writeStream = this.fs.createWriteStream(filePath)
+                res.data.pipe(writeStream)
 
-// 初始化SUMT_API_KEY
-async function Init() {
-  const resolve = await ReadConfig()
-  SUMT_API_KEY = resolve.ApiKey.SUMT_API_KEY
-  ONE_BOT_API_URL = resolve.System.ONE_BOT_API_URL
-}
+                writeStream.on('finish', () => {
+                  this.logger.info('买家秀图片保存成功')
+                  resolve(`/images/${fileName}`)
+                })
 
-// 随机买家秀
-function RandomTbShow() {
-  return new Promise((resolve, reject) => {
-    request(`https://api.sumt.cn/api/rand.tbimg.php?token=${SUMT_API_KEY}&format=json`, (err, response, body) => {
-      body = JSON.parse(body)
-      if (!err && body.code === 200) {
-        const picUrl = body.pic_url
-        console.log(`准备保存图片：${picUrl}`.log)
-        request(picUrl, (err) => {
-          if (err) {
-            reject('获取买家秀错误，错误原因：' + err)
+                writeStream.on('error', (err) => {
+                  this.logger.error(`买家秀图片保存失败: ${err.message}`)
+                  reject(err)
+                })
+              })
+              .catch((err) => {
+                this.logger.error(`下载买家秀图片失败: ${err.message}`)
+                reject(err)
+              })
+          } else {
+            reject(`随机买家秀错误，接口返回错误：${JSON.stringify(body)}`)
           }
-        }).pipe(
-          fs.createWriteStream(`./static/images/${picUrl.split('/').pop()}`).on('close', (err) => {
-            if (!err) {
-              resolve(`/images/${picUrl.split('/').pop()}`)
-            } else {
-              reject('获取买家秀失败，错误原因：' + err)
-            }
-          }),
-        )
-      } else {
-        reject('随机买家秀错误，是卡特实验室接口的锅。错误原因：' + JSON.stringify(response.body))
-      }
+        })
+        .catch((err) => {
+          this.logger.error(`请求买家秀接口失败: ${err.message}`)
+          reject(err)
+        })
     })
-  })
+  },
 }

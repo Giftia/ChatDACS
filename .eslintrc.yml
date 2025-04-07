@@ -6,3 +6,5 @@ extends:
 settings: {}
 rules:
   n/no-missing-import: off
+parserOptions:
+  ecmaVersion: 2022

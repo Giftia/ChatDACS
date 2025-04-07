@@ -39,7 +39,10 @@
     "sqlite3": "5.1.7",
     "trayicon": "1.2.2",
     "winston": "3.17.0",
-    "yaml": "2.7.1"
+    "yaml": "2.7.1",
+    "canvas": "2.11.2",
+    "select-random-file": "1.2.4",
+    "wallpaper": "5.0.1"
   },
   "devDependencies": {
     "eslint": "8.57.1",

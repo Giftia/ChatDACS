@@ -1,22 +1,33 @@
 module.exports = {
   插件名: 'r18色图插件',
   指令: '^[/!]?r18$|(可以|能)?色色|[色涩瑟]图',
-  版本: '3.2',
+  版本: '3.3', // 升级版本号
   作者: 'Giftina',
   描述: '在危险的尺度下发送一张非法的 r18 二次元色图，图片来源api.lolicon.app。',
   使用示例: '可以色色',
   预期返回: '[一张r18图]',
 
+  // 初始化方法，用于依赖注入
+  init({logger, axios, utils, config, path, fs}) {
+    this.logger = logger
+    this.axios = axios
+    this.utils = utils
+    this.path = path
+    this.fs = fs
+    this.ONE_BOT_API_URL = config.ONE_BOT_API_URL
+  },
+
+  // 插件执行逻辑
   execute: async function (msg, userId, userName, groupId, groupName, options) {
     if (options.type === 'qq') {
-      await axios.get(
-        `http://${ONE_BOT_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI(
+      await this.axios.get(
+        `http://${this.ONE_BOT_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI(
           '你不对劲，我去问问小冰有没有r18图',
         )}`,
       )
 
-      const fileDirectPath = `./static${await RandomR18()}`
-      const fileModifiedPath = url.pathToFileURL(path.resolve(await utils.ModifyPic(fileDirectPath)))
+      const fileDirectPath = `./static${await this.RandomR18()}`
+      const fileModifiedPath = this.path.toFileURL(this.path.resolve(await this.utils.ModifyPic(fileDirectPath)))
 
       const requestData = {
         group_id: groupId,
@@ -32,72 +43,55 @@ module.exports = {
         ],
       }
 
-      await axios.post(`http://${ONE_BOT_API_URL}/send_group_forward_msg`, requestData)
+      await this.axios.post(`http://${this.ONE_BOT_API_URL}/send_group_forward_msg`, requestData)
 
       return {type: 'text', content: ''}
     }
 
-    const filePath = await RandomR18()
+    const filePath = await this.RandomR18()
     return {type: 'picture', content: {file: filePath}}
   },
-}
 
-const request = require('request')
-const fs = require('fs')
-const axios = require('axios').default
-const url = require('url')
-let ONE_BOT_API_URL
-const yaml = require('yaml')
-const path = require('path')
-const utils = require('./system/utils.js')
-
-//随机r18
-function RandomR18() {
-  return new Promise((resolve, reject) => {
-    request('https://api.lolicon.app/setu/v2?r18=0&size=original', (err, response, body) => {
-      body = JSON.parse(body)
-      if (!err) {
-        const picUrl = body.data[0].urls.original.replace('i.pixiv.cat', 'i.pixiv.re')
-        console.log(`准备保存r18图片：${picUrl}`.log)
-        request(picUrl, (err) => {
-          if (err) {
-            reject('获取r18错误，错误原因：' + err)
+  // 随机获取 r18 图片
+  RandomR18: function () {
+    return new Promise((resolve, reject) => {
+      this.axios
+        .get('https://api.lolicon.app/setu/v2?r18=0&size=original')
+        .then((response) => {
+          const body = response.data
+          if (body.data && body.data.length > 0) {
+            const picUrl = body.data[0].urls.original.replace('i.pixiv.cat', 'i.pixiv.re')
+            this.logger.info(`准备保存r18图片：${picUrl}`)
+            this.axios({
+              url: picUrl,
+              method: 'GET',
+              responseType: 'stream',
+            })
+              .then((res) => {
+                const filePath = this.path.join(process.cwd(), 'static', 'images', this.path.basename(picUrl))
+                const writeStream = this.fs.createWriteStream(filePath)
+                res.data.pipe(writeStream)
+                writeStream.on('finish', () => {
+                  this.logger.info('r18图片保存成功')
+                  resolve(`/images/${this.path.basename(picUrl)}`)
+                })
+                writeStream.on('error', (err) => {
+                  this.logger.error(`r18图片保存失败: ${err.message}`)
+                  reject('获取r18失败，错误原因：' + err.message)
+                })
+              })
+              .catch((err) => {
+                this.logger.error(`下载r18图片失败: ${err.message}`)
+                reject('获取r18失败，错误原因：' + err.message)
+              })
+          } else {
+            reject('获取随机r18错误，API返回数据为空')
           }
-        }).pipe(
-          fs.createWriteStream(`./static/images/${picUrl.split('/').pop()}`).on('close', (err) => {
-            if (!err) {
-              console.log('r18图片保存成功'.log)
-              resolve(`/images/${picUrl.split('/').pop()}`)
-            } else {
-              console.log('r18图片保存失败'.log)
-              reject('获取r18失败，错误原因：' + err)
-            }
-          }),
-        )
-      } else {
-        reject('获取随机r18错误，错误原因：' + JSON.stringify(response.body))
-      }
+        })
+        .catch((err) => {
+          this.logger.error(`请求r18 API失败: ${err.message}`)
+          reject('获取随机r18错误，错误原因：' + err.message)
+        })
     })
-  })
-}
-
-Init()
-
-// 读取配置文件
-function ReadConfig() {
-  return new Promise((resolve, reject) => {
-    fs.readFile(path.join(process.cwd(), 'config', 'config.yml'), 'utf-8', function (err, data) {
-      if (!err) {
-        resolve(yaml.parse(data))
-      } else {
-        reject('读取配置文件错误。错误原因：' + err)
-      }
-    })
-  })
-}
-
-// 初始化
-async function Init() {
-  const resolve = await ReadConfig()
-  ONE_BOT_API_URL = resolve.System.ONE_BOT_API_URL
+  },
 }
