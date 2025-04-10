@@ -8,11 +8,12 @@ module.exports = {
   预期返回: '[一张随机二次元图]',
 
   // 初始化方法，用于依赖注入
-  init({logger, axios, utils, path, fs, config}) {
+  init({logger, axios, utils, path, url, fs, config}) {
     this.logger = logger
     this.axios = axios
     this.utils = utils
     this.path = path
+    this.url = url
     this.fs = fs
     this.ONE_BOT_API_URL = config.ONE_BOT_API_URL
   },
@@ -26,7 +27,7 @@ module.exports = {
         )}`,
       )
 
-      const fileDirectPath = this.path.toFileURL(this.path.resolve(`./static${await this.RandomECY()}`))
+      const fileDirectPath = this.url.pathToFileURL(this.path.resolve(`./static${await this.RandomECY()}`))
 
       const requestData = {
         group_id: groupId,

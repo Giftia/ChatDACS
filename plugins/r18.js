@@ -8,11 +8,12 @@ module.exports = {
   预期返回: '[一张r18图]',
 
   // 初始化方法，用于依赖注入
-  init({logger, axios, utils, config, path, fs}) {
+  init({logger, axios, utils, config, path, url, fs}) {
     this.logger = logger
     this.axios = axios
     this.utils = utils
     this.path = path
+    this.url = url
     this.fs = fs
     this.ONE_BOT_API_URL = config.ONE_BOT_API_URL
   },
@@ -27,7 +28,7 @@ module.exports = {
       )
 
       const fileDirectPath = `./static${await this.RandomR18()}`
-      const fileModifiedPath = this.path.toFileURL(this.path.resolve(await this.utils.ModifyPic(fileDirectPath)))
+      const fileModifiedPath = this.url.pathToFileURL(this.path.resolve(await this.utils.ModifyPic(fileDirectPath)))
 
       const requestData = {
         group_id: groupId,

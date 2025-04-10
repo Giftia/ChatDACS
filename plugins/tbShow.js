@@ -8,10 +8,11 @@ module.exports = {
   预期返回: '[一张买家秀图]',
 
   // 初始化方法，用于依赖注入
-  init({logger, axios, path, fs, config, utils}) {
+  init({logger, axios, path, url, fs, config, utils}) {
     this.logger = logger
     this.axios = axios
     this.path = path
+    this.url = url
     this.fs = fs
     this.utils = utils
     this.SUMT_API_KEY = config.SUMT_API_KEY
@@ -35,7 +36,7 @@ module.exports = {
       )
 
       const fileDirectPath = `./static${await this.RandomTbShow()}`
-      const fileModifiedPath = this.path.toFileURL(this.path.resolve(await this.utils.ModifyPic(fileDirectPath)))
+      const fileModifiedPath = this.url.pathToFileURL(this.path.resolve(await this.utils.ModifyPic(fileDirectPath)))
 
       const requestData = {
         group_id: groupId,

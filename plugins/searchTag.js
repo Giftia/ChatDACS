@@ -8,10 +8,11 @@ module.exports = {
   预期返回: '[一张健全的白丝图]',
 
   // 初始化方法，用于依赖注入
-  init({logger, axios, path, fs, utils, config}) {
+  init({logger, axios, path, url, fs, utils, config}) {
     this.logger = logger
     this.axios = axios
     this.path = path
+    this.url = url
     this.fs = fs
     this.utils = utils
     this.ONE_BOT_API_URL = config.ONE_BOT_API_URL
@@ -34,7 +35,7 @@ module.exports = {
         )
 
         const fileDirectPath = `./static${await this.SearchTag(searchTag, searchType)}`
-        const fileModifiedPath = this.path.toFileURL(this.path.resolve(await this.utils.ModifyPic(fileDirectPath)))
+        const fileModifiedPath = this.url.pathToFileURL(this.path.resolve(await this.utils.ModifyPic(fileDirectPath)))
 
         const requestData = {
           group_id: groupId,

@@ -8,10 +8,11 @@ module.exports = {
   预期返回: '[一张本地的随机图]',
 
   // 初始化方法，用于依赖注入
-  init({logger, axios, path, fs, config, randomFile}) {
+  init({logger, axios, path, url, fs, config, randomFile}) {
     this.logger = logger
     this.axios = axios
     this.path = path
+    this.url = url
     this.fs = fs
     this.randomFile = randomFile
     this.ONE_BOT_API_URL = config.ONE_BOT_API_URL
@@ -25,7 +26,7 @@ module.exports = {
         `http://${this.ONE_BOT_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI('杰哥不要！')}`,
       )
 
-      const fileDirectPath = this.path.toFileURL(
+      const fileDirectPath = this.url.pathToFileURL(
         this.path.resolve(`${this.图片文件夹}${await this.RandomLocalPicture()}`),
       )
 
