@@ -40,7 +40,7 @@
     "trayicon": "1.2.2",
     "winston": "3.17.0",
     "yaml": "2.7.1",
-    "canvas": "2.11.2",
+    "canvas": "3.1.0",
     "select-random-file": "1.2.4",
     "wallpaper": "5.0.1"
   },
