@@ -1127,7 +1127,7 @@ async function StartQQBot() {
           let replyFlag = Math.floor(Math.random() * 100)
           // 如果被@了，那么回复几率上升80%
           let atReplacedMsg = event.message // 要把[CQ:at,qq=${event.self_id}] 去除掉，否则聊天核心会乱成一锅粥
-          if (new RegExp(`\\[CQ:at,qq=${event.self_id}\\]`).test(event.message)) {
+          if (new RegExp(`\\[CQ:at,qq=${event.self_id}`).test(event.message)) {
             replyFlag -= 80
             atReplacedMsg = event.message.replace(`[CQ:at,qq=${event.self_id}]`, '').trim() // 去除@小夜
           }
