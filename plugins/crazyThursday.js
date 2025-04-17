@@ -10,10 +10,10 @@ module.exports = {
     '我本是显赫世家的大少，却被诡计多端的奸人所害！家人弃我！师门逐我！甚至断我灵脉!重生一世，今天肯德基疯狂星期四!谁请我吃？家人们，别他*垂头丧气了 知道今天是什么日子吗？ 今天是肯德基fucking crazy Thursday！大鸡腿29.9两块 ，家人们v我299，我他*要吃20个。',
 
   // 初始化方法，用于依赖注入
-  init({logger, utils, config, ChatModel}) {
+  init({logger, utils, config}) {
     this.logger = logger
     this.utils = utils
-    this.ChatModel = ChatModel
+    this.ChatModel = utils.ChatModel
     this.CHAT_BAN_WORDS = config.CHAT_BAN_WORDS || [] // 从配置中获取违禁词
   },
 

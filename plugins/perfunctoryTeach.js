@@ -8,10 +8,10 @@ module.exports = {
   预期返回: '哇！小夜学会啦！小夜可能在说不出话的时候回复 ？ 噢',
 
   // 初始化方法，用于依赖注入
-  init({logger, config, PerfunctoryModel}) {
+  init({logger, config, utils}) {
     this.logger = logger
     this.CHAT_BAN_WORDS = config.CHAT_BAN_WORDS || []
-    this.PerfunctoryModel = PerfunctoryModel
+    this.PerfunctoryModel = utils.PerfunctoryModel
   },
 
   // 插件执行逻辑
