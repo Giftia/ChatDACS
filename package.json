@@ -1,6 +1,6 @@
 {
   "name": "chatdacs",
-  "version": "4.0.0",
+  "version": "4.0.0-alpha.1",
   "decription": "Chatbot: shaDiao Ai Chat System",
   "license": "GPL-3.0",
   "scripts": {
