@@ -66,3 +66,4 @@ plugins/go-cqhttp/ffmpeg.exe
 plugins/go-cqhttp/data/
 plugins/go-cqhttp/device.json
 plugins/go-cqhttp/session.token
+static/images/*
