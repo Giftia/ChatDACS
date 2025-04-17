@@ -15,24 +15,28 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [linux-x64, linux-arm64, windows-x64, windows-x86, windows-arm64, macos-x64, macos-arm64]
+        os: [linux-x64, linux-arm64, windows-x64, windows-arm64, macos-x64, macos-arm64]
         include:
           - os: linux-x64
             runs-on: ubuntu-24.04
+            arch: x64
           - os: linux-arm64
             runs-on: ubuntu-24.04-arm
+            arch: arm64
           - os: windows-x64
-            runs-on: windows-2022-x64
-          - os: windows-x86
-            runs-on: windows-2022-win32
+            runs-on: windows-latest
+            arch: x64
           - os: windows-arm64
-            runs-on: windows-2022-arm64
+            runs-on: windows-latest
+            arch: arm64
           - os: macos-x64
             # macos-13 was the last x86_64 runner
             runs-on: macos-13
+            arch: x64
           - os: macos-arm64
             # macos-14+ (including latest) are ARM64 runners
             runs-on: macos-latest
+            arch: arm64
         node_version:
           - 18
     name: Build On：${{ matrix.os }} - Node ${{ matrix.node_version }}
@@ -42,13 +46,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node_version }}
+          architecture: ${{ matrix.arch }}
           cache: 'npm'
           cache-dependency-path: |
             ./package-lock.json
 
       - name: Remove go-cqhttp On Windows
         if: runner.os == 'Windows'
-        run: rm ./plugins/go-cqhttp/go-cqhttp
+        run: del ./plugins/go-cqhttp/go-cqhttp
 
       - name: Remove go-cqhttp.exe On Linux
         if: runner.os == 'Linux'
@@ -56,7 +61,8 @@ jobs:
           rm ./plugins/go-cqhttp/go-cqhttp_windows_amd64.exe
           rm ./plugins/go-cqhttp/go-cqhttp.bat
 
-      - name: Install system dependencies
+      - name: Install canvas dependencies
+        if: matrix.os == 'linux-arm64'
         run: |
           sudo apt-get update
           sudo apt-get install -y libcairo2-dev libjpeg-dev libpango1.0-dev libgif-dev build-essential g++
