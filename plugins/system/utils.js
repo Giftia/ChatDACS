@@ -7,12 +7,7 @@ const axios = require('axios').default
 const mp3Duration = require('mp3-duration')
 const sequelize = require('sequelize')
 const Op = sequelize.Op
-const Jimp = require('jimp')
-const cachedJpegDecoder = Jimp.decoders['image/jpeg']
-Jimp.decoders['image/jpeg'] = (data) => {
-  const userOpts = {maxMemoryUsageInMB: 1024}
-  return cachedJpegDecoder(data, userOpts)
-}
+const sharp = require('sharp')
 const dayjs = require('dayjs')
 const utc = require('dayjs/plugin/utc')
 const timezone = require('dayjs/plugin/timezone')
@@ -684,15 +679,32 @@ module.exports = {
    * @returns {Promise<string>} 修改后图片的路径
    */
   async ModifyPic(picPath) {
-    const pic = await Jimp.read(picPath)
-    const x = Math.floor(Math.random() * pic.bitmap.width)
-    const y = Math.floor(Math.random() * pic.bitmap.height)
-    const color = Math.floor(Math.random() * 0xffffff)
-    console.log(`小夜将会修改图片 ${picPath} 的像素点 (${x}, ${y}) 为颜色 ${color}`.log)
-    pic.setPixelColor(color, x, y)
+    // 读取图片为原始像素数据
+    const image = sharp(picPath)
+    const {width, height, channels} = await image.metadata()
+    const raw = await image.raw().toBuffer()
+
+    // 随机像素点
+    const x = Math.floor(Math.random() * width)
+    const y = Math.floor(Math.random() * height)
+    const idx = (y * width + x) * channels
+
+    // 随机颜色
+    const color = [
+      Math.floor(Math.random() * 256), // R
+      Math.floor(Math.random() * 256), // G
+      Math.floor(Math.random() * 256), // B
+    ]
+    if (channels === 4) color.push(255) // 保持 alpha 不变或设为 255
+
+    // 修改像素
+    for (let c = 0; c < channels; c++) {
+      raw[idx + c] = color[c] ?? raw[idx + c]
+    }
+
+    // 保存新图片
     const modifiedPicPath = `./static/images/modified/${Date.now()}.png`
-    console.log(`小夜将会保存修改后的图片到 ${modifiedPicPath}`.log)
-    await pic.writeAsync(modifiedPicPath)
+    await sharp(raw, {raw: {width, height, channels}}).png().toFile(modifiedPicPath)
     return modifiedPicPath
   },
 
