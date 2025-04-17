@@ -39,6 +39,8 @@ jobs:
             arch: arm64
         node_version:
           - 18.20.8
+        node_version_declared:
+          - 18
     name: Build On：${{ matrix.os }} - Node ${{ matrix.node_version }}
     steps:
       - uses: actions/checkout@v4
@@ -79,7 +81,7 @@ jobs:
 
       # https://docs.github.com/en/actions/learn-github-actions/environment-variables#detecting-the-operating-system
       - name: Use pkg To Package
-        run: pkg -t node${{ matrix.node_version }}-${{ matrix.os }} . --compress Brotli
+        run: pkg -t node${{ matrix.node_version_declared }}-${{ matrix.os }} . --compress Brotli
 
       # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
       - name: Declare VERSION
