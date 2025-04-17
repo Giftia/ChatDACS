@@ -11,32 +11,37 @@ env:
 # https://github.com/actions/setup-node/blob/main/docs/advanced-usage.md#multiple-operating-systems-and-architectures
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runs-on }}
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - windows-latest
-          - ubuntu-latest
-          - macos-latest
+        os: [linux-intel, linux-arm, windows-x64, windows-x86, windows-arm, macOS-intel, macOS-arm]
+        include:
+          - os: linux-intel
+            runs-on: ubuntu-24.04
+          - os: linux-arm
+            runs-on: ubuntu-24.04-arm
+          - os: windows-x64
+            runs-on: windows-2022-x64
+          - os: windows-x86
+            runs-on: windows-2022-win32
+          - os: windows-arm
+            runs-on: windows-2022-arm64
+          - os: macOS-intel
+            # macos-13 was the last x86_64 runner
+            runs-on: macos-13
+          - os: macOS-arm
+            # macos-14+ (including latest) are ARM64 runners
+            runs-on: macos-latest
         node_version:
           - 18
-        architecture:
-          - x64
-          - x86
-          - arm64
-          - armv6l
-          - armv7l
-          - ppc64le
-          - s390x
-    name: Build On：${{ matrix.os }}_${{ matrix.architecture }} - Node ${{ matrix.node_version }}
+    name: Build On：${{ matrix.os }} - Node ${{ matrix.node_version }}
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node_version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node_version }}
-          architecture: ${{ matrix.architecture }}
           cache: 'npm'
           cache-dependency-path: |
             ./package-lock.json
@@ -62,17 +67,8 @@ jobs:
         run: npm i sequelize-cli
 
       # https://docs.github.com/en/actions/learn-github-actions/environment-variables#detecting-the-operating-system
-      - name: Use pkg To Package On Windows
-        if: runner.os == 'Windows'
-        run: pkg -t node${{ matrix.node_version }}-windows-${{ matrix.architecture }} . --compress Brotli
-
-      - name: Use pkg to Package On Linux
-        if: runner.os == 'Linux'
-        run: pkg -t node${{ matrix.node_version }}-linux-${{ matrix.architecture }} . --compress Brotli
-
-      - name: Use pkg to Package On MacOS
-        if: runner.os == 'macOS'
-        run: pkg -t node${{ matrix.node_version }}-macos-${{ matrix.architecture }} . --compress Brotli
+      - name: Use pkg To Package
+        run: pkg -t node${{ matrix.node_version }}-${{ matrix.os }} . --compress Brotli
 
       # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
       - name: Declare VERSION
@@ -89,7 +85,7 @@ jobs:
             const archiver = require('archiver');
             const fs = require('fs');
             const path = require('path');
-            const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}_${{ matrix.architecture }}.zip'));
+            const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-${{ env.VERSION_NUMBER }}_${{ matrix.os }}.zip'));
             const archive = archiver('zip', {
               zlib: { level: 9 }
             });
@@ -110,6 +106,6 @@ jobs:
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}_${{ matrix.architecture }}_$(date -u +'%Y%m%d%H%M%S')
-          path: ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}_${{ matrix.architecture }}.zip
+          name: ChatDACS-${{ env.VERSION_NUMBER }}_${{ matrix.os }}_$(date -u +'%Y%m%d%H%M%S')
+          path: ChatDACS-${{ env.VERSION_NUMBER }}_${{ matrix.os }}.zip
           if-no-files-found: error
