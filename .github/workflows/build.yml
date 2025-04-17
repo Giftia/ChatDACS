@@ -13,7 +13,7 @@ jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         os:
           - windows-latest
@@ -25,6 +25,10 @@ jobs:
           - x64
           - x86
           - arm64
+          - armv6l
+          - armv7l
+          - ppc64le
+          - s390x
     name: Build On：${{ matrix.os }}_${{ matrix.architecture }} - Node ${{ matrix.node_version }}
     steps:
       - uses: actions/checkout@v4
