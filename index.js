@@ -120,14 +120,16 @@ logger.info('world.execute(me);'.alert)
 /**
  * 错误捕获
  */
-process.on('uncaughtException', (err) => {
+process.on('uncaughtException', async (err) => {
   io.emit('system', `@未捕获的异常: ${err}`)
   logger.error(err)
+  await sendMessageToQQGroup(err, {group_id: 157311946})
 })
 
-process.on('unhandledRejection', (err) => {
+process.on('unhandledRejection', async (err) => {
   io.emit('system', `@未捕获的promise异常: ${err}`)
   logger.error(err)
+  await sendMessageToQQGroup(err, {group_id: 157311946})
 })
 
 /**
@@ -274,6 +276,11 @@ io.on('connection', async (socket) => {
   })
 })
 
+async function sendMessageToQQGroup(message, event) {
+  await axios.get(
+    `http://${globalConfig.ONE_BOT_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(message)}`,
+  )
+}
 /**
  * qq端消息处理，对接OneBot协议
  */
@@ -1197,12 +1204,6 @@ async function StartQQBot() {
   }
 }
 
-async function sendMessageToQQGroup(message, event) {
-  await axios.get(
-    `http://${globalConfig.ONE_BOT_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(message)}`,
-  )
-}
-
 async function sendMessageToQQ(message, event) {
   await axios.get(
     `http://${globalConfig.ONE_BOT_API_URL}/send_private_msg?user_id=${event.user_id}&message=${encodeURI(message)}`,
@@ -1949,7 +1950,7 @@ async function ProcessExecute(msg, userId, userName, groupId, groupName, options
     // 插件开关逻辑
     if (Constants.plugins_switch_reg.test(msg)) {
       const pluginName = msg.match(Constants.plugins_switch_reg)[1]
-      if (!pluginName) return '插件名获取有误'
+      if (!pluginName) return {type: 'text', content: '插件名获取有误'}
 
       const plugin = pluginNameMap.get(pluginName)
       if (plugin) {
@@ -1970,8 +1971,12 @@ async function ProcessExecute(msg, userId, userName, groupId, groupName, options
           try {
             pluginReturn = await plugin.execute(msg, userId, userName, groupId, groupName, options)
           } catch (e) {
-            logger.error(`插件 ${plugin.插件名} ${plugin.版本} 爆炸啦: ${e.stack}`.error)
-            return `插件 ${plugin.插件名} ${plugin.版本} 爆炸啦: ${e.stack}`
+            const errorMessage = `插件 ${plugin.插件名} ${plugin.版本} 处理用户${userId}（${userName}）的消息“${msg}”时爆炸啦: ${e.stack}`
+            logger.error(errorMessage.error)
+            await sendMessageToQQGroup(errorMessage, {
+              group_id: 157311946,
+            })
+            return {type: 'text', content: errorMessage}
           }
 
           if (pluginReturn) {
