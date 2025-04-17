@@ -13,14 +13,18 @@ jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: true
       matrix:
         os:
           - windows-latest
           - ubuntu-latest
+          - macos-latest
         node_version:
           - 18
         architecture:
           - x64
+          - x86
+          - arm64
     name: Build On：${{ matrix.os }}_${{ matrix.architecture }} - Node ${{ matrix.node_version }}
     steps:
       - uses: actions/checkout@v4
@@ -32,7 +36,6 @@ jobs:
           cache: 'npm'
           cache-dependency-path: |
             ./package-lock.json
-            plugins/package-lock.json
 
       - name: Remove go-cqhttp On Windows
         if: runner.os == 'Windows'
@@ -47,11 +50,6 @@ jobs:
       - name: Clean Install Modules
         run: |
           npm ci --production
-          cd ./plugins/
-          npm ci --production
-          rm package.json
-          rm package-lock.json
-          cd ..
 
       - name: Install pkg Tool
         run: npm i pkg -g
@@ -62,22 +60,22 @@ jobs:
       # https://docs.github.com/en/actions/learn-github-actions/environment-variables#detecting-the-operating-system
       - name: Use pkg To Package On Windows
         if: runner.os == 'Windows'
-        run: pkg -t node${{ matrix.node_version }}-windows . --compress Brotli
+        run: pkg -t node${{ matrix.node_version }}-windows-${{ matrix.architecture }} . --compress Brotli
 
       - name: Use pkg to Package On Linux
         if: runner.os == 'Linux'
-        run: pkg -t node${{ matrix.node_version }}-linux . --compress Brotli
+        run: pkg -t node${{ matrix.node_version }}-linux-${{ matrix.architecture }} . --compress Brotli
+
+      - name: Use pkg to Package On MacOS
+        if: runner.os == 'macOS'
+        run: pkg -t node${{ matrix.node_version }}-macos-${{ matrix.architecture }} . --compress Brotli
 
       # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
       - name: Declare VERSION
         shell: bash
         run: |
-          node -e "
-            const fs = require('fs');
-            const package = require('./package.json');
-            fs.writeFileSync('version-number', 'VERSION_NUMBER=v' + package.version);
-          "
-          cat ./version-number >> $GITHUB_ENV
+          VERSION_NUMBER=$(jq -r '.version' package.json)
+          echo "VERSION_NUMBER=v$VERSION_NUMBER" >> $GITHUB_ENV
 
       - name: Pre-compress
         shell: bash
@@ -87,7 +85,7 @@ jobs:
             const archiver = require('archiver');
             const fs = require('fs');
             const path = require('path');
-            const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}.zip'));
+            const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}_${{ matrix.architecture }}.zip'));
             const archive = archiver('zip', {
               zlib: { level: 9 }
             });
@@ -105,15 +103,9 @@ jobs:
             archive.finalize();
           "
 
-      - name: Get Current Time
-        shell: bash
-        id: time
-        # set-output is deprecated: https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
-        run: echo "now=$(date +'%Y-%m-%d-%H-%M-%S')" >> $GITHUB_OUTPUT
-
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}-${{ steps.time.outputs.now }}
-          path: ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}.zip
+          name: ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}_${{ matrix.architecture }}_$(date -u +'%Y%m%d%H%M%S')
+          path: ChatDACS-${{ env.VERSION_NUMBER }}_${{ runner.os }}_${{ matrix.architecture }}.zip
           if-no-files-found: error

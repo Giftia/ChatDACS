@@ -12,7 +12,7 @@ module.exports = Object.freeze({
   hope_flower_reg: new RegExp(/^希望的花(.*)/), // 匹配希望的花
   loop_bomb_reg: new RegExp(/^击鼓传雷(.*)/), // 匹配击鼓传雷
   is_qq_reg: new RegExp(/^[1-9][0-9]{4,9}$/), // 校验是否是合法的qq号
-  has_qq_reg: new RegExp(/\[CQ:at,qq=(\d*)\]/), // 匹配是否有@qq
+  has_at_qq_reg: new RegExp(/\[CQ:at,qq=(\d+)(?:,name=[^\]]+)?\]/), // 匹配是否有@qq
   open_ju_reg: new RegExp(/张菊/), // 匹配张菊指令
   close_ju_reg: new RegExp(/闭菊/), // 匹配闭菊指令
   gu_gua_reg: new RegExp(/^孤寡(.*)/), // 匹配孤寡指令
@@ -22,8 +22,8 @@ module.exports = Object.freeze({
   plugins_switch_reg: new RegExp(/^插件[开关] (.*)/), // 匹配插件开关指令
 
   // 全局常量
-  TTS_FILE_RECV_PATH: "./static/xiaoye/live_latest_reply.txt", // 哔哩哔哩字幕文件存储路径
-  HTML_PATH: "/static/index.html", // 首页
+  TTS_FILE_RECV_PATH: './static/xiaoye/live_latest_reply.txt', // 哔哩哔哩字幕文件存储路径
+  HTML_PATH: '/static/index.html', // 首页
   AUDIO_START: 0, // AudioControl 开始播放操作
   // winston 日志配置
   LOG_LEVELS: {
@@ -37,16 +37,15 @@ module.exports = Object.freeze({
       silly: 6,
     },
     colors: {
-      error: "brightRed",
-      warn: "brightYellow",
-      info: "brightBlue",
-      http: "green",
-      verbose: "blue",
-      debug: "gray",
-      silly: "gray",
+      error: 'brightRed',
+      warn: 'brightYellow',
+      info: 'brightBlue',
+      http: 'green',
+      verbose: 'blue',
+      debug: 'gray',
+      silly: 'gray',
     },
   },
-  HELP_CONTENT:
-    "主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏右侧还有更多功能。",
-
-});
+  WEB_HELP_CONTENT:
+    '主人你好，我是小夜。欢迎使用沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)。在这里，你可以与经过 2w+用户调教养成的人工智能机器人小夜实时聊天，它有着令人激动的、实用的在线涩图功能，还可以和在线的其他人分享你的图片、视频与文件。现在就试试使用在聊天框下方的便捷功能栏吧，功能栏右侧还有更多功能。',
+})

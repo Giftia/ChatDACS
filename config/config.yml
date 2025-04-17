@@ -6,7 +6,16 @@ System:
   CHAT_SWITCH: true
 
   #qqBot小夜开关，为方便用户使用，默认为开启，如果只想要使用web端或哔哩哔哩直播间，请关闭此开关:
-  CONNECT_GO_CQHTTP_SWITCH: true
+  CONNECT_ONE_BOT_SWITCH: true
+
+  #go-cqhttp开关，默认关闭。如果你还想尝试使用go-cqhttp，请将此开关打开:
+  GO_CQHTTP_SWITCH: false
+
+  #HTTP事件上报地址，如果有冲突的话请尝试更改:
+  ONE_BOT_ANTI_POST_API: '/bot'
+
+  #HTTP服务监听端口，如果有冲突的话请尝试更改:
+  ONE_BOT_API_URL: '127.0.0.1:5700'
 
   #接入哔哩哔哩直播聊天开关:
   CONNECT_BILIBILI_LIVE_SWITCH: false
@@ -19,12 +28,6 @@ System:
 
   #web端使用的本机端口，如果有冲突的话请尝试更改:
   WEB_PORT: 80
-
-  #监听go_cqhttp的反向http post服务，如果有冲突的话请尝试更改:
-  GO_CQHTTP_SERVICE_ANTI_POST_API: '/bot'
-
-  #go_cqhttp的http接口地址，如果有冲突的话请尝试更改:
-  GO_CQHTTP_SERVICE_API_URL: '127.0.0.1:5700'
 
 #接口密钥配置
 ApiKey:

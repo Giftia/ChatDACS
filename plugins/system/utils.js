@@ -1,3 +1,62 @@
+const fs = require('fs')
+const path = require('path')
+const yaml = require('yaml')
+const url = require('url')
+const crypto = require('crypto')
+const axios = require('axios').default
+const mp3Duration = require('mp3-duration')
+const sequelize = require('sequelize')
+const Op = sequelize.Op
+const Jimp = require('jimp')
+const cachedJpegDecoder = Jimp.decoders['image/jpeg']
+Jimp.decoders['image/jpeg'] = (data) => {
+  const userOpts = {maxMemoryUsageInMB: 1024}
+  return cachedJpegDecoder(data, userOpts)
+}
+const dayjs = require('dayjs')
+const utc = require('dayjs/plugin/utc')
+const timezone = require('dayjs/plugin/timezone')
+dayjs.extend(utc)
+dayjs.extend(timezone)
+dayjs.tz.setDefault('Asia/Shanghai')
+
+// models
+const UserModel = require('./model/userModel.js')
+const MessageModel = require('./model/messageModel.js')
+const QQGroupModel = require('./model/qqGroupModel.js')
+const MineModel = require('./model/mineModel.js')
+const ChatModel = require('./model/chatModel.js')
+const PerfunctoryModel = require('./model/perfunctoryModel.js')
+const HandGrenadeModel = require('./model/handGrenadeModel.js')
+
+let WEB_PORT, ONE_BOT_API_URL, TIAN_XING_API_KEY
+
+Init()
+
+// 读取配置文件
+function ReadConfig() {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path.join(process.cwd(), 'config', 'config.yml'), 'utf-8', (err, data) => {
+      if (!err) {
+        resolve(yaml.parse(data))
+      } else {
+        reject('读取配置文件错误。错误原因：' + err)
+      }
+    })
+  })
+}
+
+// 初始化WEB_PORT和TIAN_XING_API_KEY
+async function Init() {
+  const resolve = await ReadConfig()
+  WEB_PORT = resolve.System.WEB_PORT
+  ONE_BOT_API_URL = resolve.System.ONE_BOT_API_URL
+  TIAN_XING_API_KEY = resolve.ApiKey.TIAN_XING_API_KEY
+}
+
+// 孤寡图序列
+const guGuaPicList = ['1.jpg', '2.jpg', '3.jpg', '4.jpg', '5.gif']
+
 /**
  * @name 系统工具类
  * @description 各种公用函数和系统底层函数
@@ -260,12 +319,12 @@ module.exports = {
    */
   async InitGroupList() {
     const groupList = await axios
-      .get(`http://${GO_CQHTTP_SERVICE_API_URL}/get_group_list`)
+      .get(`http://${ONE_BOT_API_URL}/get_group_list`)
       .then((response) => {
         return response.data.data
       })
       .catch((err) => {
-        return null
+        return err
       })
 
     if (!groupList) {
@@ -500,19 +559,11 @@ module.exports = {
   },
 
   /**
-   * 随机延时提醒闭菊的群
+   * 自动为停用服务的群启用服务
    * @returns {Promise<void>} void
    */
-  async DelayAlert() {
-    console.log('开始随机延时提醒闭菊的群'.log)
-    const alertMsg = [
-      // 提醒文本列表
-      '呜呜呜，把人家冷落了那么久，能不能让小夜张菊了呢...',
-      '闭菊那么久了，朕的菊花痒了!还不快让小夜张菊!',
-      '小夜也想为大家带来快乐，所以让小夜张菊，好吗？',
-      '欧尼酱，不要再无视我了，小夜那里很舒服的，让小夜张菊试试吧~',
-    ]
-
+  async AutoEnableQQGroupService() {
+    console.log('开始自动为停用服务的群启用服务'.log)
     // 获取停用服务的群列表
     const serviceStoppedGroupsList = await QQGroupModel.findAll({
       where: {
@@ -522,26 +573,26 @@ module.exports = {
 
     if (!serviceStoppedGroupsList) {
       console.log('目前没有群是关闭服务的，挺好'.log)
+      return
     } else {
-      console.log(`以下群未启用小夜服务: ${serviceStoppedGroupsList} ，现在开始随机延时提醒`.log)
+      console.log(`以下群未启用小夜服务: ${serviceStoppedGroupsList} ，自动启用服务`.log)
+      serviceStoppedGroupsList.forEach((groupId) => {
+        const delayTime = Math.floor(Math.random() * 60) // 随机延时0到60秒
+        console.log(`小夜将会延时 ${delayTime} 秒后提醒群 ${groupId} 小夜已自动张菊`)
+        setTimeout(async () => {
+          await axios
+            .get(
+              `http://${ONE_BOT_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI(
+                '害害嗨，小夜自动张菊了',
+              )}`,
+            )
+            .then(async () => {
+              await this.EnableGroupService(groupId)
+              console.log(`小夜提醒了群 ${groupId} 服务已经自动启用`)
+            })
+        }, 1000 * delayTime)
+      })
     }
-
-    serviceStoppedGroupsList.forEach((groupId) => {
-      const delayTime = Math.floor(Math.random() * 60) // 随机延时0到60秒
-      const randomAlertMsg = alertMsg[Math.floor(Math.random() * alertMsg.length)]
-      console.log(`小夜将会延时 ${delayTime} 秒后提醒群 ${groupId} 张菊，提醒文本为: ${randomAlertMsg}`)
-      setTimeout(async () => {
-        await axios
-          .get(
-            `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI(
-              randomAlertMsg,
-            )}`,
-          )
-          .then(() => {
-            console.log(`小夜提醒了群 ${groupId} 张菊，提醒文本为: ${randomAlertMsg}`)
-          })
-      }, 1000 * delayTime)
-    })
   },
 
   /**
@@ -555,9 +606,7 @@ module.exports = {
     guGuaPicList.forEach((pic, index) => {
       const picUrl = `[CQ:image,file=http://127.0.0.1:${WEB_PORT}/xiaoye/ps/${pic}]`
       setTimeout(async () => {
-        await axios.get(
-          `http://${GO_CQHTTP_SERVICE_API_URL}/send_private_msg?user_id=${qqId}&message=${encodeURI(picUrl)}`,
-        )
+        await axios.get(`http://${ONE_BOT_API_URL}/send_private_msg?user_id=${qqId}&message=${encodeURI(picUrl)}`)
       }, 1000 * 5 * index)
     })
   },
@@ -573,9 +622,7 @@ module.exports = {
     guGuaPicList.forEach((pic, index) => {
       const picUrl = `[CQ:image,file=http://127.0.0.1:${WEB_PORT}/xiaoye/ps/${pic}]`
       setTimeout(async () => {
-        await axios.get(
-          `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI(picUrl)}`,
-        )
+        await axios.get(`http://${ONE_BOT_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI(picUrl)}`)
       }, 1000 * 5 * index)
     })
   },
@@ -689,7 +736,7 @@ module.exports = {
    * @returns {Promise<boolean>} 插件开关状态
    */
   async ToggleGroupPlugin(groupId, pluginName) {
-    const group = await QQGroupModel.findOne({where: {groupId}})
+    const group = (await QQGroupModel.findOrCreate({where: {groupId}}))[0]
     if (!group.pluginsList || !Object.prototype.hasOwnProperty.call(group.pluginsList, pluginName)) {
       console.log(`该群没有初始化 ${pluginName} ，给一个初始开`.log)
 
@@ -730,64 +777,12 @@ module.exports = {
 
     return group.pluginsList[pluginName]
   },
+
+  UserModel,
+  MessageModel,
+  QQGroupModel,
+  MineModel,
+  ChatModel,
+  PerfunctoryModel,
+  HandGrenadeModel,
 }
-
-const request = require('request')
-const fs = require('fs')
-const path = require('path')
-const yaml = require('yaml')
-const url = require('url')
-const crypto = require('crypto')
-const axios = require('axios').default
-const mp3Duration = require('mp3-duration')
-const sequelize = require('sequelize')
-const Op = sequelize.Op
-const Jimp = require('jimp')
-const cachedJpegDecoder = Jimp.decoders['image/jpeg']
-Jimp.decoders['image/jpeg'] = (data) => {
-  const userOpts = {maxMemoryUsageInMB: 1024}
-  return cachedJpegDecoder(data, userOpts)
-}
-const dayjs = require('dayjs')
-const utc = require('dayjs/plugin/utc')
-const timezone = require('dayjs/plugin/timezone')
-dayjs.extend(utc)
-dayjs.extend(timezone)
-dayjs.tz.setDefault('Asia/Shanghai')
-
-// models
-const UserModel = require('./model/userModel.js')
-const MessageModel = require('./model/messageModel.js')
-const QQGroupModel = require('./model/qqGroupModel.js')
-const MineModel = require('./model/mineModel.js')
-const ChatModel = require('./model/chatModel.js')
-const PerfunctoryModel = require('./model/perfunctoryModel.js')
-const HandGrenadeModel = require('./model/handGrenadeModel.js')
-
-let WEB_PORT, GO_CQHTTP_SERVICE_API_URL, TIAN_XING_API_KEY
-
-Init()
-
-// 读取配置文件
-function ReadConfig() {
-  return new Promise((resolve, reject) => {
-    fs.readFile(path.join(process.cwd(), 'config', 'config.yml'), 'utf-8', (err, data) => {
-      if (!err) {
-        resolve(yaml.parse(data))
-      } else {
-        reject('读取配置文件错误。错误原因：' + err)
-      }
-    })
-  })
-}
-
-// 初始化WEB_PORT和TIAN_XING_API_KEY
-async function Init() {
-  const resolve = await ReadConfig()
-  WEB_PORT = resolve.System.WEB_PORT
-  GO_CQHTTP_SERVICE_API_URL = resolve.System.GO_CQHTTP_SERVICE_API_URL
-  TIAN_XING_API_KEY = resolve.ApiKey.TIAN_XING_API_KEY
-}
-
-// 孤寡图序列
-const guGuaPicList = ['1.jpg', '2.jpg', '3.jpg', '4.jpg', '5.gif']

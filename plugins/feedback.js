@@ -1,52 +1,40 @@
-const devGroupNumber = "157311946"; // 小夜开发群
-
 module.exports = {
-  插件名: "报错插件",
-  指令: "^[/!]?报错 (.*)",
-  版本: "2.0",
-  作者: "Giftina",
-  描述: "向小夜开发组报错消息，消息会实时转达到小夜开发成员",
-  使用示例: "报错 插件爆炸了",
-  预期返回: `谢谢您的报错，小夜已经把您的报错信息 插件爆炸了 发给了小夜开发群${devGroupNumber}啦`,
+  插件名: '报错插件',
+  指令: '^[/!]?报错 (.*)',
+  版本: '3.0',
+  作者: 'Giftina',
+  描述: '向小夜开发组报错消息，消息会实时转达到小夜开发成员',
+  使用示例: '报错 插件爆炸了',
+  预期返回: `谢谢您的报错，小夜已经把您的报错信息 插件爆炸了 发给了小夜开发群157311946啦`,
 
-  execute: async function (msg, userId, userName, groupId, groupName, options) {
-    const feedback = new RegExp(module.exports.指令).exec(msg)[1];
-    const feedbackContext = `用户 ${userId}(${userName}) 报告了错误：${feedback}`;
-
-    if (CONNECT_GO_CQHTTP_SWITCH) {
-      axios(
-        `http://${GO_CQHTTP_SERVICE_API_URL}/send_group_msg?group_id=${devGroupNumber}&message=${encodeURI(
-          feedbackContext,
-        )}`);
-    }
-    return { type: "text", content: `谢谢您的报错，小夜已经把您的报错信息 ${feedback} 发给了小夜开发群${devGroupNumber}啦` };
+  // 初始化方法，用于依赖注入
+  init({sendMessageToQQGroup, logger, config}) {
+    this.sendMessageToQQGroup = sendMessageToQQGroup
+    this.logger = logger
+    this.config = config
   },
-};
 
-const axios = require("axios").default;
-const fs = require("fs");
-const path = require("path");
-const yaml = require("yaml"); // 使用yaml解析配置文件
-let GO_CQHTTP_SERVICE_API_URL, CONNECT_GO_CQHTTP_SWITCH;
+  // 插件执行逻辑
+  execute: async function (msg, userId, userName, groupId, groupName, options) {
+    const feedback = new RegExp(this.指令).exec(msg)[1]
+    const feedbackContext = `用户 ${userId}(${userName}) 报告了错误：${feedback}`
 
-Init();
-
-// 读取配置文件
-function ReadConfig() {
-  return new Promise((resolve, reject) => {
-    fs.readFile(path.join(process.cwd(), "config", "config.yml"), "utf-8", function (err, data) {
-      if (!err) {
-        resolve(yaml.parse(data));
-      } else {
-        reject("读取配置文件错误。错误原因：" + err);
+    if (this.config.CONNECT_ONE_BOT_SWITCH) {
+      try {
+        await this.sendMessageToQQGroup(feedbackContext, {group_id: 157311946})
+        this.logger.info(`报错信息已发送到开发群: ${feedbackContext}`)
+      } catch (error) {
+        this.logger.error(`发送报错信息失败: ${error.message}`)
+        return {
+          type: 'text',
+          content: `报错信息发送失败，请稍后再试。错误详情：${error.message}`,
+        }
       }
-    });
-  });
-}
+    }
 
-// 初始化
-async function Init() {
-  const resolve = await ReadConfig();
-  GO_CQHTTP_SERVICE_API_URL = resolve.System.GO_CQHTTP_SERVICE_API_URL;
-  CONNECT_GO_CQHTTP_SWITCH = resolve.System.CONNECT_GO_CQHTTP_SWITCH;
+    return {
+      type: 'text',
+      content: `谢谢您的报错，小夜已经把您的报错信息 ${feedback} 发给了小夜开发群157311946啦`,
+    }
+  },
 }
