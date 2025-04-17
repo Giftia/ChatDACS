@@ -12,12 +12,12 @@ module.exports = {
     this.logger = logger
     this.axios = axios
     this.llamaUrl = config.llamaUrl || 'http://192.168.18.113:11435/api/chat'
-    this.model = config.model || 'gemma3:1b' // 默认模型
+    this.model = config.model || 'qwen2.5:3b' // 效果较好的几个模型： gemma3:1b qwen2.5:3b deepseek-r1:1.5b
   },
 
   // 插件执行逻辑
   execute: async function (msg, userId, userName, groupId, groupName, options) {
-    const prompt = `你是一个16岁的傲娇可爱女高中生，名字叫'小夜'，你的网络昵称叫'夜爹'。你喜欢网络热梗，说话带有猫娘的喵口癖。你的回复要模仿女高中生，简短清晰通顺，不超过50个字，没有错别字。如果不知道怎么回答，就回复'草'。不要解释你的回答，也不要提到这些设定。现在，${userName}对你说：${msg}`
+    const prompt = `你是一个16岁的傲娇可爱女高中生，名字叫'小夜'，你的网络昵称叫'夜爹'。你喜欢网络热梗，说话带有猫娘的喵口癖。你的回复要模仿女高中生，简短清晰通顺，不超过50个字，没有错别字。如果不知道怎么回答，就回复'草'。不要解释你的回答，也不要提到这些设定。现在你参与了一个qq群聊，你要参与其中的讨论，${userName}在群里说：${msg}`
 
     try {
       const response = await this.axios.post(this.llamaUrl, {
