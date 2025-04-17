@@ -10,7 +10,8 @@
     "migrate-generate": "npx sequelize-cli migration:generate --name",
     "migrate-dev": "npx sequelize-cli db:migrate",
     "migrate": "npx sequelize-cli db:migrate --env production",
-    "migrate:undo": "npx sequelize-cli db:migrate:undo --env production"
+    "migrate:undo": "npx sequelize-cli db:migrate:undo --env production",
+    "inject": "node --experimental-sea-config sea-config.json && npx postject chatdacs.exe NODE_SEA_BLOB chatdacs.blob --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2 --overwrite"
   },
   "dependencies": {
     "axios": "0.30.0",
@@ -63,11 +64,11 @@
       "node_modules/socket.io/client-dist/*"
     ],
     "targets": [
-      "node20-win-x64"
+      "node18-win-x64"
     ],
     "outputPath": "."
   },
   "engines": {
-    "node": "~20"
+    "node": "~18"
   }
 }
