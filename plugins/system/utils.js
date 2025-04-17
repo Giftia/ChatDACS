@@ -1,3 +1,62 @@
+const fs = require('fs')
+const path = require('path')
+const yaml = require('yaml')
+const url = require('url')
+const crypto = require('crypto')
+const axios = require('axios').default
+const mp3Duration = require('mp3-duration')
+const sequelize = require('sequelize')
+const Op = sequelize.Op
+const Jimp = require('jimp')
+const cachedJpegDecoder = Jimp.decoders['image/jpeg']
+Jimp.decoders['image/jpeg'] = (data) => {
+  const userOpts = {maxMemoryUsageInMB: 1024}
+  return cachedJpegDecoder(data, userOpts)
+}
+const dayjs = require('dayjs')
+const utc = require('dayjs/plugin/utc')
+const timezone = require('dayjs/plugin/timezone')
+dayjs.extend(utc)
+dayjs.extend(timezone)
+dayjs.tz.setDefault('Asia/Shanghai')
+
+// models
+const UserModel = require('./model/userModel.js')
+const MessageModel = require('./model/messageModel.js')
+const QQGroupModel = require('./model/qqGroupModel.js')
+const MineModel = require('./model/mineModel.js')
+const ChatModel = require('./model/chatModel.js')
+const PerfunctoryModel = require('./model/perfunctoryModel.js')
+const HandGrenadeModel = require('./model/handGrenadeModel.js')
+
+let WEB_PORT, ONE_BOT_API_URL, TIAN_XING_API_KEY
+
+Init()
+
+// 读取配置文件
+function ReadConfig() {
+  return new Promise((resolve, reject) => {
+    fs.readFile(path.join(process.cwd(), 'config', 'config.yml'), 'utf-8', (err, data) => {
+      if (!err) {
+        resolve(yaml.parse(data))
+      } else {
+        reject('读取配置文件错误。错误原因：' + err)
+      }
+    })
+  })
+}
+
+// 初始化WEB_PORT和TIAN_XING_API_KEY
+async function Init() {
+  const resolve = await ReadConfig()
+  WEB_PORT = resolve.System.WEB_PORT
+  ONE_BOT_API_URL = resolve.System.ONE_BOT_API_URL
+  TIAN_XING_API_KEY = resolve.ApiKey.TIAN_XING_API_KEY
+}
+
+// 孤寡图序列
+const guGuaPicList = ['1.jpg', '2.jpg', '3.jpg', '4.jpg', '5.gif']
+
 /**
  * @name 系统工具类
  * @description 各种公用函数和系统底层函数
@@ -265,7 +324,7 @@ module.exports = {
         return response.data.data
       })
       .catch((err) => {
-        return null
+        return err
       })
 
     if (!groupList) {
@@ -677,7 +736,7 @@ module.exports = {
    * @returns {Promise<boolean>} 插件开关状态
    */
   async ToggleGroupPlugin(groupId, pluginName) {
-    const group = await QQGroupModel.findOne({where: {groupId}})
+    const group = (await QQGroupModel.findOrCreate({where: {groupId}}))[0]
     if (!group.pluginsList || !Object.prototype.hasOwnProperty.call(group.pluginsList, pluginName)) {
       console.log(`该群没有初始化 ${pluginName} ，给一个初始开`.log)
 
@@ -718,64 +777,12 @@ module.exports = {
 
     return group.pluginsList[pluginName]
   },
+
+  UserModel,
+  MessageModel,
+  QQGroupModel,
+  MineModel,
+  ChatModel,
+  PerfunctoryModel,
+  HandGrenadeModel,
 }
-
-const request = require('request')
-const fs = require('fs')
-const path = require('path')
-const yaml = require('yaml')
-const url = require('url')
-const crypto = require('crypto')
-const axios = require('axios').default
-const mp3Duration = require('mp3-duration')
-const sequelize = require('sequelize')
-const Op = sequelize.Op
-const Jimp = require('jimp')
-const cachedJpegDecoder = Jimp.decoders['image/jpeg']
-Jimp.decoders['image/jpeg'] = (data) => {
-  const userOpts = {maxMemoryUsageInMB: 1024}
-  return cachedJpegDecoder(data, userOpts)
-}
-const dayjs = require('dayjs')
-const utc = require('dayjs/plugin/utc')
-const timezone = require('dayjs/plugin/timezone')
-dayjs.extend(utc)
-dayjs.extend(timezone)
-dayjs.tz.setDefault('Asia/Shanghai')
-
-// models
-const UserModel = require('./model/userModel.js')
-const MessageModel = require('./model/messageModel.js')
-const QQGroupModel = require('./model/qqGroupModel.js')
-const MineModel = require('./model/mineModel.js')
-const ChatModel = require('./model/chatModel.js')
-const PerfunctoryModel = require('./model/perfunctoryModel.js')
-const HandGrenadeModel = require('./model/handGrenadeModel.js')
-
-let WEB_PORT, ONE_BOT_API_URL, TIAN_XING_API_KEY
-
-Init()
-
-// 读取配置文件
-function ReadConfig() {
-  return new Promise((resolve, reject) => {
-    fs.readFile(path.join(process.cwd(), 'config', 'config.yml'), 'utf-8', (err, data) => {
-      if (!err) {
-        resolve(yaml.parse(data))
-      } else {
-        reject('读取配置文件错误。错误原因：' + err)
-      }
-    })
-  })
-}
-
-// 初始化WEB_PORT和TIAN_XING_API_KEY
-async function Init() {
-  const resolve = await ReadConfig()
-  WEB_PORT = resolve.System.WEB_PORT
-  ONE_BOT_API_URL = resolve.System.ONE_BOT_API_URL
-  TIAN_XING_API_KEY = resolve.ApiKey.TIAN_XING_API_KEY
-}
-
-// 孤寡图序列
-const guGuaPicList = ['1.jpg', '2.jpg', '3.jpg', '4.jpg', '5.gif']
