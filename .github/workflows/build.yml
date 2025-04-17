@@ -56,7 +56,8 @@ jobs:
           rm ./plugins/go-cqhttp/go-cqhttp_windows_amd64.exe
           rm ./plugins/go-cqhttp/go-cqhttp.bat
 
-      - name: Install system dependencies
+      - name: Install canvas dependencies
+        if: matrix.os == 'linux-arm64'
         run: |
           sudo apt-get update
           sudo apt-get install -y libcairo2-dev libjpeg-dev libpango1.0-dev libgif-dev build-essential g++
