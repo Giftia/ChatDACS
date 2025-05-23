@@ -43,11 +43,11 @@
     "trayicon": "1.2.2",
     "wallpaper": "5.0.1",
     "winston": "3.17.0",
-    "yaml": "2.7.1"
+    "yaml": "2.8.0"
   },
   "devDependencies": {
-    "eslint": "9.24.0",
-    "eslint-config-prettier": "10.1.2",
+    "eslint": "9.27.0",
+    "eslint-config-prettier": "10.1.5",
     "eslint-plugin-n": "14.0.0",
     "sequelize-cli": "^6.5.2"
   },
