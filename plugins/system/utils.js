@@ -7,6 +7,10 @@ const axios = require('axios').default
 const mp3Duration = require('mp3-duration')
 const sequelize = require('sequelize')
 const Op = sequelize.Op
+// 在 Windows 平台下，在 sharp 之前加载 canvas 会导致 "Error: The specified procedure could not be found." https://github.com/Automattic/node-canvas/issues/930
+if (process.platform === 'win32') {
+  require('canvas')
+}
 const sharp = require('sharp')
 const dayjs = require('dayjs')
 const utc = require('dayjs/plugin/utc')
