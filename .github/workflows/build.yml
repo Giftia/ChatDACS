@@ -38,7 +38,7 @@ jobs:
             runs-on: macos-latest
             arch: arm64
         node_version:
-          - 18.20.8
+          - 18.5.0
         node_version_declared:
           - 18
     name: Build On：${{ matrix.os }} - Node ${{ matrix.node_version }}
