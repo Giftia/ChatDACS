@@ -11,7 +11,6 @@ const Op = sequelize.Op
 if (process.platform === 'win32') {
   require('canvas')
 }
-const canvas = require('canvas')
 const sharp = require('sharp')
 const dayjs = require('dayjs')
 const utc = require('dayjs/plugin/utc')
