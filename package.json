@@ -37,7 +37,7 @@
     "select-random-file": "1.2.4",
     "semver-diff": "3.1.1",
     "sequelize": "6.37.7",
-    "sharp": "0.34.2",
+    "sharp": "0.32.0",
     "socket.io": "4.8.1",
     "sqlite3": "5.1.7",
     "trayicon": "1.2.2",
@@ -69,6 +69,6 @@
     "outputPath": "."
   },
   "engines": {
-    "node": "18.20.8"
+    "node": "18.5.0"
   }
 }
