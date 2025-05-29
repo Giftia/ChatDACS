@@ -289,7 +289,12 @@ async function StartQQBot() {
    * 启动后加载当前所有群，写入数据库进行群服务初始化
    */
   logger.info('正在进行群服务初始化……'.log)
-  await utils.InitGroupList()
+  const isInitSuccessfully = await utils.InitGroupList()
+  if (isInitSuccessfully) {
+    logger.info('群服务初始化完成'.log)
+  } else {
+    logger.error('连接QQ协议失败了，请确保协议已经启动后再启动ChatDACS'.error)
+  }
 
   app.post(globalConfig.ONE_BOT_ANTI_POST_API, async (req) => {
     const event = req.body
@@ -1641,20 +1646,21 @@ async function InitConfig() {
       }`.on,
     )
     await StartQQBot()
-  } else {
-    logger.info('go-cqhttp开关关闭'.off)
-  }
-
-  if (globalConfig.CONNECT_ONE_BOT_SWITCH && !globalConfig.GO_CQHTTP_SWITCH) {
-    logger.info(
-      `小夜通过OneBot协议接入QQ：\n  ·对接OneBot协议接口 ${globalConfig.ONE_BOT_API_URL}\n  ·监听反向post于 127.0.0.1:${
-        globalConfig.WEB_PORT
-      }${globalConfig.ONE_BOT_ANTI_POST_API}\n  ·私聊服务${globalConfig.QQBOT_PRIVATE_CHAT_SWITCH ? '开启' : '关闭'}`
-        .on,
-    )
-    await StartQQBot()
-  } else {
     logger.info('小夜不启用OneBot协议'.off)
+  } else {
+    logger.info('小夜启用OneBot协议，不启用go-cqhttp协议'.on)
+    if (globalConfig.CONNECT_ONE_BOT_SWITCH && !globalConfig.GO_CQHTTP_SWITCH) {
+      logger.info(
+        `小夜通过OneBot协议接入QQ：\n  ·对接OneBot协议接口 ${
+          globalConfig.ONE_BOT_API_URL
+        }\n  ·监听反向post于 127.0.0.1:${globalConfig.WEB_PORT}${globalConfig.ONE_BOT_ANTI_POST_API}\n  ·私聊服务${
+          globalConfig.QQBOT_PRIVATE_CHAT_SWITCH ? '开启' : '关闭'
+        }`.on,
+      )
+      await StartQQBot()
+    } else {
+      logger.info('小夜不启用OneBot协议和go-cqhttp协议'.off)
+    }
   }
 
   if (globalConfig.CONNECT_BILIBILI_LIVE_SWITCH) {
