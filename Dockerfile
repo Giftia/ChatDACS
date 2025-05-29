@@ -1,5 +1,5 @@
 # Build
-FROM node:18 as build
+FROM node:22 as build
 
 WORKDIR /opt/chatdacs
 
@@ -17,7 +17,7 @@ RUN npm ci --production &&
 
 # Run
 
-FROM node:18
+FROM node:22
 
 WORKDIR /opt/chatdacs
 
