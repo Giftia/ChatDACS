@@ -294,6 +294,7 @@ async function StartQQBot() {
     logger.info('群服务初始化完成'.log)
   } else {
     logger.error('连接QQ协议失败了，请确保协议已经启动后再启动ChatDACS'.error)
+    return
   }
 
   app.post(globalConfig.ONE_BOT_ANTI_POST_API, async (req) => {
