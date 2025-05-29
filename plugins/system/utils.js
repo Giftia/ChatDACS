@@ -314,7 +314,8 @@ module.exports = {
 
   /**
    * goCqhttp 启动后加载当前所有群，写入数据库进行群服务初始化
-   * @returns {Promise<void>} void
+   * @returns {Promise<void>} boolean
+   * @description 该函数会在 goCqhttp 启动后自动调用，加载当前所有群，并将群信息写入数据库进行群服务初始化
    */
   async InitGroupList() {
     const groupList = await axios
@@ -323,12 +324,12 @@ module.exports = {
         return response.data.data
       })
       .catch((err) => {
-        return err
+        console.error('获取群列表失败，错误原因：', err.code)
+        return false
       })
 
     if (!groupList) {
-      setTimeout(() => this.InitGroupList(), 1000)
-      return
+      return false
     } else {
       const groupIdList = groupList.map((group) => group.group_id)
 
@@ -346,6 +347,7 @@ module.exports = {
         }个群`.log,
       )
     }
+    return true
   },
 
   /**
