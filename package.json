@@ -70,6 +70,6 @@
     "outputPath": "."
   },
   "engines": {
-    "node": "18.20.8"
+    "node": "22.16.0"
   }
 }
