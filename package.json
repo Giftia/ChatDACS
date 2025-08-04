@@ -14,11 +14,11 @@
     "inject": "node --experimental-sea-config sea-config.json && npx postject chatdacs.exe NODE_SEA_BLOB chatdacs.blob --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2 --overwrite"
   },
   "dependencies": {
-    "axios": "0.30.0",
+    "axios": "0.30.1",
     "bilibili-live-ws": "6.3.1",
     "canvas": "3.1.2",
     "colors": "1.4.0",
-    "compression": "1.8.0",
+    "compression": "1.8.1",
     "cookie": "1.0.2",
     "dayjs": "1.11.13",
     "diff": "7.0.0",
@@ -46,8 +46,8 @@
     "yaml": "2.8.0"
   },
   "devDependencies": {
-    "eslint": "9.31.0",
-    "eslint-config-prettier": "10.1.5",
+    "eslint": "9.32.0",
+    "eslint-config-prettier": "10.1.8",
     "eslint-plugin-n": "14.0.0",
     "sequelize-cli": "^6.5.2"
   },
