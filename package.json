@@ -16,7 +16,7 @@
   "dependencies": {
     "axios": "0.30.1",
     "bilibili-live-ws": "6.3.1",
-    "canvas": "3.1.2",
+    "canvas": "3.2.0",
     "colors": "1.4.0",
     "compression": "1.8.1",
     "cookie": "1.0.2",
