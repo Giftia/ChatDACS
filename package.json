@@ -19,7 +19,7 @@
     "canvas": "3.2.0",
     "colors": "1.4.0",
     "compression": "1.8.1",
-    "cookie": "1.0.2",
+    "cookie": "1.1.0",
     "dayjs": "1.11.19",
     "diff": "7.0.0",
     "express": "5.1.0",
