@@ -14,7 +14,7 @@
     "inject": "node --experimental-sea-config sea-config.json && npx postject chatdacs.exe NODE_SEA_BLOB chatdacs.blob --sentinel-fuse NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2 --overwrite"
   },
   "dependencies": {
-    "axios": "0.30.2",
+    "axios": "0.30.3",
     "bilibili-live-ws": "6.3.1",
     "canvas": "3.2.1",
     "colors": "1.4.0",
