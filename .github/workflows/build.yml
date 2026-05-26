@@ -14,7 +14,7 @@ env:
 
 jobs:
   build:
-    name: Build on ${{ matrix.os }} - Node ${{ env.NODE_VERSION }}
+    name: Build on ${{ matrix.os }} - Node 18.20.8
     runs-on: ${{ matrix.runs_on }}
     strategy:
       fail-fast: false
