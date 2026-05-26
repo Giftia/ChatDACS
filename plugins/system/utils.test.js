@@ -1,5 +1,6 @@
 jest.mock('canvas', () => ({}))
 
+const path = require('path')
 const utils = require('./utils.js')
 
 // Set the node environment to test
@@ -69,8 +70,8 @@ describe('PluginAnswerToGoCqhttpStyle', () => {
   })
 
   test('should format a direct picture answer', () => {
-    const answer = {type: 'directPicture', content: {file: 'C:\\images\\img.png'}}
-    expect(utils.PluginAnswerToGoCqhttpStyle(answer)).toMatch(/^\[CQ:image,file=file:\/\/\/.+images\/img\.png\]$/)
+    const answer = {type: 'directPicture', content: {file: path.join('static', 'images', 'img.png')}}
+    expect(utils.PluginAnswerToGoCqhttpStyle(answer)).toMatch(/^\[CQ:image,file=file:\/\/\/.+static\/images\/img\.png\]$/)
   })
 
   test('should format an audio answer', () => {
