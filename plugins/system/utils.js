@@ -757,16 +757,15 @@ module.exports = {
     for (const key in msg) {
       if (Object.hasOwnProperty.call(msg, key)) {
         const element = msg[key]
-        const rows = await this.FuzzyContentSearchAnswer(element.word)
-        for (const k in rows) {
-          if (Object.hasOwnProperty.call(rows, k)) {
-            const answer = rows[k].answer
-            if (candidate[answer] == undefined) {
-              candidate[answer] = 1
-            } else {
-              candidate[answer] = candidate[answer] + 1
-            }
-          }
+        const answer = await this.FuzzyContentSearchAnswer(element.word)
+        if (!answer) {
+          continue
+        }
+
+        if (candidate[answer] == undefined) {
+          candidate[answer] = 1
+        } else {
+          candidate[answer] = candidate[answer] + 1
         }
       }
     }
@@ -800,6 +799,9 @@ module.exports = {
     }
     if (config.WEB_PORT) {
       WEB_PORT = config.WEB_PORT
+    }
+    if (config.CHAT_JIEBA_LIMIT) {
+      CHAT_JIEBA_LIMIT = config.CHAT_JIEBA_LIMIT
     }
   },
 }

@@ -8,7 +8,7 @@ process.env.NODE_ENV = 'test'
 
 describe('Utils Module', () => {
   beforeAll(() => {
-    utils._setTestConfig({WEB_PORT: 8080})
+    utils._setTestConfig({WEB_PORT: 8080, CHAT_JIEBA_LIMIT: 6})
   })
 
   test('should load without errors', () => {
@@ -19,6 +19,18 @@ describe('Utils Module', () => {
     const input = 'hello world'
     const expectedHash = '2aae6c35c94fcfb415dbe95f408b9ce91ee846ed'
     expect(utils.sha1(input)).toBe(expectedHash)
+  })
+
+  test('ChatJiebaFuzzy should aggregate string answers without producing undefined candidates', async () => {
+    const fuzzySpy = jest.spyOn(utils, 'FuzzyContentSearchAnswer').mockResolvedValue('候选回复')
+
+    const candidates = await utils.ChatJiebaFuzzy('回归普通聊天')
+
+    expect(candidates).toEqual(['候选回复'])
+    expect(candidates).not.toContain('undefined')
+    expect(fuzzySpy).toHaveBeenCalled()
+
+    fuzzySpy.mockRestore()
   })
 })
 
