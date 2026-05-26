@@ -7,6 +7,17 @@ const axios = require('axios').default
 const request = require('request')
 
 const Constants = require('../../config/constants.js')
+const {createOneBotSender} = require('../platforms/oneBotSender')
+const {handleQQChatReply} = require('./qq/chatReply')
+const {handleQQEventPreflight} = require('./qq/eventPreflight')
+const {
+  ensureGroupServiceEnabled,
+  handleCloseServiceCommand,
+  handleOpenServiceCommand,
+  isGroupServiceEvent,
+} = require('./qq/groupServiceGate')
+const {handleQQMediaBridge} = require('./qq/mediaBridge')
+const {handleQQPluginReply} = require('./qq/pluginBridge')
 const {ProcessGuildMessage} = require('./qqGuild')
 
 const runtime = {
@@ -14,6 +25,7 @@ const runtime = {
   logger: console,
   utils: null,
   axios,
+  oneBotSender: createOneBotSender({apiUrl: '127.0.0.1:5700', axios}),
   c1cCount: 0,
 }
 
@@ -24,6 +36,10 @@ function configureQQRuntime({config, logger, utils, axios: injectedAxios}) {
   if (logger) runtime.logger = logger
   if (utils) runtime.utils = utils
   if (injectedAxios) runtime.axios = injectedAxios
+  runtime.oneBotSender = createOneBotSender({
+    apiUrl: runtime.config.ONE_BOT_API_URL ?? '127.0.0.1:5700',
+    axios: runtime.axios,
+  })
 }
 
 /**
@@ -32,9 +48,7 @@ function configureQQRuntime({config, logger, utils, axios: injectedAxios}) {
  * @param {Object} event - 事件对象，包含group_id
  */
 async function sendMessageToQQGroup(message, event) {
-  await runtime.axios.get(
-    `http://${runtime.config.ONE_BOT_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(message)}`,
-  )
+  await runtime.oneBotSender.sendGroupMessage(event.group_id, message)
 }
 
 /**
@@ -43,9 +57,7 @@ async function sendMessageToQQGroup(message, event) {
  * @param {Object} event - 事件对象，包含user_id
  */
 async function sendMessageToQQ(message, event) {
-  await runtime.axios.get(
-    `http://${runtime.config.ONE_BOT_API_URL}/send_private_msg?user_id=${event.user_id}&message=${encodeURI(message)}`,
-  )
+  await runtime.oneBotSender.sendPrivateMessage(event.user_id, message)
 }
 
 /**
@@ -55,9 +67,7 @@ async function sendMessageToQQ(message, event) {
  */
 async function sendPluginsReplyToQQ(pluginsReply, event) {
   const replyToQQ = runtime.utils.PluginAnswerToGoCqhttpStyle(pluginsReply)
-  await runtime.axios.get(
-    `http://${runtime.config.ONE_BOT_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(replyToQQ)}`,
-  )
+  await runtime.oneBotSender.sendGroupMessage(event.group_id, replyToQQ)
 }
 
 /**
@@ -128,180 +138,53 @@ async function StartQQBot({
   app.post(config.ONE_BOT_ANTI_POST_API, async (req) => {
     const event = req.body
 
-    // 处理频道消息
-    if (event.message_type == 'guild') {
-      logger.info(
-        `小夜收到频道 ${event.channel_id} 的 ${event.user_id} (${event.sender.nickname}) 发来的消息: ${event.message}`,
-      )
-      await ProcessGuildMessage({event, processExecute: ProcessExecute, chatProcess: ChatProcess, config, logger, utils})
+    const handledByPreflight = await handleQQEventPreflight({
+      event,
+      config,
+      logger,
+      io,
+      oneBotSender: runtime.oneBotSender,
+      processExecute: ProcessExecute,
+      chatProcess: ChatProcess,
+      utils,
+      processGuildMessage: ProcessGuildMessage,
+    })
+    if (handledByPreflight) {
       return 0
     }
 
-    // 被禁言1小时以上自动退群
-    if (event.sub_type == 'ban' && event.user_id == event.self_id) {
-      if (event.duration >= 3599) {
-        await axios.get(`http://${config.ONE_BOT_API_URL}/set_group_leave?group_id=${event.group_id}`)
-        logger.info(`小夜在群 ${event.group_id} 被禁言超过1小时，自动退群`.error)
-        io.emit('system', `小夜在群 ${event.group_id} 被禁言超过1小时，自动退群`)
-      } else {
-        // 被禁言改名
-        await axios.get(
-          `http://${config.ONE_BOT_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${
-            event.self_id
-          }&card=${encodeURI('你妈的，为什么 禁言我')}`,
-        )
-        logger.info(`小夜在群 ${event.group_id} 被禁言，自动改名为 你妈的，为什么 禁言我`.log)
-      }
-      return 0
-    }
-
-    // 添加好友请求
-    if (event.request_type == 'friend') {
-      logger.info(`小夜收到好友请求，请求人：${event.user_id}，请求内容：${event.comment}，按配置自动处理`.log)
-      await axios.get(
-        `http://${config.ONE_BOT_API_URL}/set_friend_add_request?flag=${event.flag}&approve=${config.AUTO_APPROVE_QQ_FRIEND_REQUEST_SWITCH}}`,
-      )
-      return 0
-    }
-
-    // 加群请求发送给管理员
-    if (event.request_type == 'group' && event.sub_type == 'invite') {
-      const msg = `用户 ${event.user_id} 邀请小夜加入群 ${event.group_id}，批准请发送
-批准 ${event.flag}`
-      logger.info(`小夜收到加群请求，请求人：${event.user_id}，请求内容：${event.comment}，发送小夜管理员审核`.log)
-      await sendMessageToQQ(msg, {user_id: config.QQBOT_ADMIN_LIST[0]})
-      // 发送给邀请者批准提醒
-      const inviteReplyContent = `你好呀，谢谢你邀请小夜，请联系这只小夜的主人 ${config.QQBOT_ADMIN_LIST[0]} 来批准入群邀请噢。小夜开源于 https://github.com/Giftia/ChatDACS ，开发组欢迎你的加入！`
-      await sendMessageToQQ(inviteReplyContent, event)
-      return 0
-    }
-
-    // 管理员批准群邀请
-    if (
-      event.message_type == 'private' &&
-      event.user_id == config.QQBOT_ADMIN_LIST[0] &&
-      Constants.approve_group_invite_reg.test(event.message)
-    ) {
-      const flag = event.message.match(Constants.approve_group_invite_reg)[1]
-      await axios.get(
-        `http://${config.ONE_BOT_API_URL}/set_group_add_request?flag=${encodeURI(flag)}&type=invite&approve=1`,
-      )
-      logger.info(`管理员批准了群邀请请求 ${flag}`.log)
-      await sendMessageToQQ('已批准', event)
-      return 0
-    }
-
-    // ————————————————————下面是功能————————————————————
-    let notify = ''
-    switch (event.sub_type) {
-      case 'friend':
-      case 'group':
-        notify = `小夜收到好友 ${event.user_id} (${event.sender.nickname}) 发来的消息: ${event.message}`
-        break
-      case 'normal':
-        notify = `小夜收到群 ${event.group_id} 的 ${event.user_id} (${event.sender.nickname}) 发来的消息: ${event.message}`
-        break
-      case 'approve':
-        notify = `${event.user_id} 加入了群 ${event.group_id}`.log
-        break
-      case 'ban':
-        notify = `${event.user_id} 在群 ${event.group_id} 被禁言 ${event.duration} 秒`.error
-        break
-      case 'poke':
-        notify = `${event.user_id} 戳了一下 ${event.target_id}`.log
-        break
-      default:
-        return 0
-    }
-    logger.info(notify)
-    io.emit('system', notify)
-
-    // 转发图片到web端
-    if (config.QQBOT_SAVE_ALL_IMAGE_TO_LOCAL_SWITCH) {
-      if (Constants.isImage_reg.test(event.message)) {
-        const url = Constants.img_url_reg.exec(event.message)
-        utils
-          .SaveQQimg(url)
-          .then((resolve) => {
-            io.emit('qqImage', resolve)
-          })
-          .catch((reject) => {
-            logger.error(`转发图片失败：${reject}`.error)
-          })
-        return 0
-      }
-    }
-
-    // 转发视频到web端
-    if (Constants.isVideo_reg.test(event.message)) {
-      const url = Constants.video_url_reg.exec(event.message)[0]
-      io.emit('qqVideo', {file: url, filename: 'qq视频'})
+    const handledByMediaBridge = handleQQMediaBridge({
+      event,
+      config,
+      constants: Constants,
+      utils,
+      io,
+      logger,
+    })
+    if (handledByMediaBridge) {
       return 0
     }
 
     // 群服务开关判断
-    const subTypeCondition = ['ban', 'poke', 'friend_add']
-    if (
-      event.message_type == 'group' ||
-      event.notice_type == 'group_increase' ||
-      subTypeCondition.includes(event.sub_type)
-    ) {
-      // 服务启用开关
-      // 指定小夜的话
-      if (Constants.open_ju_reg.test(event.message) && Constants.has_at_qq_reg.test(event.message)) {
-        const who = Constants.has_at_qq_reg.exec(event.message)[1]
-        if (Constants.is_qq_reg.test(who)) {
-          // 如果是自己要被张菊，那么张菊
-          if (event.self_id == who) {
-            axios
-              .get(
-                `http://${config.ONE_BOT_API_URL}/get_group_member_info?group_id=${event.group_id}&user_id=${event.user_id}`,
-              )
-              .then(async (response) => {
-                if (response.data.data.role === 'owner' || response.data.data.role === 'admin') {
-                  logger.info(`群 ${event.group_id} 启用了小夜服务`.log)
-                  await utils.EnableGroupService(event.group_id)
-                  await sendMessageToQQGroup(
-                    '小夜的菊花被管理员张开了，这只小夜在本群的所有服务已经启用，要停用请发 闭菊',
-                    event,
-                  )
-                  return 0
-                }
-                // 申请人不是管理，再看看是不是qqBot管理员
-                else {
-                  if (config.QQBOT_ADMIN_LIST.includes(event.user_id)) {
-                    logger.info(`群 ${event.group_id} 启用了小夜服务`.log)
-                    await utils.EnableGroupService(event.group_id)
-                    await sendMessageToQQGroup(
-                      '小夜的菊花被主人张开了，这只小夜在本群的所有服务已经启用，要停用请发 闭菊',
-                      event,
-                    )
-                    return 0
-                  }
-                  // 看来真不是管理员呢
-                  await sendMessageToQQGroup('你不是群管理呢，小夜不张，张菊需要让管理员来帮忙张噢', event)
-                  return 0
-                }
-              })
-            return 0
-          }
-          // 不是这只小夜被张菊的话，嘲讽那只小夜
-          else {
-            await sendMessageToQQGroup(`[CQ:at,qq=${who}] 说你呢，快张菊!`, event)
-            return 0
-          }
-        }
+    if (isGroupServiceEvent(event)) {
+      const handledOpenServiceCommand = await handleOpenServiceCommand({
+        event,
+        config,
+        constants: Constants,
+        logger,
+        utils,
+        oneBotSender: runtime.oneBotSender,
+      })
+      if (handledOpenServiceCommand) {
+        return 0
       }
-      // 在收到群消息的时候判断群服务开关
-      else {
-        const groupServiceSwitch = await utils.GetGroupServiceSwitch(event.group_id)
 
-        // 闭嘴了就无视掉所有消息
-        if (!groupServiceSwitch) {
-          logger.info(`群 ${event.group_id} 服务已停用，无视群所有消息`.error)
-          return 0
-        } else {
-          // 服务启用了，允许进入后续的指令系统
+      const groupServiceEnabled = await ensureGroupServiceEnabled({event, utils, logger})
+      if (!groupServiceEnabled) {
+        return 0
+      }
+
+      // 服务启用了，允许进入后续的指令系统
 
           // 群欢迎
           if (event.notice_type === 'group_increase') {
@@ -367,53 +250,24 @@ async function StartQQBot({
           }
 
           // 服务停用开关
-          // 指定小夜的话
-          if (Constants.close_ju_reg.test(event.message) && Constants.has_at_qq_reg.test(event.message)) {
-            const who = Constants.has_at_qq_reg.exec(event.message)[1]
-            if (Constants.is_qq_reg.test(who)) {
-              // 如果是自己要被闭菊，那么闭菊
-              if (event.self_id == who) {
-                console.log(`群 ${event.group_id} 停止了小夜服务`.error)
-                await utils.DisableGroupService(event.group_id)
-                await sendMessageToQQGroup(
-                  `小夜的菊花闭上了，这只小夜在本群的所有服务已经停用，取消请发 张菊[CQ:at,qq=${event.self_id}]`,
-                  event,
-                )
-                // 不是这只小夜被闭菊的话，嘲讽那只小夜（或人
-              } else {
-                await sendMessageToQQGroup(`[CQ:at,qq=${who}] 说你呢，快闭菊!`, event)
-              }
-              return 0
-            }
-            // 没指定小夜
-          } else if (event.message === '闭菊') {
-            console.log(`群 ${event.group_id} 停止了小夜服务`.error)
-            await utils.DisableGroupService(event.group_id)
-            await sendMessageToQQGroup(
-              `小夜的菊花闭上了，小夜在本群的所有服务已经停用，取消请发 张菊[CQ:at,qq=${event.self_id}]`,
-              event,
-            )
+          const handledCloseServiceCommand = await handleCloseServiceCommand({
+            event,
+            constants: Constants,
+            utils,
+            oneBotSender: runtime.oneBotSender,
+            logger,
+          })
+          if (handledCloseServiceCommand) {
             return 0
           }
 
           // qq端插件应答器
-          const pluginsReply = await ProcessExecute(
-            event.message,
-            event.user_id,
-            event?.sender?.nickname,
-            event.group_id,
-            (
-              await axios.get(`http://${config.ONE_BOT_API_URL}/get_group_info?group_id=${event.group_id}&no_cache=1`)
-            ).data.data.group_name,
-            {
-              selfId: event.self_id,
-              targetId: event.sub_type == 'poke' ? event.target_id : null,
-              type: 'qq',
-            },
-          )
-          if (pluginsReply != '') {
-            await sendPluginsReplyToQQ(pluginsReply, event)
-          }
+          await handleQQPluginReply({
+            event,
+            processExecute: ProcessExecute,
+            oneBotSender: runtime.oneBotSender,
+            utils,
+          })
 
           // 戳一戳
           if (event.sub_type === 'poke' && event.target_id == event.self_id) {
@@ -944,38 +798,18 @@ async function StartQQBot({
             return 0
           }
 
-          // 是否触发复读
-          const couldRepeat = Math.floor(Math.random() * 100) < config.QQBOT_FUDU_PROBABILITY
-          if (couldRepeat) {
-            console.log(`小夜复读 ${event.message}`.log)
-            await sendMessageToQQGroup(event.message, event)
+          const handledChatReply = await handleQQChatReply({
+            event,
+            config,
+            chatProcess: ChatProcess,
+            sendGroupMessage: sendMessageToQQGroup,
+          })
+          if (handledChatReply) {
             return 0
           }
-
-          // 是否触发回复
-          let replyFlag = Math.floor(Math.random() * 100)
-          // 如果被@了，那么回复几率上升80%
-          let atReplacedMsg = event.message // 要把[CQ:at,qq=${event.self_id}] 去除掉，否则聊天核心会乱成一锅粥
-          if (new RegExp(`\\[CQ:at,qq=${event.self_id}`).test(event.message)) {
-            replyFlag -= 80
-            atReplacedMsg = event.message.replace(`[CQ:at,qq=${event.self_id}]`, '').trim() // 去除@小夜
-          }
-          // 根据权重回复
-          if (replyFlag < config.QQBOT_REPLY_PROBABILITY) {
-            let replyMsg = await ChatProcess(atReplacedMsg)
-
-            if (replyMsg.indexOf('[name]') || replyMsg.indexOf('&#91;name&#93;')) {
-              replyMsg = replyMsg.toString().replace('[name]', `[CQ:at,qq=${event.user_id}]`) // 替换[name]为正确的@
-              replyMsg = replyMsg.toString().replace('&#91;name&#93;', `[CQ:at,qq=${event.user_id}]`) // 替换[name]为正确的@
-            }
-
-            console.log(`对于QQ聊天 ${atReplacedMsg} ，小夜回复 ${replyMsg}`.log)
-            await sendMessageToQQGroup(replyMsg, event)
-            return 0
-          }
-        }
       }
-    } else if (event.message_type == 'private' && config.QQBOT_PRIVATE_CHAT_SWITCH == true) {
+
+    if (event.message_type == 'private' && config.QQBOT_PRIVATE_CHAT_SWITCH == true) {
       // 私聊回复
       ChatProcess(event.message).then(async (resolve) => {
         logger.info(`小夜回复 ${resolve}`.log)
@@ -983,9 +817,8 @@ async function StartQQBot({
         await sendMessageToQQ(resolve, event)
       })
       return 0
-    } else {
-      return 0
     }
+    return 0
   })
 }
 
@@ -999,5 +832,11 @@ module.exports = {
       throw new Error('_setRuntimeForTest can only be called in test environment')
     }
     Object.assign(runtime, config)
+    if (config.config || config.axios) {
+      runtime.oneBotSender = createOneBotSender({
+        apiUrl: runtime.config.ONE_BOT_API_URL ?? '127.0.0.1:5700',
+        axios: runtime.axios,
+      })
+    }
   },
 }
