@@ -1,126 +1,136 @@
 # Thanks @ssp97 for the initial work on this file.
 name: Build ChatDACS One-Click-To-Deploy Package (ChatDACS一键运行包构建)
+
 on:
   push:
     branches:
       - master
+  workflow_dispatch:
 
 env:
   GITHUB_TOKEN: ${{ github.token }}
+  NODE_VERSION: 18.20.8
+  PKG_NODE_TARGET: node18
 
-# https://github.com/actions/setup-node/blob/main/docs/advanced-usage.md#multiple-operating-systems-and-architectures
 jobs:
   build:
+    name: Build on ${{ matrix.os }} - Node ${{ env.NODE_VERSION }}
     runs-on: ${{ matrix.runs-on }}
     strategy:
       fail-fast: false
       matrix:
-        os: [linux-x64, linux-arm64, windows-x64, windows-arm64, macos-x64, macos-arm64]
         include:
           - os: linux-x64
             runs-on: ubuntu-24.04
-            arch: x64
+            node_arch: x64
+            pkg_target: linux-x64
           - os: linux-arm64
             runs-on: ubuntu-24.04-arm
-            arch: arm64
-          - os: windows-x64
+            node_arch: arm64
+            pkg_target: linux-arm64
+          - os: win-x64
             runs-on: windows-latest
-            arch: x64
-          - os: windows-arm64
+            node_arch: x64
+            pkg_target: win-x64
+          - os: win-arm64
             runs-on: windows-latest
-            arch: arm64
+            node_arch: x64
+            pkg_target: win-arm64
           - os: macos-x64
-            # macos-13 was the last x86_64 runner
             runs-on: macos-13
-            arch: x64
+            node_arch: x64
+            pkg_target: macos-x64
           - os: macos-arm64
-            # macos-14+ (including latest) are ARM64 runners
             runs-on: macos-latest
-            arch: arm64
-        node_version:
-          - 18.5.0
-        node_version_declared:
-          - 18
-    name: Build On：${{ matrix.os }} - Node ${{ matrix.node_version }}
+            node_arch: arm64
+            pkg_target: macos-arm64
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node_version }}
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node_version }}
-          architecture: ${{ matrix.arch }}
-          cache: 'npm'
-          cache-dependency-path: |
-            ./package-lock.json
+          node-version: ${{ env.NODE_VERSION }}
+          architecture: ${{ matrix.node_arch }}
+          cache: npm
+          cache-dependency-path: package-lock.json
 
-      - name: Remove go-cqhttp On Windows
+      - name: Remove go-cqhttp binary on Windows
         if: runner.os == 'Windows'
-        run: del ./plugins/go-cqhttp/go-cqhttp
+        shell: pwsh
+        run: Remove-Item -LiteralPath '.\plugins\go-cqhttp\go-cqhttp' -ErrorAction SilentlyContinue
 
-      - name: Remove go-cqhttp.exe On Linux
+      - name: Remove go-cqhttp Windows helpers on Linux
         if: runner.os == 'Linux'
         run: |
-          rm ./plugins/go-cqhttp/go-cqhttp_windows_amd64.exe
-          rm ./plugins/go-cqhttp/go-cqhttp.bat
+          rm -f ./plugins/go-cqhttp/go-cqhttp_windows_amd64.exe
+          rm -f ./plugins/go-cqhttp/go-cqhttp.bat
 
       - name: Install canvas dependencies
-        if: matrix.os == 'linux-arm64'
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libcairo2-dev libjpeg-dev libpango1.0-dev libgif-dev build-essential g++
 
-      - name: Clean Install Modules
-        run: |
-          npm ci --production
+      - name: Install production dependencies
+        run: npm ci --omit=dev
 
-      - name: Install pkg Tool
-        run: npm i pkg -g
+      - name: Install packaging tools
+        run: npm install --no-save --package-lock=false pkg@5.8.1 sequelize-cli@6.6.2 archiver@7.0.1
 
-      - name: Install sequelize-cli
-        run: npm i sequelize-cli
+      - name: Build executable
+        run: npx pkg -t ${{ env.PKG_NODE_TARGET }}-${{ matrix.pkg_target }} . --compress Brotli
 
-      # https://docs.github.com/en/actions/learn-github-actions/environment-variables#detecting-the-operating-system
-      - name: Use pkg To Package
-        run: pkg -t node${{ matrix.node_version_declared }}-${{ matrix.os }} . --compress Brotli
-
-      # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#setting-an-environment-variable
-      - name: Declare VERSION
+      - name: Declare package metadata
         shell: bash
         run: |
-          VERSION_NUMBER=$(jq -r '.version' package.json)
-          echo "VERSION_NUMBER=v$VERSION_NUMBER" >> $GITHUB_ENV
+          echo "VERSION_NUMBER=v$(node -p "require('./package.json').version")" >> "$GITHUB_ENV"
+          echo "BUILD_TIME=$(TZ='Asia/Shanghai' date +'%Y%m%d%H%M%S')" >> "$GITHUB_ENV"
 
-      - name: Pre-compress
+      - name: Create zip package
         shell: bash
         run: |
-          npm i archiver
-          node -e "
-            const archiver = require('archiver');
-            const fs = require('fs');
-            const path = require('path');
-            const output = fs.createWriteStream(path.join(__dirname, 'ChatDACS-${{ env.VERSION_NUMBER }}_${{ matrix.os }}.zip'));
-            const archive = archiver('zip', {
-              zlib: { level: 9 }
-            });
-            archive.pipe(output);
-            archive.directory('./config/', 'config');
-            archive.directory('./static/', 'static');
-            archive.directory('./plugins/', 'plugins');
-            archive.directory('./migrations/', 'migrations');
-            archive.directory('./node_modules', 'node_modules');
-            archive.file('./README.md', { name: 'README.md' });
-            archive.file('./LICENSE', { name: 'LICENSE' });
-            archive.file('./package.json', { name: 'package.json' });
-            archive.file('./chatdacs.exe', { name: 'chatdacs.exe' });
-            archive.file('./chatdacs', { name: 'chatdacs' });
-            archive.finalize();
-          "
+          node - <<'NODE'
+          const archiver = require('archiver')
+          const fs = require('fs')
+          const path = require('path')
 
-      - name: Set BUILD_TIME (Shanghai)
-        shell: bash
-        run: echo "BUILD_TIME=$(TZ='Asia/Shanghai' date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
+          async function main() {
+            const version = process.env.VERSION_NUMBER
+            const os = process.env.MATRIX_OS
+            const output = fs.createWriteStream(path.join(process.cwd(), `ChatDACS-${version}_${os}.zip`))
+            const archive = archiver('zip', {zlib: {level: 9}})
 
-      - name: Upload Build Artifact
+            const done = new Promise((resolve, reject) => {
+              output.on('close', resolve)
+              archive.on('error', reject)
+              output.on('error', reject)
+            })
+
+            archive.pipe(output)
+            for (const dir of ['config', 'static', 'plugins', 'migrations', 'node_modules']) {
+              archive.directory(`./${dir}/`, dir)
+            }
+            for (const file of ['README.md', 'LICENSE', 'package.json', 'chatdacs.exe', 'chatdacs']) {
+              if (fs.existsSync(file)) {
+                archive.file(file, {name: file})
+              }
+            }
+            await archive.finalize()
+            await done
+          }
+
+          main().catch((error) => {
+            console.error(error)
+            process.exit(1)
+          })
+          NODE
+        env:
+          MATRIX_OS: ${{ matrix.os }}
+
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: ChatDACS-${{ env.VERSION_NUMBER }}_${{ matrix.os }}_${{ env.BUILD_TIME }}

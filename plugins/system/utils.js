@@ -12,6 +12,7 @@ if (process.platform === 'win32') {
   require('canvas')
 }
 const sharp = require('sharp')
+const jieba = require('nodejs-jieba')
 const dayjs = require('dayjs')
 const utc = require('dayjs/plugin/utc')
 const timezone = require('dayjs/plugin/timezone')
@@ -28,7 +29,7 @@ const ChatModel = require('./model/chatModel.js')
 const PerfunctoryModel = require('./model/perfunctoryModel.js')
 const HandGrenadeModel = require('./model/handGrenadeModel.js')
 
-let WEB_PORT, ONE_BOT_API_URL, TIAN_XING_API_KEY
+let WEB_PORT, ONE_BOT_API_URL, TIAN_XING_API_KEY, CHAT_JIEBA_LIMIT
 
 Init()
 
@@ -51,6 +52,7 @@ async function Init() {
   WEB_PORT = resolve.System.WEB_PORT
   ONE_BOT_API_URL = resolve.System.ONE_BOT_API_URL
   TIAN_XING_API_KEY = resolve.ApiKey.TIAN_XING_API_KEY
+  CHAT_JIEBA_LIMIT = resolve.qqBot.CHAT_JIEBA_LIMIT ?? 5
 }
 
 // 孤寡图序列
@@ -796,6 +798,54 @@ module.exports = {
     return group.pluginsList[pluginName]
   },
 
+  /**
+   * 异步结巴 thanks@ssp97
+   * @param {Promise<string>} text
+   */
+  async ChatJiebaFuzzy(msg) {
+    msg = msg.replace('/', '')
+    msg = jieba.extract(msg, CHAT_JIEBA_LIMIT) // 按权重分词
+
+    if (msg.length === 0) {
+      return []
+    }
+
+    let candidate = []
+    let candidateNextList = []
+    let candidateNextGrand = 0
+    // 收集数据开始
+    for (const key in msg) {
+      if (Object.hasOwnProperty.call(msg, key)) {
+        const element = msg[key]
+        const rows = await this.FuzzyContentSearchAnswer(element.word)
+        for (const k in rows) {
+          if (Object.hasOwnProperty.call(rows, k)) {
+            const answer = rows[k].answer
+            if (candidate[answer] == undefined) {
+              candidate[answer] = 1
+            } else {
+              candidate[answer] = candidate[answer] + 1
+            }
+          }
+        }
+      }
+    }
+    // 筛选次数最多
+    for (const key in candidate) {
+      if (Object.hasOwnProperty.call(candidate, key)) {
+        const element = candidate[key]
+        if (element > candidateNextGrand) {
+          candidateNextList = []
+          candidateNextGrand = element
+          candidateNextList.push(key)
+        } else if (element == candidateNextGrand) {
+          candidateNextList.push(key)
+        }
+      }
+    }
+    return candidateNextList
+  },
+
   UserModel,
   MessageModel,
   QQGroupModel,
@@ -803,4 +853,13 @@ module.exports = {
   ChatModel,
   PerfunctoryModel,
   HandGrenadeModel,
+
+  _setTestConfig(config) {
+    if (process.env.NODE_ENV !== 'test') {
+      throw new Error('_setTestConfig can only be called in test environment')
+    }
+    if (config.WEB_PORT) {
+      WEB_PORT = config.WEB_PORT
+    }
+  },
 }

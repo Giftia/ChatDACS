@@ -1,0 +1,135 @@
+jest.mock('canvas', () => ({}))
+
+const utils = require('./utils.js')
+
+// Set the node environment to test
+process.env.NODE_ENV = 'test'
+
+describe('Utils Module', () => {
+  beforeAll(() => {
+    utils._setTestConfig({WEB_PORT: 8080})
+  })
+
+  test('should load without errors', () => {
+    expect(utils).not.toBeNull()
+  })
+
+  test('sha1 should compute the correct hash', () => {
+    const input = 'hello world'
+    const expectedHash = '2aae6c35c94fcfb415dbe95f408b9ce91ee846ed'
+    expect(utils.sha1(input)).toBe(expectedHash)
+  })
+})
+
+describe('PluginAnswerToWebStyle', () => {
+  test('should format a text answer', () => {
+    const answer = {type: 'text', content: 'hello'}
+    expect(utils.PluginAnswerToWebStyle(answer)).toBe('hello')
+  })
+
+  test('should format a picture answer', () => {
+    const answer = {type: 'picture', content: {file: '/img.png'}}
+    expect(utils.PluginAnswerToWebStyle(answer)).toBe('img[/img.png]')
+  })
+
+  test('should format an audio answer', () => {
+    const answer = {type: 'audio', content: {file: '/audio.mp3', filename: 'song.mp3'}}
+    expect(utils.PluginAnswerToWebStyle(answer)).toBe('audio[/audio.mp3](song.mp3)')
+  })
+
+  test('should format a video answer', () => {
+    const answer = {type: 'video', content: {file: '/video.mp4', filename: 'movie.mp4'}}
+    expect(utils.PluginAnswerToWebStyle(answer)).toBe('video[/video.mp4](movie.mp4)')
+  })
+
+  test('should format a file answer', () => {
+    const answer = {type: 'file', content: {file: '/file.zip', filename: 'archive.zip'}}
+    expect(utils.PluginAnswerToWebStyle(answer)).toBe('file(/file.zip)[archive.zip]')
+  })
+})
+
+describe('PluginAnswerToGoCqhttpStyle', () => {
+  beforeAll(() => {
+    utils._setTestConfig({WEB_PORT: 8080})
+  })
+
+  test('should format a text answer', () => {
+    const answer = {type: 'text', content: 'hello'}
+    expect(utils.PluginAnswerToGoCqhttpStyle(answer)).toBe('hello')
+  })
+
+  test('should format a local picture answer', () => {
+    const answer = {type: 'picture', content: {file: '/img.png'}}
+    expect(utils.PluginAnswerToGoCqhttpStyle(answer)).toBe('[CQ:image,file=http://127.0.0.1:8080/img.png]')
+  })
+
+  test('should format a remote picture answer', () => {
+    const answer = {type: 'picture', content: {file: 'http://example.com/img.png'}}
+    expect(utils.PluginAnswerToGoCqhttpStyle(answer)).toBe('[CQ:image,file=http://example.com/img.png]')
+  })
+
+  test('should format a direct picture answer', () => {
+    const answer = {type: 'directPicture', content: {file: 'C:\\images\\img.png'}}
+    expect(utils.PluginAnswerToGoCqhttpStyle(answer)).toMatch(/^\[CQ:image,file=file:\/\/\/.+images\/img\.png\]$/)
+  })
+
+  test('should format an audio answer', () => {
+    const answer = {type: 'audio', content: {file: '/audio.mp3'}}
+    expect(utils.PluginAnswerToGoCqhttpStyle(answer)).toBe('[CQ:record,file=http://127.0.0.1:8080/audio.mp3]')
+  })
+})
+
+describe('PluginAnswerToQQGuildStyle', () => {
+  beforeAll(() => {
+    utils._setTestConfig({WEB_PORT: 8080})
+  })
+
+  test('should format a picture answer', () => {
+    const answer = {type: 'picture', content: {file: '/img.png'}}
+    expect(utils.PluginAnswerToQQGuildStyle(answer)).toEqual({image: 'http://127.0.0.1:8080/img.png'})
+  })
+
+  test('should format a direct picture answer', () => {
+    const answer = {type: 'directPicture', content: {file: './static/img.png'}}
+    expect(utils.PluginAnswerToQQGuildStyle(answer)).toEqual({image: 'http://127.0.0.1:8080/img.png'})
+  })
+
+  test('should format an audio answer', () => {
+    const answer = {type: 'audio', content: {file: '/audio.mp3', filename: 'song.mp3'}}
+    expect(utils.PluginAnswerToQQGuildStyle(answer)).toEqual({
+      text: 'song.mp3',
+      audio: 'http://127.0.0.1:8080/audio.mp3',
+    })
+  })
+
+  test('should format a text answer', () => {
+    const answer = {type: 'text', content: 'hello'}
+    expect(utils.PluginAnswerToQQGuildStyle(answer)).toEqual({text: 'hello'})
+  })
+})
+
+describe('PluginAnswerToTelegramStyle', () => {
+  test('should format a picture answer', () => {
+    const answer = {type: 'picture', content: {file: '/img.png'}}
+    expect(utils.PluginAnswerToTelegramStyle(answer)).toEqual({image: './static/img.png'})
+  })
+
+  test('should format a direct picture answer', () => {
+    const answer = {type: 'directPicture', content: {file: '/img.png'}}
+    expect(utils.PluginAnswerToTelegramStyle(answer)).toEqual({image: '/img.png'})
+  })
+
+  test('should format an audio answer', () => {
+    const answer = {type: 'audio', content: {file: '/audio.mp3', filename: 'song.mp3', duration: 120}}
+    expect(utils.PluginAnswerToTelegramStyle(answer)).toEqual({
+      text: 'song.mp3',
+      audio: './static/audio.mp3',
+      duration: 120,
+    })
+  })
+
+  test('should format a text answer', () => {
+    const answer = {type: 'text', content: 'hello'}
+    expect(utils.PluginAnswerToTelegramStyle(answer)).toEqual({text: 'hello'})
+  })
+})
