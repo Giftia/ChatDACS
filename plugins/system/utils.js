@@ -1,7 +1,6 @@
 const fs = require('fs')
 const path = require('path')
 const yaml = require('yaml')
-const url = require('url')
 const crypto = require('crypto')
 const axios = require('axios').default
 const mp3Duration = require('mp3-duration')
@@ -28,6 +27,7 @@ const MineModel = require('./model/mineModel.js')
 const ChatModel = require('./model/chatModel.js')
 const PerfunctoryModel = require('./model/perfunctoryModel.js')
 const HandGrenadeModel = require('./model/handGrenadeModel.js')
+const responseAdapter = require('../../src/platforms/responseAdapter.js')
 
 let WEB_PORT, ONE_BOT_API_URL, TIAN_XING_API_KEY, CHAT_JIEBA_LIMIT
 
@@ -198,17 +198,7 @@ module.exports = {
    * @returns {string} 转换结果
    */
   PluginAnswerToWebStyle(answer) {
-    if (!answer.content?.file) {
-      return answer.content
-    }
-    const styleMap = {
-      picture: `img[${answer.content?.file}]`,
-      directPicture: `img[${answer.content?.file}]`,
-      audio: `audio[${answer.content?.file}](${answer.content?.filename})`,
-      video: `video[${answer.content?.file}](${answer.content?.filename})`,
-      file: `file(${answer.content?.file})[${answer.content?.filename}]`,
-    }
-    return styleMap[answer.type]
+    return responseAdapter.formatPluginAnswer('web', answer, {webPort: WEB_PORT})
   },
 
   /**
@@ -217,20 +207,7 @@ module.exports = {
    * @returns {string} 转换结果
    */
   PluginAnswerToGoCqhttpStyle(answer) {
-    if (!answer.content?.file) {
-      return answer.content
-    }
-    const styleMap = {
-      picture: `[CQ:image,file=${
-        answer.content?.file.indexOf('http') === -1
-          ? `http://127.0.0.1:${WEB_PORT}${answer.content?.file}`
-          : answer.content?.file
-      }]`,
-      directPicture: `[CQ:image,file=${url.pathToFileURL(path.resolve(answer.content?.file))}]`,
-      audio: `[CQ:record,file=http://127.0.0.1:${WEB_PORT}${answer.content?.file}]`,
-      video: `[CQ:video,file=http://127.0.0.1:${WEB_PORT}${answer.content?.file}]`,
-    }
-    return styleMap[answer.type]
+    return responseAdapter.formatPluginAnswer('onebot', answer, {webPort: WEB_PORT})
   },
 
   /**
@@ -239,25 +216,7 @@ module.exports = {
    * @returns {object} { image, audio, text }
    */
   PluginAnswerToQQGuildStyle(answer) {
-    switch (answer.type) {
-      case 'picture':
-        return {
-          image: `http://127.0.0.1:${WEB_PORT}${answer.content?.file}`,
-        }
-      case 'directPicture':
-        return {
-          image: `http://127.0.0.1:${WEB_PORT}${answer.content?.file.replace('./static', '')}`,
-        }
-      case 'audio':
-        return {
-          text: answer.content.filename,
-          audio: `http://127.0.0.1:${WEB_PORT}${answer.content?.file}`,
-        }
-      default:
-        return {
-          text: answer.content,
-        }
-    }
+    return responseAdapter.formatPluginAnswer('qqGuild', answer, {webPort: WEB_PORT})
   },
 
   /**
@@ -266,26 +225,7 @@ module.exports = {
    * @returns {object} { image, audio, text }
    */
   PluginAnswerToTelegramStyle(answer) {
-    switch (answer.type) {
-      case 'picture':
-        return {
-          image: `./static${answer.content?.file}`,
-        }
-      case 'directPicture':
-        return {
-          image: answer.content?.file,
-        }
-      case 'audio':
-        return {
-          text: answer.content.filename,
-          audio: `./static${answer.content?.file}`,
-          duration: answer.content.duration,
-        }
-      default:
-        return {
-          text: answer.content,
-        }
-    }
+    return responseAdapter.formatPluginAnswer('telegram', answer, {webPort: WEB_PORT})
   },
 
   /**
