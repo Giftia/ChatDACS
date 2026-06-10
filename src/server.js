@@ -18,10 +18,19 @@ const fs = require('fs')
 const utils = require('../plugins/system/utils.js') // 载入系统通用模块
 const Constants = require('../config/constants.js') // 系统常量
 const ipTranslator = require('lib-qqwry')(true)
+const {createWebMessageHandler} = require('./web/messageHandler')
 
 let onlineUsers = 0
 
 function startServer({version, globalConfig, logger, chatProcess, processExecute}) {
+  const handleWebMessage = createWebMessageHandler({
+    io,
+    utils,
+    logger,
+    chatProcess,
+    processExecute,
+    globalConfig,
+  })
 
   io.on('connection', async (socket) => {
     socket.emit('getCookie')
@@ -105,36 +114,7 @@ function startServer({version, globalConfig, logger, chatProcess, processExecute
 
     // web端最核心代码，聊天处理
     socket.on('message', async (msgIn) => {
-      const CID = cookie.parse(socket.request.headers.cookie || '').ChatdacsID ?? 0
-      const msg = msgIn.msg.replace(/['<>]/g, '') // 防爆
-      logger.info(`web端用户 ${socket.username}(${CID}) 发送了消息: ${msg}`.warn)
-
-      // 新消息写入数据库
-      utils.AddMessage(CID, msg)
-
-      io.emit('message', {CID: CID, name: socket.username, msg: msg}) // 用户广播
-
-      // web端插件应答器
-      const pluginsReply =
-        (await processExecute(msg, CID, socket.username, '1145141919810', '', {
-          type: 'web',
-        })) ?? ''
-      if (pluginsReply) {
-        const replyToWeb = utils.PluginAnswerToWebStyle(pluginsReply)
-        const answerMessage = {
-          CID: '0',
-          msg: replyToWeb,
-        }
-        io.emit('message', answerMessage)
-      }
-
-      if (globalConfig.CHAT_SWITCH) {
-        // 交给聊天函数处理
-        const chatReply = await chatProcess(msg)
-        if (chatReply) {
-          io.emit('message', {CID: '0', msg: chatReply})
-        }
-      }
+      await handleWebMessage({socket, msgIn})
     })
   })
 
