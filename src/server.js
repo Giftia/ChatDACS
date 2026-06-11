@@ -9,7 +9,6 @@ app.use(express.json()) // 解析post
 app.use(express.urlencoded({extended: false})) // 解析post
 const multer = require('multer') // 用于文件上传
 const upload = multer({dest: './static/uploads/'}) // 用户上传目录
-const cookie = require('cookie')
 const http = require('http').Server(app)
 const io = require('socket.io')(http)
 const path = require('path')
@@ -19,10 +18,17 @@ const utils = require('../plugins/system/utils.js') // 载入系统通用模块
 const Constants = require('../config/constants.js') // 系统常量
 const ipTranslator = require('lib-qqwry')(true)
 const {createWebMessageHandler} = require('./web/messageHandler')
-
-let onlineUsers = 0
+const {createWebSessionRuntime} = require('./web/session')
 
 function startServer({version, globalConfig, logger, chatProcess, processExecute}) {
+  const webSessionRuntime = createWebSessionRuntime({
+    io,
+    utils,
+    logger,
+    constants: Constants,
+    version,
+    ipTranslator,
+  })
   const handleWebMessage = createWebMessageHandler({
     io,
     utils,
@@ -33,84 +39,10 @@ function startServer({version, globalConfig, logger, chatProcess, processExecute
   })
 
   io.on('connection', async (socket) => {
-    socket.emit('getCookie')
-    const CID = cookie.parse(socket.request.headers.cookie || '').ChatdacsID
-    if (CID == undefined) {
-      socket.emit('getCookie')
+    const connected = await webSessionRuntime.handleConnection(socket)
+    if (!connected) {
       return 0
     }
-
-    // 获取 ip 与 地理位置
-    const ip = socket.handshake.headers['x-forwarded-for']
-      ? socket.handshake.headers['x-forwarded-for']?.split('::ffff:')[1]
-      : socket.handshake.address.split('::ffff:')[1] ?? socket.handshake.address
-    let location = '未知归属地'
-    try {
-      location = ipTranslator.searchIP(ip).Country
-    } catch (error) {
-      logger.error(`获取地理位置失败: ${error}`)
-    }
-
-    socket.emit('version', version)
-    io.emit('onlineUsers', ++onlineUsers)
-
-    // 开始获取用户信息并处理
-    const {nickname, loginTimes, updatedAt} = await utils.GetUserData(CID)
-
-    if (updatedAt) {
-      socket.username = `${nickname}[来自${location}]`
-
-      logger.info(`web端用户 ${nickname}(${CID}) 已经连接，登录次数 ${loginTimes + 1}，上次登录时间 ${updatedAt}`.log)
-
-      // 更新登录次数
-      utils.UpdateLoginTimes(CID)
-
-      io.emit(
-        'system',
-        `欢迎回来，${socket.username}(${CID}) 。这是你第${loginTimes + 1}次访问。上次访问时间: ${updatedAt}`,
-      )
-    } else {
-      // 若无法获取该用户信息，则应该是其第一次访问，接下来是新增用户操作:
-      const CID = cookie.parse(socket.request.headers.cookie || '').ChatdacsID
-      const randomNickname = await utils.RandomNickname()
-      socket.username = `${randomNickname}[来自${location}]`
-
-      logger.info(`web端用户 ${socket.username}(${CID}) 第一次访问，新增该用户`.log)
-
-      // 新增用户
-      utils.AddUser(CID, randomNickname)
-
-      io.emit(
-        'system',
-        `新用户 ${socket.username}(${CID}) 已连接。小夜帮你取了一个随机昵称: ${socket.username}，请前往 更多-设置 来更改昵称`,
-      )
-
-      socket.emit('message', {
-        CID: '0',
-        msg: Constants.WEB_HELP_CONTENT,
-      })
-    }
-
-    socket.on('disconnect', () => {
-      onlineUsers--
-      io.emit('onlineUsers', onlineUsers)
-      logger.info(`web端用户 ${socket.username}(${CID}) 已经断开连接`.log)
-      io.emit('system', '用户 ' + socket.username + ' 已断开连接')
-    })
-
-    socket.on('typing', () => {
-      io.emit('typing', `${socket.username} 正在输入...`)
-    })
-
-    socket.on('typingOver', () => {
-      io.emit('typing', '')
-    })
-
-    // 用户设置
-    socket.on('getSettings', () => {
-      const CID = cookie.parse(socket.request.headers.cookie || '').ChatdacsID
-      socket.emit('settings', {CID: CID, name: socket.username})
-    })
 
     // web端最核心代码，聊天处理
     socket.on('message', async (msgIn) => {
