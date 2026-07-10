@@ -106,4 +106,3 @@ jobs:
           name: ChatDACS-${{ env.VERSION_NUMBER }}_${{ matrix.os }}_${{ env.BUILD_TIME }}
           path: .release/ChatDACS-${{ env.VERSION_NUMBER }}_${{ matrix.os }}.zip
           if-no-files-found: error
-
