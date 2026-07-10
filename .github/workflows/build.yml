@@ -29,9 +29,11 @@ jobs:
             node_arch: x64
           - os: win-arm64
             runs_on: windows-11-arm
-            node_arch: arm64
+            # Node 18 never shipped a Windows ARM64 runtime. Windows 11 ARM runs
+            # this x64 bundle through its supported compatibility layer.
+            node_arch: x64
           - os: macos-x64
-            runs_on: macos-13
+            runs_on: macos-15
             node_arch: x64
           - os: macos-arm64
             runs_on: macos-latest
@@ -49,25 +51,21 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
 
-      - name: Remove go-cqhttp binary on Windows
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: Remove-Item -LiteralPath '.\plugins\go-cqhttp\go-cqhttp' -ErrorAction SilentlyContinue
-
-      - name: Remove go-cqhttp Windows helpers on Linux
-        if: runner.os == 'Linux'
-        run: |
-          rm -f ./plugins/go-cqhttp/go-cqhttp_windows_amd64.exe
-          rm -f ./plugins/go-cqhttp/go-cqhttp.bat
-
       - name: Install canvas dependencies
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libcairo2-dev libjpeg-dev libpango1.0-dev libgif-dev build-essential g++
 
+      - name: Install canvas dependencies on macOS
+        if: runner.os == 'macOS'
+        run: brew install pkg-config cairo pango libpng jpeg giflib librsvg pixman
+
       - name: Install production dependencies
         run: npm ci --omit=dev
+
+      - name: Smoke production runtime
+        run: npm run smoke:web
 
       - name: Install isolated packaging tool
         shell: pwsh
@@ -82,6 +80,20 @@ jobs:
         env:
           RELEASE_TARGET: ${{ matrix.os }}
 
+      - name: Verify bundled runtime
+        shell: pwsh
+        run: |
+          $bundle = Get-ChildItem -LiteralPath '.release/stage' -Directory | Select-Object -First 1
+          if (-not $bundle) { throw 'Release stage directory was not created.' }
+          $runtimeName = if ($IsWindows) { 'node.exe' } else { 'node' }
+          $runtime = Join-Path $bundle.FullName "runtime/$runtimeName"
+          $runtimeVersion = & $runtime --version
+          if ($runtimeVersion -ne "v${{ env.NODE_VERSION }}") {
+            throw "Unexpected bundled Node version: $runtimeVersion"
+          }
+          Push-Location $bundle.FullName
+          try { & $runtime --check index.js } finally { Pop-Location }
+
       - name: Declare package metadata
         shell: bash
         run: |
@@ -94,3 +106,4 @@ jobs:
           name: ChatDACS-${{ env.VERSION_NUMBER }}_${{ matrix.os }}_${{ env.BUILD_TIME }}
           path: .release/ChatDACS-${{ env.VERSION_NUMBER }}_${{ matrix.os }}.zip
           if-no-files-found: error
+
