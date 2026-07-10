@@ -8,9 +8,7 @@ on:
   workflow_dispatch:
 
 env:
-  GITHUB_TOKEN: ${{ github.token }}
   NODE_VERSION: 18.20.8
-  PKG_NODE_TARGET: node18
 
 jobs:
   build:
@@ -23,27 +21,21 @@ jobs:
           - os: linux-x64
             runs_on: ubuntu-24.04
             node_arch: x64
-            pkg_target: linux-x64
           - os: linux-arm64
             runs_on: ubuntu-24.04-arm
             node_arch: arm64
-            pkg_target: linux-arm64
           - os: win-x64
             runs_on: windows-latest
             node_arch: x64
-            pkg_target: win-x64
           - os: win-arm64
-            runs_on: windows-latest
-            node_arch: x64
-            pkg_target: win-arm64
+            runs_on: windows-11-arm
+            node_arch: arm64
           - os: macos-x64
             runs_on: macos-13
             node_arch: x64
-            pkg_target: macos-x64
           - os: macos-arm64
             runs_on: macos-latest
             node_arch: arm64
-            pkg_target: macos-arm64
 
     steps:
       - name: Checkout
@@ -77,11 +69,18 @@ jobs:
       - name: Install production dependencies
         run: npm ci --omit=dev
 
-      - name: Install packaging tools
-        run: npm install --no-save --package-lock=false pkg@5.8.1 sequelize-cli@6.6.2 archiver@7.0.1
+      - name: Install isolated packaging tool
+        shell: pwsh
+        run: |
+          $toolRoot = Join-Path $env:RUNNER_TEMP 'chatdacs-build-tools'
+          npm install --prefix $toolRoot --no-save --package-lock=false archiver@7.0.1
+          $archiverPath = Join-Path $toolRoot 'node_modules/archiver'
+          "ARCHIVER_MODULE_PATH=$archiverPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: Build executable
-        run: npx pkg -t ${{ env.PKG_NODE_TARGET }}-${{ matrix.pkg_target }} . --compress Brotli
+      - name: Build runtime bundle
+        run: npm run package:release
+        env:
+          RELEASE_TARGET: ${{ matrix.os }}
 
       - name: Declare package metadata
         shell: bash
@@ -89,50 +88,9 @@ jobs:
           echo "VERSION_NUMBER=v$(node -p "require('./package.json').version")" >> "$GITHUB_ENV"
           echo "BUILD_TIME=$(TZ='Asia/Shanghai' date +'%Y%m%d%H%M%S')" >> "$GITHUB_ENV"
 
-      - name: Create zip package
-        shell: bash
-        run: |
-          node - <<'NODE'
-          const archiver = require('archiver')
-          const fs = require('fs')
-          const path = require('path')
-
-          async function main() {
-            const version = process.env.VERSION_NUMBER
-            const os = process.env.MATRIX_OS
-            const output = fs.createWriteStream(path.join(process.cwd(), `ChatDACS-${version}_${os}.zip`))
-            const archive = archiver('zip', {zlib: {level: 9}})
-
-            const done = new Promise((resolve, reject) => {
-              output.on('close', resolve)
-              archive.on('error', reject)
-              output.on('error', reject)
-            })
-
-            archive.pipe(output)
-            for (const dir of ['config', 'static', 'plugins', 'migrations', 'node_modules']) {
-              archive.directory(`./${dir}/`, dir)
-            }
-            for (const file of ['README.md', 'LICENSE', 'package.json', 'chatdacs.exe', 'chatdacs']) {
-              if (fs.existsSync(file)) {
-                archive.file(file, {name: file})
-              }
-            }
-            await archive.finalize()
-            await done
-          }
-
-          main().catch((error) => {
-            console.error(error)
-            process.exit(1)
-          })
-          NODE
-        env:
-          MATRIX_OS: ${{ matrix.os }}
-
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: ChatDACS-${{ env.VERSION_NUMBER }}_${{ matrix.os }}_${{ env.BUILD_TIME }}
-          path: ChatDACS-${{ env.VERSION_NUMBER }}_${{ matrix.os }}.zip
+          path: .release/ChatDACS-${{ env.VERSION_NUMBER }}_${{ matrix.os }}.zip
           if-no-files-found: error
