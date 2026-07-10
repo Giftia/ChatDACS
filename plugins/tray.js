@@ -23,6 +23,8 @@ module.exports = {
     if (process.platform === 'win32') {
       this.runTray().then((resolve) => {
         this.tray = resolve
+      }).catch((error) => {
+        this.logger.error(`托盘启动失败: ${error?.stack ?? error}`)
       })
     }
   },

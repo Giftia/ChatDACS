@@ -5,7 +5,12 @@ const path = require('path')
 const {spawnSync} = require('child_process')
 
 const rootDir = path.resolve(__dirname, '..')
-const checkTargets = [path.join(rootDir, 'index.js'), ...findJsFiles(path.join(rootDir, 'src'))]
+const rootFiles = ['index.js', 'plugin_dependencies.js', 'plugin_tester.js']
+const sourceDirs = ['config', 'migrations', 'plugins', 'scripts', 'src']
+const checkTargets = [
+  ...rootFiles.map((file) => path.join(rootDir, file)),
+  ...sourceDirs.flatMap((dir) => findJsFiles(path.join(rootDir, dir))),
+].sort()
 let failed = false
 
 for (const file of checkTargets) {

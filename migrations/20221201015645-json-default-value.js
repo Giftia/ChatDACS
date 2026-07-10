@@ -28,10 +28,8 @@ module.exports = {
     });
 
     // 给已有记录设置默认值
-    await queryInterface.sequelize.query(`
-      UPDATE qqGroups SET pluginsList = '{}' WHERE pluginsList = '';
-      UPDATE danceCube SET location = '{}' WHERE location = '';
-    `);
+    await queryInterface.sequelize.query("UPDATE qqGroups SET pluginsList = '{}' WHERE pluginsList = '';");
+    await queryInterface.sequelize.query("UPDATE danceCube SET location = '{}' WHERE location = '';");
   },
 
   async down(queryInterface, Sequelize) {
@@ -58,9 +56,7 @@ module.exports = {
     });
 
     // 已有记录回滚默认值
-    await queryInterface.sequelize.query(`
-      UPDATE qqGroups SET pluginsList = '' WHERE pluginsList = '{}';
-      UPDATE danceCube SET location = '' WHERE location = '{}';
-    `);
+    await queryInterface.sequelize.query("UPDATE qqGroups SET pluginsList = '' WHERE pluginsList = '{}';");
+    await queryInterface.sequelize.query("UPDATE danceCube SET location = '' WHERE location = '{}';");
   }
 };

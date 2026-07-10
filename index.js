@@ -31,12 +31,17 @@ const yaml = require('yaml')
 require.all = require('require.all')
 
 const Constants = require('./config/constants.js')
+const danceCubeAuthorization = require('./plugins/danceCube/authorization.json')
+const {sequelize} = require('./plugins/system/model/database.js')
 const utils = require('./plugins/system/utils.js')
 const {StartLive} = require('./src/bots/bilibili')
 const {StartQQBot, configureQQRuntime, sendMessageToQQGroup} = require('./src/bots/qq')
 const {StartQQGuild} = require('./src/bots/qqGuild')
 const {StartTelegram} = require('./src/bots/telegram')
+const {normalizeRuntimeConfig} = require('./src/config/runtimeConfig')
 const {ChatProcess, ECYWenDa} = require('./src/core/chat.js')
+const {runMigrations} = require('./src/core/migrations')
+const {registerProcessErrorHandlers} = require('./src/core/processErrors')
 const {createPluginRuntime} = require('./src/plugins/runtime.js')
 
 const versionNumber = `v${require('./package.json').version}`
@@ -119,10 +124,18 @@ async function main() {
   printBanner()
 
   globalConfig = await InitConfig()
+  await RunMigration()
   configureQQRuntime({config: globalConfig, logger, utils, axios})
   const {startServer, app, io} = require('./src/server.js')
 
-  registerProcessErrorHandlers(io)
+  registerProcessErrorHandlers({
+    io,
+    logger,
+    notifyAdmin:
+      globalConfig.CONNECT_ONE_BOT_SWITCH || globalConfig.GO_CQHTTP_SWITCH
+        ? (error) => sendMessageToQQGroup(error, {group_id: 157311946})
+        : undefined,
+  })
 
   startServer({
     version,
@@ -135,18 +148,6 @@ async function main() {
   InitPluginSystem(io)
   await StartConfiguredAdapters({app, io})
   CheckUpdate()
-  RunMigration()
-}
-
-function registerProcessErrorHandlers(io) {
-  const report = async (prefix, err) => {
-    io.emit('system', `${prefix}: ${err}`)
-    logger.error(err)
-    await sendMessageToQQGroup(err, {group_id: 157311946})
-  }
-
-  process.on('uncaughtException', async (err) => report('@未捕获的异常', err))
-  process.on('unhandledRejection', async (err) => report('@未捕获的promise异常', err))
 }
 
 async function StartConfiguredAdapters({app, io}) {
@@ -175,19 +176,15 @@ async function StartConfiguredAdapters({app, io}) {
       }`.on,
     )
     await StartQQBot({config: globalConfig, ...adapterDependencies})
-    logger.info('小夜不启用OneBot协议'.off)
+  } else if (globalConfig.CONNECT_ONE_BOT_SWITCH) {
+    logger.info(
+      `小夜通过OneBot协议接入QQ：\n  ·对接OneBot协议接口 ${globalConfig.ONE_BOT_API_URL}\n  ·监听反向post于 127.0.0.1:${
+        globalConfig.WEB_PORT
+      }${globalConfig.ONE_BOT_ANTI_POST_API}\n  ·私聊服务${globalConfig.QQBOT_PRIVATE_CHAT_SWITCH ? '开启' : '关闭'}`.on,
+    )
+    await StartQQBot({config: globalConfig, ...adapterDependencies})
   } else {
-    logger.info('小夜启用OneBot协议，不启用go-cqhttp协议'.on)
-    if (globalConfig.CONNECT_ONE_BOT_SWITCH) {
-      logger.info(
-        `小夜通过OneBot协议接入QQ：\n  ·对接OneBot协议接口 ${globalConfig.ONE_BOT_API_URL}\n  ·监听反向post于 127.0.0.1:${
-          globalConfig.WEB_PORT
-        }${globalConfig.ONE_BOT_ANTI_POST_API}\n  ·私聊服务${globalConfig.QQBOT_PRIVATE_CHAT_SWITCH ? '开启' : '关闭'}`.on,
-      )
-      await StartQQBot({config: globalConfig, ...adapterDependencies})
-    } else {
-      logger.info('小夜不启用OneBot协议和go-cqhttp协议'.off)
-    }
+    logger.info('小夜不启用OneBot协议和go-cqhttp协议'.off)
   }
 
   if (globalConfig.CONNECT_BILIBILI_LIVE_SWITCH) {
@@ -260,34 +257,8 @@ function ReadConfig() {
 
 async function InitConfig() {
   const config = await ReadConfig()
-  const newConfig = {}
-
-  newConfig.CHAT_SWITCH = config.System.CHAT_SWITCH ?? true
-  newConfig.CONNECT_ONE_BOT_SWITCH = config.System.CONNECT_ONE_BOT_SWITCH ?? false
-  newConfig.GO_CQHTTP_SWITCH = config.System.GO_CQHTTP_SWITCH ?? false
-  newConfig.CONNECT_BILIBILI_LIVE_SWITCH = config.System.CONNECT_BILIBILI_LIVE_SWITCH ?? false
-  newConfig.CONNECT_QQ_GUILD_SWITCH = config.System.CONNECT_QQ_GUILD_SWITCH ?? false
-  newConfig.CONNECT_TELEGRAM_SWITCH = config.System.CONNECT_TELEGRAM_SWITCH ?? false
-  newConfig.WEB_PORT = config.System.WEB_PORT ?? 80
-  newConfig.PLUGIN_TIMEOUT_MS = config.System.PLUGIN_TIMEOUT_MS ?? 8000
-  newConfig.ONE_BOT_ANTI_POST_API = config.System.ONE_BOT_ANTI_POST_API ?? '/bot'
-  newConfig.ONE_BOT_API_URL = config.System.ONE_BOT_API_URL ?? '127.0.0.1:5700'
-
-  newConfig.QQ_GUILD_APP_ID = config.ApiKey.QQ_GUILD_APP_ID ?? ''
-  newConfig.QQ_GUILD_TOKEN = config.ApiKey.QQ_GUILD_TOKEN ?? ''
-  newConfig.TELEGRAM_BOT_TOKEN = config.ApiKey.TELEGRAM_BOT_TOKEN ?? ''
-  newConfig.QQBOT_ADMIN_LIST = config.qqBot.QQBOT_ADMIN_LIST ?? []
-  newConfig.QQ_GROUP_WELCOME_MESSAGE = config.qqBot.QQ_GROUP_WELCOME_MESSAGE ?? '欢迎新人加入！'
-  newConfig.QQ_GROUP_POKE_REPLY_MESSAGE = config.qqBot.QQ_GROUP_POKE_REPLY_MESSAGE ?? '别戳啦！'
-  newConfig.QQ_GROUP_POKE_BOOM_REPLY_MESSAGE = config.qqBot.QQ_GROUP_POKE_BOOM_REPLY_MESSAGE ?? '戳坏啦！'
-  newConfig.AUTO_APPROVE_QQ_FRIEND_REQUEST_SWITCH = config.qqBot.AUTO_APPROVE_QQ_FRIEND_REQUEST_SWITCH ?? false
-  newConfig.QQBOT_PRIVATE_CHAT_SWITCH = config.qqBot.QQBOT_PRIVATE_CHAT_SWITCH ?? false
-  newConfig.CHAT_JIEBA_LIMIT = config.qqBot.CHAT_JIEBA_LIMIT ?? 5
-  newConfig.QQBOT_REPLY_PROBABILITY = config.qqBot.QQBOT_REPLY_PROBABILITY ?? 10
-  newConfig.QQBOT_FUDU_PROBABILITY = config.qqBot.QQBOT_FUDU_PROBABILITY ?? 1
-  newConfig.QQBOT_SAVE_ALL_IMAGE_TO_LOCAL_SWITCH = config.qqBot.QQBOT_SAVE_ALL_IMAGE_TO_LOCAL_SWITCH ?? false
-  newConfig.QQBOT_MAX_MINE_AT_MOST = config.qqBot.QQBOT_MAX_MINE_AT_MOST ?? 5
-  newConfig.BILIBILI_LIVE_ROOM_ID = config.Others.BILIBILI_LIVE_ROOM_ID ?? 49148
+  const newConfig = normalizeRuntimeConfig(config, {logger})
+  utils.ConfigureRuntime(newConfig)
 
   logger.info(newConfig.CHAT_SWITCH ? '小夜web端自动聊天开启'.on : '小夜web端自动聊天关闭'.off)
   return newConfig
@@ -297,7 +268,7 @@ function InitPluginSystem(io) {
   logger.info('开始加载插件……'.log)
   pluginRuntime = createPluginRuntime({
     pluginDir: path.join(process.cwd(), 'plugins'),
-    dependencies: createPluginDependencies(io),
+    dependencies: createPluginDependencies(io, globalConfig),
     logger,
     getPluginStatus: utils.GetGroupPluginStatus,
     setPluginStatus: utils.ToggleGroupPlugin,
@@ -310,11 +281,11 @@ function InitPluginSystem(io) {
   logger.info('插件加载完毕√'.log)
 }
 
-function createPluginDependencies(io) {
+function createPluginDependencies(io, runtimeConfig = globalConfig) {
   return {
     axios,
     logger,
-    config: globalConfig,
+    config: runtimeConfig,
     utils,
     fs,
     path,
@@ -338,6 +309,8 @@ function createPluginDependencies(io) {
     constants: Constants,
     voicePlayer,
     sendMessageToQQGroup,
+    authorization: danceCubeAuthorization.authorization ?? '',
+    baiduGeocodingAk: danceCubeAuthorization.baiduGeocodingAk ?? '',
   }
 }
 
@@ -362,25 +335,21 @@ ${res.data.body}`.alert,
     })
 }
 
-function RunMigration() {
-  const migration = exec('npm run migrate')
+async function RunMigration({sequelizeInstance = sequelize, migrationsDir = path.join(process.cwd(), 'migrations')} = {}) {
   logger.info('正在检查数据库迁移'.log)
-  let migrationLog = ''
-  migration.stdout.on('data', (data) => {
-    migrationLog += data
+  const result = await runMigrations({
+    sequelize: sequelizeInstance,
+    migrationsDir,
+    logger,
   })
 
-  migration.on('close', (code) => {
-    if (code === 0) {
-      if (migrationLog.includes('database schema was already up to date')) {
-        logger.info('数据库迁移检查完毕，无需迁移√'.log)
-      } else {
-        logger.info('数据库迁移检查完毕，迁移完毕√'.log)
-      }
-    } else {
-      logger.error(`数据库迁移失败，错误原因: ${migrationLog}`.error)
-    }
-  })
+  if (result.applied.length === 0 && result.baselined.length === 0) {
+    logger.info('数据库迁移检查完毕，无需迁移√'.log)
+  } else {
+    logger.info('数据库迁移检查完毕，迁移完毕√'.log)
+  }
+
+  return result
 }
 
 async function ProcessExecute(msg, userId, userName, groupId, groupName, options) {
@@ -412,13 +381,17 @@ async function ProcessExecute(msg, userId, userName, groupId, groupName, options
 }
 
 if (require.main === module) {
-  main()
+  main().catch((error) => {
+    logger.error(`ChatDACS 启动失败: ${error?.stack ?? error}`)
+    process.exitCode = 1
+  })
 }
 
 module.exports = {
   InitConfig,
   InitPluginSystem,
   ProcessExecute,
+  RunMigration,
   StartConfiguredAdapters,
   createPluginDependencies,
   main,

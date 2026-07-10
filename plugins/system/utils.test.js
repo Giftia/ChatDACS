@@ -1,6 +1,8 @@
 jest.mock('canvas', () => ({}))
 
 const path = require('path')
+const axios = require('axios').default
+const {normalizeRuntimeConfig} = require('../../src/config/runtimeConfig')
 const utils = require('./utils.js')
 
 // Set the node environment to test
@@ -31,6 +33,31 @@ describe('Utils Module', () => {
     expect(fuzzySpy).toHaveBeenCalled()
 
     fuzzySpy.mockRestore()
+  })
+
+  test('should use the normalized v3.7 OneBot URL for utility requests', async () => {
+    const requestSpy = jest.spyOn(axios, 'get').mockRejectedValue({code: 'OFFLINE'})
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    const config = normalizeRuntimeConfig({
+      System: {GO_CQHTTP_SERVICE_API_URL: 'legacy-onebot:6700'},
+    })
+
+    utils.ConfigureRuntime(config)
+    await expect(utils.InitGroupList()).resolves.toBe(false)
+
+    expect(requestSpy).toHaveBeenCalledWith('http://legacy-onebot:6700/get_group_list')
+    requestSpy.mockRestore()
+    errorSpy.mockRestore()
+  })
+
+  test('should bound the external nickname request', async () => {
+    const requestSpy = jest.spyOn(axios, 'get').mockResolvedValue({
+      data: {code: 200, newslist: [{naming: '测试昵称'}]},
+    })
+
+    await expect(utils.RandomNickname()).resolves.toBe('测试昵称')
+    expect(requestSpy).toHaveBeenCalledWith(expect.stringContaining('api.tianapi.com'), {timeout: 3000})
+    requestSpy.mockRestore()
   })
 })
 

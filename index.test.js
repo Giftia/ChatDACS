@@ -79,5 +79,23 @@ describe('index module startup guard', () => {
     expect(indexModule.main).toEqual(expect.any(Function))
     expect(indexModule.InitConfig).toEqual(expect.any(Function))
     expect(indexModule.ProcessExecute).toEqual(expect.any(Function))
+    expect(indexModule.RunMigration).toEqual(expect.any(Function))
+  })
+
+  test('should expose DanceCube credentials through plugin dependencies', () => {
+    const indexModule = require('./index.js')
+    const dependencies = indexModule.createPluginDependencies({emit: jest.fn()})
+
+    expect(typeof dependencies.authorization).toBe('string')
+    expect(typeof dependencies.baiduGeocodingAk).toBe('string')
+  })
+
+  test('should use an explicitly provided runtime config for plugin dependencies', () => {
+    const indexModule = require('./index.js')
+    const runtimeConfig = {WEB_PORT: 18080, TIAN_XING_API_KEY: 'test-key'}
+
+    const dependencies = indexModule.createPluginDependencies({emit: jest.fn()}, runtimeConfig)
+
+    expect(dependencies.config).toBe(runtimeConfig)
   })
 })

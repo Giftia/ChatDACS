@@ -69,7 +69,6 @@ module.exports = {
       },
       CID: {
         type: Sequelize.STRING,
-        unique: true,
       },
       message: {
         type: Sequelize.STRING,

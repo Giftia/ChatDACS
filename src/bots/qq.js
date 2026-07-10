@@ -18,6 +18,7 @@ const {
 } = require('./qq/groupServiceGate')
 const {handleQQMediaBridge} = require('./qq/mediaBridge')
 const {handleQQPluginReply} = require('./qq/pluginBridge')
+const {registerOneBotWebhook} = require('./qq/webhook')
 const {ProcessGuildMessage} = require('./qqGuild')
 
 const runtime = {
@@ -135,9 +136,7 @@ async function StartQQBot({
     return
   }
 
-  app.post(config.ONE_BOT_ANTI_POST_API, async (req) => {
-    const event = req.body
-
+  const handleEvent = async (event) => {
     const handledByPreflight = await handleQQEventPreflight({
       event,
       config,
@@ -819,6 +818,13 @@ async function StartQQBot({
       return 0
     }
     return 0
+  }
+
+  registerOneBotWebhook({
+    app,
+    path: config.ONE_BOT_ANTI_POST_API,
+    handleEvent,
+    logger,
   })
 }
 

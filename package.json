@@ -7,9 +7,12 @@
     "check:syntax": "node scripts/check-syntax.js",
     "ci:verify": "npm run check:syntax && npm run test:ci",
     "dev": "node index.js",
+    "smoke:web": "node scripts/verify-release.js",
     "test": "jest",
     "test:ci": "jest --runInBand",
-    "pkg": "pkg .",
+    "verify:release": "npm run ci:verify && npm run smoke:web",
+    "package:release": "node scripts/build-release.js",
+    "pkg": "npm run package:release",
     "docker-build": "docker build . -t giftina/chatdacs:",
     "migrate-generate": "npx sequelize-cli migration:generate --name",
     "migrate-dev": "npx sequelize-cli db:migrate",
@@ -50,6 +53,7 @@
     "yaml": "2.8.1"
   },
   "devDependencies": {
+    "archiver": "7.0.1",
     "eslint": "9.33.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-n": "14.0.0",
@@ -61,19 +65,6 @@
     "url": "//github.com/Giftia/ChatDACS.git"
   },
   "bin": "index.js",
-  "pkg": {
-    "assets": [
-      "node_modules/canvas/build/Release/*",
-      "node_modules/sqlite3/lib/binding/napi-v6-win32-unknown-x64/node_sqlite3.node",
-      "node_modules/sqlite3/lib/binding/napi-v6-linux-glibc-x64/node_sqlite3.node",
-      "node_modules/socket.io/client-dist/*",
-      "node_modules/trayicon/rsrcs/trayicon.exe"
-    ],
-    "targets": [
-      "node18-win-x64"
-    ],
-    "outputPath": "."
-  },
   "engines": {
     "node": "18.20.8"
   }

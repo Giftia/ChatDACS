@@ -8,7 +8,6 @@ const MessageModel = sequelize.define("message", {
   },
   CID: {
     type: DataTypes.STRING,
-    unique: true,
   },
   message: {
     type: DataTypes.STRING,

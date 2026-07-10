@@ -8,7 +8,7 @@ module.exports = {
   预期返回: '[炫酷的舞立方个人信息图片]',
 
   // 初始化方法，用于依赖注入
-  init({logger, config, axios, path, fs, utils, canvas, baiduGeocodingAk}) {
+  init({logger, config, axios, path, fs, utils, canvas, authorization, baiduGeocodingAk}) {
     this.logger = logger
     this.config = config
     this.axios = axios
@@ -18,7 +18,7 @@ module.exports = {
     this.canvas = canvas
     this.baiduGeocodingAk = baiduGeocodingAk
 
-    this.authorization = config.authorization
+    this.authorization = authorization
     this.baseURL = 'https://dancedemo.shenghuayule.com/'
     this.headers = {
       Authorization: this.authorization,

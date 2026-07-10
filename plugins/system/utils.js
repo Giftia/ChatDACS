@@ -29,9 +29,13 @@ const PerfunctoryModel = require('./model/perfunctoryModel.js')
 const HandGrenadeModel = require('./model/handGrenadeModel.js')
 const responseAdapter = require('../../src/platforms/responseAdapter.js')
 
-let WEB_PORT, ONE_BOT_API_URL, TIAN_XING_API_KEY, CHAT_JIEBA_LIMIT
+let WEB_PORT = 80
+let ONE_BOT_API_URL = '127.0.0.1:5700'
+let TIAN_XING_API_KEY = ''
+let CHAT_JIEBA_LIMIT = 5
+let explicitRuntimeConfigured = false
 
-Init()
+Init().catch((error) => console.error(error))
 
 // 读取配置文件
 function ReadConfig() {
@@ -48,11 +52,25 @@ function ReadConfig() {
 
 // 初始化WEB_PORT和TIAN_XING_API_KEY
 async function Init() {
-  const resolve = await ReadConfig()
-  WEB_PORT = resolve.System.WEB_PORT
-  ONE_BOT_API_URL = resolve.System.ONE_BOT_API_URL
-  TIAN_XING_API_KEY = resolve.ApiKey.TIAN_XING_API_KEY
-  CHAT_JIEBA_LIMIT = resolve.qqBot.CHAT_JIEBA_LIMIT ?? 5
+  const config = await ReadConfig()
+  if (!explicitRuntimeConfigured) {
+    applyRuntimeConfig(config)
+  }
+}
+
+function applyRuntimeConfig(config = {}) {
+  const system = config.System ?? {}
+  const apiKey = config.ApiKey ?? {}
+  const qqBot = config.qqBot ?? {}
+
+  WEB_PORT = config.WEB_PORT ?? system.WEB_PORT ?? 80
+  ONE_BOT_API_URL =
+    config.ONE_BOT_API_URL ??
+    system.ONE_BOT_API_URL ??
+    system.GO_CQHTTP_SERVICE_API_URL ??
+    '127.0.0.1:5700'
+  TIAN_XING_API_KEY = config.TIAN_XING_API_KEY ?? apiKey.TIAN_XING_API_KEY ?? ''
+  CHAT_JIEBA_LIMIT = config.CHAT_JIEBA_LIMIT ?? qqBot.CHAT_JIEBA_LIMIT ?? 5
 }
 
 // 孤寡图序列
@@ -156,7 +174,7 @@ module.exports = {
    */
   async RandomNickname() {
     const nickname = await axios
-      .get(`http://api.tianapi.com/txapi/cname/index?key=${TIAN_XING_API_KEY}`)
+      .get(`http://api.tianapi.com/txapi/cname/index?key=${TIAN_XING_API_KEY}`, {timeout: 3000})
       .then((response) => {
         if (response.data.code === 200) {
           return response.data.newslist[0].naming
@@ -793,15 +811,15 @@ module.exports = {
   PerfunctoryModel,
   HandGrenadeModel,
 
+  ConfigureRuntime(config) {
+    explicitRuntimeConfigured = true
+    applyRuntimeConfig(config)
+  },
+
   _setTestConfig(config) {
     if (process.env.NODE_ENV !== 'test') {
       throw new Error('_setTestConfig can only be called in test environment')
     }
-    if (config.WEB_PORT) {
-      WEB_PORT = config.WEB_PORT
-    }
-    if (config.CHAT_JIEBA_LIMIT) {
-      CHAT_JIEBA_LIMIT = config.CHAT_JIEBA_LIMIT
-    }
+    applyRuntimeConfig(config)
   },
 }
