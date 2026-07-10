@@ -40,3 +40,5 @@
 ## 运行包结构
 
 官方运行包包含应用源码、生产依赖和目标平台对应的 Node.js `18.20.8` 运行时。请保持目录完整：启动器、`runtime/`、`node_modules/`、`src/`、`plugins/`、`migrations/`、`static/` 和 `config/` 共同构成一个可部署单元。
+
+Node.js 18 没有官方 Windows ARM64 运行时，因此 `win-arm64` 运行包使用 Node.js 18 x64 和对应的 x64 原生依赖，通过 Windows 11 ARM 的 x64 兼容层运行。包内 `release-manifest.json` 会明确标记 `runtimeArch: "x64"` 和 `compatibility: "x64-emulation"`；其他五个平台均为原生运行时。

@@ -20,10 +20,19 @@ function getHostTarget(platform = process.platform, arch = process.arch) {
   return `${platformName}-${arch}`
 }
 
-function assertNativeTarget(target, host = {platform: process.platform, arch: process.arch}) {
-  const hostTarget = getHostTarget(host.platform, host.arch)
-  if (target !== hostTarget) {
-    throw new Error(`发布包必须在目标架构的原生 runner 上构建: target=${target}, host=${hostTarget}`)
+function assertBuildTarget(target, host = {platform: process.platform, arch: process.arch}) {
+  const separator = target.lastIndexOf('-')
+  const targetPlatform = target.slice(0, separator)
+  const targetArch = target.slice(separator + 1)
+  const hostPlatform = platformNames[host.platform]
+
+  if (!hostPlatform || targetPlatform !== hostPlatform) {
+    throw new Error(`发布平台与构建主机不兼容: target=${target}, host=${host.platform}-${host.arch}`)
+  }
+
+  const usesWindowsArmCompatibility = target === 'win-arm64' && host.arch === 'x64'
+  if (host.arch !== targetArch && !usesWindowsArmCompatibility) {
+    throw new Error(`运行时架构与发布目标不兼容: target=${target}, runtime=${host.arch}`)
   }
 }
 
@@ -59,12 +68,21 @@ function createLauncherFiles(target) {
   ]
 }
 
-function createReleaseManifest({appVersion, nodeVersion, target, createdAt = new Date().toISOString()}) {
+function createReleaseManifest({
+  appVersion,
+  nodeVersion,
+  target,
+  runtimeArch = target.slice(target.lastIndexOf('-') + 1),
+  createdAt = new Date().toISOString(),
+}) {
+  const targetArch = target.slice(target.lastIndexOf('-') + 1)
   return {
     product: 'ChatDACS',
     appVersion,
     nodeVersion,
     target,
+    runtimeArch,
+    compatibility: runtimeArch === targetArch ? 'native' : 'x64-emulation',
     createdAt,
     entrypoint: target.startsWith('win-') ? 'ChatDACS.cmd' : 'chatdacs',
     runtime: target.startsWith('win-') ? 'runtime/node.exe' : 'runtime/node',
@@ -72,7 +90,7 @@ function createReleaseManifest({appVersion, nodeVersion, target, createdAt = new
 }
 
 async function buildRelease({target = process.env.RELEASE_TARGET ?? getHostTarget()} = {}) {
-  assertNativeTarget(target)
+  assertBuildTarget(target)
 
   const packageJson = require(path.join(rootDir, 'package.json'))
   const expectedNodeVersion = `v${packageJson.engines.node}`
@@ -85,7 +103,7 @@ async function buildRelease({target = process.env.RELEASE_TARGET ?? getHostTarge
   const outputFile = path.join(releaseDir, `${releaseName}.zip`)
 
   resetDirectory(stageDir)
-  copyReleaseContents(stageDir)
+  copyReleaseContents(stageDir, target)
   copyRuntime(stageDir, target)
 
   for (const launcher of createLauncherFiles(target)) {
@@ -98,6 +116,7 @@ async function buildRelease({target = process.env.RELEASE_TARGET ?? getHostTarge
     appVersion: packageJson.version,
     nodeVersion: process.version,
     target,
+    runtimeArch: process.arch,
   })
   fs.writeFileSync(path.join(stageDir, 'release-manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8')
 
@@ -126,8 +145,8 @@ function resetDirectory(directory) {
   fs.mkdirSync(resolved, {recursive: true})
 }
 
-function copyReleaseContents(stageDir) {
-  const projectFiles = selectProjectFiles(listRepositoryFiles())
+function copyReleaseContents(stageDir, target) {
+  const projectFiles = selectProjectFiles(listRepositoryFiles(), target)
   for (const relativePath of projectFiles) {
     const destination = path.join(stageDir, relativePath)
     fs.mkdirSync(path.dirname(destination), {recursive: true})
@@ -150,7 +169,7 @@ function listRepositoryFiles() {
     .filter(Boolean)
 }
 
-function selectProjectFiles(files) {
+function selectProjectFiles(files, target) {
   const directories = ['config/', 'migrations/', 'plugins/', 'src/', 'static/']
   const rootFiles = new Set([
     'CONTEXT.md',
@@ -168,7 +187,29 @@ function selectProjectFiles(files) {
     .map((file) => file.replaceAll('\\', '/'))
     .filter((file) => !file.endsWith('.test.js') && !file.includes('/__tests__/'))
     .filter((file) => rootFiles.has(file) || directories.some((directory) => file.startsWith(directory)))
+    .filter((file) => includePlatformFile(file, target))
     .sort()
+}
+
+function includePlatformFile(file, target) {
+  const goCqhttpFiles = {
+    linux: 'plugins/go-cqhttp/go-cqhttp',
+    windows: [
+      'plugins/go-cqhttp/go-cqhttp.bat',
+      'plugins/go-cqhttp/go-cqhttp_windows_amd64.exe',
+    ],
+  }
+
+  if (target?.startsWith('win-')) {
+    return file !== goCqhttpFiles.linux
+  }
+  if (target?.startsWith('linux-')) {
+    return !goCqhttpFiles.windows.includes(file)
+  }
+  if (target?.startsWith('macos-')) {
+    return file !== goCqhttpFiles.linux && !goCqhttpFiles.windows.includes(file)
+  }
+  return true
 }
 
 function copyCommittedDatabase(destination) {
@@ -250,7 +291,7 @@ if (require.main === module) {
 }
 
 module.exports = {
-  assertNativeTarget,
+  assertBuildTarget,
   buildRelease,
   createLauncherFiles,
   createReleaseManifest,

@@ -1,7 +1,7 @@
 'use strict'
 
 const {
-  assertNativeTarget,
+  assertBuildTarget,
   createLauncherFiles,
   createReleaseManifest,
   getHostTarget,
@@ -17,9 +17,13 @@ describe('runtime release builder', () => {
     expect(getHostTarget(platform, arch)).toBe(expected)
   })
 
-  test('rejects cross-target packaging so native dependencies cannot be mislabeled', () => {
-    expect(() => assertNativeTarget('win-arm64', {platform: 'win32', arch: 'x64'})).toThrow(
-      '必须在目标架构的原生 runner 上构建',
+  test('allows the Windows ARM package to use the Node 18 x64 compatibility runtime', () => {
+    expect(() => assertBuildTarget('win-arm64', {platform: 'win32', arch: 'x64'})).not.toThrow()
+  })
+
+  test('rejects unsupported cross-target packaging so native dependencies cannot be mislabeled', () => {
+    expect(() => assertBuildTarget('linux-arm64', {platform: 'linux', arch: 'x64'})).toThrow(
+      '运行时架构与发布目标不兼容',
     )
   })
 
@@ -37,12 +41,19 @@ describe('runtime release builder', () => {
 
   test('records the exact application and Node runtime versions', () => {
     expect(
-      createReleaseManifest({appVersion: '4.0.0-alpha.1', nodeVersion: 'v18.20.8', target: 'win-x64'}),
+      createReleaseManifest({
+        appVersion: '4.0.0-alpha.1',
+        nodeVersion: 'v18.20.8',
+        target: 'win-arm64',
+        runtimeArch: 'x64',
+      }),
     ).toEqual(
       expect.objectContaining({
         appVersion: '4.0.0-alpha.1',
         nodeVersion: 'v18.20.8',
-        target: 'win-x64',
+        target: 'win-arm64',
+        runtimeArch: 'x64',
+        compatibility: 'x64-emulation',
         entrypoint: 'ChatDACS.cmd',
       }),
     )
@@ -52,11 +63,14 @@ describe('runtime release builder', () => {
     expect(
       selectProjectFiles([
         'README.md',
+        'plugins/go-cqhttp/go-cqhttp',
+        'plugins/go-cqhttp/go-cqhttp.bat',
+        'plugins/go-cqhttp/go-cqhttp_windows_amd64.exe',
         'src/server.js',
         'src/server.test.js',
         'static/index.html',
         'tmp/package-smoke/package.json',
-      ]),
-    ).toEqual(['README.md', 'src/server.js', 'static/index.html'])
+      ], 'linux-x64'),
+    ).toEqual(['README.md', 'plugins/go-cqhttp/go-cqhttp', 'src/server.js', 'static/index.html'])
   })
 })
