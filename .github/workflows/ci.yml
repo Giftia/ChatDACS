@@ -40,4 +40,4 @@ jobs:
         run: npm ci
 
       - name: Verify
-        run: npm run ci:verify
+        run: npm run verify:release
