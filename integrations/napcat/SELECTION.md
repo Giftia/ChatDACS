@@ -21,3 +21,7 @@ ChatDACS 的 QQ 处理器已经依赖 OneBot 11 HTTP API、反向 HTTP 事件和
 - 默认使用本机 HTTP，消息格式固定为 `string`。未统一 token 前，OneBot API 只能绑定可信回环或私有网络。
 - go-cqhttp 代码暂不删除，`GO_CQHTTP_SWITCH` 继续覆盖 provider，确保旧部署可以回退。
 - WebSocket、Milky 或其他 provider 只有在 QQ API 全部收敛到 sender 后再评估，避免同时迁移 transport 与业务行为。
+
+## 验证边界
+
+自动化测试覆盖真实 HTTP `get_version_info` 探测，以及“反向事件上报、插件执行、`send_group_msg` 回复”的协议级链路。QQ 登录、账号风控和运营群权限必须使用部署者自己的 NapCat 测试账号做上线前验收，不能由无账号的 CI 模拟替代。
