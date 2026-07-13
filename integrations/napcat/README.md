@@ -38,10 +38,11 @@ NapCat 不在线或探测失败时，ChatDACS 会记录警告并继续提供 Web
 ## 验收
 
 1. 先启动 NapCatQQ，再启动 ChatDACS。
-2. 确认日志出现 `NapCat OneBot 11 已连接`。
-3. 在测试群发送 `/ping`，确认机器人回复 `Pong!`。
-4. 发送普通消息，确认插件和小夜聊天回复均可用。
-5. 停止 NapCatQQ，确认 ChatDACS Web 页面仍可访问；重新启动 NapCatQQ 和 ChatDACS 后再次测试群消息。
+2. 运行 `npm run qq:napcat:check`，确认 `compatible`、`loggedIn` 为 `true`，且 `groupCount` 符合测试账号实际加入的群数。
+3. 确认 ChatDACS 日志出现 `NapCat OneBot 11 已连接`。
+4. 在测试群发送 `/ping`，确认机器人回复 `Pong!`。
+5. 发送普通消息，确认插件和小夜聊天回复均可用。
+6. 停止 NapCatQQ，确认 ChatDACS Web 页面仍可访问；重新启动 NapCatQQ 和 ChatDACS 后再次测试群消息。
 
 `GO_CQHTTP_SWITCH` 仅用于旧部署兼容。启用它会覆盖 `ONE_BOT_PROVIDER` 并继续启动发布包中的旧 go-cqhttp。
 

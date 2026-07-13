@@ -2,6 +2,7 @@
 
 const {
   buildNapCatConfigFromRuntime,
+  checkNapCatReadiness,
   createNapCatOneBotConfig,
   probeNapCat,
   verifyNapCatConnection,
@@ -106,5 +107,31 @@ describe('NapCat OneBot integration', () => {
     )
     expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('NapCat'))
     expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('重启 ChatDACS'))
+  })
+
+  test('checks login state and group visibility without exposing account details', async () => {
+    const axios = {
+      get: jest
+        .fn()
+        .mockResolvedValueOnce({
+          data: {
+            status: 'ok',
+            data: {app_name: 'NapCatQQ', app_version: '4.18.9', protocol_version: 'v11'},
+          },
+        })
+        .mockResolvedValueOnce({data: {status: 'ok', data: {user_id: '10001', nickname: 'Bot'}}})
+        .mockResolvedValueOnce({data: {status: 'ok', data: [{group_id: '1'}, {group_id: '2'}]}}),
+    }
+
+    const result = await checkNapCatReadiness({
+      config: {ONE_BOT_API_URL: '127.0.0.1:5700', ONE_BOT_CONNECT_TIMEOUT_MS: 1000},
+      axios,
+    })
+
+    expect(result).toEqual(
+      expect.objectContaining({compatible: true, loggedIn: true, groupCount: 2}),
+    )
+    expect(result).not.toHaveProperty('userId')
+    expect(result).not.toHaveProperty('nickname')
   })
 })

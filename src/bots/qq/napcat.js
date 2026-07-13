@@ -102,6 +102,42 @@ async function verifyNapCatConnection({config, axios, logger = console}) {
   return result
 }
 
+async function checkNapCatReadiness({config, axios}) {
+  const connection = await probeNapCat({
+    apiUrl: config.ONE_BOT_API_URL,
+    axios,
+    timeoutMs: config.ONE_BOT_CONNECT_TIMEOUT_MS,
+  })
+  if (!connection.compatible) {
+    return {...connection, loggedIn: false, groupCount: 0}
+  }
+
+  try {
+    const baseUrl = normalizeApiBaseUrl(config.ONE_BOT_API_URL)
+    const options = {timeout: config.ONE_BOT_CONNECT_TIMEOUT_MS}
+    const [loginResponse, groupsResponse] = await Promise.all([
+      axios.get(`${baseUrl}/get_login_info`, options),
+      axios.get(`${baseUrl}/get_group_list`, options),
+    ])
+    const loginPayload = loginResponse?.data ?? {}
+    const groupsPayload = groupsResponse?.data ?? {}
+    const groups = Array.isArray(groupsPayload.data) ? groupsPayload.data : []
+
+    return {
+      ...connection,
+      loggedIn: loginPayload.status === 'ok' && loginPayload.data?.user_id != null,
+      groupCount: groupsPayload.status === 'ok' ? groups.length : 0,
+    }
+  } catch (error) {
+    return {
+      ...connection,
+      loggedIn: false,
+      groupCount: 0,
+      error: formatError(error),
+    }
+  }
+}
+
 function normalizeApiBaseUrl(apiUrl) {
   const parsed = parseApiUrl(apiUrl)
   return `${parsed.protocol}//${parsed.host}${parsed.pathname === '/' ? '' : parsed.pathname.replace(/\/$/, '')}`
@@ -133,6 +169,7 @@ function formatError(error) {
 
 module.exports = {
   buildNapCatConfigFromRuntime,
+  checkNapCatReadiness,
   createNapCatOneBotConfig,
   normalizeApiBaseUrl,
   probeNapCat,
