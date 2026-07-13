@@ -12,6 +12,7 @@
     "test:ci": "jest --runInBand",
     "verify:release": "npm run ci:verify && npm run smoke:web",
     "package:release": "node scripts/build-release.js",
+    "qq:napcat:config": "node scripts/generate-napcat-config.js",
     "pkg": "npm run package:release",
     "docker-build": "docker build . -t giftina/chatdacs:",
     "migrate-generate": "npx sequelize-cli migration:generate --name",

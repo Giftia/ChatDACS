@@ -16,6 +16,8 @@ describe('runtime config normalization', () => {
         PLUGIN_TIMEOUT_MS: 3000,
         ONE_BOT_ANTI_POST_API: '/onebot',
         ONE_BOT_API_URL: 'onebot.example:5700',
+        ONE_BOT_PROVIDER: 'napcat',
+        ONE_BOT_CONNECT_TIMEOUT_MS: 1500,
       },
       ApiKey: {
         TIAN_XING_API_KEY: 'tianxing',
@@ -46,6 +48,8 @@ describe('runtime config normalization', () => {
         PLUGIN_TIMEOUT_MS: 3000,
         ONE_BOT_ANTI_POST_API: '/onebot',
         ONE_BOT_API_URL: 'onebot.example:5700',
+        ONE_BOT_PROVIDER: 'napcat',
+        ONE_BOT_CONNECT_TIMEOUT_MS: 1500,
         TIAN_XING_API_KEY: 'tianxing',
         SUMT_API_KEY: 'sumt',
         XIZHI_CHANNEL_KEY: 'xizhi',
@@ -76,6 +80,7 @@ describe('runtime config normalization', () => {
         GO_CQHTTP_SWITCH: true,
         ONE_BOT_ANTI_POST_API: '/legacy-bot',
         ONE_BOT_API_URL: '127.0.0.1:6700',
+        ONE_BOT_PROVIDER: 'go-cqhttp',
       }),
     )
     expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('v3.7'))
@@ -109,10 +114,28 @@ describe('runtime config normalization', () => {
         PLUGIN_TIMEOUT_MS: 8000,
         ONE_BOT_ANTI_POST_API: '/bot',
         ONE_BOT_API_URL: '127.0.0.1:5700',
+        ONE_BOT_PROVIDER: 'external',
+        ONE_BOT_CONNECT_TIMEOUT_MS: 3000,
         ApiKey: {},
         QQBOT_ADMIN_LIST: [],
         CHAT_BAN_WORDS: [],
       }),
     )
+  })
+
+  test('normalizes provider names and rejects invalid provider settings', () => {
+    expect(
+      normalizeRuntimeConfig({System: {ONE_BOT_PROVIDER: ' NapCat '}}).ONE_BOT_PROVIDER,
+    ).toBe('napcat')
+
+    const logger = {warn: jest.fn()}
+    const config = normalizeRuntimeConfig(
+      {System: {ONE_BOT_PROVIDER: 'unsupported', ONE_BOT_CONNECT_TIMEOUT_MS: 0}},
+      {logger},
+    )
+
+    expect(config.ONE_BOT_PROVIDER).toBe('external')
+    expect(config.ONE_BOT_CONNECT_TIMEOUT_MS).toBe(3000)
+    expect(logger.warn).toHaveBeenCalledTimes(2)
   })
 })

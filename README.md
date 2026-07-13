@@ -18,6 +18,7 @@
       <br/>
       使用文档：<a href="https://docs.giftia.moe/">https://docs.giftia.moe/</a><br/>
       v3.7 升级指南：<a href="./UPGRADE.md">UPGRADE.md</a><br/>
+      NapCat QQ 接入：<a href="./integrations/napcat/README.md">integrations/napcat/README.md</a><br/>
       示例 DEMO：<a href="http://110.42.221.72/" target="_blank">http://110.42.221.72/</a><br/>
       语录来自小夜：<a href="https://github.com/Giftia/Project_Xiaoye" target="_blank">github.com/Giftia/Project_Xiaoye</a><br/>
     </p>
@@ -82,7 +83,7 @@
 - [x] 与经过 2w+ 用户调教养成的人工智能机器人小夜实时聊天 `Chat with Ai Xiaoye`
 - [x] 令人激动的、实用的在线涩图功能 `🔞 Features`
 - [x] web 端图片、视频与文件分享 `Share your images, videos and files`
-- [x] 与 go-cqhttp 对接，实现了 qq 机器人小夜 `Connectable with go-cqhttp`
+- [x] 通过 OneBot 11 对接 NapCatQQ，保留 go-cqhttp 旧部署兼容 `QQ via NapCat OneBot 11`
 - [x] 简单好用的插件系统 `Easy-to-use plugin system`
 - [x] 支持接入哔哩哔哩直播间 `Support Bilibili Live-Room`
 - [x] 支持接入 QQ `Support QQ`

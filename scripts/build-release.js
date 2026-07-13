@@ -170,7 +170,7 @@ function listRepositoryFiles() {
 }
 
 function selectProjectFiles(files, target) {
-  const directories = ['config/', 'migrations/', 'plugins/', 'src/', 'static/']
+  const directories = ['config/', 'integrations/', 'migrations/', 'plugins/', 'src/', 'static/']
   const rootFiles = new Set([
     'CONTEXT.md',
     'LICENSE',
@@ -236,6 +236,7 @@ function copyRuntime(stageDir, target) {
 function verifyReleaseLayout(stageDir, manifest) {
   const required = [
     'config',
+    'integrations',
     'migrations',
     'node_modules',
     'plugins',

@@ -8,7 +8,10 @@ System:
   #qqBot小夜开关，为方便用户使用，默认为开启，如果只想要使用web端或哔哩哔哩直播间，请关闭此开关:
   CONNECT_ONE_BOT_SWITCH: true
 
-  #go-cqhttp开关，默认关闭。如果你还想尝试使用go-cqhttp，请将此开关打开:
+  #OneBot实现。推荐使用外部运行的NapCat；external可连接其他兼容OneBot 11实现:
+  ONE_BOT_PROVIDER: 'napcat'
+
+  #旧版内置go-cqhttp兼容开关。启用时会覆盖ONE_BOT_PROVIDER，不建议新部署使用:
   GO_CQHTTP_SWITCH: false
 
   #HTTP事件上报地址，如果有冲突的话请尝试更改:
@@ -16,6 +19,9 @@ System:
 
   #HTTP服务监听端口，如果有冲突的话请尝试更改:
   ONE_BOT_API_URL: '127.0.0.1:5700'
+
+  #启动时探测NapCat连接的超时时间，单位毫秒。探测失败不会阻断Web服务启动:
+  ONE_BOT_CONNECT_TIMEOUT_MS: 3000
 
   #接入哔哩哔哩直播聊天开关:
   CONNECT_BILIBILI_LIVE_SWITCH: false

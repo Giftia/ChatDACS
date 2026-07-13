@@ -1,0 +1,33 @@
+{
+  "network": {
+    "httpServers": [
+      {
+        "name": "ChatDACS API",
+        "enable": true,
+        "port": 5700,
+        "host": "127.0.0.1",
+        "enableCors": false,
+        "enableWebsocket": false,
+        "messagePostFormat": "string",
+        "token": "",
+        "debug": false
+      }
+    ],
+    "httpClients": [
+      {
+        "name": "ChatDACS Events",
+        "enable": true,
+        "url": "http://127.0.0.1/bot",
+        "messagePostFormat": "string",
+        "reportSelfMessage": false,
+        "token": "",
+        "debug": false
+      }
+    ],
+    "websocketServers": [],
+    "websocketClients": []
+  },
+  "musicSignUrl": "",
+  "enableLocalFile2Url": false,
+  "parseMultMsg": false
+}

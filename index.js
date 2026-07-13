@@ -36,6 +36,7 @@ const {sequelize} = require('./plugins/system/model/database.js')
 const utils = require('./plugins/system/utils.js')
 const {StartLive} = require('./src/bots/bilibili')
 const {StartQQBot, configureQQRuntime, sendMessageToQQGroup} = require('./src/bots/qq')
+const {verifyNapCatConnection} = require('./src/bots/qq/napcat')
 const {StartQQGuild} = require('./src/bots/qqGuild')
 const {StartTelegram} = require('./src/bots/telegram')
 const {normalizeRuntimeConfig} = require('./src/config/runtimeConfig')
@@ -177,8 +178,11 @@ async function StartConfiguredAdapters({app, io}) {
     )
     await StartQQBot({config: globalConfig, ...adapterDependencies})
   } else if (globalConfig.CONNECT_ONE_BOT_SWITCH) {
+    if (globalConfig.ONE_BOT_PROVIDER === 'napcat') {
+      await verifyNapCatConnection({config: globalConfig, axios, logger})
+    }
     logger.info(
-      `小夜通过OneBot协议接入QQ：\n  ·对接OneBot协议接口 ${globalConfig.ONE_BOT_API_URL}\n  ·监听反向post于 127.0.0.1:${
+      `小夜通过${globalConfig.ONE_BOT_PROVIDER === 'napcat' ? 'NapCat OneBot 11' : 'OneBot协议'}接入QQ：\n  ·对接OneBot协议接口 ${globalConfig.ONE_BOT_API_URL}\n  ·监听反向post于 127.0.0.1:${
         globalConfig.WEB_PORT
       }${globalConfig.ONE_BOT_ANTI_POST_API}\n  ·私聊服务${globalConfig.QQBOT_PRIVATE_CHAT_SWITCH ? '开启' : '关闭'}`.on,
     )

@@ -6,6 +6,17 @@ function normalizeRuntimeConfig(rawConfig = {}, {logger} = {}) {
   const qqBot = rawConfig.qqBot ?? {}
   const others = rawConfig.Others ?? {}
   const legacyGoCqhttpSwitch = system.CONNECT_GO_CQHTTP_SWITCH
+  const goCqhttpSwitch = system.GO_CQHTTP_SWITCH ?? legacyGoCqhttpSwitch ?? false
+  const oneBotProvider = normalizeOneBotProvider(
+    goCqhttpSwitch ? 'go-cqhttp' : system.ONE_BOT_PROVIDER,
+    logger,
+  )
+  const oneBotConnectTimeoutMs = normalizePositiveNumber(
+    system.ONE_BOT_CONNECT_TIMEOUT_MS,
+    3000,
+    'ONE_BOT_CONNECT_TIMEOUT_MS',
+    logger,
+  )
   const legacyKeysUsed =
     (system.GO_CQHTTP_SWITCH === undefined && legacyGoCqhttpSwitch !== undefined) ||
     (system.ONE_BOT_ANTI_POST_API === undefined && system.GO_CQHTTP_SERVICE_ANTI_POST_API !== undefined) ||
@@ -23,7 +34,7 @@ function normalizeRuntimeConfig(rawConfig = {}, {logger} = {}) {
     Others: others,
     CHAT_SWITCH: system.CHAT_SWITCH ?? true,
     CONNECT_ONE_BOT_SWITCH: system.CONNECT_ONE_BOT_SWITCH ?? legacyGoCqhttpSwitch ?? false,
-    GO_CQHTTP_SWITCH: system.GO_CQHTTP_SWITCH ?? legacyGoCqhttpSwitch ?? false,
+    GO_CQHTTP_SWITCH: goCqhttpSwitch,
     CONNECT_BILIBILI_LIVE_SWITCH: system.CONNECT_BILIBILI_LIVE_SWITCH ?? false,
     CONNECT_QQ_GUILD_SWITCH: system.CONNECT_QQ_GUILD_SWITCH ?? false,
     CONNECT_TELEGRAM_SWITCH: system.CONNECT_TELEGRAM_SWITCH ?? false,
@@ -32,6 +43,8 @@ function normalizeRuntimeConfig(rawConfig = {}, {logger} = {}) {
     ONE_BOT_ANTI_POST_API:
       system.ONE_BOT_ANTI_POST_API ?? system.GO_CQHTTP_SERVICE_ANTI_POST_API ?? '/bot',
     ONE_BOT_API_URL: system.ONE_BOT_API_URL ?? system.GO_CQHTTP_SERVICE_API_URL ?? '127.0.0.1:5700',
+    ONE_BOT_PROVIDER: oneBotProvider,
+    ONE_BOT_CONNECT_TIMEOUT_MS: oneBotConnectTimeoutMs,
     TIAN_XING_API_KEY: apiKey.TIAN_XING_API_KEY ?? '',
     SUMT_API_KEY: apiKey.SUMT_API_KEY ?? '',
     XIZHI_CHANNEL_KEY: apiKey.XIZHI_CHANNEL_KEY ?? '',
@@ -52,6 +65,26 @@ function normalizeRuntimeConfig(rawConfig = {}, {logger} = {}) {
     CHAT_BAN_WORDS: qqBot.CHAT_BAN_WORDS ?? [],
     BILIBILI_LIVE_ROOM_ID: others.BILIBILI_LIVE_ROOM_ID ?? 49148,
   }
+}
+
+function normalizeOneBotProvider(value, logger) {
+  const provider = String(value ?? 'external').trim().toLowerCase()
+  if (['napcat', 'external', 'go-cqhttp'].includes(provider)) {
+    return provider
+  }
+
+  logger?.warn?.(`未知的 ONE_BOT_PROVIDER: ${value}，已回退到 external`)
+  return 'external'
+}
+
+function normalizePositiveNumber(value, fallback, name, logger) {
+  if (value === undefined) return fallback
+
+  const number = Number(value)
+  if (Number.isFinite(number) && number > 0) return number
+
+  logger?.warn?.(`${name} 必须是正数，已回退到 ${fallback}`)
+  return fallback
 }
 
 module.exports = {

@@ -63,6 +63,8 @@ describe('runtime release builder', () => {
     expect(
       selectProjectFiles([
         'README.md',
+        'integrations/napcat/README.md',
+        'integrations/napcat/onebot11.json.example',
         'plugins/go-cqhttp/go-cqhttp',
         'plugins/go-cqhttp/go-cqhttp.bat',
         'plugins/go-cqhttp/go-cqhttp_windows_amd64.exe',
@@ -71,6 +73,13 @@ describe('runtime release builder', () => {
         'static/index.html',
         'tmp/package-smoke/package.json',
       ], 'linux-x64'),
-    ).toEqual(['README.md', 'plugins/go-cqhttp/go-cqhttp', 'src/server.js', 'static/index.html'])
+    ).toEqual([
+      'README.md',
+      'integrations/napcat/README.md',
+      'integrations/napcat/onebot11.json.example',
+      'plugins/go-cqhttp/go-cqhttp',
+      'src/server.js',
+      'static/index.html',
+    ])
   })
 })

@@ -33,12 +33,25 @@
 - 如果启用了 OneBot，确认 webhook 返回 HTTP `204`，群消息仍通过配置的 API 地址发送。
 - 确认启动日志中没有迁移失败、插件初始化失败或未处理进程异常。
 
+## 从 go-cqhttp 迁移到 NapCatQQ
+
+go-cqhttp 已停止维护，新部署推荐使用外部运行的 NapCatQQ。迁移不会改变 ChatDACS 的插件协议、QQ群玩法或 CQ 码消息格式。
+
+1. 保留旧 go-cqhttp 目录和登录数据作为独立回退，不要直接覆盖。
+2. 安装并登录 NapCatQQ，确认其 WebUI 可访问。
+3. 在 `config/config.yml` 中设置 `ONE_BOT_PROVIDER: 'napcat'`、`GO_CQHTTP_SWITCH: false`。
+4. 保持 `ONE_BOT_API_URL: '127.0.0.1:5700'`，运行 `npm run qq:napcat:config -- --output integrations/napcat/onebot11.json`。
+5. 按 [NapCatQQ 接入指南](./integrations/napcat/README.md) 将生成的网络配置合并到 NapCat。
+6. 先启动 NapCatQQ，再启动 ChatDACS，完成群内 `/ping`、普通聊天和管理玩法验收。
+
+如果需要暂时回退，停止 NapCatQQ，将 `GO_CQHTTP_SWITCH` 改回 `true` 并启动旧协议端。该开关优先于 `ONE_BOT_PROVIDER`。
+
 ## 回滚
 
 停止新版运行时，回到旧版 ChatDACS 目录，并同时恢复升级前备份的 `config.yml` 和 `db.db`。不要把已迁移的数据库交给 v3.7 打开并视为回滚；必须恢复升级前的原始数据库副本。
 
 ## 运行包结构
 
-官方运行包包含应用源码、生产依赖和目标平台对应的 Node.js `18.20.8` 运行时。请保持目录完整：启动器、`runtime/`、`node_modules/`、`src/`、`plugins/`、`migrations/`、`static/` 和 `config/` 共同构成一个可部署单元。
+官方运行包包含应用源码、生产依赖和目标平台对应的 Node.js `18.20.8` 运行时。请保持目录完整：启动器、`runtime/`、`node_modules/`、`src/`、`plugins/`、`integrations/`、`migrations/`、`static/` 和 `config/` 共同构成一个可部署单元。
 
 Node.js 18 没有官方 Windows ARM64 运行时，因此 `win-arm64` 运行包使用 Node.js 18 x64 和对应的 x64 原生依赖，通过 Windows 11 ARM 的 x64 兼容层运行。包内 `release-manifest.json` 会明确标记 `runtimeArch: "x64"` 和 `compatibility: "x64-emulation"`；其他五个平台均为原生运行时。
