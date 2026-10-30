@@ -121,7 +121,7 @@ jobs:
         run: echo "BUILD_TIME=$(TZ='Asia/Shanghai' date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
 
       - name: Upload Build Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ChatDACS-${{ env.VERSION_NUMBER }}_${{ matrix.os }}_${{ env.BUILD_TIME }}
           path: ChatDACS-${{ env.VERSION_NUMBER }}_${{ matrix.os }}.zip
