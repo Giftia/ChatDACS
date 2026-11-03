@@ -32,6 +32,7 @@ function createTesterRuntime({
     getPluginStatus: async () => true,
     setPluginStatus: async () => true,
     timeoutMs,
+    pluginTimeouts: dependencies.config?.PLUGIN_TIMEOUTS ?? dependencies.config?.System?.PLUGIN_TIMEOUTS,
   })
   runtime.load()
   return runtime

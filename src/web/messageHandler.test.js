@@ -42,6 +42,37 @@ function makeContext(overrides = {}) {
 }
 
 describe('web message handler', () => {
+  const hash = '0123456789abcdef0123456789abcdef'
+  test.each([
+    `img[/uploads/${hash}.PNG]`,
+    `file(/uploads/${hash}.wav)[中英 Song.wav]`,
+    `file(/uploads/${hash}.mp4)[movie.mp4]`,
+    `file(/uploads/${hash}.txt)[notes.txt]`,
+    ` img[/uploads/${hash}.png]\nfile(/uploads/${hash}.zip)[archive.zip] `,
+  ])('upload-only message is recorded and broadcast exactly once without plugin or model requests: %s', async (msg) => {
+    const context = makeContext()
+    await createWebMessageHandler(context)({socket: makeSocket(), msgIn: {msg}})
+    expect(context.utils.AddMessage).toHaveBeenCalledWith('test-cid', msg)
+    expect(context.io.emit).toHaveBeenCalledTimes(1)
+    expect(context.io.emit).toHaveBeenCalledWith('message', {CID: 'test-cid', name: '测试用户', msg})
+    expect(context.processExecute).not.toHaveBeenCalled()
+    expect(context.chatProcess).not.toHaveBeenCalled()
+  })
+
+  test.each([
+    `请分析 file(/uploads/${hash}.wav)[song.wav]`,
+    `file(https://example.invalid/${hash}.wav)[song.wav]`,
+    'file(/uploads/not-a-generated-id.wav)[song.wav]',
+    `file(/uploads/${hash}.wav?x=1)[song.wav]`,
+    `file(/uploads/${hash}.wav)[name(with markup).wav]`,
+    `img[/uploads/${hash}.txt]`,
+    `audio[/uploads/${hash}.wav]`,
+  ])('mixed, remote or noncanonical markup retains normal plugin/chat behavior: %s', async (msg) => {
+    const context = makeContext()
+    await createWebMessageHandler(context)({socket: makeSocket(), msgIn: {msg}})
+    expect(context.processExecute).toHaveBeenCalledTimes(1)
+    expect(context.chatProcess).toHaveBeenCalledWith(msg)
+  })
   test('sanitizes web message text before persistence and broadcast', async () => {
     const context = makeContext()
     const handleMessage = createWebMessageHandler(context)
@@ -55,6 +86,7 @@ describe('web message handler', () => {
 
     expect(sanitizeWebMessage("清洗 <script>alert('x')</script> end")).toBe(sanitized)
     expect(context.utils.AddMessage).toHaveBeenCalledWith('test-cid', sanitized)
+    expect(context.logger.info.mock.calls).toEqual([['WEB_MESSAGE_RECEIVED']])
     expect(context.io.emit).toHaveBeenCalledWith('message', {
       CID: 'test-cid',
       name: '测试用户',
@@ -97,6 +129,25 @@ describe('web message handler', () => {
       CID: '0',
       msg: 'Pong!',
     })
+    expect(context.chatProcess).not.toHaveBeenCalled()
+  })
+
+  test.each([{handled: true, type: 'text', content: ''}, {type: 'text', content: ''}])(
+    'handled silent plugin reply prevents chat fallback: %p', async (pluginReply) => {
+      const context = makeContext({processExecute: jest.fn(() => pluginReply)})
+      await createWebMessageHandler(context)({socket: makeSocket(), msgIn: {msg: '/silent'}})
+      expect(context.chatProcess).not.toHaveBeenCalled()
+      expect(context.io.emit).toHaveBeenCalledTimes(1)
+    },
+  )
+
+  test('explicit unhandled result falls through without emitting plugin content', async () => {
+    const context = makeContext({processExecute: jest.fn(() => ({handled: false, content: 'not a reply'})),
+      chatProcess: jest.fn(() => 'fallback')})
+    await createWebMessageHandler(context)({socket: makeSocket(), msgIn: {msg: 'hello'}})
+    expect(context.utils.PluginAnswerToWebStyle).not.toHaveBeenCalled()
+    expect(context.chatProcess).toHaveBeenCalledWith('hello')
+    expect(context.io.emit).toHaveBeenCalledTimes(2)
   })
 
   test('falls through to chatProcess when plugins do not handle the message', async () => {

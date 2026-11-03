@@ -6,9 +6,8 @@
  * 沙雕Ai聊天系统 ChatDACS (Chatbot : shaDiao Ai Chat System)，一个简单的机器人框架，支持接入哔哩哔哩直播，具备完全功能的web网页控制台。
  */
 
-const {exec} = require('child_process')
+const {exec, execFile} = require('child_process')
 const fs = require('fs')
-const https = require('https')
 const os = require('os')
 const path = require('path')
 const request = require('request')
@@ -36,14 +35,21 @@ const {sequelize} = require('./plugins/system/model/database.js')
 const utils = require('./plugins/system/utils.js')
 const {StartLive} = require('./src/bots/bilibili')
 const {StartQQBot, configureQQRuntime, sendMessageToQQGroup} = require('./src/bots/qq')
-const {verifyNapCatConnection} = require('./src/bots/qq/napcat')
+const {verifyOneBotConnection} = require('./src/bots/qq/oneBotProvider')
+const {createOneBotHttpClient} = require('./src/platforms/oneBotHttp')
 const {StartQQGuild} = require('./src/bots/qqGuild')
 const {StartTelegram} = require('./src/bots/telegram')
 const {normalizeRuntimeConfig} = require('./src/config/runtimeConfig')
-const {ChatProcess, ECYWenDa} = require('./src/core/chat.js')
+const {readConfig} = require('./src/config/readConfig')
+const {ChatProcess, ECYWenDa, matchChat} = require('./src/core/chat.js')
 const {runMigrations} = require('./src/core/migrations')
 const {registerProcessErrorHandlers} = require('./src/core/processErrors')
 const {createPluginRuntime} = require('./src/plugins/runtime.js')
+const {createConversationPluginStateStore} = require('./src/plugins/conversationState')
+const {createProactiveChat} = require('./src/plugins/proactiveChat')
+const {createOneBotSender} = require('./src/platforms/oneBotSender')
+const {textChunks} = require('./src/bots/qqOfficial/response')
+const {startQQOfficial} = require('./src/bots/qqOfficial')
 
 const versionNumber = `v${require('./package.json').version}`
 const version = `ChatDACS ${versionNumber}`
@@ -85,9 +91,6 @@ const logger = winston.createLogger({
     new transports.Console({
       format: winston.format.combine(winston.format.colorize(), myFormat),
     }),
-    new transports.Http({
-      level: 'warn',
-    }),
     new winston.transports.File({
       filename: 'error.log',
       level: 'error',
@@ -101,6 +104,10 @@ const logger = winston.createLogger({
 let globalConfig = {}
 let plugins = {}
 let pluginRuntime = null
+
+function oneBotHttp(runtimeConfig = globalConfig) {
+  return createOneBotHttpClient({axios, config: runtimeConfig})
+}
 
 function warnIfRunningInNonAsciiPath() {
   if (!new RegExp('[\u4e00-\u9fa5]').test(process.cwd())) {
@@ -120,96 +127,218 @@ function printBanner() {
   console.log('_______________________________________\n'.rainbow)
 }
 
-async function main() {
-  warnIfRunningInNonAsciiPath()
-  printBanner()
+async function main({configPath, pluginDependencyOverrides, checkUpdates = true} = {}) {
+  let http, io, errorHandlers, adapters, adapterStartup, stopping
+  const report = (code) => { try { logger.error(code) } catch (_) {} }
+  const stop = () => {
+    if (stopping) return stopping
+    let failed = false
+    const attempt = async (action, code) => {
+      try { await action() } catch (_) { failed = true; report(code) }
+    }
+    stopping = Promise.resolve().then(async () => {
+      try {
+        await attempt(async () => {
+          const initialized = adapters ?? await adapterStartup?.catch(() => undefined)
+          await initialized?.stop()
+        }, 'ADAPTER_STOP_FAILED')
+      } finally {
+        try {
+          await attempt(() => io && new Promise((resolve, reject) => {
+            io.close((error) => error && error.code !== 'ERR_SERVER_NOT_RUNNING' ? reject(error) : resolve())
+          }), 'SOCKET_STOP_FAILED')
+        } finally {
+          try {
+            await attempt(() => http && new Promise((resolve, reject) => {
+              http.close((error) => error && error.code !== 'ERR_SERVER_NOT_RUNNING' ? reject(error) : resolve())
+            }), 'HTTP_STOP_FAILED')
+          } finally {
+            await attempt(() => sequelize.close(), 'DATABASE_STOP_FAILED')
+          }
+        }
+      }
+      if (failed) throw Object.assign(new Error('APP_STOP_FAILED'), {code: 'APP_STOP_FAILED'})
+    })
+    try { errorHandlers?.dispose() } catch (_) { failed = true; report('PROCESS_HANDLER_STOP_FAILED') }
+    return stopping
+  }
+  try {
+    warnIfRunningInNonAsciiPath()
+    printBanner()
 
-  globalConfig = await InitConfig()
-  await RunMigration()
-  configureQQRuntime({config: globalConfig, logger, utils, axios})
-  const {startServer, app, io} = require('./src/server.js')
+    globalConfig = await InitConfig(configPath)
+    await RunMigration()
+    configureQQRuntime({config: globalConfig, logger, utils, axios: oneBotHttp()})
+    const server = require('./src/server.js')
+    ;({io, http} = server)
+    const {startServer, app} = server
 
-  registerProcessErrorHandlers({
-    io,
-    logger,
-    notifyAdmin:
-      globalConfig.CONNECT_ONE_BOT_SWITCH || globalConfig.GO_CQHTTP_SWITCH
-        ? (error) => sendMessageToQQGroup(error, {group_id: 157311946})
-        : undefined,
-  })
+    errorHandlers = registerProcessErrorHandlers({
+      io,
+      logger,
+      notifyAdmin:
+        (globalConfig.CONNECT_ONE_BOT_SWITCH || globalConfig.GO_CQHTTP_SWITCH) &&
+        /^\d+$/.test(String(globalConfig.ERROR_NOTIFY_GROUP_ID ?? ''))
+          ? ({code}) => sendMessageToQQGroup(`系统处理失败 (${code})`, {group_id: globalConfig.ERROR_NOTIFY_GROUP_ID})
+          : undefined,
+    })
 
-  startServer({
-    version,
-    globalConfig,
-    logger,
-    chatProcess: ChatProcess,
-    processExecute: ProcessExecute,
-  })
+    http.once('close', () => { void stop().catch(() => {}) })
+    startServer({
+      version,
+      globalConfig,
+      logger,
+      chatProcess: ChatProcess,
+      processExecute: ProcessExecute,
+    })
 
-  InitPluginSystem(io)
-  await StartConfiguredAdapters({app, io})
-  CheckUpdate()
+    InitPluginSystem(io, {dependencies: pluginDependencyOverrides})
+    adapterStartup = StartConfiguredAdapters({app, io})
+    adapters = await adapterStartup
+    if (stopping) await stopping
+    else if (checkUpdates) CheckUpdate()
+    return {http, io, stop}
+  } catch (error) {
+    await stop().catch(() => {})
+    const code = ['CONFIG_READ_FAILED', 'CONFIG_INVALID'].includes(error?.code) ? error.code : 'APP_START_FAILED'
+    throw Object.assign(new Error(code), {code})
+  }
 }
 
-async function StartConfiguredAdapters({app, io}) {
-  const adapterDependencies = {
-    app,
-    io,
-    logger,
-    utils,
-    axios,
-    Constants,
-    request,
-    plugins,
-    voicePlayer,
-    chatProcess: ChatProcess,
-    processExecute: ProcessExecute,
-    ecYWenDa: ECYWenDa,
+async function StartConfiguredAdapters({app, io, config = globalConfig}) {
+  const controllers = []
+  let stopping
+  const fail = (code) => Object.assign(new Error(code), {code})
+  const track = (controller) => {
+    if (typeof controller?.stop !== 'function') throw fail('ADAPTER_CONTROLLER_INVALID')
+    controllers.push(controller)
   }
-
-  if (globalConfig.GO_CQHTTP_SWITCH) {
-    startGoCqhttp()
-    logger.info(
-      `小夜通过go-cqhttp接入QQ，配置: \n  ·对接OneBot协议接口 ${
-        globalConfig.ONE_BOT_API_URL
-      }\n  ·监听反向post于 127.0.0.1:${globalConfig.WEB_PORT}${globalConfig.ONE_BOT_ANTI_POST_API}\n  ·私聊服务${
-        globalConfig.QQBOT_PRIVATE_CHAT_SWITCH ? '开启' : '关闭'
-      }`.on,
-    )
-    await StartQQBot({config: globalConfig, ...adapterDependencies})
-  } else if (globalConfig.CONNECT_ONE_BOT_SWITCH) {
-    if (globalConfig.ONE_BOT_PROVIDER === 'napcat') {
-      await verifyNapCatConnection({config: globalConfig, axios, logger})
+  const startPlatform = async (start, code) => {
+    let controller
+    try { controller = await start() } catch (_) {
+      try { logger.error(code) } catch (_) {}
+      return
     }
-    logger.info(
-      `小夜通过${globalConfig.ONE_BOT_PROVIDER === 'napcat' ? 'NapCat OneBot 11' : 'OneBot协议'}接入QQ：\n  ·对接OneBot协议接口 ${globalConfig.ONE_BOT_API_URL}\n  ·监听反向post于 127.0.0.1:${
-        globalConfig.WEB_PORT
-      }${globalConfig.ONE_BOT_ANTI_POST_API}\n  ·私聊服务${globalConfig.QQBOT_PRIVATE_CHAT_SWITCH ? '开启' : '关闭'}`.on,
-    )
-    await StartQQBot({config: globalConfig, ...adapterDependencies})
-  } else {
-    logger.info('小夜不启用OneBot协议和go-cqhttp协议'.off)
+    // Contract validation belongs to orchestration, not platform degradation.
+    track(controller)
   }
-
-  if (globalConfig.CONNECT_BILIBILI_LIVE_SWITCH) {
-    logger.info(`小夜哔哩哔哩直播接入开启，直播间id为 ${globalConfig.BILIBILI_LIVE_ROOM_ID}`.on)
-    StartLive({config: globalConfig, ...adapterDependencies})
-  } else {
-    logger.info('小夜哔哩哔哩直播接入关闭'.off)
+  const stop = () => {
+    if (!stopping) {
+      stopping = Promise.resolve().then(async () => {
+        let failed = false
+        for (const controller of [...controllers].reverse()) {
+          try { await controller.stop() } catch (_) {
+            failed = true
+            try { logger.error('ADAPTER_STOP_FAILED') } catch (_) {}
+          }
+        }
+        if (failed) throw fail('ADAPTER_STOP_FAILED')
+      })
+    }
+    return stopping
   }
+  try {
+    await startPlatform(() => startQQOfficial({
+      config,
+      logger,
+      execute: (context) => pluginRuntime.execute(context),
+      chatProcess: ChatProcess,
+    }), 'QQ_OFFICIAL_START_FAILED')
+    const adapterDependencies = {
+      app,
+      io,
+      logger,
+      utils,
+      axios: oneBotHttp(config),
+      Constants,
+      request,
+      plugins,
+      voicePlayer,
+      chatProcess: ChatProcess,
+      processExecute: ProcessExecute,
+      ecYWenDa: ECYWenDa,
+      conversation: {
+        execute: context => pluginRuntime.execute(context),
+        matchChat,
+        fallback: context => pluginRuntime.executeFallback(context),
+        observe: context => plugins.ollama?.observeMessage?.(context),
+        recordReply: (context, text) => plugins.ollama?.recordReply?.(context, text),
+        createProactive: ({send}) => {
+          const options = config.llm?.proactive
+          if (options?.enabled !== true) return null
+          const sender = createOneBotSender({apiUrl: config.ONE_BOT_API_URL, axios: oneBotHttp(config)})
+          return createProactiveChat({
+            ...options, groupIds: Array.isArray(options.groupIds) ? options.groupIds : [], logger,
+            generate: context => plugins.ollama?.generateProactive?.(context),
+            canSend: async context => {
+              if (!await pluginRuntime.isEnabled('ollama', context) ||
+                  !await pluginRuntime.isEnabled('proactiveChat', context)) return false
+              const member = (await sender.getGroupMemberInfo(context.targetId, context.selfId, 1))?.data?.data
+              if (!member || !Number.isFinite(Number(member.shut_up_timestamp)) ||
+                  Number(member.shut_up_timestamp) > Date.now() / 1000) return false
+              const group = (await sender.getGroupInfo(context.targetId, 1))?.data?.data
+              return Boolean(group && (Number(group.group_all_shut) === 0 || ['owner', 'admin'].includes(member.role)))
+            },
+            send: async (context, text) => {
+              const chunks = textChunks(text)
+              for (const chunk of chunks) await send(context, chunk)
+              plugins.ollama?.recordReply?.(context, chunks.join('\n'))
+            },
+          })
+        },
+      },
+    }
 
-  if (globalConfig.CONNECT_QQ_GUILD_SWITCH) {
-    logger.info('小夜QQ频道接入开启'.on)
-    StartQQGuild({config: globalConfig, ...adapterDependencies})
-  } else {
-    logger.info('小夜QQ频道接入关闭'.off)
-  }
+    if (config.GO_CQHTTP_SWITCH) {
+      startGoCqhttp()
+      logger.info(
+        `小夜通过go-cqhttp接入QQ，配置: \n  ·对接OneBot协议接口 ${
+          config.ONE_BOT_API_URL
+        }\n  ·监听反向post于 127.0.0.1:${config.WEB_PORT}${config.ONE_BOT_ANTI_POST_API}\n  ·私聊服务${
+          config.QQBOT_PRIVATE_CHAT_SWITCH ? '开启' : '关闭'
+        }`.on,
+      )
+      await startPlatform(() => StartQQBot({config, ...adapterDependencies}), 'QQ_START_FAILED')
+    } else if (config.CONNECT_ONE_BOT_SWITCH) {
+      logger.info(
+        `小夜通过${config.ONE_BOT_PROVIDER === 'napcat' ? 'NapCat OneBot 11' : 'OneBot协议'}接入QQ：\n  ·对接OneBot协议接口 ${config.ONE_BOT_API_URL}\n  ·监听反向post于 127.0.0.1:${
+          config.WEB_PORT
+        }${config.ONE_BOT_ANTI_POST_API}\n  ·私聊服务${config.QQBOT_PRIVATE_CHAT_SWITCH ? '开启' : '关闭'}`.on,
+      )
+      await startPlatform(() => StartQQBot({config, ...adapterDependencies}), 'QQ_START_FAILED')
+      try {
+        await verifyOneBotConnection({config, axios, logger})
+      } catch {
+        logger.warn('ONEBOT_PROBE_FAILED')
+      }
+    } else {
+      logger.info('小夜不启用OneBot协议和go-cqhttp协议'.off)
+    }
 
-  if (globalConfig.CONNECT_TELEGRAM_SWITCH) {
-    logger.info('小夜Telegram接入开启'.on)
-    StartTelegram({config: globalConfig, ...adapterDependencies})
-  } else {
-    logger.info('小夜Telegram接入关闭'.off)
+    if (config.CONNECT_BILIBILI_LIVE_SWITCH) {
+      logger.info(`小夜哔哩哔哩直播接入开启，直播间id为 ${config.BILIBILI_LIVE_ROOM_ID}`.on)
+      await startPlatform(() => StartLive({config, ...adapterDependencies}), 'BILIBILI_START_FAILED')
+    } else {
+      logger.info('小夜哔哩哔哩直播接入关闭'.off)
+    }
+
+    if (config.CONNECT_QQ_GUILD_SWITCH) {
+      logger.info('小夜QQ频道接入开启'.on)
+      await startPlatform(() => StartQQGuild({config, ...adapterDependencies}), 'QQ_GUILD_START_FAILED')
+    } else {
+      logger.info('小夜QQ频道接入关闭'.off)
+    }
+
+    if (config.CONNECT_TELEGRAM_SWITCH) {
+      logger.info('小夜Telegram接入开启'.on)
+      await startPlatform(() => StartTelegram({config, ...adapterDependencies}), 'TELEGRAM_START_FAILED')
+    } else {
+      logger.info('小夜Telegram接入关闭'.off)
+    }
+    return {stop}
+  } catch (error) {
+    await stop().catch(() => {})
+    throw fail(error?.code === 'ADAPTER_CONTROLLER_INVALID' ? error.code : 'ADAPTER_START_FAILED')
   }
 }
 
@@ -245,22 +374,15 @@ function startGoCqhttp() {
   }
 }
 
-function ReadConfig() {
-  return new Promise((resolve, reject) => {
-    logger.info('开始加载配置……'.log)
-    fs.readFile(path.join(process.cwd(), 'config', 'config.yml'), 'utf-8', (err, data) => {
-      if (!err) {
-        logger.info('配置加载完毕√'.log)
-        resolve(yaml.parse(data))
-      } else {
-        reject('读取配置文件错误，尝试以默认配置启动。错误原因: ' + err)
-      }
-    })
-  })
+async function ReadConfig(configPath = path.join(process.cwd(), 'config', 'config.yml')) {
+  logger.info('开始加载配置……'.log)
+  const config = await readConfig(configPath)
+  logger.info('配置加载完毕√'.log)
+  return config
 }
 
-async function InitConfig() {
-  const config = await ReadConfig()
+async function InitConfig(configPath) {
+  const config = await ReadConfig(configPath)
   const newConfig = normalizeRuntimeConfig(config, {logger})
   utils.ConfigureRuntime(newConfig)
 
@@ -268,16 +390,19 @@ async function InitConfig() {
   return newConfig
 }
 
-function InitPluginSystem(io) {
+function InitPluginSystem(io, {dependencies = {}} = {}) {
   logger.info('开始加载插件……'.log)
   pluginRuntime = createPluginRuntime({
     pluginDir: path.join(process.cwd(), 'plugins'),
-    dependencies: createPluginDependencies(io, globalConfig),
+    dependencies: {...createPluginDependencies(io, globalConfig), ...dependencies},
     logger,
     getPluginStatus: utils.GetGroupPluginStatus,
     setPluginStatus: utils.ToggleGroupPlugin,
     timeoutMs: globalConfig.PLUGIN_TIMEOUT_MS ?? 8000,
+    pluginTimeouts: globalConfig.PLUGIN_TIMEOUTS,
     switchReg: Constants.plugins_switch_reg,
+    conversationState: createConversationPluginStateStore({sequelize}),
+    officialPluginAllowlist: globalConfig.QQ_OFFICIAL_PLUGIN_ALLOWLIST,
   })
 
   plugins = pluginRuntime.load()
@@ -287,7 +412,7 @@ function InitPluginSystem(io) {
 
 function createPluginDependencies(io, runtimeConfig = globalConfig) {
   return {
-    axios,
+    axios: oneBotHttp(runtimeConfig),
     logger,
     config: runtimeConfig,
     utils,
@@ -299,6 +424,7 @@ function createPluginDependencies(io, runtimeConfig = globalConfig) {
     plugins,
     os,
     exec,
+    execFile,
     schedule: nodeSchedule,
     dayjs,
     jieba,
@@ -321,7 +447,7 @@ function createPluginDependencies(io, runtimeConfig = globalConfig) {
 function CheckUpdate() {
   axios
     .get('https://api.github.com/repos/Giftia/ChatDACS/releases/latest', {
-      httpsAgent: new https.Agent({rejectUnauthorized: false}),
+      timeout: 8000,
     })
     .then((res) => {
       if (semverDiff(versionNumber, res.data.tag_name) !== undefined) {
@@ -381,6 +507,8 @@ async function ProcessExecute(msg, userId, userName, groupId, groupName, options
   return {
     type: result.type,
     content: result.content,
+    ...(result.safeError ? {safeError: result.safeError} : {}),
+    ...(result.timeout ? {timeout: true} : {}),
   }
 }
 
@@ -396,6 +524,7 @@ module.exports = {
   InitPluginSystem,
   ProcessExecute,
   RunMigration,
+  ReadConfig,
   StartConfiguredAdapters,
   createPluginDependencies,
   main,

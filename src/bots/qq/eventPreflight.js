@@ -18,7 +18,7 @@ async function handleQQEventPreflight({
     logger.info(
       `小夜收到频道 ${event.channel_id} 的 ${event.user_id} (${event.sender.nickname}) 发来的消息: ${event.message}`,
     )
-    await processGuildMessage({event, processExecute, chatProcess, config, logger, utils})
+    await processGuildMessage({event, processExecute, chatProcess, config, logger, utils, oneBotSender})
     return true
   }
 

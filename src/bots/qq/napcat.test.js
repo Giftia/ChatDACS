@@ -8,6 +8,10 @@ const {
   verifyNapCatConnection,
 } = require('./napcat')
 
+const token = 'synthetic-napcat-test-token'
+const auth = {env: {CHATDACS_ONEBOT_ACCESS_TOKEN: token},
+  readFileSync: () => { throw new Error('unexpected credential read') }}
+
 describe('NapCat OneBot integration', () => {
   test('generates the HTTP API and event push configuration expected by ChatDACS', () => {
     const config = createNapCatOneBotConfig({
@@ -35,6 +39,7 @@ describe('NapCat OneBot integration', () => {
 
   test('builds the callback URL from normalized ChatDACS runtime settings', () => {
     const config = buildNapCatConfigFromRuntime({
+      ...auth,
       config: {
         ONE_BOT_API_URL: '127.0.0.1:5700',
         ONE_BOT_ANTI_POST_API: '/onebot',
@@ -61,9 +66,12 @@ describe('NapCat OneBot integration', () => {
       }),
     }
 
-    const result = await probeNapCat({apiUrl: '127.0.0.1:5700', axios, timeoutMs: 1500})
+    const result = await probeNapCat({...auth, apiUrl: '127.0.0.1:5700', axios, timeoutMs: 1500})
 
-    expect(axios.get).toHaveBeenCalledWith('http://127.0.0.1:5700/get_version_info', {timeout: 1500})
+    expect(axios.get).toHaveBeenCalledWith('http://127.0.0.1:5700/get_version_info', expect.objectContaining({
+      timeout: 1500, maxRedirects: 0, signal: expect.any(AbortSignal),
+      headers: {Authorization: `Bearer ${token}`},
+    }))
     expect(result).toEqual({
       reachable: true,
       compatible: true,
@@ -87,7 +95,7 @@ describe('NapCat OneBot integration', () => {
       }),
     }
 
-    await expect(probeNapCat({apiUrl: 'http://onebot.local:5700/', axios})).resolves.toEqual(
+    await expect(probeNapCat({...auth, apiUrl: 'http://onebot.local:5700/', axios})).resolves.toEqual(
       expect.objectContaining({reachable: true, compatible: false, appName: 'AnotherBot'}),
     )
   })
@@ -97,16 +105,18 @@ describe('NapCat OneBot integration', () => {
     const axios = {get: jest.fn().mockRejectedValue(new Error('connect ECONNREFUSED'))}
 
     const result = await verifyNapCatConnection({
+      ...auth,
       config: {ONE_BOT_API_URL: '127.0.0.1:5700', ONE_BOT_CONNECT_TIMEOUT_MS: 3000},
       axios,
       logger,
     })
 
     expect(result).toEqual(
-      expect.objectContaining({reachable: false, compatible: false, error: 'connect ECONNREFUSED'}),
+      expect.objectContaining({reachable: false, compatible: false, error: 'ONEBOT_REQUEST_FAILED'}),
     )
     expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('NapCat'))
-    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('重启 ChatDACS'))
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('ONEBOT_REQUEST_FAILED'))
+    expect(logger.warn.mock.calls.flat().join(' ')).not.toContain('connect ECONNREFUSED')
   })
 
   test('checks login state and group visibility without exposing account details', async () => {
@@ -124,6 +134,7 @@ describe('NapCat OneBot integration', () => {
     }
 
     const result = await checkNapCatReadiness({
+      ...auth,
       config: {ONE_BOT_API_URL: '127.0.0.1:5700', ONE_BOT_CONNECT_TIMEOUT_MS: 1000},
       axios,
     })

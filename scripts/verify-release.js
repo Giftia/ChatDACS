@@ -47,7 +47,7 @@ async function main() {
     migrationsDir: path.join(process.cwd(), 'migrations'),
     logger,
   })
-  assert(migrationResult.applied.length === 4, 'fresh database did not apply all migrations')
+  assert(migrationResult.applied.length === 5, 'fresh database did not apply all migrations')
 
   originalRandomNickname = utils.RandomNickname
   utils.RandomNickname = async () => 'SmokeUser'
@@ -62,6 +62,7 @@ async function main() {
     getPluginStatus: async () => true,
     setPluginStatus: async () => true,
     timeoutMs: config.PLUGIN_TIMEOUT_MS,
+    pluginTimeouts: config.PLUGIN_TIMEOUTS,
   })
   pluginRuntime.load()
 
@@ -98,6 +99,19 @@ async function main() {
   const page = await request({port, method: 'GET', path: '/', headers: {Cookie: cookie}})
   assert(page.statusCode === 200, `home page status was ${page.statusCode}`)
   assert(page.body.includes('<title>ChatDACS</title>'), 'home page content mismatch')
+  for (const [asset, file] of [
+    ['/vendor/purify.min.js', require.resolve('dompurify/purify.min.js')],
+    ['/renderSecurity.js', path.join(process.cwd(), 'static/renderSecurity.js')],
+    ['/uploadMedia.js', path.join(process.cwd(), 'static/uploadMedia.js')],
+  ]) {
+    assert(page.body.includes(asset), 'required browser asset is not wired into the page')
+    const response = await request({port, method: 'GET', path: asset})
+    assert(response.statusCode === 200, 'browser asset request failed')
+    assert(response.body === fs.readFileSync(file, 'utf8'), 'browser asset content mismatch')
+    if (asset.startsWith('/vendor/')) {
+      assert(response.headers['x-content-type-options'] === 'nosniff', 'vendor script is missing nosniff')
+    }
+  }
 
   const pollingPath = await openSocketSession({port, cookie})
   const sessionFrames = await pollUntil({
@@ -243,7 +257,7 @@ function request({port, method, path: requestPath, headers = {}, body, timeoutMs
         const chunks = []
         res.setEncoding('utf8')
         res.on('data', (chunk) => chunks.push(chunk))
-        res.on('end', () => resolve({statusCode: res.statusCode, body: chunks.join('')}))
+        res.on('end', () => resolve({statusCode: res.statusCode, headers: res.headers, body: chunks.join('')}))
       },
     )
     req.setTimeout(timeoutMs, () => req.destroy(new Error(`request timeout: ${method} ${requestPath}`)))

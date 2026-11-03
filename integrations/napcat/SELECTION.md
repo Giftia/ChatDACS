@@ -1,5 +1,7 @@
 # QQ OneBot Provider 选型记录
 
+> 本文保留选型时的 Node 版本与约束；现行运行基线以主仓 [`.nvmrc`](../../.nvmrc) 和 [UPGRADE.md](../../UPGRADE.md) 为准，不将历史 Node 18/24 判断改写为当前验收。
+
 - 状态：已采用
 - 日期：2026-07-13
 - 决策：新部署推荐外部 NapCatQQ，保留通用 OneBot 11 与旧 go-cqhttp 兼容路径。

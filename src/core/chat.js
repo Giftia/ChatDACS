@@ -4,6 +4,26 @@ const utils = require('../../plugins/system/utils.js')
 const jieba = require('nodejs-jieba')
 const axios = require('axios').default
 
+async function matchChat(ask) {
+  const miss = {handled: false, content: '', matchType: null}
+  if (typeof ask !== 'string' || !ask.trim()) return miss
+  const hasText = (value) => typeof value === 'string' && value.trim().length > 0
+  try {
+    const full = await utils.FullContentSearchAnswer(ask)
+    if (hasText(full)) return {handled: true, content: full, matchType: 'full'}
+    const fuzzy = await utils.FuzzyContentSearchAnswer(ask)
+    if (hasText(fuzzy)) return {handled: true, content: fuzzy, matchType: 'fuzzy'}
+    const candidates = await utils.ChatJiebaFuzzy(ask)
+    const valid = Array.isArray(candidates) ? candidates.filter(hasText) : []
+    if (valid.length) {
+      return {handled: true, content: valid[Math.floor(Math.random() * valid.length)], matchType: 'jieba'}
+    }
+    return miss
+  } catch (_) {
+    throw Object.assign(new Error('CHAT_MATCH_FAILED'), {code: 'CHAT_MATCH_FAILED'})
+  }
+}
+
 /**
  * 响应聊天回复，超智能(障)的聊天算法: 全匹配搜索 => 模糊搜索 => 分词模糊搜索 => 敷衍
  * @param {string} ask 关键词
@@ -75,6 +95,7 @@ async function ECYWenDa(config) {
 }
 
 module.exports = {
+  matchChat,
   ChatProcess,
   ECYWenDa,
 }

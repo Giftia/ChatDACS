@@ -7,6 +7,10 @@ const {createOpenAPI, createWebsocket} = require('qq-guild-bot')
 const axios = require('axios').default
 
 const Constants = require('../../config/constants.js')
+const {createGuildDirectMessageHandler} = require('./qqGuild/directMessage')
+const {createGuildDirectTransport} = require('./qqGuild/directTransport')
+const {createOneBotSender} = require('../platforms/oneBotSender')
+const {createOneBotHttpClient} = require('../platforms/oneBotHttp')
 
 /**
  * 处理QQ内嵌频道消息
@@ -16,7 +20,8 @@ const Constants = require('../../config/constants.js')
  * @param {Object} config - 配置对象
  * @param {Object} logger - 日志对象
  */
-async function ProcessGuildMessage({event, processExecute, chatProcess, config, logger, utils}) {
+async function ProcessGuildMessage({event, processExecute, chatProcess, config, logger, utils,
+  oneBotSender, axios: injectedAxios = axios, env, readFileSync}) {
   const content = event.message
   // qq内嵌频道插件应答器
   const pluginsReply = await processExecute(content, event.user_id, event?.sender?.nickname, event.channel_id, '', {
@@ -39,11 +44,11 @@ async function ProcessGuildMessage({event, processExecute, chatProcess, config, 
   }
 
   if (replyToGuild) {
-    await axios.get(
-      `http://${config.ONE_BOT_API_URL}/send_guild_channel_msg?guild_id=${event.guild_id}&channel_id=${
-        event.channel_id
-      }&message=${encodeURI(replyToGuild)}`,
-    )
+    const sender = oneBotSender ?? createOneBotSender({
+      apiUrl: config.ONE_BOT_API_URL,
+      axios: createOneBotHttpClient({axios: injectedAxios, config, env, readFileSync}),
+    })
+    await sender.sendGuildChannelMessage(event.guild_id, event.channel_id, replyToGuild)
   }
 }
 
@@ -53,15 +58,22 @@ async function ProcessGuildMessage({event, processExecute, chatProcess, config, 
  * @param {Function} ProcessExecute - 插件处理函数
  * @param {Object} dependencies - 依赖对象
  */
-async function StartQQGuild({config, processExecute, chatProcess, logger, utils}) {
+async function StartQQGuild({config, processExecute, chatProcess, logger, utils,
+  createOpenAPI: openApiFactory = createOpenAPI, createWebsocket: websocketFactory = createWebsocket}) {
   const testConfig = {
     appID: config.QQ_GUILD_APP_ID,
     token: config.QQ_GUILD_TOKEN,
-    intents: ['GUILD_MESSAGES'], // 事件订阅,用于开启可接收的消息类型
+    intents: config.QQ_GUILD_DIRECT_MESSAGE_SWITCH ? ['GUILD_MESSAGES', 'DIRECT_MESSAGE'] : ['GUILD_MESSAGES'],
     sandbox: true, // 沙箱频道
   }
-  const qqGuildClient = createOpenAPI(testConfig)
-  const qqGuildWS = createWebsocket(testConfig)
+  const qqGuildClient = openApiFactory(testConfig)
+  const qqGuildWS = websocketFactory(testConfig)
+  let stopped = false
+  const directTransport = config.QQ_GUILD_DIRECT_MESSAGE_SWITCH
+    ? createGuildDirectTransport(qqGuildClient.directMessageApi) : null
+  const handleDirectMessage = createGuildDirectMessageHandler({
+    appId: String(config.QQ_GUILD_APP_ID), client: {directMessageApi: directTransport}, processExecute, chatProcess, logger,
+  })
 
   // 消息监听
   qqGuildWS.on('READY', (data) => {
@@ -80,7 +92,7 @@ async function StartQQGuild({config, processExecute, chatProcess, logger, utils}
     console.log('[GUILD_MESSAGE_REACTIONS] 事件接收 :', data)
   })
   qqGuildWS.on('DIRECT_MESSAGE', (data) => {
-    console.log('[DIRECT_MESSAGE] 事件接收 :', data)
+    if (config.QQ_GUILD_DIRECT_MESSAGE_SWITCH) return handleDirectMessage(data)
   })
   qqGuildWS.on('INTERACTION', (data) => {
     console.log('[INTERACTION] 事件接收 :', data)
@@ -95,6 +107,7 @@ async function StartQQGuild({config, processExecute, chatProcess, logger, utils}
     console.log('[AUDIO_ACTION] 事件接收 :', data)
   })
   qqGuildWS.on('GUILD_MESSAGES', async (data) => {
+    if (stopped) return
     console.log('[GUILD_MESSAGES] 事件接收 :', data)
 
     // 需要把指令前 <@!1234567890 > 和 [sandbox] 移除
@@ -114,6 +127,7 @@ async function StartQQGuild({config, processExecute, chatProcess, logger, utils}
 
     const channelID = data.msg.channel_id
     const replyMsgID = data.msg.id
+    if (stopped) return
 
     if (pluginsReply) {
       const replyToQQGuild = utils.PluginAnswerToQQGuildStyle(pluginsReply)
@@ -155,6 +169,7 @@ async function StartQQGuild({config, processExecute, chatProcess, logger, utils}
       const replyFlag = Math.floor(Math.random() * 100)
       if (replyFlag < config.QQBOT_REPLY_PROBABILITY) {
         const chatReply = await chatProcess(content)
+        if (stopped) return
         if (chatReply) {
           console.log(`对于QQ频道Bot端聊天 ${content} ，小夜回复 ${chatReply}`.log)
           const message = {
@@ -174,6 +189,23 @@ async function StartQQGuild({config, processExecute, chatProcess, logger, utils}
       }
     }
   })
+  return {stop() {
+    if (stopped) return
+    stopped = true
+    handleDirectMessage.stop()
+    directTransport?.stop()
+    // qq-guild-bot reconnects on EVENT_WS even after disconnect(). Remove its
+    // lifecycle listener before closing our exclusively owned connection.
+    qqGuildWS.removeAllListeners()
+    const sessionSocket = qqGuildWS.session?.ws
+    if (sessionSocket) {
+      // A pending gateway lookup may complete after stop. The old SDK has no
+      // cancellation API and disconnect() assumes the socket already exists.
+      sessionSocket.createWebsocket = () => {}
+      if (!sessionSocket.ws) return
+    }
+    qqGuildWS.disconnect()
+  }}
 }
 
 module.exports = {

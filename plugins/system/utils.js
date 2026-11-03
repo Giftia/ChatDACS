@@ -2,7 +2,10 @@ const fs = require('fs')
 const path = require('path')
 const yaml = require('yaml')
 const crypto = require('crypto')
-const axios = require('axios').default
+const baseAxios = require('axios').default
+const {createOneBotHttpClient} = require('../../src/platforms/oneBotHttp')
+const {buildOneBotUrl} = require('../../src/platforms/oneBotSender')
+const {normalizeRuntimeConfig} = require('../../src/config/runtimeConfig')
 const mp3Duration = require('mp3-duration')
 const sequelize = require('sequelize')
 const Op = sequelize.Op
@@ -34,6 +37,7 @@ let ONE_BOT_API_URL = '127.0.0.1:5700'
 let TIAN_XING_API_KEY = ''
 let CHAT_JIEBA_LIMIT = 5
 let explicitRuntimeConfigured = false
+let axios = baseAxios
 
 Init().catch((error) => console.error(error))
 
@@ -62,15 +66,27 @@ function applyRuntimeConfig(config = {}) {
   const system = config.System ?? {}
   const apiKey = config.ApiKey ?? {}
   const qqBot = config.qqBot ?? {}
+  const normalized = normalizeRuntimeConfig({...config, System: {
+    ...system,
+    ONE_BOT_PROVIDER: config.ONE_BOT_PROVIDER ?? system.ONE_BOT_PROVIDER,
+    ONE_BOT_REQUEST_TIMEOUT_MS: config.ONE_BOT_REQUEST_TIMEOUT_MS ?? system.ONE_BOT_REQUEST_TIMEOUT_MS,
+  }})
 
   WEB_PORT = config.WEB_PORT ?? system.WEB_PORT ?? 80
   ONE_BOT_API_URL =
     config.ONE_BOT_API_URL ??
     system.ONE_BOT_API_URL ??
     system.GO_CQHTTP_SERVICE_API_URL ??
-    '127.0.0.1:5700'
+    normalized.ONE_BOT_API_URL
   TIAN_XING_API_KEY = config.TIAN_XING_API_KEY ?? apiKey.TIAN_XING_API_KEY ?? ''
   CHAT_JIEBA_LIMIT = config.CHAT_JIEBA_LIMIT ?? qqBot.CHAT_JIEBA_LIMIT ?? 5
+  axios = createOneBotHttpClient({axios: baseAxios, config: {
+    ...normalized,
+    ONE_BOT_API_URL,
+    ONE_BOT_PROVIDER: normalized.ONE_BOT_PROVIDER,
+    ONE_BOT_CREDENTIALS_FILE: config.ONE_BOT_CREDENTIALS_FILE ?? normalized.ONE_BOT_CREDENTIALS_FILE,
+    ONE_BOT_REQUEST_TIMEOUT_MS: normalized.ONE_BOT_REQUEST_TIMEOUT_MS,
+  }})
 }
 
 // 孤寡图序列
@@ -279,7 +295,7 @@ module.exports = {
    */
   async InitGroupList() {
     const groupList = await axios
-      .get(`http://${ONE_BOT_API_URL}/get_group_list`)
+      .get(buildOneBotUrl(ONE_BOT_API_URL, 'get_group_list'))
       .then((response) => {
         return response.data.data
       })
@@ -543,9 +559,9 @@ module.exports = {
         setTimeout(async () => {
           await axios
             .get(
-              `http://${ONE_BOT_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI(
-                '害害嗨，小夜自动张菊了',
-              )}`,
+              buildOneBotUrl(ONE_BOT_API_URL, 'send_group_msg', {
+                group_id: groupId, message: '害害嗨，小夜自动张菊了',
+              }),
             )
             .then(async () => {
               await this.EnableGroupService(groupId)
@@ -567,7 +583,7 @@ module.exports = {
     guGuaPicList.forEach((pic, index) => {
       const picUrl = `[CQ:image,file=http://127.0.0.1:${WEB_PORT}/xiaoye/ps/${pic}]`
       setTimeout(async () => {
-        await axios.get(`http://${ONE_BOT_API_URL}/send_private_msg?user_id=${qqId}&message=${encodeURI(picUrl)}`)
+        await axios.get(buildOneBotUrl(ONE_BOT_API_URL, 'send_private_msg', {user_id: qqId, message: picUrl}))
       }, 1000 * 5 * index)
     })
   },
@@ -583,7 +599,7 @@ module.exports = {
     guGuaPicList.forEach((pic, index) => {
       const picUrl = `[CQ:image,file=http://127.0.0.1:${WEB_PORT}/xiaoye/ps/${pic}]`
       setTimeout(async () => {
-        await axios.get(`http://${ONE_BOT_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI(picUrl)}`)
+        await axios.get(buildOneBotUrl(ONE_BOT_API_URL, 'send_group_msg', {group_id: groupId, message: picUrl}))
       }, 1000 * 5 * index)
     })
   },

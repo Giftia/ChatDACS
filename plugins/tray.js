@@ -8,13 +8,14 @@ module.exports = {
   预期返回: "[在宿主电脑弹出一个消息通知：'您可能是盗版软件的受害者']",
 
   // 初始化方法，用于依赖注入
-  init({logger, trayicon, path, fs, os, exec}) {
+  init({logger, trayicon, path, fs, os, exec, execFile}) {
     this.logger = logger
     this.trayicon = trayicon
     this.path = path
     this.fs = fs
     this.os = os
     this.exec = exec
+    this.execFile = execFile
     this.versionNumber = `v${require(path.join(process.cwd(), 'package.json')).version}`
     this.icon = path.resolve(process.cwd(), 'static', 'favicon.ico')
     this.tray = null
@@ -23,20 +24,55 @@ module.exports = {
     if (process.platform === 'win32') {
       this.runTray().then((resolve) => {
         this.tray = resolve
-      }).catch((error) => {
-        this.logger.error(`托盘启动失败: ${error?.stack ?? error}`)
+      }).catch(() => {
+        this.logger?.error?.('TRAY_START_FAILED')
       })
     }
   },
 
   // 插件执行逻辑
   execute: async function (msg, userId, userName, groupId, groupName, options) {
-    if (process.platform === 'win32') {
-      const text = new RegExp(this.指令).exec(msg)[1]
-      await this.tray.notify(`来自${userId}(${userName})的消息`, text)
-      this.exec(`msg %username% ${text}`)
+    if (process.platform !== 'win32') {
+      return {type: 'text', content: '当前平台不支持宿主通知'}
     }
-    return {type: 'text', content: '已经在宿主桌面弹出了一个消息通知，请查收'}
+    const text = new RegExp(this.指令).exec(msg)?.[1]
+    if (text === undefined) {
+      return {type: 'text', content: '通知指令格式不正确'}
+    }
+
+    let trayNotified = false
+    if (typeof this.tray?.notify === 'function') {
+      try {
+        await this.tray.notify(`来自${userId}(${userName})的消息`, text)
+        trayNotified = true
+      } catch {
+        this.logger?.error?.('TRAY_NOTIFY_FAILED')
+      }
+    } else {
+      this.logger?.error?.('TRAY_NOT_READY')
+    }
+
+    let messageSent = false
+    try {
+      const username = process.env.USERNAME || this.os.userInfo().username
+      await new Promise((resolve, reject) => {
+        // Keep message text out of msg.exe's option syntax without pipe encoding changes.
+        this.execFile('msg.exe', [username, `ChatDACS: ${text}`], {
+          windowsHide: true, timeout: 5000, maxBuffer: 64 * 1024,
+        }, (error) => {
+          if (error) reject(error)
+          else resolve()
+        })
+      })
+      messageSent = true
+    } catch {
+      this.logger?.error?.('TRAY_MESSAGE_FAILED')
+    }
+
+    const content = trayNotified && messageSent ? '已经在宿主桌面弹出了一个消息通知，请查收' :
+      trayNotified ? '托盘通知已发送，系统消息发送失败' :
+        messageSent ? '系统消息已发送，托盘通知未完成' : '宿主通知发送失败，请稍后重试'
+    return {type: 'text', content}
   },
 
   // 托盘运行逻辑
@@ -65,10 +101,10 @@ module.exports = {
         },
         (error) => {
           if (error) {
-            this.logger.error(`go-cqhttp启动失败，错误原因: ${error.message}`)
+            this.logger.error('TRAY_GO_CQHTTP_START_FAILED')
             return
           }
-          this.logger.error('go-cqhttp窗口意外退出，小夜将无法正常使用，请尝试重新启动')
+          this.logger.error('TRAY_GO_CQHTTP_EXITED')
         },
       )
     })
@@ -77,9 +113,13 @@ module.exports = {
       const configFile = this.path.join(`${process.cwd()}`, 'config', 'config.yml')
       if (this.fs.existsSync(configFile)) {
         this.logger.info(`打开配置文件：${configFile}`)
-        this.exec(`notepad ${configFile}`, {
-          cwd: this.path.join(process.cwd(), 'config'),
-        })
+        try {
+          this.execFile('notepad.exe', [configFile], {windowsHide: true}, (error) => {
+            if (error) this.logger?.error?.('TRAY_CONFIG_OPEN_FAILED')
+          })
+        } catch {
+          this.logger?.error?.('TRAY_CONFIG_OPEN_FAILED')
+        }
       } else {
         newTray.notify('配置文件不存在', '是不是哪里出问题了, 建议重开')
       }

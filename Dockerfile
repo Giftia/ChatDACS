@@ -1,23 +1,15 @@
 # Build
-FROM node:18 as build
+FROM node:26.13.0-bookworm AS build
 
 WORKDIR /opt/chatdacs
 
 COPY . .
 
-RUN npm ci --production &&
-  rm package.json &&
-  rm package-lock.json &&
-  rm ./plugins/go-cqhttp/go-cqhttp_windows_amd64.exe &&
-  rm ./plugins/go-cqhttp/go-cqhttp.bat &&
-  cd ./plugins/ &&
-  npm ci --production &&
-  rm package.json &&
-  rm package-lock.json
+RUN npm ci --omit=dev
 
 # Run
 
-FROM node:18
+FROM node:26.13.0-bookworm
 
 WORKDIR /opt/chatdacs
 
@@ -25,4 +17,4 @@ COPY --from=build /opt/chatdacs ./
 
 EXPOSE 80
 
-CMD node .
+CMD ["node", "index.js"]

@@ -56,6 +56,19 @@ typings/
 
 # dotenv environment variables file
 .env
+.env.*
+config/qq-official.credentials.json
+config/qq-official.credentials.json.*.tmp
+*.credentials.json
+*.credentials.json.*.tmp
+config/llm-persona-state.json
+config/llm-persona-state.json.*.tmp
+config/llm-model-state.json
+config/llm-model-state.json.*.tmp
+plugins/persona/
+integrations/qq-official/CHECKPOINT.md
+integrations/qq-official/PLATFORM-QUERY.md
+integrations/qq-official/AUTH-COMPATIBILITY.md
 
 # next.js build output
 .next

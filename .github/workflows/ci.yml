@@ -23,10 +23,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Use Node.js 18.20.8
+      - name: Use project Node.js LTS
         uses: actions/setup-node@v4
         with:
-          node-version: 18.20.8
+          node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: package-lock.json
 
@@ -40,4 +40,4 @@ jobs:
         run: npm ci
 
       - name: Verify
-        run: npm run verify:release
+        run: node scripts/ci-runtime.js verify

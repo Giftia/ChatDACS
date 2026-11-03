@@ -1,19 +1,25 @@
 'use strict'
 
 function registerProcessErrorHandlers({processLike = process, io, logger = console, notifyAdmin} = {}) {
-  const report = async (prefix, error) => {
-    const formattedError = formatError(error)
-    io?.emit?.('system', `${prefix}: ${formattedError}`)
-    loggerCall(logger, 'error', `${prefix}: ${formattedError}`)
+  const report = async (prefix) => {
+    const code = prefix === '@未捕获的异常' ? 'PROCESS_UNCAUGHT_EXCEPTION' :
+      prefix === '@未捕获的promise异常' ? 'PROCESS_UNHANDLED_REJECTION' : 'PROCESS_ERROR'
+    const metadata = Object.freeze({code})
+    try {
+      io?.emit?.('system', '系统处理失败，请稍后再试')
+    } catch {
+      loggerCall(logger, 'error', 'PROCESS_BROADCAST_ERROR')
+    }
+    loggerCall(logger, 'error', code)
 
     if (typeof notifyAdmin !== 'function') {
       return
     }
 
     try {
-      await notifyAdmin(error)
-    } catch (notificationError) {
-      loggerCall(logger, 'error', `异常通知发送失败: ${formatError(notificationError)}`)
+      await notifyAdmin(metadata)
+    } catch {
+      loggerCall(logger, 'error', 'PROCESS_NOTIFICATION_ERROR')
     }
   }
 
@@ -40,14 +46,10 @@ function removeListener(processLike, event, handler) {
   }
 }
 
-function formatError(error) {
-  return error?.stack ?? error?.message ?? String(error)
-}
-
 function loggerCall(logger, level, message) {
-  if (typeof logger?.[level] === 'function') {
-    logger[level](message)
-  }
+  try {
+    if (typeof logger?.[level] === 'function') Promise.resolve(logger[level](message)).catch(() => {})
+  } catch {}
 }
 
 module.exports = {

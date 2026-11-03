@@ -4,11 +4,11 @@
  */
 
 const axios = require('axios').default
-const request = require('request')
 
 const Constants = require('../../config/constants.js')
-const {createOneBotSender} = require('../platforms/oneBotSender')
-const {handleQQChatReply} = require('./qq/chatReply')
+const {createOneBotSender, buildOneBotUrl} = require('../platforms/oneBotSender')
+const {handleQQChatReply, getQQChatText, formatQQChatReply} = require('./qq/chatReply')
+const {createConversationRuntime} = require('../plugins/conversationRuntime')
 const {handleQQEventPreflight} = require('./qq/eventPreflight')
 const {
   ensureGroupServiceEnabled,
@@ -29,8 +29,6 @@ const runtime = {
   oneBotSender: createOneBotSender({apiUrl: '127.0.0.1:5700', axios}),
   c1cCount: 0,
 }
-
-let boomTimer
 
 function configureQQRuntime({config, logger, utils, axios: injectedAxios}) {
   if (config) runtime.config = config
@@ -83,19 +81,21 @@ async function poked(event) {
     runtime.logger.info(`小夜被戳坏了，${event.user_id} 被禁言10s`.error)
     runtime.c1cCount = 0
     await runtime.axios.get(
-      `http://${runtime.config.ONE_BOT_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(
-        runtime.config.QQ_GROUP_POKE_BOOM_REPLY_MESSAGE,
-      )}`,
+      buildOneBotUrl(runtime.config.ONE_BOT_API_URL, 'send_group_msg', {
+        group_id: event.group_id, message: runtime.config.QQ_GROUP_POKE_BOOM_REPLY_MESSAGE,
+      }),
     )
     await runtime.axios.get(
-      `http://${runtime.config.ONE_BOT_API_URL}/set_group_ban?group_id=${event.group_id}&user_id=${event.user_id}&duration=10`,
+      buildOneBotUrl(runtime.config.ONE_BOT_API_URL, 'set_group_ban', {
+        group_id: event.group_id, user_id: event.user_id, duration: 10,
+      }),
     )
   } else {
     // 被戳的回复
     await runtime.axios.get(
-      `http://${runtime.config.ONE_BOT_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(
-        runtime.config.QQ_GROUP_POKE_REPLY_MESSAGE,
-      )}`,
+      buildOneBotUrl(runtime.config.ONE_BOT_API_URL, 'send_group_msg', {
+        group_id: event.group_id, message: runtime.config.QQ_GROUP_POKE_REPLY_MESSAGE,
+      }),
     )
   }
 }
@@ -112,37 +112,147 @@ async function StartQQBot({
   ecYWenDa: ECYWenDa,
   processExecute: ProcessExecute,
   chatProcess: ChatProcess,
+  matchChat,
+  fallback: injectedFallback,
+  executeFallback,
+  conversation,
+  legacyReplyMode = false,
   logger,
   utils,
   app,
   io,
   plugins,
   axios: injectedAxios = axios,
-  request: injectedRequest = request,
 }) {
   configureQQRuntime({config, logger, utils, axios: injectedAxios})
   const axios = injectedAxios
-  const request = injectedRequest
+  const oneBotSender = runtime.oneBotSender
+  const games = new Map()
+  const cancelled = Symbol('QQ runtime stopped or game replaced')
+  let stopped = false
+  let ready = false
+  let stopping
+  let groupConversation, privateConversation, proactive
+  const fallback = injectedFallback ?? executeFallback
 
-  /**
-   * 启动后加载当前所有群，写入数据库进行群服务初始化
-   */
-  logger.info('正在进行群服务初始化……'.log)
-  const isInitSuccessfully = await utils.InitGroupList()
-  if (isInitSuccessfully) {
-    logger.info('群服务初始化完成'.log)
-  } else {
-    logger.error('连接QQ协议失败了，请确保协议已经启动后再启动ChatDACS'.error)
-    return
+  const isCurrent = (game) => !stopped && (!game || games.get(game.groupId) === game)
+  const step = async (game, action) => {
+    if (!isCurrent(game)) throw cancelled
+    const result = await action()
+    if (!isCurrent(game)) throw cancelled
+    return result
+  }
+  const clearGame = (groupId) => {
+    const key = String(groupId)
+    const game = games.get(key)
+    if (!game) return
+    games.delete(key)
+    for (const timer of game.timers) clearTimeout(timer)
+    game.timers.clear()
+    return game
+  }
+  const getGame = (groupId) => {
+    const key = String(groupId)
+    if (!games.has(key)) games.set(key, {groupId: key, timers: new Set()})
+    return games.get(key)
+  }
+  const reportAsyncError = (code = 'QQ 异步任务失败') => {
+    // Transport errors may contain tokens, URLs or message bodies.
+    try { logger.error(code) } catch (_) { /* Logging must not reject a detached task. */ }
+  }
+  const schedule = (game, action, delay, final = false) => {
+    if (!isCurrent(game)) return
+    const timer = setTimeout(async () => {
+      game.timers.delete(timer)
+      if (!isCurrent(game)) return
+      try {
+        await action()
+      } catch (error) {
+        if (error !== cancelled && isCurrent(game)) reportAsyncError()
+      } finally {
+        if (final && isCurrent(game)) clearGame(game.groupId)
+      }
+    }, delay)
+    game.timers.add(timer)
+  }
+  const stop = () => {
+    stopped = true
+    for (const groupId of games.keys()) clearGame(groupId)
+    if (!stopping) {
+      stopping = Promise.allSettled([() => proactive?.stop(), () => groupConversation?.stop(), () => privateConversation?.stop()]
+        .map((close) => Promise.resolve().then(close))).then((results) => {
+        if (results.some((result) => result.status === 'rejected')) {
+          reportAsyncError('QQ_STOP_FAILED')
+          throw Object.assign(new Error('QQ_STOP_FAILED'), {code: 'QQ_STOP_FAILED'})
+        }
+      })
+    }
+    return stopping
+  }
+  const sendMessageToQQGroup = (message, event) => step(null, () => oneBotSender.sendGroupMessage(event.group_id, message))
+  const sendMessageToQQ = (message, event) => step(null, () => oneBotSender.sendPrivateMessage(event.user_id, message))
+
+  const conversationContext = (event) => {
+    const text = getQQChatText(event)
+    if (!text.replace(/\[CQ:[^\]]*\]/g, '').trim() || String(event.user_id) === String(event.self_id)) return null
+    const group = event.message_type === 'group'
+    return {text, platform: 'qq', selfId: event.self_id, userId: event.user_id, userName: event.sender?.nickname ?? '',
+      groupId: group ? event.group_id : undefined, groupName: event.group_name ?? '',
+      targetId: group ? event.group_id : event.user_id, raw: {scope: group ? 'group' : 'private', event}}
+  }
+  const updateHistory = async (action) => {
+    try { await step(null, action) } catch (error) {
+      if (error !== cancelled && !stopped) reportAsyncError()
+    }
+  }
+  const notifyMessage = (context) => {
+    if (context.raw?.scope === 'group') {
+      try { proactive?.observe(context) } catch (_) { reportAsyncError('QQ_PROACTIVE_OBSERVE_FAILED') }
+    }
+    return conversation.onMessage?.(context)
+  }
+  if (conversation) {
+    const options = {...conversation, logger, onMessage: notifyMessage,
+      send: async (context, reply) => {
+        const content = (!reply.type || reply.type === 'text') && typeof reply.content === 'string'
+          ? formatQQChatReply(reply.content, context.userId) : utils.PluginAnswerToGoCqhttpStyle(reply)
+        if (typeof content !== 'string') throw new Error('QQ_RESPONSE_FORMAT_INVALID')
+        await step(null, () => context.groupId == null ? oneBotSender.sendPrivateMessage(context.targetId, content) :
+          oneBotSender.sendGroupMessage(context.targetId, content))
+        return content
+      },
+    }
+    // Group plugins already ran before built-in games; do not execute them twice.
+    groupConversation = createConversationRuntime({...options, onMessage: () => {}, execute: async () => ({handled: false})})
+    privateConversation = createConversationRuntime(options)
   }
 
   const handleEvent = async (event) => {
+    if (!ready || stopped) return 0
+    try {
+      return await processEvent(event)
+    } catch (error) {
+      if (error !== cancelled) throw error
+      return 0
+    }
+  }
+
+  registerOneBotWebhook({
+    app,
+    config,
+    path: config.ONE_BOT_ANTI_POST_API,
+    handleEvent,
+    isReady: () => ready && !stopped,
+    logger,
+  })
+
+  const processEvent = async (event) => {
     const handledByPreflight = await handleQQEventPreflight({
       event,
       config,
       logger,
       io,
-      oneBotSender: runtime.oneBotSender,
+      oneBotSender,
       processExecute: ProcessExecute,
       chatProcess: ChatProcess,
       utils,
@@ -151,6 +261,7 @@ async function StartQQBot({
     if (handledByPreflight) {
       return 0
     }
+    if (stopped) return 0
 
     const handledByMediaBridge = handleQQMediaBridge({
       event,
@@ -172,27 +283,31 @@ async function StartQQBot({
         constants: Constants,
         logger,
         utils,
-        oneBotSender: runtime.oneBotSender,
+        oneBotSender,
       })
       if (handledOpenServiceCommand) {
         return 0
       }
 
       const groupServiceEnabled = await ensureGroupServiceEnabled({event, utils, logger})
+      if (stopped) return 0
       if (!groupServiceEnabled) {
+        if (clearGame(event.group_id)) await step(null, () => utils.EndGroupLoopBombGame(event.group_id))
         return 0
       }
 
       // 服务启用了，允许进入后续的指令系统
+      const groupContext = conversation ? conversationContext(event) : null
+      if (groupContext) await updateHistory(() => notifyMessage(groupContext))
 
           // 群欢迎
           if (event.notice_type === 'group_increase') {
             console.log(`${event.user_id} 加入了群 ${event.group_id}，小夜欢迎了ta`.log)
             const welcomeMessage = config.QQ_GROUP_WELCOME_MESSAGE.replace(/@新人/g, `[CQ:at,qq=${event.user_id}]`)
             await axios.get(
-              `http://${config.ONE_BOT_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(
-                welcomeMessage,
-              )}`,
+              buildOneBotUrl(config.ONE_BOT_API_URL, 'send_group_msg', {
+                group_id: event.group_id, message: welcomeMessage,
+              }),
             )
             // 在小夜加入新群后，将新群写入群服务表
             await utils.AddNewGroup(event.group_id)
@@ -223,7 +338,7 @@ async function StartQQBot({
                 const isHollyMine = Math.floor(Math.random() * 100) < 1 // 神圣地雷的概率为1%
                 if (isHollyMine) {
                   await axios.get(
-                    `http://${config.ONE_BOT_API_URL}/set_group_whole_ban?group_id=${event.group_id}&enable=1`,
+                    buildOneBotUrl(config.ONE_BOT_API_URL, 'set_group_whole_ban', {group_id: event.group_id, enable: 1}),
                   )
                   console.log(`${mine.owner} 在群 ${mine.groupId} 触发了神圣地雷`.error)
                   await sendMessageToQQGroup(
@@ -236,7 +351,9 @@ async function StartQQBot({
                   const boomTime = Math.floor(Math.random() * 60 * 2) // 造成伤害时间，2分钟内
                   console.log(`${mine.owner} 在群 ${mine.groupId} 埋的地雷被引爆，伤害时间${boomTime}秒`.log)
                   await axios.get(
-                    `http://${config.ONE_BOT_API_URL}/set_group_ban?group_id=${mine.groupId}&user_id=${event.user_id}&duration=${boomTime}`,
+                    buildOneBotUrl(config.ONE_BOT_API_URL, 'set_group_ban', {
+                      group_id: mine.groupId, user_id: event.user_id, duration: boomTime,
+                    }),
                   )
                   await sendMessageToQQGroup(
                     `[CQ:at,qq=${event.user_id}]恭喜你，被[CQ:at,qq=${mine.owner}]所埋地雷炸伤，休养生息${boomTime}秒!`,
@@ -244,8 +361,8 @@ async function StartQQBot({
                   )
                 }
               }
+              return 0 // 踩中实际存在的地雷后不再处理消息
             }
-            return 0 // 踩中地雷后不再处理消息
           }
 
           // 服务停用开关
@@ -253,24 +370,50 @@ async function StartQQBot({
             event,
             constants: Constants,
             utils,
-            oneBotSender: runtime.oneBotSender,
+            oneBotSender,
             logger,
           })
           if (handledCloseServiceCommand) {
+            const closesThisBot = event.message === '闭菊' || Constants.has_at_qq_reg.exec(event.message)?.[1] == event.self_id
+            if (closesThisBot && clearGame(event.group_id)) {
+              await step(null, () => utils.EndGroupLoopBombGame(event.group_id))
+            }
             return 0
           }
 
           // qq端插件应答器
-          await handleQQPluginReply({
+          let pluginResult
+          const pluginSender = groupContext ? {...oneBotSender,
+            getGroupInfo: async (...args) => {
+              const response = await step(null, () => oneBotSender.getGroupInfo(...args))
+              groupContext.groupName = response.data.data.group_name
+              return response
+            },
+            sendGroupMessage: async (groupId, content) => {
+              await updateHistory(() => conversation.observe?.(groupContext))
+              await step(null, () => oneBotSender.sendGroupMessage(groupId, content))
+              if ((!pluginResult?.type || pluginResult.type === 'text') && !pluginResult?.timeout && !pluginResult?.safeError &&
+                typeof content === 'string') {
+                await updateHistory(() => conversation.recordReply?.(groupContext, content))
+              }
+            },
+          } : oneBotSender
+          const pluginsReply = await handleQQPluginReply({
             event,
-            processExecute: ProcessExecute,
-            oneBotSender: runtime.oneBotSender,
+            processExecute: groupContext ? async (...args) => {
+              pluginResult = await step(null, () => ProcessExecute(...args))
+              return pluginResult
+            } : ProcessExecute,
+            oneBotSender: pluginSender,
             utils,
           })
+          if (pluginsReply != '') {
+            return 0
+          }
 
           // 戳一戳
           if (event.sub_type === 'poke' && event.target_id == event.self_id) {
-            poked(event)
+            await poked(event)
             return 0
           }
 
@@ -280,17 +423,14 @@ async function StartQQBot({
             const syslog = `群 ${event.group_id} 的 ${event.user_id} (${event.sender.nickname}) 对线说: ${message}`
             logger.info(syslog.log)
             io.emit('system', syslog)
-            ChatProcess(message).then((reply) => {
-              plugins.tts
-                .execute(`吠 ${reply}`)
-                .then(async (resolve) => {
-                  const tts_file = `[CQ:record,file=http://127.0.0.1:${config.WEB_PORT}${resolve.file},url=http://127.0.0.1:${config.WEB_PORT}${resolve.file}]`
-                  await sendMessageToQQGroup(tts_file, event)
-                })
-                .catch((reject) => {
-                  console.log(`TTS错误: ${reject}`.error)
-                })
-            })
+            try {
+              const reply = await step(null, () => ChatProcess(message))
+              const resolve = await step(null, () => plugins.tts.execute(`吠 ${reply}`))
+              const tts_file = `[CQ:record,file=http://127.0.0.1:${config.WEB_PORT}${resolve.file},url=http://127.0.0.1:${config.WEB_PORT}${resolve.file}]`
+              await sendMessageToQQGroup(tts_file, event)
+            } catch (error) {
+              if (error !== cancelled && !stopped) reportAsyncError()
+            }
             return 0
           }
 
@@ -333,87 +473,33 @@ async function StartQQBot({
                 '[CQ:image,file=1ea870ec3656585d4a81e13648d66db5.image,url=https://gchat.qpic.cn/gchatpic_new/1277161008/2063243247-2238741340-1EA870EC3656585D4A81E13648D66DB5/0?term=3]'
             }
 
-            // 发送
-            // 先获取昵称
-            request(
-              `http://${config.ONE_BOT_API_URL}/get_group_member_info?group_id=${event.group_id}&user_id=${who}&no_cache=0`,
-              function (error, _response, body) {
-                if (!error) {
-                  body = JSON.parse(body)
-                  name = body.data.nickname
-
-                  requestData = {
-                    group_id: event.group_id,
-                    messages: [
-                      {
-                        type: 'node',
-                        data: {name: name, uin: who, content: text},
-                      },
-                      {
-                        type: 'node',
-                        data: {
-                          name: '星野夜蝶Official',
-                          uin: '1648468212',
-                          content: xiaoye_say,
-                        },
-                      },
-                    ],
-                  }
-
-                  request(
-                    {
-                      url: `http://${config.ONE_BOT_API_URL}/send_group_forward_msg`,
-                      method: 'POST',
-                      json: true,
-                      headers: {
-                        'content-type': 'application/json',
-                      },
-                      body: requestData,
-                    },
-                    function (error, response, body) {
-                      if (!error && response.statusCode == 200) {
-                        console.log(body)
-                      }
-                    },
-                  )
-                } else {
-                  requestData = {
-                    group_id: event.group_id,
-                    messages: [
-                      {
-                        type: 'node',
-                        data: {name: name, uin: who, content: text},
-                      },
-                      {
-                        type: 'node',
-                        data: {
-                          name: '星野夜蝶Official',
-                          uin: '1648468212',
-                          content: xiaoye_say,
-                        },
-                      },
-                    ],
-                  }
-
-                  request(
-                    {
-                      url: `http://${config.ONE_BOT_API_URL}/send_group_forward_msg`,
-                      method: 'POST',
-                      json: true,
-                      headers: {
-                        'content-type': 'application/json',
-                      },
-                      body: requestData,
-                    },
-                    function (error, response, body) {
-                      if (!error && response.statusCode == 200) {
-                        console.log(body)
-                      }
-                    },
-                  )
-                }
-              },
-            )
+            try {
+              try {
+                const response = await step(null, () => axios.get(
+                  buildOneBotUrl(config.ONE_BOT_API_URL, 'get_group_member_info', {
+                    group_id: event.group_id, user_id: who, no_cache: 0,
+                  }),
+                ))
+                name = response.data.data.nickname
+              } catch (error) {
+                if (error === cancelled) throw error
+                // Preserve the original nickname fallback when lookup fails.
+              }
+              requestData = {
+                group_id: event.group_id,
+                messages: [
+                  {type: 'node', data: {name, uin: who, content: text}},
+                  {type: 'node', data: {name: '星野夜蝶Official', uin: '1648468212', content: xiaoye_say}},
+                ],
+              }
+              const response = await step(null, () => axios.post(
+                buildOneBotUrl(config.ONE_BOT_API_URL, 'send_group_forward_msg'), requestData,
+                {headers: {'content-type': 'application/json'}},
+              ))
+              if (response.status === 200) console.log(response.data)
+            } catch (error) {
+              if (error !== cancelled && !stopped) reportAsyncError()
+            }
             return 0
           }
 
@@ -455,7 +541,9 @@ async function StartQQBot({
               const boomTime = Math.floor(Math.random() * 60 * 3) + 60 // 造成伤害时间，随机在60-180秒内
               console.log(`${mine.owner} 在群 ${mine.groupId} 埋的地雷被排爆`.log)
               await axios.get(
-                `http://${config.ONE_BOT_API_URL}/set_group_ban?group_id=${mine.groupId}&user_id=${event.user_id}&duration=${boomTime}`,
+                buildOneBotUrl(config.ONE_BOT_API_URL, 'set_group_ban', {
+                  group_id: mine.groupId, user_id: event.user_id, duration: boomTime,
+                }),
               )
               await sendMessageToQQGroup(
                 `[CQ:at,qq=${event.user_id}] 踩了一脚地雷，为什么要想不开呢，被[CQ:at,qq=${mine.owner}]所埋地雷炸成重伤，休养生息${boomTime}秒!`,
@@ -496,7 +584,9 @@ async function StartQQBot({
 
             // 先救活目标
             await axios.get(
-              `http://${config.ONE_BOT_API_URL}/set_group_ban?group_id=${event.group_id}&user_id=${who}&duration=0`,
+              buildOneBotUrl(config.ONE_BOT_API_URL, 'set_group_ban', {
+                group_id: event.group_id, user_id: who, duration: 0,
+              }),
             )
             console.log(`群 ${event.group_id} 的 群员 ${event.user_id} 救活了 ${who}`.log)
             await sendMessageToQQGroup(
@@ -506,7 +596,9 @@ async function StartQQBot({
 
             // 再禁言团长
             await axios.get(
-              `http://${config.ONE_BOT_API_URL}/set_group_ban?group_id=${event.group_id}&user_id=${event.user_id}&duration=${boomTime}`,
+              buildOneBotUrl(config.ONE_BOT_API_URL, 'set_group_ban', {
+                group_id: event.group_id, user_id: event.user_id, duration: boomTime,
+              }),
             )
             console.log(`${event.user_id} 团长自己被炸伤${boomTime}秒`.log)
             return 0
@@ -515,82 +607,89 @@ async function StartQQBot({
           // 击鼓传雷
           if (Constants.loop_bomb_reg.test(event.message)) {
             // 先检查群有没有开始游戏
-            const loopBombGame = await utils.GetGroupLoopBombGameStatus(event.group_id)
+            const loopBombGame = await step(null, () => utils.GetGroupLoopBombGameStatus(event.group_id))
 
             // 判断游戏开关，没有开始的话就开始游戏，如果游戏已经超时结束了的话就重新开始
             if (!loopBombGame.loopBombEnabled || 60 - process.hrtime([loopBombGame.loopBombStartTime, 0])[0] < 0) {
+              clearGame(event.group_id)
+              const game = getGame(event.group_id)
               // 游戏开始
               const text = '击鼓传雷游戏开始啦，这是一个只有死亡才能结束的游戏，做好准备了吗'
-              await axios.get(
-                `http://${config.ONE_BOT_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(text)}`,
-              )
+              await step(game, () => axios.get(
+                buildOneBotUrl(config.ONE_BOT_API_URL, 'send_group_msg', {group_id: event.group_id, message: text}),
+              ))
               console.log(`群 ${event.group_id} 开始了击鼓传雷`.log)
 
               // 给发起人出题，等待ta回答
-              const wenDa = await ECYWenDa(config)
+              const wenDa = await step(game, () => ECYWenDa(config))
 
               const question = `那么[CQ:at,qq=${event.user_id}]请听题：${wenDa.question} 请按如下格式告诉小夜：击鼓传雷 你的答案，时间剩余59秒`
 
               // 把答案、持有人、开始时间存入数据库
-              await utils.StartGroupLoopBombGame(event.group_id, wenDa.answer, event.user_id, process.hrtime()[0])
+              await step(game, () => utils.StartGroupLoopBombGame(event.group_id, wenDa.answer, event.user_id, process.hrtime()[0]))
 
               // 金手指
-              await axios.get(
-                `http://${config.ONE_BOT_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${
-                  event.user_id
-                }&card=${encodeURI(wenDa.answer)}`,
-              )
+              await step(game, () => axios.get(
+                buildOneBotUrl(config.ONE_BOT_API_URL, 'set_group_card', {
+                  group_id: event.group_id, user_id: event.user_id, card: wenDa.answer,
+                }),
+              ))
 
               // 丢出问题
-              setTimeout(async () => {
-                await axios.get(
-                  `http://${config.ONE_BOT_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(
-                    question,
-                  )}`,
-                )
+              schedule(game, async () => {
+                await step(game, () => axios.get(
+                  buildOneBotUrl(config.ONE_BOT_API_URL, 'send_group_msg', {
+                    group_id: event.group_id, message: question,
+                  }),
+                ))
               }, 1000)
 
               // 开始倒计时，倒计时结束宣布游戏结束
-              boomTimer = setTimeout(async () => {
+              schedule(game, async () => {
                 console.log(`群 ${event.group_id} 的击鼓传雷到达时间，炸了`.log)
                 const boomTime = Math.floor(Math.random() * 60 * 3) + 60 // 造成伤害时间，随机在60-180秒内
 
                 // 获取这个雷现在是谁手上，炸ta
-                const {bombHolder, bombAnswer} = await utils.GetGroupLoopBomb(event.group_id)
+                const {bombHolder, bombAnswer} = await step(game, () => utils.GetGroupLoopBomb(event.group_id))
 
-                await axios.get(
-                  `http://${config.ONE_BOT_API_URL}/set_group_ban?group_id=${event.group_id}&user_id=${bombHolder}&duration=${boomTime}`,
-                )
+                await step(game, () => axios.get(
+                  buildOneBotUrl(config.ONE_BOT_API_URL, 'set_group_ban', {
+                    group_id: event.group_id, user_id: bombHolder, duration: boomTime,
+                  }),
+                ))
                 console.log(`${bombHolder} 在群 ${event.group_id} 回答超时，被炸伤${boomTime}秒`.log)
 
                 // 金手指关闭
-                await axios.get(
-                  `http://${config.ONE_BOT_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${bombHolder}&card=`,
-                )
+                await step(game, () => axios.get(
+                  buildOneBotUrl(config.ONE_BOT_API_URL, 'set_group_card', {
+                    group_id: event.group_id, user_id: bombHolder, card: '',
+                  }),
+                ))
 
                 const gameOverContent = `时间到了，pia，雷在[CQ:at,qq=${bombHolder}]手上炸了，你被炸成重伤了，休养生息${boomTime}秒！游戏结束！下次加油噢，那么答案公布：${bombAnswer}`
 
-                await axios.get(
-                  `http://${config.ONE_BOT_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(
-                    gameOverContent,
-                  )}`,
-                )
+                await step(game, () => axios.get(
+                  buildOneBotUrl(config.ONE_BOT_API_URL, 'send_group_msg', {
+                    group_id: event.group_id, message: gameOverContent,
+                  }),
+                ))
 
                 // 游戏结束，清空数据
-                await utils.EndGroupLoopBombGame(event.group_id)
+                await step(game, () => utils.EndGroupLoopBombGame(event.group_id))
 
                 return 0
-              }, 1000 * 60)
+              }, 1000 * 60, true)
             }
             // 已经开始游戏了，判断答案对不对
             else {
+              const game = getGame(event.group_id)
               let playerAnswer = event.message
               playerAnswer = playerAnswer.replace('击鼓传雷 ', '')
               playerAnswer = playerAnswer.replace('击鼓传雷', '')
               playerAnswer = playerAnswer.trim()
 
               // 从数据库里取答案判断
-              const {bombHolder, bombAnswer} = await utils.GetGroupLoopBomb(event.group_id)
+              const {bombHolder, bombAnswer} = await step(game, () => utils.GetGroupLoopBomb(event.group_id))
 
               // 判断答案 loop_bomb_answer
               if (bombAnswer == playerAnswer) {
@@ -603,14 +702,18 @@ async function StartQQBot({
                   reply = `[CQ:at,qq=${event.user_id}] 抢答正确！答案确实是 ${bombAnswer} ！但因为抢答了别人的题目所以被惩罚了！`
 
                   // 金手指关闭
-                  await axios.get(
-                    `http://${config.ONE_BOT_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${bombHolder}&card=`,
-                  )
+                  await step(game, () => axios.get(
+                    buildOneBotUrl(config.ONE_BOT_API_URL, 'set_group_card', {
+                      group_id: event.group_id, user_id: bombHolder, card: '',
+                    }),
+                  ))
 
                   // 禁言这个游戏周期
-                  await axios.get(
-                    `http://${config.ONE_BOT_API_URL}/set_group_ban?group_id=${event.group_id}&user_id=${event.user_id}&duration=60`,
-                  )
+                  await step(game, () => axios.get(
+                    buildOneBotUrl(config.ONE_BOT_API_URL, 'set_group_ban', {
+                      group_id: event.group_id, user_id: event.user_id, duration: 60,
+                    }),
+                  ))
                 }
                 // 回答正确
                 else {
@@ -618,59 +721,59 @@ async function StartQQBot({
                   reply = `[CQ:at,qq=${event.user_id}] 回答正确！答案确实是 ${bombAnswer} ！`
 
                   // 金手指关闭
-                  await axios.get(
-                    `http://${config.ONE_BOT_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${bombHolder}&card=`,
-                  )
+                  await step(game, () => axios.get(
+                    buildOneBotUrl(config.ONE_BOT_API_URL, 'set_group_card', {
+                      group_id: event.group_id, user_id: bombHolder, card: '',
+                    }),
+                  ))
                 }
 
                 // 答题成功，返回消息
-                await axios.get(
-                  `http://${config.ONE_BOT_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(
-                    reply,
-                  )}`,
-                )
+                await step(game, () => axios.get(
+                  buildOneBotUrl(config.ONE_BOT_API_URL, 'send_group_msg', {
+                    group_id: event.group_id, message: reply,
+                  }),
+                ))
 
                 // 把雷传给随机幸运群友，进入下一题
-                setTimeout(async () => {
+                schedule(game, async () => {
                   // 随机选一位幸运群友
-                  const randomMember = await axios
-                    .get(`http://${config.ONE_BOT_API_URL}/get_group_member_list?group_id=${event.group_id}`)
-                    .then(async (response) => {
-                      const members = response.data.data
-                      const randomMember = members[Math.floor(Math.random() * members.length)].user_id
-                      console.log(`随机选取一个群友 ${randomMember} 给他下一题`.log)
-                      return randomMember
-                    })
+                  const response = await step(game, () => axios.get(
+                    buildOneBotUrl(config.ONE_BOT_API_URL, 'get_group_member_list', {group_id: event.group_id}),
+                  ))
+                  const members = response.data.data
+                  const randomMember = members[Math.floor(Math.random() * members.length)].user_id
+                  console.log(`随机选取一个群友 ${randomMember} 给他下一题`.log)
 
                   // 开始下一轮游戏，，给幸运群友出题，等待ta回答
 
                   console.log(`群 ${event.group_id} 开始了下一轮击鼓传雷`.log)
 
                   //获取剩余时间
-                  const {bombStartTime} = await utils.GetGroupLoopBomb(event.group_id)
+                  const {bombStartTime} = await step(game, () => utils.GetGroupLoopBomb(event.group_id))
                   const diff = 60 - process.hrtime([bombStartTime, 0])[0] // 剩余时间
 
-                  const wenDa = await ECYWenDa(config)
+                  const wenDa = await step(game, () => ECYWenDa(config))
 
                   const question = `抽到了幸运群友[CQ:at,qq=${randomMember}]！请听题：${wenDa.question} 请按如下格式告诉小夜：击鼓传雷 你的答案，时间还剩余${diff}秒`
 
                   // 把答案、持有人存入数据库
-                  await utils.UpdateGroupLoopBombGame(event.group_id, wenDa.answer, randomMember)
+                  await step(game, () => utils.UpdateGroupLoopBombGame(event.group_id, wenDa.answer, randomMember))
 
                   // 金手指
-                  await axios.get(
-                    `http://${config.ONE_BOT_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${
-                      event.user_id
-                    }&card=${encodeURI(wenDa.answer)}`,
-                  )
+                  await step(game, () => axios.get(
+                    buildOneBotUrl(config.ONE_BOT_API_URL, 'set_group_card', {
+                      group_id: event.group_id, user_id: event.user_id, card: wenDa.answer,
+                    }),
+                  ))
 
                   // 丢出问题
-                  setTimeout(async () => {
-                    await axios.get(
-                      `http://${config.ONE_BOT_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(
-                        question,
-                      )}`,
-                    )
+                  schedule(game, async () => {
+                    await step(game, () => axios.get(
+                      buildOneBotUrl(config.ONE_BOT_API_URL, 'send_group_msg', {
+                        group_id: event.group_id, message: question,
+                      }),
+                    ))
                   }, 1000)
 
                   return 0
@@ -678,6 +781,7 @@ async function StartQQBot({
               }
               // 答错了，游戏结束
               else {
+                clearGame(event.group_id)
                 const boomTime = Math.floor(Math.random() * 60 * 3) + 60 // 造成伤害时间
                 const endGameContent = `[CQ:at,qq=${event.user_id}] 回答错误，好可惜，你被炸成重伤了，休养生息${boomTime}秒！游戏结束！下次加油噢，那么答案公布：${bombAnswer}`
 
@@ -685,15 +789,15 @@ async function StartQQBot({
 
                 // 禁言
                 await axios.get(
-                  `http://${config.ONE_BOT_API_URL}/set_group_ban?group_id=${event.group_id}&user_id=${event.user_id}&duration=${boomTime}`,
+                  buildOneBotUrl(config.ONE_BOT_API_URL, 'set_group_ban', {
+                    group_id: event.group_id, user_id: event.user_id, duration: boomTime,
+                  }),
                 )
 
-                clearTimeout(boomTimer)
-
                 await axios.get(
-                  `http://${config.ONE_BOT_API_URL}/send_group_msg?group_id=${event.group_id}&message=${encodeURI(
-                    endGameContent,
-                  )}`,
+                  buildOneBotUrl(config.ONE_BOT_API_URL, 'send_group_msg', {
+                    group_id: event.group_id, message: endGameContent,
+                  }),
                 )
 
                 // 游戏结束，删掉游戏记录
@@ -701,11 +805,14 @@ async function StartQQBot({
 
                 // 金手指关闭
                 await axios.get(
-                  `http://${config.ONE_BOT_API_URL}/set_group_card?group_id=${event.group_id}&user_id=${bombHolder}&card=`,
+                  buildOneBotUrl(config.ONE_BOT_API_URL, 'set_group_card', {
+                    group_id: event.group_id, user_id: bombHolder, card: '',
+                  }),
                 )
                 return 0
               }
             }
+            return 0
           }
 
           // 孤寡
@@ -719,7 +826,7 @@ async function StartQQBot({
             const who = Constants.has_at_qq_reg.exec(event.message)[1]
             console.log(`孤寡对象：${who}`.log)
             if (Constants.is_qq_reg.test(who)) {
-              await axios.get(`http://${config.ONE_BOT_API_URL}/get_friend_list`).then(async (response) => {
+              await axios.get(buildOneBotUrl(config.ONE_BOT_API_URL, 'get_friend_list')).then(async (response) => {
                 if (response.length != 0) {
                   // 判断 who 是否在 response.data.data 数组里
                   const userExist = response.data.data.some((item) => {
@@ -763,10 +870,10 @@ async function StartQQBot({
           // 手动复读，复读回复中指定的消息
           if (Constants.reply_reg.test(event.message)) {
             // 从 [CQ:reply,id=-1982767585][CQ:at,qq=1005056803] 复读 消息里获取id
-            const msgID = event.message.split('id=')[1].split(']')[0].trim()
+            const msgID = event.message.match(/\[CQ:reply,id=([^\]]+)\]/)[1].trim()
             logger.info(`收到手动复读指令，消息id: ${msgID}`.log)
 
-            const historyMessage = (await axios.get(`http://${config.ONE_BOT_API_URL}/get_msg?message_id=${msgID}`))
+            const historyMessage = (await axios.get(buildOneBotUrl(config.ONE_BOT_API_URL, 'get_msg', {message_id: msgID})))
               .data.data.message
             logger.info(`复读历史消息: ${historyMessage}`.log)
             await sendMessageToQQGroup(historyMessage, event)
@@ -797,10 +904,18 @@ async function StartQQBot({
             return 0
           }
 
+          if (groupConversation && groupContext && !legacyReplyMode) {
+            await groupConversation.handle(groupContext)
+            return 0
+          }
           const handledChatReply = await handleQQChatReply({
             event,
             config,
             chatProcess: ChatProcess,
+            matchChat,
+            fallback,
+            legacyMode: legacyReplyMode,
+            logger,
             sendGroupMessage: sendMessageToQQGroup,
           })
           if (handledChatReply) {
@@ -809,23 +924,51 @@ async function StartQQBot({
       }
 
     if (event.message_type == 'private' && config.QQBOT_PRIVATE_CHAT_SWITCH == true) {
+      if (privateConversation) {
+        const context = conversationContext(event)
+        if (context) await privateConversation.handle(context)
+        return 0
+      }
+      if (matchChat || fallback) {
+        await handleQQChatReply({event, config, chatProcess: ChatProcess, matchChat, fallback, logger,
+          sendGroupMessage: sendMessageToQQ})
+        return 0
+      }
       // 私聊回复
-      ChatProcess(event.message).then(async (resolve) => {
+      try {
+        const resolve = await step(null, () => ChatProcess(event.message))
         logger.info(`小夜回复 ${resolve}`.log)
         io.emit('system', `QQ用户 ${event.user_id} 私聊: ${event.message}，小夜回复: ${resolve}`)
         await sendMessageToQQ(resolve, event)
-      })
+      } catch (error) {
+        if (error !== cancelled && !stopped) reportAsyncError()
+      }
       return 0
     }
     return 0
   }
 
-  registerOneBotWebhook({
-    app,
-    path: config.ONE_BOT_ANTI_POST_API,
-    handleEvent,
-    logger,
-  })
+  logger.info('正在进行群服务初始化……'.log)
+  try {
+    if (await utils.InitGroupList()) {
+      ready = !stopped
+      logger.info('群服务初始化完成'.log)
+      if (ready && typeof conversation?.createProactive === 'function') {
+        try {
+          proactive = conversation.createProactive({send: (context, text) => step(null,
+            () => oneBotSender.sendGroupMessage(context.targetId, text))})
+          if (proactive) await step(null, () => proactive.start())
+        } catch (error) {
+          if (error !== cancelled && !stopped) reportAsyncError('QQ_PROACTIVE_START_FAILED')
+        }
+      }
+    } else {
+      logger.error('连接QQ协议失败了，请确保协议已经启动后再启动ChatDACS'.error)
+    }
+  } catch {
+    logger.error('ONEBOT_GROUP_INIT_FAILED')
+  }
+  return {stop}
 }
 
 module.exports = {

@@ -35,10 +35,11 @@ describe('NapCat HTTP integration', () => {
     })
   })
 
-  afterAll((done) => server.close(done))
+  afterAll((done) => { server.close(done) })
 
   test('probes a real HTTP endpoint using the production axios client', async () => {
-    await expect(probeNapCat({apiUrl, axios, timeoutMs: 1000})).resolves.toEqual(
+    await expect(probeNapCat({apiUrl, axios, timeoutMs: 1000, env: {},
+      readFileSync: () => { throw Object.assign(new Error('synthetic absent credentials'), {code: 'ENOENT'}) }})).resolves.toEqual(
       expect.objectContaining({
         reachable: true,
         compatible: true,

@@ -1,6 +1,17 @@
 # node
 node_modules
 .npm-cache
+.env
+.env.*
+**/*.credentials.json
+**/*.credentials.json.*.tmp
+**/llm-persona-state.json
+**/llm-persona-state.json.*.tmp
+**/llm-model-state.json
+**/llm-model-state.json.*.tmp
+plugins/persona
+tmp
+.release
 
 # git
 .git

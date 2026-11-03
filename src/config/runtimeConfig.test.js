@@ -3,6 +3,93 @@
 const {normalizeRuntimeConfig} = require('./runtimeConfig')
 
 describe('runtime config normalization', () => {
+  test('preserves an optional Web listen host without changing the legacy default', () => {
+    expect(normalizeRuntimeConfig({}).WEB_HOST).toBeUndefined()
+    expect(normalizeRuntimeConfig({System: {WEB_HOST: '127.0.0.1'}}).WEB_HOST).toBe('127.0.0.1')
+  })
+  test('error group notifications are disabled by default and accept only digit strings', () => {
+    expect(normalizeRuntimeConfig({}).ERROR_NOTIFY_GROUP_ID).toBeUndefined()
+    expect(normalizeRuntimeConfig({System: {ERROR_NOTIFY_GROUP_ID: '123456'}}).ERROR_NOTIFY_GROUP_ID).toBe('123456')
+    const logger = {warn: jest.fn()}
+    for (const value of [null, '', 123456, ' 123 ', '123\n', '123&message=other', {}, true]) {
+      expect(normalizeRuntimeConfig({System: {ERROR_NOTIFY_GROUP_ID: value}}, {logger}).ERROR_NOTIFY_GROUP_ID)
+        .toBeUndefined()
+    }
+    expect(logger.warn).toHaveBeenCalledTimes(8)
+    expect(logger.warn).toHaveBeenCalledWith('ERROR_NOTIFY_GROUP_ID 必须是数字字符串，已禁用错误群通知')
+  })
+
+  test.each([undefined, null, '', '   '])('normalized empty self ID accepts legacy webhook events %#', async (selfId) => {
+    const {registerOneBotWebhook} = require('../bots/qq/webhook')
+    let handler
+    const event = {post_type: 'message', self_id: 123}
+    const handleEvent = jest.fn()
+    const response = {status: jest.fn().mockReturnThis(), end: jest.fn()}
+    registerOneBotWebhook({app: {post: (_path, callback) => { handler = callback }}, path: '/bot',
+      config: normalizeRuntimeConfig({System: {ONE_BOT_SELF_ID: selfId}}), env: {},
+      readFileSync: () => { throw Object.assign(new Error('mock missing'), {code: 'ENOENT'}) }, handleEvent})
+    handler({headers: {}, body: event}, response)
+    await Promise.resolve()
+    expect(response.status).toHaveBeenCalledWith(204)
+    expect(handleEvent).toHaveBeenCalledWith(event)
+  })
+
+  test('SnowLuma gets its own API default and credential metadata only', () => {
+    const readSpy = jest.spyOn(require('fs'), 'readFileSync')
+    try {
+      const config = normalizeRuntimeConfig({System: {ONE_BOT_PROVIDER: ' SnowLuma '}})
+      expect(config).toMatchObject({ONE_BOT_PROVIDER: 'snowluma', ONE_BOT_API_URL: '127.0.0.1:3000',
+        ONE_BOT_CREDENTIALS_FILE: 'config/onebot.credentials.json', ONE_BOT_REQUEST_TIMEOUT_MS: 15000})
+      expect(config.ONE_BOT_SELF_ID).toBeUndefined()
+      expect(readSpy).not.toHaveBeenCalled()
+    } finally { readSpy.mockRestore() }
+  })
+
+  test.each(['napcat', 'external', 'go-cqhttp'])('%s retains port 5700 by default', (provider) => {
+    expect(normalizeRuntimeConfig({System: {ONE_BOT_PROVIDER: provider}}).ONE_BOT_API_URL).toBe('127.0.0.1:5700')
+  })
+
+  test('preserves explicit API and credential path, normalizes optional self ID and deadline', () => {
+    expect(normalizeRuntimeConfig({System: {
+      ONE_BOT_PROVIDER: 'snowluma', ONE_BOT_API_URL: 'https://mock.invalid/api',
+      ONE_BOT_CREDENTIALS_FILE: 'mock.credentials.json', ONE_BOT_SELF_ID: 12345,
+      ONE_BOT_REQUEST_TIMEOUT_MS: '4200',
+    }})).toMatchObject({ONE_BOT_API_URL: 'https://mock.invalid/api',
+      ONE_BOT_CREDENTIALS_FILE: 'mock.credentials.json', ONE_BOT_SELF_ID: '12345', ONE_BOT_REQUEST_TIMEOUT_MS: 4200})
+  })
+
+  test.each([undefined, null, '', '   '])('empty self ID remains optional %#', (value) => {
+    expect(normalizeRuntimeConfig({System: {ONE_BOT_SELF_ID: value}}).ONE_BOT_SELF_ID).toBeUndefined()
+  })
+
+  test.each([0, -5, '', 'invalid', Infinity, null])('invalid OneBot request timeout falls back %#', (value) => {
+    const logger = {warn: jest.fn()}
+    expect(normalizeRuntimeConfig({System: {ONE_BOT_REQUEST_TIMEOUT_MS: value}}, {logger})
+      .ONE_BOT_REQUEST_TIMEOUT_MS).toBe(15000)
+    expect(logger.warn).toHaveBeenCalledWith('ONE_BOT_REQUEST_TIMEOUT_MS 必须是正数，已回退到 15000')
+  })
+
+  test('preserves optional module deadlines and LLM configuration without changing defaults', () => {
+    expect(normalizeRuntimeConfig({}).PLUGIN_TIMEOUTS).toEqual({})
+    const llm = {provider: 'openai', model: 'gpt-6-luna'}
+    expect(normalizeRuntimeConfig({System: {PLUGIN_TIMEOUTS: {ollama: 31000}}, llm})).toMatchObject({
+      PLUGIN_TIMEOUT_MS: 8000, PLUGIN_TIMEOUTS: {ollama: 31000}, llm,
+    })
+  })
+  test('official QQ stays opt-in and access configuration fails closed on invalid values', () => {
+    expect(normalizeRuntimeConfig({}).QQ_GUILD_DIRECT_MESSAGE_SWITCH).toBe(false)
+    expect(normalizeRuntimeConfig({qqBot: {QQ_GUILD_DIRECT_MESSAGE_SWITCH: true}}).QQ_GUILD_DIRECT_MESSAGE_SWITCH).toBe(true)
+    expect(normalizeRuntimeConfig({qqBot: {QQ_GUILD_DIRECT_MESSAGE_SWITCH: 'true'}}).QQ_GUILD_DIRECT_MESSAGE_SWITCH).toBe(false)
+    expect(normalizeRuntimeConfig({}).CONNECT_QQ_OFFICIAL_SWITCH).toBe(false)
+    const config = normalizeRuntimeConfig({System: {CONNECT_QQ_OFFICIAL_SWITCH: true}, qqOfficial: {
+      pluginAllowlist: [' ping ', 123, ''], access: {c2cMode: 'typo', groupMode: 'allowlist', groupAllow: [' group ']},
+    }})
+    expect(config.CONNECT_QQ_OFFICIAL_SWITCH).toBe(true)
+    expect(config.QQ_OFFICIAL_PLUGIN_ALLOWLIST).toEqual(['ping'])
+    expect(config.QQ_OFFICIAL_ACCESS).toMatchObject({c2cMode: 'disabled', groupMode: 'allowlist', groupAllow: ['group']})
+    expect(normalizeRuntimeConfig({qqOfficial: {access: null}}).QQ_OFFICIAL_ACCESS.c2cMode).toBe('disabled')
+    expect(normalizeRuntimeConfig({System: {CONNECT_QQ_OFFICIAL_SWITCH: 'false'}}).CONNECT_QQ_OFFICIAL_SWITCH).toBe(false)
+  })
   test('preserves current config keys and plugin-facing values', () => {
     const rawConfig = {
       System: {

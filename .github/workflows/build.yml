@@ -7,12 +7,9 @@ on:
       - master
   workflow_dispatch:
 
-env:
-  NODE_VERSION: 18.20.8
-
 jobs:
   build:
-    name: Build on ${{ matrix.os }} - Node 18.20.8
+    name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.runs_on }}
     strategy:
       fail-fast: false
@@ -29,24 +26,24 @@ jobs:
             node_arch: x64
           - os: win-arm64
             runs_on: windows-11-arm
-            # Node 18 never shipped a Windows ARM64 runtime. Windows 11 ARM runs
-            # this x64 bundle through its supported compatibility layer.
+            # Keep x64 emulation for native dependencies without Windows ARM64
+            # prebuilds (notably canvas). This is recorded in the manifest.
             node_arch: x64
           - os: macos-x64
-            runs_on: macos-15
+            runs_on: macos-15-intel
             node_arch: x64
           - os: macos-arm64
-            runs_on: macos-latest
+            runs_on: macos-15
             node_arch: arm64
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Use Node.js ${{ env.NODE_VERSION }}
+      - name: Use project Node.js LTS
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: .nvmrc
           architecture: ${{ matrix.node_arch }}
           cache: npm
           cache-dependency-path: package-lock.json
@@ -65,15 +62,10 @@ jobs:
         run: npm ci --omit=dev
 
       - name: Smoke production runtime
-        run: npm run smoke:web
+        run: node scripts/ci-runtime.js production
 
       - name: Install isolated packaging tool
-        shell: pwsh
-        run: |
-          $toolRoot = Join-Path $env:RUNNER_TEMP 'chatdacs-build-tools'
-          npm install --prefix $toolRoot --no-save --package-lock=false archiver@7.0.1
-          $archiverPath = Join-Path $toolRoot 'node_modules/archiver'
-          "ARCHIVER_MODULE_PATH=$archiverPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        run: node scripts/ci-runtime.js tools
 
       - name: Build runtime bundle
         run: npm run package:release
@@ -81,28 +73,18 @@ jobs:
           RELEASE_TARGET: ${{ matrix.os }}
 
       - name: Verify bundled runtime
-        shell: pwsh
-        run: |
-          $bundle = Get-ChildItem -LiteralPath '.release/stage' -Directory | Select-Object -First 1
-          if (-not $bundle) { throw 'Release stage directory was not created.' }
-          $runtimeName = if ($IsWindows) { 'node.exe' } else { 'node' }
-          $runtime = Join-Path $bundle.FullName "runtime/$runtimeName"
-          $runtimeVersion = & $runtime --version
-          if ($runtimeVersion -ne "v${{ env.NODE_VERSION }}") {
-            throw "Unexpected bundled Node version: $runtimeVersion"
-          }
-          Push-Location $bundle.FullName
-          try { & $runtime --check index.js } finally { Pop-Location }
+        run: node scripts/ci-runtime.js bundle
+        env:
+          RELEASE_TARGET: ${{ matrix.os }}
 
       - name: Declare package metadata
-        shell: bash
-        run: |
-          echo "VERSION_NUMBER=v$(node -p "require('./package.json').version")" >> "$GITHUB_ENV"
-          echo "BUILD_TIME=$(TZ='Asia/Shanghai' date +'%Y%m%d%H%M%S')" >> "$GITHUB_ENV"
+        run: node scripts/ci-runtime.js metadata
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: ChatDACS-${{ env.VERSION_NUMBER }}_${{ matrix.os }}_${{ env.BUILD_TIME }}
-          path: .release/ChatDACS-${{ env.VERSION_NUMBER }}_${{ matrix.os }}.zip
+          path: |
+            .release/ChatDACS-${{ env.VERSION_NUMBER }}_${{ matrix.os }}.zip
+            .release/native-dependencies-${{ matrix.os }}.json
           if-no-files-found: error

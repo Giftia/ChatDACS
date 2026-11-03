@@ -15,6 +15,11 @@ module.exports = {
 
   // 插件执行逻辑
   execute: async function (msg, userId, userName, groupId, groupName, options) {
+    if (['qqOfficial', 'qqGuildDirect'].includes(options?.type)) {
+      return {type: 'text', content: ['当前通道可用插件：',
+        ...(options.availablePlugins ?? []).map((plugin) => `${plugin.插件名}: ${plugin.使用示例 ?? ''}`),
+      ].join('\n')}
+    }
     // 针对 docs 指令生成文档
     if (msg === 'docs') {
       let docsMap = {}

@@ -12,6 +12,7 @@ const MIGRATION_NAMES = [
   '20221201015645-json-default-value.js',
   '20221208034936-chat-teacherType.js',
   '20260710000000-message-cid-non-unique.js',
+  '20261027000000-conversation-plugin-states.js',
 ]
 
 describe('database migration runtime', () => {
@@ -125,7 +126,7 @@ describe('database migration runtime', () => {
       migrationsDir: path.join(process.cwd(), 'migrations'),
     })
 
-    expect(result.applied).toEqual([MIGRATION_NAMES[3]])
+    expect(result.applied).toEqual(MIGRATION_NAMES.slice(3))
     await expect(
       sequelize.query(
         "INSERT INTO messages (CID, message, createdAt, updatedAt) VALUES ('same-user', 'second', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",

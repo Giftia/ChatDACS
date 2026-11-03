@@ -59,6 +59,7 @@ describe('QQ event preflight', () => {
         event,
         processExecute: context.processExecute,
         chatProcess: context.chatProcess,
+        oneBotSender: context.oneBotSender,
       }),
     )
   })

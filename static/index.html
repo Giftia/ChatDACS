@@ -18,6 +18,9 @@
     <link rel="stylesheet" href="/layim/css/layui.css" />
     <script async src="/socket.io/socket.io.js"></script>
     <script src="/layim/layui.js"></script>
+    <script src="/uploadMedia.js"></script>
+    <script src="/vendor/purify.min.js"></script>
+    <script src="/renderSecurity.js"></script>
   </head>
 
   <!-- <body onmousedown="switchLive2DVisible();"> -->
@@ -39,6 +42,8 @@
             form = mobile.form,
             layer = mobile.layer,
             myCID = "";
+          ChatDacsUploadMedia.install(layui);
+          ChatDacsRenderSecurity.install(layui, {purify: window.DOMPurify, layim: layim});
           // resourcesPath = "/live2d/assets/", // 指定资源文件（模型）保存的路径
           // backImageName = "", // 指定背景图片 ,默认为空
           // modelDir = ["xiaoye"]; // 指定需要加载的模型
@@ -48,14 +53,18 @@
           const socket = io();
 
           socket.on("getCookie", function (msg) {
-            if (!document.cookie) {
+            const identity = document.cookie.split(";").map(function (value) { return value.trim(); })
+              .find(function (value) { return value.startsWith("ChatdacsID="); });
+            const rawCID = identity ? identity.slice("ChatdacsID=".length) : "";
+            try { myCID = decodeURIComponent(rawCID); } catch (error) { myCID = rawCID; }
+            if (!myCID || myCID === "0") {
               document.cookie =
                 "ChatdacsID=" +
                 new Date().getTime() +
                 ";expires=Fri, 1 Apr 2050 17:00:00 GMT";
               window.location.reload();
+              return;
             }
-            myCID = document.cookie.replace("ChatdacsID=", "");
           });
 
           socket.on("version", function (msg) {
@@ -64,7 +73,7 @@
             socket.on("onlineUsers", function (msg) {
               const online_status =
                 document.getElementsByClassName("layim-chat-status")[0];
-              online_status.innerHTML = `当前在线:${msg}`;
+              online_status.textContent = `当前在线:${msg}`;
             });
 
             layim.config({
@@ -353,14 +362,14 @@
     <div class="layui-form-item">
       <label class="layui-form-label">CID</label>
       <div class="layui-input-block">
-        <input type="message" name="CID" required placeholder={{d.data.CID}} class="layui-input" value={{d.data.CID}} />
+        <input type="message" name="CID" required placeholder="{{d.data.CID}}" class="layui-input" value="{{d.data.CID}}" />
         <div class="layui-form-mid layui-word-aux">用户唯一标识，不要乱改啊</div>
       </div>
     </div>
     <div class="layui-form-item">
       <label class="layui-form-label">昵称</label>
       <div class="layui-input-block">
-        <input type="message" name="name" required placeholder="请输入昵称" class="layui-input" value={{d.data.name}} />
+        <input type="message" name="name" required placeholder="请输入昵称" class="layui-input" value="{{d.data.name}}" />
         <div class="layui-form-mid layui-word-aux">1-10长度的数英汉昵称</div>
       </div>
     </div>
@@ -378,8 +387,8 @@
   </form>
 </div>`,
                     data: {
-                      name: data.name,
-                      CID: data.CID,
+                      name: ChatDacsRenderSecurity.escapeHtml(data.name),
+                      CID: ChatDacsRenderSecurity.escapeHtml(data.CID),
                     },
                   });
                 });
@@ -555,7 +564,7 @@
             text.setAttribute("oninput", "typing()");
 
             socket.on("typing", function (msg) {
-              if (text != "") typing_status.innerHTML = msg;
+              if (text != "") typing_status.textContent = msg;
             });
 
             typing = function () {

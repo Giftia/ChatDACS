@@ -146,15 +146,13 @@ function resetDirectory(directory) {
 }
 
 function copyReleaseContents(stageDir, target) {
-  const projectFiles = selectProjectFiles(listRepositoryFiles(), target)
+  const projectFiles = selectProjectFiles(listRepositoryFiles(), target, {
+    trackedFiles: listTrackedRepositoryFiles(),
+  })
   for (const relativePath of projectFiles) {
     const destination = path.join(stageDir, relativePath)
     fs.mkdirSync(path.dirname(destination), {recursive: true})
-    if (relativePath === 'config/db.db') {
-      copyCommittedDatabase(destination)
-    } else {
-      fs.copyFileSync(path.join(rootDir, relativePath), destination)
-    }
+    copyProjectFile(relativePath, destination)
   }
 
   copyDirectory(path.join(rootDir, 'node_modules'), path.join(stageDir, 'node_modules'))
@@ -169,7 +167,14 @@ function listRepositoryFiles() {
     .filter(Boolean)
 }
 
-function selectProjectFiles(files, target) {
+function listTrackedRepositoryFiles() {
+  return execFileSync('git', ['ls-files', '--cached', '-z'], {cwd: rootDir, encoding: 'utf8'})
+    .split('\0')
+    .filter(Boolean)
+}
+
+function selectProjectFiles(files, target, {trackedFiles = []} = {}) {
+  const tracked = new Set(trackedFiles.map(file => file.replaceAll('\\', '/')))
   const directories = ['config/', 'integrations/', 'migrations/', 'plugins/', 'src/', 'static/']
   const rootFiles = new Set([
     'CONTEXT.md',
@@ -181,12 +186,22 @@ function selectProjectFiles(files, target) {
     'package.json',
     'plugin_dependencies.js',
     'plugin_tester.js',
+    'scripts/bind-qq-official.js',
+    'scripts/check-onebot.js',
+    'scripts/generate-onebot-config.js',
+    'scripts/check-napcat.js',
+    'scripts/generate-napcat-config.js',
+    'scripts/verify-startup.js',
   ])
 
-  return files
+  return [...new Set(files)]
     .map((file) => file.replaceAll('\\', '/'))
     .filter((file) => !file.endsWith('.test.js') && !file.includes('/__tests__/'))
     .filter((file) => rootFiles.has(file) || directories.some((directory) => file.startsWith(directory)))
+    .filter((file) => !['plugins/persona/', 'static/uploads/'].some(directory => file.startsWith(directory)) || tracked.has(file))
+    .filter((file) => !/\.credentials\.json(?:\.|$)/i.test(file))
+    .filter((file) => !/^integrations\/qq-official\/(?:checkpoint|platform-query|auth-compatibility)\.md$/.test(file.toLowerCase()))
+      .filter((file) => !/^config\/llm-(?:persona|model)-state\.json(?:\.|$)/i.test(file))
     .filter((file) => includePlatformFile(file, target))
     .sort()
 }
@@ -204,7 +219,8 @@ function includePlatformFile(file, target) {
     return file !== goCqhttpFiles.linux
   }
   if (target?.startsWith('linux-')) {
-    return !goCqhttpFiles.windows.includes(file)
+    return !goCqhttpFiles.windows.includes(file) &&
+      !(target === 'linux-arm64' && file === goCqhttpFiles.linux)
   }
   if (target?.startsWith('macos-')) {
     return file !== goCqhttpFiles.linux && !goCqhttpFiles.windows.includes(file)
@@ -212,17 +228,24 @@ function includePlatformFile(file, target) {
   return true
 }
 
-function copyCommittedDatabase(destination) {
-  const database = execFileSync('git', ['show', 'HEAD:config/db.db'], {
+function readCommittedFile(relativePath) {
+  return execFileSync('git', ['show', `HEAD:${relativePath}`], {
     cwd: rootDir,
     encoding: 'buffer',
     maxBuffer: 64 * 1024 * 1024,
   })
-  fs.writeFileSync(destination, database)
+}
+
+function copyProjectFile(relativePath, destination, {sourceRoot = rootDir, readBaseline = readCommittedFile} = {}) {
+  if (['config/config.yml', 'config/db.db'].includes(relativePath)) {
+    fs.writeFileSync(destination, readBaseline(relativePath))
+  } else {
+    fs.copyFileSync(path.join(sourceRoot, relativePath), destination)
+  }
 }
 
 function copyDirectory(source, destination) {
-  fs.cpSync(source, destination, {recursive: true})
+  fs.cpSync(source, destination, {recursive: true, verbatimSymlinks: true})
 }
 
 function copyRuntime(stageDir, target) {
@@ -235,6 +258,8 @@ function copyRuntime(stageDir, target) {
 
 function verifyReleaseLayout(stageDir, manifest) {
   const required = [
+    'README.md',
+    'LICENSE',
     'config',
     'integrations',
     'migrations',
@@ -294,8 +319,11 @@ if (require.main === module) {
 module.exports = {
   assertBuildTarget,
   buildRelease,
+  copyProjectFile,
+  copyDirectory,
   createLauncherFiles,
   createReleaseManifest,
   getHostTarget,
   selectProjectFiles,
+  verifyReleaseLayout,
 }

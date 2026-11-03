@@ -6,6 +6,7 @@ function makeSocket(overrides = {}) {
   return {
     emit: jest.fn(),
     on: jest.fn(),
+    once: jest.fn(),
     username: '',
     request: {
       headers: {
@@ -56,6 +57,103 @@ function makeRuntime(overrides = {}) {
 }
 
 describe('web session runtime', () => {
+  test.each(['', '0', '%30'])('rejects empty/reserved CID %p before any user read or write', async (CID) => {
+    const {context, runtime} = makeRuntime()
+    const socket = makeSocket({request: {headers: {cookie: `theme=dark; ChatdacsID=${CID}`}}})
+    expect(await runtime.handleConnection(socket)).toBe(false)
+    for (const method of Object.values(context.utils)) expect(method).not.toHaveBeenCalled()
+    expect(runtime.getOnlineUsers()).toBe(0)
+    expect(context.io.emit).not.toHaveBeenCalled()
+    expect(socket.on).not.toHaveBeenCalled()
+    expect(socket.once).not.toHaveBeenCalled()
+    expect(socket.emit).toHaveBeenCalledWith('getCookie')
+  })
+
+  function deferred() {
+    let resolve
+    const promise = new Promise((done) => { resolve = done })
+    return {promise, resolve}
+  }
+
+  test('disconnect while GetUserData is pending cancels initialization and decrements exactly once', async () => {
+    const {context, runtime} = makeRuntime()
+    const pending = deferred()
+    context.utils.GetUserData.mockReturnValue(pending.promise)
+    const socket = makeSocket()
+    const connected = runtime.handleConnection(socket)
+    expect(socket.once).toHaveBeenCalledWith('disconnect', expect.any(Function))
+    const cleanup = socket.once.mock.calls.find(([event]) => event === 'disconnect')[1]
+    cleanup()
+    cleanup()
+    pending.resolve({nickname: 'late user', loginTimes: 1, updatedAt: 'old'})
+    expect(await connected).toBe(false)
+    expect(runtime.getOnlineUsers()).toBe(0)
+    expect(context.io.emit.mock.calls.filter(([event]) => event === 'onlineUsers')).toEqual([
+      ['onlineUsers', 1], ['onlineUsers', 0],
+    ])
+    expect(context.io.emit).not.toHaveBeenCalledWith('system', expect.anything())
+    expect(context.utils.UpdateLoginTimes).not.toHaveBeenCalled()
+    expect(context.utils.AddUser).not.toHaveBeenCalled()
+    expect(socket.on).not.toHaveBeenCalled()
+  })
+
+  test('disconnect during nickname lookup prevents new-user creation, welcome and late handlers', async () => {
+    const {context, runtime} = makeRuntime()
+    const pending = deferred()
+    context.utils.GetUserData.mockResolvedValue(null)
+    context.utils.RandomNickname.mockReturnValue(pending.promise)
+    const socket = makeSocket()
+    const connected = runtime.handleConnection(socket)
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(context.utils.RandomNickname).toHaveBeenCalled()
+    expect(socket.once).toHaveBeenCalledWith('disconnect', expect.any(Function))
+    socket.once.mock.calls.find(([event]) => event === 'disconnect')[1]()
+    pending.resolve('late nickname')
+    expect(await connected).toBe(false)
+    expect(runtime.getOnlineUsers()).toBe(0)
+    expect(context.utils.AddUser).not.toHaveBeenCalled()
+    expect(context.io.emit).not.toHaveBeenCalledWith('system', expect.anything())
+    expect(socket.emit).not.toHaveBeenCalledWith('message', expect.anything())
+    expect(socket.on).not.toHaveBeenCalled()
+  })
+
+  test('already disconnected socket never counts or queries user data', async () => {
+    const {context, runtime} = makeRuntime()
+    expect(await runtime.handleConnection(makeSocket({disconnected: true}))).toBe(false)
+    expect(context.utils.GetUserData).not.toHaveBeenCalled()
+    expect(runtime.getOnlineUsers()).toBe(0)
+    expect(context.io.emit).not.toHaveBeenCalled()
+  })
+
+  test('one initializing disconnect does not decrement a different ready session', async () => {
+    const {context, runtime} = makeRuntime()
+    const readySocket = makeSocket()
+    expect(await runtime.handleConnection(readySocket)).toBe(true)
+    const pending = deferred()
+    context.utils.GetUserData.mockReturnValue(pending.promise)
+    const lateSocket = makeSocket()
+    const connecting = runtime.handleConnection(lateSocket)
+    const cancel = lateSocket.once.mock.calls[0][1]
+    cancel()
+    cancel()
+    pending.resolve(null)
+    expect(await connecting).toBe(false)
+    expect(runtime.getOnlineUsers()).toBe(1)
+    readySocket.once.mock.calls[0][1]()
+    expect(runtime.getOnlineUsers()).toBe(0)
+  })
+
+  test('initialization exception cleans count and later disconnect is a no-op', async () => {
+    const {context, runtime} = makeRuntime()
+    context.utils.UpdateLoginTimes.mockImplementation(() => { throw new Error('fixture failure') })
+    const socket = makeSocket()
+    await expect(runtime.handleConnection(socket)).rejects.toThrow('fixture failure')
+    expect(runtime.getOnlineUsers()).toBe(0)
+    socket.once.mock.calls[0][1]()
+    expect(runtime.getOnlineUsers()).toBe(0)
+    expect(socket.on).not.toHaveBeenCalled()
+  })
   test('requests cookie and stops initialization when ChatdacsID is missing', async () => {
     const {context, runtime} = makeRuntime()
     const socket = makeSocket({request: {headers: {}}})
@@ -87,7 +185,7 @@ describe('web session runtime', () => {
       'system',
       '欢迎回来，老用户[来自本机地址](test-cid) 。这是你第3次访问。上次访问时间: 2026-06-11 00:00:00',
     )
-    expect(socket.on).toHaveBeenCalledWith('disconnect', expect.any(Function))
+    expect(socket.once).toHaveBeenCalledWith('disconnect', expect.any(Function))
     expect(socket.on).toHaveBeenCalledWith('typing', expect.any(Function))
     expect(socket.on).toHaveBeenCalledWith('typingOver', expect.any(Function))
     expect(socket.on).toHaveBeenCalledWith('getSettings', expect.any(Function))
@@ -174,12 +272,16 @@ describe('web session runtime', () => {
     const socket = makeSocket()
 
     await runtime.handleConnection(socket)
-    const disconnectHandler = socket.on.mock.calls.find(([event]) => event === 'disconnect')[1]
+    const disconnectHandler = socket.once.mock.calls.find(([event]) => event === 'disconnect')[1]
+    disconnectHandler()
     disconnectHandler()
 
     expect(runtime.getOnlineUsers()).toBe(0)
     expect(context.io.emit).toHaveBeenCalledWith('onlineUsers', 0)
     expect(context.io.emit).toHaveBeenCalledWith('system', '用户 老用户[来自本机地址] 已断开连接')
+    expect(context.io.emit.mock.calls.filter(([event]) => event === 'onlineUsers')).toEqual([
+      ['onlineUsers', 1], ['onlineUsers', 0],
+    ])
   })
 
   test('typing and settings socket events keep legacy payloads', async () => {

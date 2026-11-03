@@ -54,12 +54,21 @@ function createOneBotSender({apiUrl, axios}) {
 }
 
 function buildOneBotUrl(apiUrl, action, params = {}) {
+  let base
+  try {
+    if (typeof apiUrl !== 'string' || !apiUrl || /[\s\\]/.test(apiUrl)) throw new Error()
+    base = new URL(apiUrl.includes('://') ? apiUrl : `http://${apiUrl}`)
+    if (!['http:', 'https:'].includes(base.protocol) || base.username || base.password ||
+        apiUrl.includes('?') || apiUrl.includes('#')) throw new Error()
+  } catch {
+    throw Object.assign(new Error('ONEBOT_REQUEST_FAILED'), {code: 'ONEBOT_REQUEST_FAILED'})
+  }
   const query = Object.entries(params)
     .filter(([, value]) => value !== undefined && value !== null)
-    .map(([key, value]) => `${key}=${encodeURI(String(value))}`)
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
     .join('&')
 
-  return `http://${apiUrl}/${action}${query ? `?${query}` : ''}`
+  return `${base.origin}${base.pathname.replace(/\/+$/, '')}/${encodeURIComponent(action)}${query ? `?${query}` : ''}`
 }
 
 module.exports = {

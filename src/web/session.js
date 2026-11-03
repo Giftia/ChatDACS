@@ -30,30 +30,64 @@ function createWebSessionRuntime({
   let onlineUsers = 0
 
   async function handleConnection(socket) {
+    if (socket.disconnected === true) return false
     socket.emit('getCookie')
     const CID = getChatdacsId(socket)
-    if (CID == undefined) {
+    if (CID == undefined || CID === '' || CID === '0') {
       socket.emit('getCookie')
       return false
     }
 
-    const location = resolveLocation({socket, ipTranslator, logger})
-    socket.emit('version', version)
-    io.emit('onlineUsers', ++onlineUsers)
-
-    const user = await getUserData(utils, CID, logger)
-    if (user?.updatedAt) {
-      initializeExistingUser({socket, CID, user, location, io, utils, logger})
-    } else {
-      await initializeNewUser({socket, CID, location, io, utils, logger, constants, nicknameFallback})
+    let cancelled = false
+    let counted = false
+    let ready = false
+    const isCancelled = () => cancelled || socket.disconnected === true
+    function cleanup() {
+      cancelled = true
+      if (!counted) return
+      counted = false
+      io.emit('onlineUsers', --onlineUsers)
+      if (ready) {
+        logger.info(`web端用户 ${socket.username}(${CID}) 已经断开连接`.log)
+        io.emit('system', '用户 ' + socket.username + ' 已断开连接')
+      }
     }
+    socket.once('disconnect', cleanup)
+    if (isCancelled()) return false
 
-    registerBasicSocketEvents({socket, CID, io, logger, getOnlineUsers: () => onlineUsers, setOnlineUsers: setCount})
-    return true
-  }
+    try {
+      const location = resolveLocation({socket, ipTranslator, logger})
+      socket.emit('version', version)
+      if (isCancelled()) return false
+      counted = true
+      io.emit('onlineUsers', ++onlineUsers)
 
-  function setCount(count) {
-    onlineUsers = count
+      const user = await getUserData(utils, CID, logger)
+      if (isCancelled()) {
+        cleanup()
+        return false
+      }
+      if (user?.updatedAt) {
+        initializeExistingUser({socket, CID, user, location, io, utils, logger})
+      } else {
+        const initialized = await initializeNewUser({socket, CID, location, io, utils, logger, constants,
+          nicknameFallback, isCancelled})
+        if (!initialized) {
+          cleanup()
+          return false
+        }
+      }
+      if (isCancelled()) {
+        cleanup()
+        return false
+      }
+      ready = true
+      registerBasicSocketEvents({socket, CID, io})
+      return true
+    } catch (error) {
+      cleanup()
+      throw error
+    }
   }
 
   function getOnlineUsers() {
@@ -102,8 +136,9 @@ function initializeExistingUser({socket, CID, user, location, io, utils, logger}
   io.emit('system', `欢迎回来，${socket.username}(${CID}) 。这是你第${loginTimes + 1}次访问。上次访问时间: ${updatedAt}`)
 }
 
-async function initializeNewUser({socket, CID, location, io, utils, logger, constants, nicknameFallback}) {
+async function initializeNewUser({socket, CID, location, io, utils, logger, constants, nicknameFallback, isCancelled}) {
   const randomNickname = await resolveNickname({utils, logger, nicknameFallback})
+  if (isCancelled()) return false
   socket.username = `${randomNickname}[来自${location}]`
 
   logger.info(`web端用户 ${socket.username}(${CID}) 第一次访问，新增该用户`.log)
@@ -118,6 +153,7 @@ async function initializeNewUser({socket, CID, location, io, utils, logger, cons
     CID: '0',
     msg: constants.WEB_HELP_CONTENT,
   })
+  return true
 }
 
 async function resolveNickname({utils, logger, nicknameFallback}) {
@@ -130,15 +166,7 @@ async function resolveNickname({utils, logger, nicknameFallback}) {
   }
 }
 
-function registerBasicSocketEvents({socket, CID, io, logger, getOnlineUsers, setOnlineUsers}) {
-  socket.on('disconnect', () => {
-    const onlineUsers = getOnlineUsers() - 1
-    setOnlineUsers(onlineUsers)
-    io.emit('onlineUsers', onlineUsers)
-    logger.info(`web端用户 ${socket.username}(${CID}) 已经断开连接`.log)
-    io.emit('system', '用户 ' + socket.username + ' 已断开连接')
-  })
-
+function registerBasicSocketEvents({socket, CID, io}) {
   socket.on('typing', () => {
     io.emit('typing', `${socket.username} 正在输入...`)
   })

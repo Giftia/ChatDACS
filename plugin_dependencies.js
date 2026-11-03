@@ -1,6 +1,8 @@
 const axios = require('axios').default
 const fs = require('fs')
 const path = require('path')
+const os = require('os')
+const {exec, execFile} = require('child_process')
 const request = require('request')
 const url = require('url')
 const express = require('express')
@@ -32,6 +34,9 @@ const pluginDependencies = {
   utils: require('./plugins/system/utils.js'),
   fs,
   path,
+  os,
+  exec,
+  execFile,
   request,
   url,
   express,
