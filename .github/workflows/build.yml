@@ -1,6 +1,9 @@
 # Thanks @ssp97 for the initial work on this file.
 name: Build ChatDACS One-Click-To-Deploy Package (ChatDACS一键运行包构建)
 
+permissions:
+  contents: read
+
 on:
   push:
     branches:

@@ -81,6 +81,8 @@ test('six release targets use explicit runner and runtime architectures', () => 
   ])
   for (const file of ['ci.yml', 'build.yml']) {
     const workflow = YAML.parse(fs.readFileSync(path.join(root, '.github/workflows', file), 'utf8'))
+    expect(workflow.permissions).toEqual({contents: 'read'})
+    expect(Object.values(workflow.jobs).every(job => job.permissions === undefined)).toBe(true)
     const job = Object.values(workflow.jobs)[0]
     const setup = job.steps.find(step => step.uses?.startsWith('actions/setup-node@'))
     expect(setup.with['node-version-file']).toBe('.nvmrc')
