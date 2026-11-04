@@ -123,14 +123,19 @@ async function verifyBundle() {
   runNode([path.join(__dirname, 'verify-native-runtime.js')], stage, runtime)
   runNode(['scripts/verify-startup.js'], stage, runtime)
   const hash = crypto.createHash('sha256').update(fs.readFileSync(runtime)).digest('hex')
-  const entries = await verifyZip(path.join(root, '.release', name + '.zip'), manifest, hash)
+  const zipFile = path.join(root, '.release', name + '.zip')
+  const entries = await verifyZip(zipFile, manifest, hash)
+  const {verifyDistribution} = require('./verify-distribution')
+  const distribution = await verifyDistribution({zipFile, manifest})
+  assert.equal(distribution.ok, true)
   const {auditNativeLinks} = require('./verify-native-links')
   const dependencies = auditNativeLinks({root: stage})
   fs.writeFileSync(path.join(root, '.release', `native-dependencies-${target}.json`),
     JSON.stringify(dependencies, null, 2) + '\n', 'utf8')
   console.log(JSON.stringify({dependencyAudit: dependencies.status,
     requiresExternalLibraries: dependencies.requiresExternalLibraries, missingLibraries: dependencies.missing.length}))
-  console.log(JSON.stringify({ok: true, target, compatibility, ...actual, zipEntries: entries}))
+  console.log(JSON.stringify({ok: true, target, compatibility, ...actual, zipEntries: entries,
+    extractedStartup: distribution.startup, launcher: distribution.launcher}))
 }
 
 async function main(command = process.argv[2]) {

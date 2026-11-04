@@ -199,6 +199,7 @@ describe('runtime release builder', () => {
     expect(linux).toEqual([
       expect.objectContaining({name: 'chatdacs', mode: 0o755, content: expect.stringContaining('runtime/node')}),
     ])
+    expect(linux[0].content).toContain('cd "$SCRIPT_DIR"\nexec ')
   })
 
   test('records the exact application and Node runtime versions', () => {

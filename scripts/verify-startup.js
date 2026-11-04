@@ -10,6 +10,20 @@ const {randomUUID} = require('crypto')
 const failure = (code) => Object.assign(new Error(code), {code})
 const assert = (condition, code) => { if (!condition) throw failure(code) }
 const workspaces = new Set()
+const httpStages = new Set(['HTTP', 'POLL', 'HOME', 'SOCKET_OPEN', 'SOCKET_CONNECT',
+  'SESSION_READY', 'PLUGIN_SEND', 'PLUGIN_REPLY', 'CHAT_SEND', 'CHAT_REPLY'])
+const httpCauses = new Set(['HTTP_TIMEOUT', 'ECONNREFUSED', 'ECONNRESET', 'EPIPE', 'ETIMEDOUT',
+  'ABORT_ERR', 'ERR_STREAM_PREMATURE_CLOSE', 'REQUEST_ERROR', 'RESPONSE_ERROR', 'RESPONSE_ABORTED',
+  'RESPONSE_INCOMPLETE', 'RESPONSE_TOO_LARGE', 'POLL_HTTP_STATUS', 'POLL_DEADLINE'])
+
+function diagnostics(error) {
+  return {...(httpStages.has(error?.stage) ? {stage: error.stage} : {}),
+    ...(httpCauses.has(error?.causeCode) ? {causeCode: error.causeCode} : {})}
+}
+
+function httpFailure(code, stage, causeCode) {
+  return Object.assign(failure(code), diagnostics({stage, causeCode}))
+}
 
 function removeWorkspace(root) {
   const resolved = path.resolve(root)
@@ -103,7 +117,8 @@ function supervise({nodePath, cwd, env, deadlineMs = 45000, spawnChild = spawn})
         if (timedOut) finish(failure('STARTUP_DEADLINE'))
         else if (spawnError) finish(failure('STARTUP_CHILD_FAILED'))
         else if (code !== 0 || signal || result?.ok !== true || result?.graceful !== true) {
-          finish(failure(/^STARTUP_[A-Z_]+$/.test(result?.code) ? result.code : 'STARTUP_VERIFICATION_FAILED'))
+          finish(Object.assign(failure(/^STARTUP_[A-Z_]+$/.test(result?.code) ? result.code : 'STARTUP_VERIFICATION_FAILED'),
+            diagnostics(result)))
         } else finish()
       })
     } catch (_) { finish(failure('STARTUP_CHILD_FAILED')) }
@@ -139,36 +154,65 @@ function noopTrayicon() {
   return {async create() { return {item() { return {} }, separator() { return {} }, setMenu() {}, notify() {}, kill() {}} }}
 }
 
-function request({port, method = 'GET', requestPath = '/', cookie, body}) {
+function request({port, method = 'GET', requestPath = '/', cookie, body, stage = 'HTTP', timeoutMs = 1500},
+  {httpRequest = http.request} = {}) {
   return new Promise((resolve, reject) => {
-    const req = http.request({host: '127.0.0.1', port, method, path: requestPath,
-      headers: {...(cookie ? {Cookie: cookie} : {}), ...(body === undefined ? {} : {'Content-Type': 'text/plain;charset=UTF-8'})}},
-    (res) => {
-      let content = ''
-      res.setEncoding('utf8')
-      res.on('data', (chunk) => {
-        content += chunk
-        if (content.length > 2 * 1024 * 1024) req.destroy(failure('STARTUP_RESPONSE_TOO_LARGE'))
+    let req, timer, settled = false
+    const finish = (error, result) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      if (error) reject(error)
+      else resolve(result)
+    }
+    const abort = (code, causeCode) => {
+      if (settled) return
+      finish(httpFailure(code, stage, causeCode))
+      try { req?.destroy() } catch (_) {}
+    }
+    try {
+      req = httpRequest({host: '127.0.0.1', port, method, path: requestPath,
+        headers: {...(cookie ? {Cookie: cookie} : {}), ...(body === undefined ? {} : {'Content-Type': 'text/plain;charset=UTF-8'})}},
+      (res) => {
+        let content = ''
+        res.setEncoding('utf8')
+        res.on('data', (chunk) => {
+          content += chunk
+          if (content.length > 2 * 1024 * 1024) abort('STARTUP_RESPONSE_TOO_LARGE', 'RESPONSE_TOO_LARGE')
+        })
+        res.on('aborted', () => abort('STARTUP_HTTP_FAILED', 'RESPONSE_ABORTED'))
+        res.on('error', (error) => abort('STARTUP_HTTP_FAILED', httpCauses.has(error?.code) ? error.code : 'RESPONSE_ERROR'))
+        res.on('end', () => {
+          if (res.complete === false) abort('STARTUP_HTTP_FAILED', 'RESPONSE_INCOMPLETE')
+          else finish(null, {status: res.statusCode, body: content})
+        })
       })
-      res.on('error', () => reject(failure('STARTUP_HTTP_FAILED')))
-      res.on('end', () => resolve({status: res.statusCode, body: content}))
-    })
-    req.setTimeout(1500, () => req.destroy(failure('STARTUP_HTTP_TIMEOUT')))
-    req.on('error', () => reject(failure('STARTUP_HTTP_FAILED')))
-    req.end(body)
+      const timeout = () => abort('STARTUP_HTTP_TIMEOUT', 'HTTP_TIMEOUT')
+      // The absolute deadline also bounds a connection that keeps producing data.
+      timer = setTimeout(timeout, timeoutMs)
+      req.setTimeout(timeoutMs, timeout)
+      req.on('error', (error) => abort('STARTUP_HTTP_FAILED', httpCauses.has(error?.code) ? error.code : 'REQUEST_ERROR'))
+      req.end(body)
+    } catch (error) {
+      abort('STARTUP_HTTP_FAILED', httpCauses.has(error?.code) ? error.code : 'REQUEST_ERROR')
+    }
   })
 }
 
-async function poll({port, cookie, pollingPath, predicate}) {
-  const until = Date.now() + 8000
+async function poll({port, cookie, pollingPath, predicate, stage = 'POLL'},
+  {requestHttp = request, now = Date.now} = {}) {
+  const until = now() + 8000
   let frames = ''
-  while (Date.now() < until) {
-    const response = await request({port, cookie, requestPath: pollingPath})
-    assert(response.status === 200, 'STARTUP_POLL_FAILED')
+  while (now() < until) {
+    // Engine.IO polling legitimately waits for an event. Use the remaining poll
+    // budget, not the ordinary HTTP request's shorter inactivity timeout.
+    const response = await requestHttp({port, cookie, requestPath: pollingPath, stage, timeoutMs: until - now()})
+    if (now() >= until) break
+    if (response.status !== 200) throw httpFailure('STARTUP_POLL_FAILED', stage, 'POLL_HTTP_STATUS')
     frames += response.body
     if (predicate(frames)) return
   }
-  throw failure('STARTUP_POLL_FAILED')
+  throw httpFailure('STARTUP_POLL_FAILED', stage, 'POLL_DEADLINE')
 }
 
 async function childMain() {
@@ -234,16 +278,18 @@ async function childMain() {
     const now = new Date()
     await sequelize.getQueryInterface().bulkInsert('chat', [{ask, answer, createdAt: now, updatedAt: now}])
     const cookie = `ChatdacsID=${id}`
-    assert((await request({port, cookie})).status === 200, 'STARTUP_HOME_FAILED')
-    const hello = await request({port, cookie, requestPath: '/socket.io/?EIO=4&transport=polling'})
+    assert((await request({port, cookie, stage: 'HOME'})).status === 200, 'STARTUP_HOME_FAILED')
+    const hello = await request({port, cookie, stage: 'SOCKET_OPEN', requestPath: '/socket.io/?EIO=4&transport=polling'})
     assert(hello.status === 200 && hello.body.startsWith('0'), 'STARTUP_SOCKET_FAILED')
     const pollingPath = `/socket.io/?EIO=4&transport=polling&sid=${encodeURIComponent(JSON.parse(hello.body.slice(1)).sid)}`
-    assert((await request({port, cookie, method: 'POST', requestPath: pollingPath, body: '40'})).status === 200, 'STARTUP_SOCKET_FAILED')
-    await poll({port, cookie, pollingPath, predicate: (frames) => frames.includes('StartupUser')})
-    for (const [msg, expected] of [['/ping', 'Pong!'], [ask, answer]]) {
-      assert((await request({port, cookie, method: 'POST', requestPath: pollingPath,
+    assert((await request({port, cookie, stage: 'SOCKET_CONNECT', method: 'POST', requestPath: pollingPath, body: '40'})).status === 200, 'STARTUP_SOCKET_FAILED')
+    await poll({port, cookie, pollingPath, stage: 'SESSION_READY', predicate: (frames) => frames.includes('StartupUser')})
+    for (const [msg, expected, sendStage, replyStage] of [['/ping', 'Pong!', 'PLUGIN_SEND', 'PLUGIN_REPLY'],
+      [ask, answer, 'CHAT_SEND', 'CHAT_REPLY']]) {
+      assert((await request({port, cookie, stage: sendStage, method: 'POST', requestPath: pollingPath,
         body: `42${JSON.stringify(['message', {msg}])}`})).status === 200, 'STARTUP_MESSAGE_FAILED')
-      await poll({port, cookie, pollingPath, predicate: (frames) => frames.includes(expected) && frames.includes('"CID":"0"')})
+      await poll({port, cookie, pollingPath, stage: replyStage,
+        predicate: (frames) => frames.includes(expected) && frames.includes('"CID":"0"')})
     }
     const stopping = controller.stop()
     assert(controller.stop() === stopping, 'STARTUP_STOP_NOT_IDEMPOTENT')
@@ -276,16 +322,18 @@ if (require.main === module) {
     childMain().then((result) => process.send(result, () => process.disconnect())).catch((error) => {
       process.exitCode = 1
       if (process.connected) process.send({type: 'startup-result', ok: false, graceful: false,
-        code: /^STARTUP_[A-Z_]+$/.test(error?.code) ? error.code : 'STARTUP_VERIFICATION_FAILED'}, () => process.disconnect())
+        code: /^STARTUP_[A-Z_]+$/.test(error?.code) ? error.code : 'STARTUP_VERIFICATION_FAILED',
+        ...diagnostics(error)}, () => process.disconnect())
     })
   } else {
     Promise.resolve().then(() => verifyStartup(parseArgs(process.argv.slice(2)))).then((result) => {
       console.log(JSON.stringify(result))
     }).catch((error) => {
-      console.error(/^STARTUP_[A-Z_]+$/.test(error?.code) ? error.code : 'STARTUP_VERIFICATION_FAILED')
+      console.error(JSON.stringify({code: /^STARTUP_[A-Z_]+$/.test(error?.code) ? error.code : 'STARTUP_VERIFICATION_FAILED',
+        ...diagnostics(error)}))
       process.exitCode = 1
     })
   }
 }
 
-module.exports = {createWorkspace, removeWorkspace, supervise, childEnvironment, verifyStartup, parseArgs}
+module.exports = {createWorkspace, removeWorkspace, supervise, childEnvironment, verifyStartup, parseArgs, request, poll}

@@ -1,9 +1,14 @@
 jest.mock('canvas', () => ({}))
+// Image processing is not exercised here; native bootstrap is outside this suite's scope.
+jest.mock('sharp', () => jest.fn())
 jest.mock('nodejs-jieba', () => ({extract: jest.fn((text) => [{word: text}])}))
 jest.mock('fs', () => ({
   ...jest.requireActual('fs'),
   readFile: jest.fn((_path, _encoding, callback) => callback(null, '{}')),
-  readFileSync: jest.fn(() => { throw Object.assign(new Error('mock missing'), {code: 'ENOENT'}) }),
+  readFileSync: jest.fn((file) => {
+    if (file === '/usr/bin/ldd') return 'mock libc probe'
+    throw Object.assign(new Error('mock missing'), {code: 'ENOENT'})
+  }),
 }))
 jest.mock('./model/userModel.js', () => ({}))
 jest.mock('./model/messageModel.js', () => ({}))
@@ -18,6 +23,12 @@ const fs = require('fs')
 const axios = require('axios').default
 const {normalizeRuntimeConfig} = require('../../src/config/runtimeConfig')
 const utils = require('./utils.js')
+
+function expectMetadataOnlyReads() {
+  expect(fs.readFile.mock.calls.map(([file]) => file)).toEqual([path.join(process.cwd(), 'config', 'config.yml')])
+  expect(fs.readFile.mock.calls[0][1]).toBe('utf-8')
+  expect(fs.readFileSync.mock.calls.filter(([file]) => file !== '/usr/bin/ldd')).toEqual([])
+}
 
 // Set the node environment to test
 process.env.NODE_ENV = 'test'
@@ -87,8 +98,12 @@ describe('Utils OneBot scoped authentication', () => {
   let errorSpy
   let logSpy
   beforeEach(() => {
+    fs.readFile.mockClear()
     fs.readFileSync.mockClear()
-    fs.readFileSync.mockImplementation(() => { throw Object.assign(new Error('mock missing'), {code: 'ENOENT'}) })
+    fs.readFileSync.mockImplementation((file) => {
+      if (file === '/usr/bin/ldd') return 'mock libc probe'
+      throw Object.assign(new Error('mock missing'), {code: 'ENOENT'})
+    })
     requestSpy = jest.spyOn(axios, 'get').mockResolvedValue({status: 200, data: {status: 'ok', retcode: 0, data: []}})
     errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
     logSpy = jest.spyOn(console, 'log').mockImplementation(() => {})
@@ -190,30 +205,51 @@ describe('Utils OneBot scoped authentication', () => {
     } finally { enableSpy.mockRestore() }
   })
 
-  test('implicit local config reads metadata only, and cannot replace explicit runtime config', async () => {
+  test.each([false, true])('implicit config reads metadata only and cannot replace explicit runtime config (OS probe: %s)', async (osProbe) => {
     let finishRead
     fs.readFile.mockImplementationOnce((_path, _encoding, callback) => { finishRead = callback })
     let isolated
-    jest.isolateModules(() => { isolated = require('./utils') })
-    expect(fs.readFileSync).not.toHaveBeenCalled()
-    isolated.ConfigureRuntime({WEB_PORT: 9876, ONE_BOT_PROVIDER: 'snowluma'})
-    finishRead(null, 'System:\n  WEB_PORT: 1234\n  ONE_BOT_PROVIDER: napcat\n')
+    jest.isolateModules(() => {
+      if (osProbe) fs.readFileSync('/usr/bin/ldd', 'utf-8')
+      isolated = require('./utils')
+    })
+    expectMetadataOnlyReads()
+    isolated.ConfigureRuntime({WEB_PORT: 9876, ONE_BOT_PROVIDER: 'snowluma', ONE_BOT_CREDENTIALS_FILE: 'explicit.mock'})
+    finishRead(null, 'System:\n  WEB_PORT: 1234\n  ONE_BOT_PROVIDER: napcat\n  ONE_BOT_CREDENTIALS_FILE: implicit.mock\n')
     await Promise.resolve()
     expect(isolated.PluginAnswerToGoCqhttpStyle({type: 'picture', content: {file: '/mock.png'}}))
       .toBe('[CQ:image,file=http://127.0.0.1:9876/mock.png]')
-    expect(fs.readFileSync).not.toHaveBeenCalled()
+    expectMetadataOnlyReads()
+    if (osProbe) expect(fs.readFileSync).toHaveBeenCalledWith('/usr/bin/ldd', 'utf-8')
   })
 
-  test('implicit local SnowLuma config applies without reading credentials', async () => {
+  test.each([false, true])('implicit local SnowLuma config applies without reading credentials (OS probe: %s)', async (osProbe) => {
     fs.readFile.mockImplementationOnce((_path, _encoding, callback) => callback(null,
       'System:\n  WEB_PORT: 3456\n  ONE_BOT_PROVIDER: snowluma\n  ONE_BOT_CREDENTIALS_FILE: implicit.mock\n'))
     let isolated
-    jest.isolateModules(() => { isolated = require('./utils') })
+    jest.isolateModules(() => {
+      if (osProbe) fs.readFileSync('/usr/bin/ldd', 'utf-8')
+      isolated = require('./utils')
+    })
     await Promise.resolve()
     expect(isolated.PluginAnswerToGoCqhttpStyle({type: 'picture', content: {file: '/mock.png'}}))
       .toBe('[CQ:image,file=http://127.0.0.1:3456/mock.png]')
-    expect(fs.readFileSync).not.toHaveBeenCalled()
+    expectMetadataOnlyReads()
+    if (osProbe) expect(fs.readFileSync).toHaveBeenCalledWith('/usr/bin/ldd', 'utf-8')
   })
+
+  test.each(['config/onebot.credentials.json', path.resolve('config/onebot.credentials.json'), 'implicit.mock', 'explicit.mock'])(
+    'metadata-only guard still fails on a credential read: %s', async (credentialPath) => {
+      jest.isolateModules(() => {
+        fs.readFileSync('/usr/bin/ldd', 'utf-8')
+        require('./utils')
+      })
+      await Promise.resolve()
+      expectMetadataOnlyReads()
+      expect(() => fs.readFileSync(credentialPath, 'utf-8')).toThrow('mock missing')
+      expect(() => expectMetadataOnlyReads()).toThrow()
+    },
+  )
 })
 
 describe('PluginAnswerToWebStyle', () => {
