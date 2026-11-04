@@ -1,6 +1,6 @@
 # ChatDACS v3.7 升级指南
 
-本文说明从 ChatDACS v3.7 替换到当前模块化运行时的已验证路径。
+本文说明从 ChatDACS v3.7 升级到当前模块化运行时的步骤、兼容改进与验证边界；云端最终结果和真实 QQ 收发仍需分别确认。
 
 ## 升级前
 
@@ -33,7 +33,15 @@
 - 如果启用了 OneBot，确认 webhook 返回 HTTP `204`，群消息仍通过配置的 API 地址发送。
 - 确认启动日志中没有迁移失败、插件初始化失败或未处理进程异常。
 
-已复现的 Web 入口问题已修复并完成对应复验。Node.js `26.13.0` 曾用于本地受限 QQ 验收入口，普通收发有此前的手机端确认；主动发送的 OneBot 成功回执不等于手机送达。截至 2026-11-04，用户已批准完整 `index` 接管本机 QQ，但 NapCat 与验收进程均未运行，本轮部署和真实收发验收尚未完成。隔离 smoke 或历史受限入口结果都不能作为本轮上线结论；云端仍有待修项，见下表。
+截至 2026-11-04，`84c51d7` 已完成 Node 26 全量 verify：60 个套件、1743 项测试通过，1 项 Windows 符号链接测试跳过，176 项语法检查及 actual main smoke 通过。该结果是本地隔离验证，不等于正式上线或真实 QQ 收发验收。
+
+完整 index 源码/云端验证与真实 QQ 私聊群聊送达分别验收，本轮真实收发待手机确认，历史受限入口不能替代。
+
+## SQLite 与 QQ 消息兼容改进
+
+此前云端 actual main smoke 的 `PLUGIN_RUNTIME_ERROR` / `SQLITE_BUSY` 已定位并修复：`GetGroupPluginStatus.findOrCreate` 的读事务与 `AddMessage` / `UpdateLoginTimes` 消息写入竞争。当前改用不创建该读事务的 `findCreateFind`，并对同群插件状态操作进行 per-group 序列化，避免同群并发更新相互覆盖；不以增加重试掩盖锁竞争，也不据此承诺所有数据库并发问题均已消除。该问题不再列为当前未修阻断。
+
+主动发送的 `canSend` 已纳入群服务开关，执行“闭菊”停用群服务后不再主动发送；发送前仍须通过禁言状态及插件开关检查。自身 `message_sent` 和自身消息在入口丢弃；普通 `message` 按机器人 self、scope、peer、sender、message ID 隔离去重，窗口 5 分钟、最多 4096 项。缺失或无效 ID 不去重，处理失败不自动重试；`notice` / `poke` 保留原处理路径，不被消息去重误拦截。
 
 ## 异常通知配置
 
@@ -132,22 +140,16 @@ go-cqhttp 已停止维护，新部署推荐使用外部运行的 NapCatQQ。迁�
 Canvas 已升级到 3.2.3；SQLite 和分词仍使用原模块。`nodejs-jieba@0.3.0` 的 engines
 声明尚未包含 Node 26，因此 npm 会产生版本警告，不能用修改依赖声明来隐藏。Windows x64 隔离候选已完成安装、原生加载与功能验证，不能据此推断其他平台兼容。
 
-截至 2026-11-04，按父任务提供的云端快照记录如下，尚非全通过；后续以最终 run 更新，不重复触发构建：
+截至 2026-11-04，云端状态如下。不同候选分别记录，不能沿用前一候选的成功结果宣称最终版本通过：
 
-| 候选 / run | 当前结果 | 待修项 |
+| 候选 | 检查 / run | 状态 |
 | --- | --- | --- |
-| `3a718` / `41669844909` | 六平台 2/6 成功 | 其余 4 项未通过；不推断具体成功平台 |
-| `9c89` / `41753482691` | `linux-arm64`、`win-arm64` 通过 | 其余 4 平台 `PLUGIN_REPLY` 超时，父任务继续修复 |
-| CI / `41753482345` | 全部 syntax / Jest 检查已过 | startup 超时，整体不算通过 |
+| `572e` | build `41757018129` | 6/6 全部通过，含 Windows ARM |
+| `84c51d7` | CI `41757622782` | Ubuntu、Windows 均通过 |
+| `8ebd580` | CI `41758028133` | success |
+| `8ebd580` | 最终只读权限 build `41758029637` | 6/6 全部通过，6 个 artifact 已生成 |
 
-| 目标 | 配置的 runner | 运行时架构 | 验证状态 |
-| --- | --- | --- | --- |
-| `linux-x64` | `ubuntu-24.04` | x64 原生 | 第二轮 `PLUGIN_REPLY` 超时，待修 |
-| `linux-arm64` | `ubuntu-24.04-arm` | arm64 原生 | 第二轮通过；真实 QQ 未验收 |
-| `win-x64` | `windows-latest` | x64 原生 | 第二轮 `PLUGIN_REPLY` 超时，待修 |
-| `win-arm64` | `windows-11-arm` | x64-emulation | 第二轮通过；ARM 真机未验收 |
-| `macos-x64` | `macos-15-intel` | x64 原生 | 第二轮 `PLUGIN_REPLY` 超时，待修 |
-| `macos-arm64` | `macos-15` | arm64 原生 | 第二轮 `PLUGIN_REPLY` 超时，待修 |
+`8ebd580` 仅修改两个 workflow 与 `ci-runtime.test`，应用代码与 `84c51d7` 相同；权限回归的 32 项测试通过。两个 workflow 显式声明 `permissions: contents: read`，测试断言无 job 覆盖权限。此声明不代表仓库默认权限已修改。该候选已完成六平台生产依赖安装、原生探针、真实 main 烟测、实际 ZIP 解压运行和启动器验证，并生成六个 artifact；未合并主分支或发布正式 Release。
 
 ARM 限制：`linux-arm64` 打包排除仓内 ELF 机器类型为 62（x86-64）的 go-cqhttp，Node 与适配器仍使用原生 ARM64；QQ 接入应使用独立部署的外部 OneBot/NapCat/SnowLuma 服务，不下载或自动替换协议程序。`win-arm64` 为 x64 仿真包，仍可包含 x64 go-cqhttp。Canvas 在 ARM64 上源码编译涉及外部 Cairo/Pango 依赖；上述 runner 通过不等于任意 ARM 主机免系统依赖运行或真机验收通过。
 

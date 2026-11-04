@@ -69,7 +69,7 @@ node index.js --config /private/local.yml
 
 `--config` 只选择 YAML，不改变进程 cwd；Windows 可使用 `C:/private/local.yml`。相对凭据路径仍从 cwd 解析，不从 YAML 所在目录解析。不要为切换入口覆盖现有配置、数据库或个人人设。
 
-截至 2026-11-04，完整 `index` 接管本机 QQ 已获用户批准，但 NapCat 与验收进程均未运行，本轮部署和真实收发验收尚未完成；此前受限入口的结果不能代替本轮验收。
+完整 index 源码/云端验证与真实 QQ 私聊群聊送达分别验收，本轮真实收发待手机确认，历史受限入口不能替代。
 
 先验证私聊和测试群的 `/ping`、普通聊天，并对照入站、插件或聊天核心、
 OneBot `status=ok / retcode=0` 及手机实际收到四层证据。接口成功不等于手机送达。
@@ -86,6 +86,10 @@ OneBot `status=ok / retcode=0` 及手机实际收到四层证据。接口成功�
 可配置 `System.ONE_BOT_SELF_ID`，校验入站回调的 `self_id`，拒绝账号不匹配的事件；该校验及就绪检查不等于消息送达。
 
 宿主插件 `wallpaper`、`tray`、`chatPush` 的执行和开关仅允许可信 QQ/NapCat（OneBot）事件中的 `QQBOT_ADMIN_LIST` 宿主管理员，不能仅凭消息提供的 ID 授权。普通群插件切换及群服务启停允许群 `admin` / `owner` 或宿主管理员；私聊普通插件开关只影响调用者本人的会话。公开游戏、语料和 LLM 人设查询不因此封禁。
+
+主动发送的 `canSend` 包含群服务开关，执行“闭菊”停用服务后不主动发送。自身 `message_sent` 和自身消息在入口丢弃；普通 `message` 按 self / scope / peer / sender / message ID 隔离去重，窗口 5 分钟、最多 4096 项。缺失或无效 ID 不去重，失败不自动重试；`notice` / `poke` 保留原路径，不参与消息去重。
+
+插件状态查询改用 `findCreateFind`，并对同群插件状态操作进行 per-group 序列化，修复原 `findOrCreate` 读事务与消息写入竞争引发的 `SQLITE_BUSY`。这是源码和隔离验证结论，不代表本机账号已完成收发验收。
 
 `GO_CQHTTP_SWITCH` 仅用于旧部署兼容。启用它会覆盖 `ONE_BOT_PROVIDER` 并继续启动发布包中的旧 go-cqhttp。
 
