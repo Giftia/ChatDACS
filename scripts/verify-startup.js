@@ -18,7 +18,29 @@ const httpCauses = new Set(['HTTP_TIMEOUT', 'ECONNREFUSED', 'ECONNRESET', 'EPIPE
 
 function diagnostics(error) {
   return {...(httpStages.has(error?.stage) ? {stage: error.stage} : {}),
-    ...(httpCauses.has(error?.causeCode) ? {causeCode: error.causeCode} : {})}
+    ...(httpCauses.has(error?.causeCode) ? {causeCode: error.causeCode} : {}),
+    ...(error?.summary ? {summary: summarizeLog('', error.summary)} : {})}
+}
+
+function summarizeLog(log, counts) {
+  const codes = ['WEB_MESSAGE_RECEIVED', 'PLUGIN_RUNTIME_ERROR', 'PLUGIN_EXECUTION_ERROR',
+    'PLUGIN_TIMEOUT_ERROR', 'UNHANDLED_REJECTION', 'UNCAUGHT_EXCEPTION']
+  return Object.fromEntries(codes.map(code => [code, counts
+    ? (Number.isSafeInteger(counts[code]) && counts[code] >= 0 ? Math.min(counts[code], 1000000) : 0)
+    : (String(log).match(new RegExp(`\\b${code}\\b`, 'g')) ?? []).length]))
+}
+
+function failureSummary(root) {
+  const file = path.join(root, 'combined.log')
+  let descriptor
+  try {
+    descriptor = fs.openSync(file, 'r')
+    const size = fs.fstatSync(descriptor).size
+    const buffer = Buffer.alloc(Math.min(size, 128 * 1024))
+    const bytes = fs.readSync(descriptor, buffer, 0, buffer.length, Math.max(0, size - buffer.length))
+    return summarizeLog(buffer.subarray(0, bytes).toString('utf8'))
+  } catch (_) { return summarizeLog('') }
+  finally { if (descriptor !== undefined) fs.closeSync(descriptor) }
 }
 
 function httpFailure(code, stage, causeCode) {
@@ -144,6 +166,7 @@ async function verifyStartup({appDir = path.resolve(__dirname, '..'), dependenci
     return await supervise({nodePath, cwd: workspace.root, env: childEnvironment(workspace), deadlineMs})
   } catch (error) {
     keep = error.code === 'STARTUP_CHILD_STILL_RUNNING'
+    error.summary = failureSummary(workspace.root)
     throw error
   } finally {
     if (!keep) removeWorkspace(workspace.root)
@@ -336,4 +359,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = {createWorkspace, removeWorkspace, supervise, childEnvironment, verifyStartup, parseArgs, request, poll}
+module.exports = {createWorkspace, removeWorkspace, supervise, childEnvironment, verifyStartup, parseArgs, request, poll, summarizeLog}

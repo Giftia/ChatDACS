@@ -4,7 +4,16 @@ const fs = require('fs')
 const os = require('os')
 const path = require('path')
 const {EventEmitter} = require('events')
-const {createWorkspace, removeWorkspace, supervise, childEnvironment, parseArgs, request, poll} = require('./verify-startup')
+const {createWorkspace, removeWorkspace, supervise, childEnvironment, parseArgs, request, poll, summarizeLog} = require('./verify-startup')
+
+test('failure summary exposes only bounded counters, never log bodies or arbitrary fields', () => {
+  const summary = summarizeLog('SECRET_BODY WEB_MESSAGE_RECEIVED PLUGIN_RUNTIME_ERROR WEB_MESSAGE_RECEIVED')
+  expect(summary.WEB_MESSAGE_RECEIVED).toBe(2)
+  expect(summary.PLUGIN_RUNTIME_ERROR).toBe(1)
+  expect(JSON.stringify(summary)).not.toContain('SECRET_BODY')
+  expect(summarizeLog('', {WEB_MESSAGE_RECEIVED: 1e12, PLUGIN_RUNTIME_ERROR: -1, secret: 'SECRET'}))
+    .toMatchObject({WEB_MESSAGE_RECEIVED: 1000000, PLUGIN_RUNTIME_ERROR: 0})
+})
 
 test('workspace snapshots code but never copies original config, database, credentials or upload data', () => {
   const source = fs.mkdtempSync(path.join(os.tmpdir(), 'startup-test-source-'))
