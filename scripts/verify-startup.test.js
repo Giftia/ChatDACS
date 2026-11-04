@@ -10,6 +10,7 @@ test('failure summary exposes only bounded counters, never log bodies or arbitra
   const summary = summarizeLog('SECRET_BODY WEB_MESSAGE_RECEIVED PLUGIN_RUNTIME_ERROR WEB_MESSAGE_RECEIVED')
   expect(summary.WEB_MESSAGE_RECEIVED).toBe(2)
   expect(summary.PLUGIN_RUNTIME_ERROR).toBe(1)
+  expect(summarizeLog('STARTUP_SQLITE_BUSY SECRET_SQL')).toMatchObject({STARTUP_SQLITE_BUSY: 1})
   expect(JSON.stringify(summary)).not.toContain('SECRET_BODY')
   expect(summarizeLog('', {WEB_MESSAGE_RECEIVED: 1e12, PLUGIN_RUNTIME_ERROR: -1, secret: 'SECRET'}))
     .toMatchObject({WEB_MESSAGE_RECEIVED: 1000000, PLUGIN_RUNTIME_ERROR: 0})

@@ -24,7 +24,8 @@ function diagnostics(error) {
 
 function summarizeLog(log, counts) {
   const codes = ['WEB_MESSAGE_RECEIVED', 'PLUGIN_RUNTIME_ERROR', 'PLUGIN_EXECUTION_ERROR',
-    'PLUGIN_TIMEOUT_ERROR', 'UNHANDLED_REJECTION', 'UNCAUGHT_EXCEPTION']
+    'PLUGIN_TIMEOUT_ERROR', 'UNHANDLED_REJECTION', 'UNCAUGHT_EXCEPTION',
+    'STARTUP_SQLITE_BUSY', 'STARTUP_SQLITE_CONSTRAINT', 'STARTUP_STATE_OTHER_ERROR']
   return Object.fromEntries(codes.map(code => [code, counts
     ? (Number.isSafeInteger(counts[code]) && counts[code] >= 0 ? Math.min(counts[code], 1000000) : 0)
     : (String(log).match(new RegExp(`\\b${code}\\b`, 'g')) ?? []).length]))
@@ -268,6 +269,18 @@ async function childMain() {
   assert(process.env.CHATDACS_DB_PATH === path.join(root, 'startup-state', 'chat.sqlite') &&
     process.env.CHATDACS_STARTUP_CONFIG === path.join(root, 'startup-state', 'shadow.yml'), 'STARTUP_ISOLATION_INVALID')
   const {main} = require(path.join(root, 'index.js'))
+  const utils = require(path.join(root, 'plugins/system/utils'))
+  const getPluginStatus = utils.GetGroupPluginStatus.bind(utils)
+  utils.GetGroupPluginStatus = async (...args) => {
+    try { return await getPluginStatus(...args) }
+    catch (error) {
+      const cause = error?.original?.code ?? error?.parent?.code ?? error?.code
+      const code = cause === 'SQLITE_BUSY' ? 'STARTUP_SQLITE_BUSY'
+        : cause === 'SQLITE_CONSTRAINT' ? 'STARTUP_SQLITE_CONSTRAINT' : 'STARTUP_STATE_OTHER_ERROR'
+      fs.appendFileSync(path.join(root, 'combined.log'), JSON.stringify({code}) + '\n', 'utf8')
+      throw error
+    }
+  }
   let controller
   try {
     controller = await main({configPath: process.env.CHATDACS_STARTUP_CONFIG,
@@ -288,7 +301,6 @@ async function childMain() {
     port = address.port
     const {sequelize} = require(path.join(root, 'plugins/system/model/database'))
     assert(sequelize.options.storage === process.env.CHATDACS_DB_PATH, 'STARTUP_DATABASE_NOT_ISOLATED')
-    const utils = require(path.join(root, 'plugins/system/utils'))
     const id = `startup-${randomUUID()}`
     utils.AddUser(id, 'StartupUser')
     const until = Date.now() + 3000
