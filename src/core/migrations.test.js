@@ -26,6 +26,8 @@ describe('database migration runtime', () => {
     resources.length = 0
   })
 
+  // File-backed DDL can exceed Jest's unit-test budget on hosted Windows disks.
+  // Keep the real database and all migration/data assertions, with a bounded I/O budget.
   test('applies all migrations to a fresh database and is idempotent', async () => {
     const {sequelize} = createDatabase()
 
@@ -53,7 +55,7 @@ describe('database migration runtime', () => {
         "INSERT INTO messages (CID, message, createdAt, updatedAt) VALUES ('same-user', 'second', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
       ),
     ).resolves.toBeDefined()
-  })
+  }, 15000)
 
   test('baselines a v3.7 database and applies only later migrations without data loss', async () => {
     const {sequelize} = createDatabase()
