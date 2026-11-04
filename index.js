@@ -271,6 +271,7 @@ async function StartConfiguredAdapters({app, io, config = globalConfig}) {
             ...options, groupIds: Array.isArray(options.groupIds) ? options.groupIds : [], logger,
             generate: context => plugins.ollama?.generateProactive?.(context),
             canSend: async context => {
+              if (!await utils.GetGroupServiceSwitch(context.targetId)) return false
               if (!await pluginRuntime.isEnabled('ollama', context) ||
                   !await pluginRuntime.isEnabled('proactiveChat', context)) return false
               const member = (await sender.getGroupMemberInfo(context.targetId, context.selfId, 1))?.data?.data

@@ -28,7 +28,7 @@ jest.mock('node-telegram-bot-api', () => jest.fn())
 jest.mock('./plugins/system/utils.js', () => ({
   FullContentSearchAnswer: jest.fn(), FuzzyContentSearchAnswer: jest.fn(), ChatJiebaFuzzy: jest.fn(),
   PerfunctoryAnswer: jest.fn(), ConfigureRuntime: jest.fn(), InitGroupList: jest.fn(async () => true),
-  GetGroupPluginStatus: jest.fn(), ToggleGroupPlugin: jest.fn(),
+  GetGroupPluginStatus: jest.fn(), ToggleGroupPlugin: jest.fn(), GetGroupServiceSwitch: jest.fn(),
 }))
 jest.mock('fs', () => ({
   readFile: jest.fn(), readFileSync: jest.fn(() => { throw new Error('Unexpected file access') }),
@@ -58,7 +58,8 @@ jest.mock('./plugins/system/model/database.js', () => ({sequelize: {close: jest.
 jest.mock('./src/core/migrations', () => ({runMigrations: jest.fn(async () => ({applied: [], baselined: []}))}))
 jest.mock('./src/config/runtimeConfig', () => ({normalizeRuntimeConfig: jest.fn((config) => config)}))
 jest.mock('./src/plugins/conversationState', () => ({createConversationPluginStateStore: jest.fn(() => ({}))}))
-jest.mock('./src/plugins/runtime.js', () => ({createPluginRuntime: jest.fn(() => ({load: jest.fn(() => ({})), execute: jest.fn()}))}))
+jest.mock('./src/plugins/runtime.js', () => ({createPluginRuntime: jest.fn(() => ({load: jest.fn(() => ({})), execute: jest.fn(), isEnabled: jest.fn(async () => true)}))}))
+jest.mock('./src/plugins/proactiveChat', () => ({createProactiveChat: jest.fn(() => ({}))}))
 jest.mock('./src/bots/qq', () => ({StartQQBot: jest.fn(), configureQQRuntime: jest.fn(), sendMessageToQQGroup: jest.fn()}))
 jest.mock('./src/bots/qqOfficial', () => ({startQQOfficial: jest.fn()}))
 jest.mock('./src/bots/qq/oneBotProvider', () => ({verifyOneBotConnection: jest.fn()}))
@@ -279,6 +280,26 @@ describe('index adapter and scoped-client integration', () => {
     await controller.stop()
     expect(qqStop).toHaveBeenCalledTimes(1)
     expect(officialStop).toHaveBeenCalledTimes(1)
+  })
+
+  test('proactive delivery checks group service again after generation and fails closed', async () => {
+    const config = await configure({llm: {proactive: {enabled: true, groupIds: ['23456']}}})
+    const controller = await indexModule.main({checkUpdates: false})
+    try {
+      qq.StartQQBot.mock.calls.at(-1)[0].conversation.createProactive({send: jest.fn()})
+      const {canSend} = require('./src/plugins/proactiveChat').createProactiveChat.mock.calls.at(-1)[0]
+      const context = {groupId: 23456, targetId: 23456, selfId: 456, platform: 'qq'}
+      axios.get.mockImplementation(async url => ({data: {status: 'ok', retcode: 0, data:
+        url.includes('get_group_member_info') ? {role: 'member', shut_up_timestamp: 0} : {group_all_shut: 0}}}))
+      utils.GetGroupServiceSwitch.mockResolvedValue(true)
+      await expect(canSend(context)).resolves.toBe(true)
+      utils.GetGroupServiceSwitch.mockResolvedValue(false)
+      axios.get.mockClear()
+      await expect(canSend(context)).resolves.toBe(false)
+      expect(axios.get).not.toHaveBeenCalled()
+      utils.GetGroupServiceSwitch.mockRejectedValue(new Error('fixture failure'))
+      await expect(canSend(context)).rejects.toThrow('fixture failure')
+    } finally { await controller.stop() }
   })
 
   test('official still stops when QQ stop rejects', async () => {

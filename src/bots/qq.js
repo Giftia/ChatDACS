@@ -19,6 +19,7 @@ const {
 const {handleQQMediaBridge} = require('./qq/mediaBridge')
 const {handleQQPluginReply} = require('./qq/pluginBridge')
 const {registerOneBotWebhook} = require('./qq/webhook')
+const {createMessageIngress} = require('./qq/messageIngress')
 const {ProcessGuildMessage} = require('./qqGuild')
 
 const runtime = {
@@ -128,6 +129,7 @@ async function StartQQBot({
   const axios = injectedAxios
   const oneBotSender = runtime.oneBotSender
   const games = new Map()
+  const messageIngress = createMessageIngress()
   const cancelled = Symbol('QQ runtime stopped or game replaced')
   let stopped = false
   let ready = false
@@ -177,6 +179,7 @@ async function StartQQBot({
   }
   const stop = () => {
     stopped = true
+    messageIngress.clear()
     for (const groupId of games.keys()) clearGame(groupId)
     if (!stopping) {
       stopping = Promise.allSettled([() => proactive?.stop(), () => groupConversation?.stop(), () => privateConversation?.stop()]
@@ -229,6 +232,7 @@ async function StartQQBot({
 
   const handleEvent = async (event) => {
     if (!ready || stopped) return 0
+    if (messageIngress.shouldIgnore(event)) return 0
     try {
       return await processEvent(event)
     } catch (error) {
