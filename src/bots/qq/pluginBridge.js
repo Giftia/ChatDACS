@@ -13,6 +13,8 @@ async function handleQQPluginReply({event, processExecute, oneBotSender, utils})
       selfId: event.self_id,
       targetId: event.sub_type == 'poke' ? event.target_id : null,
       type: 'qq',
+      scope: 'group',
+      raw: {scope: 'group', event},
     },
   )
 

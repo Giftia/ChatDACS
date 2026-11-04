@@ -12,7 +12,10 @@ jest.mock('fs', () => ({
 }))
 jest.mock('./model/userModel.js', () => ({}))
 jest.mock('./model/messageModel.js', () => ({}))
-jest.mock('./model/qqGroupModel.js', () => ({findAll: jest.fn().mockResolvedValue([]), bulkCreate: jest.fn()}))
+jest.mock('./model/qqGroupModel.js', () => ({
+  findAll: jest.fn().mockResolvedValue([]), bulkCreate: jest.fn(),
+  findCreateFind: jest.fn(), update: jest.fn(),
+}))
 jest.mock('./model/mineModel.js', () => ({}))
 jest.mock('./model/chatModel.js', () => ({}))
 jest.mock('./model/perfunctoryModel.js', () => ({}))
@@ -46,6 +49,27 @@ describe('Utils Module', () => {
 
   test('should load without errors', () => {
     expect(utils).not.toBeNull()
+  })
+
+  test('plugin status uses findCreateFind and preserves other entries when toggling', async () => {
+    const groups = require('./model/qqGroupModel')
+    const log = jest.spyOn(console, 'log').mockImplementation(() => {})
+    groups.findCreateFind.mockResolvedValue([{pluginsList: {ping: false, other: true}}, false])
+    groups.update.mockResolvedValue([1])
+    try {
+      expect(await utils.GetGroupPluginStatus(789, 'ping')).toBe(false)
+      expect(groups.findCreateFind).toHaveBeenNthCalledWith(1, {where: {groupId: 789}})
+      expect(groups.update).not.toHaveBeenCalled()
+      expect(await utils.ToggleGroupPlugin(789, 'ping')).toBe(true)
+      expect(groups.findCreateFind).toHaveBeenNthCalledWith(2, {where: {groupId: 789}})
+      expect(groups.findCreateFind).toHaveBeenCalledTimes(2)
+      expect(groups.update).toHaveBeenCalledTimes(1)
+      expect(groups.update).toHaveBeenCalledWith({pluginsList: {ping: true, other: true}}, {where: {groupId: 789}})
+    } finally {
+      groups.findCreateFind.mockReset()
+      groups.update.mockReset()
+      log.mockRestore()
+    }
   })
 
   test('sha1 should compute the correct hash', () => {

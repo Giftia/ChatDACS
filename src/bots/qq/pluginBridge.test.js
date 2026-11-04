@@ -28,6 +28,8 @@ describe('QQ plugin bridge', () => {
       selfId: 30003,
       targetId: null,
       type: 'qq',
+      scope: 'group',
+      raw: {scope: 'group', event},
     })
     expect(utils.PluginAnswerToGoCqhttpStyle).toHaveBeenCalledWith({type: 'text', content: 'pong'})
     expect(oneBotSender.sendGroupMessage).toHaveBeenCalledWith(20002, 'pong')

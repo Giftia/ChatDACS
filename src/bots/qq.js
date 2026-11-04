@@ -368,6 +368,7 @@ async function StartQQBot({
           // 服务停用开关
           const handledCloseServiceCommand = await handleCloseServiceCommand({
             event,
+            config,
             constants: Constants,
             utils,
             oneBotSender,

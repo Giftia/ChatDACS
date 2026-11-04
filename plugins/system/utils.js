@@ -92,6 +92,19 @@ function applyRuntimeConfig(config = {}) {
 // 孤寡图序列
 const guGuaPicList = ['1.jpg', '2.jpg', '3.jpg', '4.jpg', '5.gif']
 
+const pluginStateWrites = new Map()
+
+function withPluginState(groupId, operation) {
+  const key = String(groupId)
+  const pending = (pluginStateWrites.get(key) ?? Promise.resolve()).then(operation)
+  const settled = pending.then(() => {}, () => {})
+  pluginStateWrites.set(key, settled)
+  settled.then(() => {
+    if (pluginStateWrites.get(key) === settled) pluginStateWrites.delete(key)
+  })
+  return pending
+}
+
 /**
  * @name 系统工具类
  * @description 各种公用函数和系统底层函数
@@ -730,20 +743,23 @@ module.exports = {
    * @returns {Promise<boolean>} 插件开关状态
    */
   async ToggleGroupPlugin(groupId, pluginName) {
-    const group = (await QQGroupModel.findOrCreate({where: {groupId}}))[0]
-    if (!group.pluginsList || !Object.prototype.hasOwnProperty.call(group.pluginsList, pluginName)) {
-      console.log(`该群没有初始化 ${pluginName} ，给一个初始开`.log)
+    return withPluginState(groupId, async () => {
+      // No read transaction: concurrent message writes must not invalidate a SQLite snapshot.
+      const group = (await QQGroupModel.findCreateFind({where: {groupId}}))[0]
+      if (!group.pluginsList || !Object.prototype.hasOwnProperty.call(group.pluginsList, pluginName)) {
+        console.log(`该群没有初始化 ${pluginName} ，给一个初始开`.log)
 
-      group.pluginsList = {
-        ...group.pluginsList,
-        [pluginName]: true,
+        group.pluginsList = {
+          ...group.pluginsList,
+          [pluginName]: true,
+        }
       }
-    }
 
-    const pluginStatus = group.pluginsList[pluginName]
-    console.log(`小夜将会将群 ${groupId} 的 ${pluginName} 插件状态从 ${pluginStatus} 变为 ${!pluginStatus}`.log)
-    await QQGroupModel.update({pluginsList: {...group.pluginsList, [pluginName]: !pluginStatus}}, {where: {groupId}})
-    return !pluginStatus
+      const pluginStatus = group.pluginsList[pluginName]
+      console.log(`小夜将会将群 ${groupId} 的 ${pluginName} 插件状态从 ${pluginStatus} 变为 ${!pluginStatus}`.log)
+      await QQGroupModel.update({pluginsList: {...group.pluginsList, [pluginName]: !pluginStatus}}, {where: {groupId}})
+      return !pluginStatus
+    })
   },
 
   /**
@@ -753,23 +769,25 @@ module.exports = {
    * @returns {Promise<boolean>} 插件开关状态
    */
   async GetGroupPluginStatus(groupId, pluginName) {
-    const group = (await QQGroupModel.findOrCreate({where: {groupId}}))[0]
-    if (!group.pluginsList) {
-      console.log('该群没有初始化插件列表，初始化一下'.log)
+    return withPluginState(groupId, async () => {
+      const group = (await QQGroupModel.findCreateFind({where: {groupId}}))[0]
+      if (!group.pluginsList) {
+        console.log('该群没有初始化插件列表，初始化一下'.log)
 
-      await QQGroupModel.update({pluginsList: {[pluginName]: true}}, {where: {groupId}})
-      return true
-    }
+        await QQGroupModel.update({pluginsList: {[pluginName]: true}}, {where: {groupId}})
+        return true
+      }
 
-    const pluginExists = Object.prototype.hasOwnProperty.call(group.pluginsList, pluginName)
-    if (!pluginExists) {
-      console.log(`该群没有初始化 ${pluginName} ，给一个初始开`.log)
+      const pluginExists = Object.prototype.hasOwnProperty.call(group.pluginsList, pluginName)
+      if (!pluginExists) {
+        console.log(`该群没有初始化 ${pluginName} ，给一个初始开`.log)
 
-      await QQGroupModel.update({pluginsList: {...group.pluginsList, [pluginName]: true}}, {where: {groupId}})
-      return true
-    }
+        await QQGroupModel.update({pluginsList: {...group.pluginsList, [pluginName]: true}}, {where: {groupId}})
+        return true
+      }
 
-    return group.pluginsList[pluginName]
+      return group.pluginsList[pluginName]
+    })
   },
 
   /**

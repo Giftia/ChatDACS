@@ -27,17 +27,18 @@ module.exports = {
     }
 
     try {
-      const response = await this.axios.get(
-        `https://xizhi.qqoq.net/${XIZHI_CHANNEL_KEY}.channel?title=${encodeURI(
+      await this.axios.get(
+        `https://xizhi.qqoq.net/${XIZHI_CHANNEL_KEY}.channel?title=${encodeURIComponent(
           '来自 ' + userName + ' 的消息：' + msg,
         )}`,
+        {timeout: 5000},
       )
-      this.logger.info(`消息推送成功: ${response.data}`)
-    } catch (error) {
-      this.logger.error(`消息推送失败: ${error.message}`)
+      this.logger.info('消息推送成功')
+    } catch (_) {
+      this.logger.error('CHAT_PUSH_FAILED')
       return {
         type: 'text',
-        content: `推送消息失败，请稍后再试。错误详情：${error.message}`,
+        content: '推送消息失败，请稍后再试。',
       }
     }
 

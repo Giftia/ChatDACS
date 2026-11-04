@@ -1,6 +1,18 @@
 const {ChatProcess} = require('./src/core/chat.js')
 const utils = require('./plugins/system/utils.js')
 
+test('startup config option is explicit, validated and does not change cwd', () => {
+  const {parseStartupOptions} = require('./index')
+  const path = require('path')
+  expect(parseStartupOptions([])).toEqual({})
+  expect(parseStartupOptions(['--config', 'private config/settings.yml']))
+    .toEqual({configPath: path.resolve('private config/settings.yml')})
+  for (const args of [['--config'], ['--config', ''], ['--config', '--bad'], ['--bad', 'private'],
+    ['--config', 'private', 'extra'], ['--config', 'unsafe\npath']]) {
+    expect(() => parseStartupOptions(args)).toThrow('STARTUP_ARGUMENT_INVALID')
+  }
+})
+
 jest.mock('canvas', () => ({}))
 jest.mock('play-sound', () => () => ({play: jest.fn()}))
 jest.mock('trayicon', () => ({}))

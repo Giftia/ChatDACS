@@ -16,6 +16,7 @@ async function start(overrides = {}) {
     const parsed = new URL(url)
     calls.push(parsed)
     const data = parsed.pathname === '/get_group_info' ? {group_name: 'mock group'}
+      : parsed.pathname === '/get_group_member_info' ? {role: 'member'}
       : parsed.pathname === '/get_group_member_list' ? [{user_id: 45678}]
       : parsed.pathname === '/get_msg' ? {message: special} : {}
     return {data: {data}}
@@ -204,6 +205,7 @@ describe('StartQQBot real event pipeline with isolated dependencies', () => {
   test.each(['wrong answer', 'close service'])('interleaved groups keep separate timers after %s', async (ending) => {
     jest.useFakeTimers()
     const bot = await startWithGames()
+    bot.config.QQBOT_ADMIN_LIST = ['12345']
     await bot.handle({group_id: 111, message: '击鼓传雷'})
     await jest.advanceTimersByTimeAsync(100)
     await bot.handle({group_id: 222, message: '击鼓传雷'})
@@ -387,6 +389,7 @@ describe('StartQQBot real event pipeline with isolated dependencies', () => {
   test('closing a group clears its stored game so reopening starts a fresh countdown', async () => {
     jest.useFakeTimers()
     const bot = await startWithGames()
+    bot.config.QQBOT_ADMIN_LIST = ['12345']
     await bot.handle({message: '击鼓传雷'})
     await bot.handle({message: '闭菊'})
     expect(bot.utils.EndGroupLoopBombGame).toHaveBeenCalledWith(23456)
@@ -419,10 +422,64 @@ describe('StartQQBot real event pipeline with isolated dependencies', () => {
     const bot = await startWithGames()
     await bot.handle({message: '击鼓传雷'})
     await bot.handle({message: '闭菊[CQ:at,qq=45678]'})
+    expect(bot.utils.DisableGroupService).not.toHaveBeenCalled()
+    expect(bot.calls.some((call) => call.pathname === '/get_group_member_info')).toBe(false)
+    expect(bot.calls.at(-1).searchParams.get('message')).toBe('[CQ:at,qq=45678] 说你呢，快闭菊!')
     expect(bot.utils.EndGroupLoopBombGame).not.toHaveBeenCalled()
     expect(jest.getTimerCount()).toBe(2)
     await jest.advanceTimersByTimeAsync(60000)
     expect(bot.utils.EndGroupLoopBombGame).toHaveBeenCalledTimes(1)
+  })
+
+  test.each(['闭菊', '闭菊[CQ:at,qq=34567]'])('unauthorized %s neither disables service nor cancels a public game', async (message) => {
+    jest.useFakeTimers()
+    const bot = await startWithGames()
+    await bot.handle({message: '击鼓传雷'})
+    await bot.handle({message, sender: {nickname: 'mock', user_id: 12345, role: 'owner'}})
+    expect(bot.utils.DisableGroupService).not.toHaveBeenCalled()
+    expect(bot.utils.EndGroupLoopBombGame).not.toHaveBeenCalled()
+    expect(jest.getTimerCount()).toBe(2)
+    const lookup = bot.calls.find((call) => call.pathname === '/get_group_member_info')
+    expect(Object.fromEntries(lookup.searchParams)).toEqual({group_id: '23456', user_id: '12345'})
+    await jest.advanceTimersByTimeAsync(60000)
+    expect(bot.utils.EndGroupLoopBombGame).toHaveBeenCalledTimes(1)
+    await bot.controller.stop()
+  })
+
+  test.each(['admin', 'owner', 'host'])('verified %s can close service through the event pipeline', async (role) => {
+    jest.useFakeTimers()
+    const bot = await startWithGames()
+    if (role === 'host') bot.config.QQBOT_ADMIN_LIST = ['12345']
+    const get = bot.axios.get.getMockImplementation()
+    bot.axios.get.mockImplementation((url) => new URL(url).pathname === '/get_group_member_info'
+      ? Promise.resolve({data: {data: {role: role === 'host' ? 'member' : role}}}) : get(url))
+    await bot.handle({message: '击鼓传雷'})
+    await bot.handle({message: '闭菊[CQ:at,qq=34567]'})
+    expect(bot.utils.DisableGroupService).toHaveBeenCalledWith(23456)
+    expect(bot.utils.EndGroupLoopBombGame).toHaveBeenCalledWith(23456)
+    expect(jest.getTimerCount()).toBe(0)
+    await bot.controller.stop()
+  })
+
+  test('failed service role lookup cannot disable service or cancel a game even for a host admin', async () => {
+    jest.useFakeTimers()
+    const bot = await startWithGames()
+    bot.config.QQBOT_ADMIN_LIST = ['12345']
+    const get = bot.axios.get.getMockImplementation()
+    bot.axios.get.mockImplementation((url) => new URL(url).pathname === '/get_group_member_info'
+      ? Promise.reject(new Error('mock lookup failure')) : get(url))
+    await bot.handle({message: '击鼓传雷'})
+    await bot.handle({message: '闭菊'})
+    expect(bot.utils.DisableGroupService).not.toHaveBeenCalled()
+    expect(bot.utils.EndGroupLoopBombGame).not.toHaveBeenCalled()
+    expect(jest.getTimerCount()).toBe(2)
+    await bot.controller.stop()
+    const calls = bot.calls.length
+    await bot.handle({message: '闭菊'})
+    await jest.advanceTimersByTimeAsync(60000)
+    expect(bot.calls).toHaveLength(calls)
+    expect(bot.utils.DisableGroupService).not.toHaveBeenCalled()
+    expect(bot.utils.EndGroupLoopBombGame).not.toHaveBeenCalled()
   })
 
   test('group conversation preserves one legacy plugin pass, then corpus/LLM, full send and successful history', async () => {

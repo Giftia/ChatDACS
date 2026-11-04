@@ -7,6 +7,7 @@ ChatDACS 将 NapCatQQ 作为推荐的 QQ OneBot 11 实现。NapCatQQ 需要独�
 - ChatDACS 与 NapCatQQ 运行在同一台可信主机，或两者之间有受控的私有网络。
 - NapCatQQ 已登录机器人 QQ 账号。
 - `config/config.yml` 中 `CONNECT_ONE_BOT_SWITCH` 为 `true`，`ONE_BOT_PROVIDER` 为 `napcat`。
+- NapCat 与 ChatDACS 配置同一真实 access token，通过 `CHATDACS_ONEBOT_ACCESS_TOKEN` 或私密凭据文件的 `accessToken` 提供，不使用空值或文档占位值。
 
 ## Windows 独立账号
 
@@ -52,11 +53,23 @@ NapCat 不在线或探测失败时，ChatDACS 会记录警告并继续提供 Web
 
 共享 HTTP client 已支持 scoped Bearer：仅向配置的 OneBot API origin 和基路径注入 token，不向其他服务注入，并禁止跟随重定向。token 可由 `CHATDACS_ONEBOT_ACCESS_TOKEN` 或 `System.ONE_BOT_CREDENTIALS_FILE` 指定的私密 JSON 文件提供；文件使用 `accessToken` 字段，默认路径为 `config/onebot.credentials.json`。环境变量优先，显式空值或非法凭据不会静默回退。
 
-回调支持以同一 token 对原始请求体计算 HMAC-SHA1 的 `X-Signature: sha1=...`，也兼容仅使用 `Authorization: Bearer ...` 的回调。若提供了签名，签名必须有效，不能用 Bearer 绕过无效签名。未配置 token 的旧 NapCat 部署仍兼容，但应限于可信回环环境。
+回调支持以同一 token 对原始请求体计算 HMAC-SHA1 的 `X-Signature: sha1=...`，也兼容仅使用 `Authorization: Bearer ...` 的回调。若提供了签名，签名必须有效，不能用 Bearer 绕过无效签名；不能使用重新序列化的 JSON 代替原始请求体。
+
+`napcat` 与 `snowluma` 默认都必须提供有效的真实 `accessToken`，回环地址也不豁免。只有 provider 未声明、`external` 或旧 go-cqhttp 路径，在未设置 token 环境变量、未显式声明凭据文件且默认凭据文件不存在时，才兼容旧无 token 模式。显式空值、文件不可读、非法 JSON 或无效 token 均不能降级成无鉴权。
 
 即使启用鉴权，API 仍建议只监听 loopback，不要把 `5700` 端口直接暴露到公网。跨机部署需配置 TLS 或加密隧道及访问控制；Bearer 和 HMAC 不替代传输加密。
 
 ## 验收
+
+源码完整入口可在 ChatDACS 根目录运行：
+
+```bash
+node index.js --config /private/local.yml
+```
+
+`--config` 只选择 YAML，不改变进程 cwd；Windows 可使用 `C:/private/local.yml`。相对凭据路径仍从 cwd 解析，不从 YAML 所在目录解析。不要为切换入口覆盖现有配置、数据库或个人人设。
+
+截至 2026-11-04，完整 `index` 接管本机 QQ 已获用户批准，但 NapCat 与验收进程均未运行，本轮部署和真实收发验收尚未完成；此前受限入口的结果不能代替本轮验收。
 
 先验证私聊和测试群的 `/ping`、普通聊天，并对照入站、插件或聊天核心、
 OneBot `status=ok / retcode=0` 及手机实际收到四层证据。接口成功不等于手机送达。
@@ -69,6 +82,10 @@ OneBot `status=ok / retcode=0` 及手机实际收到四层证据。接口成功�
 4. 在测试群发送 `/ping`，确认机器人回复 `Pong!`。
 5. 发送普通消息，确认插件和小夜聊天回复均可用。
 6. 停止 NapCatQQ，确认 ChatDACS Web 页面仍可访问；重新启动 NapCatQQ 和 ChatDACS 后再次测试群消息。
+
+可配置 `System.ONE_BOT_SELF_ID`，校验入站回调的 `self_id`，拒绝账号不匹配的事件；该校验及就绪检查不等于消息送达。
+
+宿主插件 `wallpaper`、`tray`、`chatPush` 的执行和开关仅允许可信 QQ/NapCat（OneBot）事件中的 `QQBOT_ADMIN_LIST` 宿主管理员，不能仅凭消息提供的 ID 授权。普通群插件切换及群服务启停允许群 `admin` / `owner` 或宿主管理员；私聊普通插件开关只影响调用者本人的会话。公开游戏、语料和 LLM 人设查询不因此封禁。
 
 `GO_CQHTTP_SWITCH` 仅用于旧部署兼容。启用它会覆盖 `ONE_BOT_PROVIDER` 并继续启动发布包中的旧 go-cqhttp。
 

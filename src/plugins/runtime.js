@@ -1,5 +1,7 @@
 'use strict'
 
+const {createPluginAuthorization} = require('./authorization')
+
 const DEFAULT_TIMEOUT_MS = 8000
 const DEFAULT_SWITCH_REG = /^插件[开关] (.*)/
 const TIMEOUT_RESULT = Symbol('plugin-timeout')
@@ -28,6 +30,7 @@ function createPluginRuntime({
   const commandEntries = []
   const pluginStatusCache = new Map()
   const loadReports = []
+  const authorization = createPluginAuthorization(dependencies.config)
   const logInfo = (message) => loggerCall(logger, 'info', message)
   const logWarn = (message) => loggerCall(logger, 'warn', message)
   const logError = (message) => loggerCall(logger, 'error', message)
@@ -105,6 +108,7 @@ function createPluginRuntime({
           if (String(entry.plugin.指令) === '') continue
           return response({handled: true, type: 'text', content: '该插件暂不支持官方 QQ 通道', pluginName})
         }
+        if (!authorization.canExecute(entry.moduleName, context)) return denied(pluginName)
         const pluginStatus = await readPluginStatus(context, pluginName)
         if (!pluginStatus) {
           logWarn(`群${context.groupId} 的插件 ${pluginName} 已关闭，不响应`)
@@ -161,7 +165,8 @@ function createPluginRuntime({
   async function isEnabled(moduleName, messageContext) {
     const context = normalizeMessageContext(messageContext)
     const entry = commandEntries.find(item => item.moduleName === moduleName)
-    return Boolean(entry && isAllowed(context, entry) && await readPluginStatus(context, entry.plugin.插件名))
+    return Boolean(entry && isAllowed(context, entry) && authorization.canExecute(entry.moduleName, context) &&
+      await readPluginStatus(context, entry.plugin.插件名))
   }
 
   async function toggle(groupId, pluginName, context) {
@@ -171,12 +176,17 @@ function createPluginRuntime({
     }
 
     const entry = commandEntries.find((item) => item.plugin === plugin)
+    if (context) context = normalizeMessageContext(context)
     if (context && !isAllowed(context, entry)) return {ok: false, status: false, pluginName, unsupported: true}
+    if (context && (String(groupId) !== String(context.groupId) || !authorization.canToggle(entry.moduleName, context))) {
+      return {ok: false, status: false, pluginName, denied: true}
+    }
     const cacheKey = contextCacheKey(context ?? {groupId}, pluginName)
     const state = cacheEntry(cacheKey)
-    const status = CONVERSATION_PLATFORMS.has(context?.platform)
-      ? await requireConversationState().toggle(context, pluginName)
-      : await setPluginStatus(groupId, pluginName)
+    const storedContext = conversationStateContext(context ?? {groupId})
+    const status = storedContext
+      ? await requireConversationState().toggle(storedContext, pluginName)
+      : await setPluginStatus(statusGroupId(context ?? {groupId}), pluginName)
     if (pluginStatusCache.get(cacheKey) === state) {
       state.status = status
       state.hasStatus = true
@@ -210,6 +220,7 @@ function createPluginRuntime({
     }
 
     const result = await toggle(context.groupId, pluginName, context)
+    if (result.denied) return denied(pluginName)
     if (result.unsupported) {
       return response({handled: true, type: 'text', content: '该插件暂不支持官方 QQ 通道', pluginName})
     }
@@ -306,6 +317,11 @@ function createPluginRuntime({
     return !CONVERSATION_PLATFORMS.has(context.platform) || officialPluginAllowlist.includes(entry?.moduleName)
   }
 
+  function denied(pluginName) {
+    return response({handled: true, type: 'text', content: '无权操作该插件', pluginName,
+      safeError: {code: 'PLUGIN_PERMISSION_DENIED'}})
+  }
+
   async function reportFailure(code, pluginName, context, startedAt) {
     const metadata = Object.freeze({code, pluginName, platform: context.platform, elapsedMs: Date.now() - startedAt})
     logError(JSON.stringify(metadata))
@@ -325,9 +341,32 @@ function createPluginRuntime({
   }
 
   function contextCacheKey(context, pluginName) {
-    return CONVERSATION_PLATFORMS.has(context.platform)
-      ? JSON.stringify([context.platform, context.selfId, context.groupId, pluginName])
-      : statusCacheKey(context.groupId, pluginName)
+    const storedContext = conversationStateContext(context)
+    return storedContext
+      ? JSON.stringify([storedContext.platform, storedContext.selfId, storedContext.groupId, pluginName])
+      : statusCacheKey(statusGroupId(context), pluginName)
+  }
+
+  function conversationStateContext(context) {
+    if (CONVERSATION_PLATFORMS.has(context.platform)) return context
+    if (conversationState && isTrustedPrivate(context)) {
+      return {...context, selfId: String(context.selfId), groupId: statusGroupId(context)}
+    }
+    return null
+  }
+
+  function isTrustedPrivate(context) {
+    const scope = context.scope ?? context.raw?.scope ?? context.raw?.raw?.scope
+    return scope === 'private' && !CONVERSATION_PLATFORMS.has(context.platform) &&
+      authorization.canToggle('ping', context)
+  }
+
+  function statusGroupId(context) {
+    if (isTrustedPrivate(context)) {
+      // Standalone embedders without conversationState must accept opaque private keys.
+      return JSON.stringify([context.platform, String(context.selfId), 'private', String(context.userId)])
+    }
+    return context.groupId
   }
 
   function cacheEntry(key) {
@@ -341,9 +380,10 @@ function createPluginRuntime({
       const state = cacheEntry(key)
       if (state.hasStatus) return state.status
       if (!state.pending) {
-        state.pending = Promise.resolve().then(() => CONVERSATION_PLATFORMS.has(context.platform)
-          ? requireConversationState().get(context, pluginName)
-          : getPluginStatus(context.groupId, pluginName))
+        const storedContext = conversationStateContext(context)
+        state.pending = Promise.resolve().then(() => storedContext
+          ? requireConversationState().get(storedContext, pluginName)
+          : getPluginStatus(statusGroupId(context), pluginName))
       }
       try {
         const status = await state.pending
@@ -425,9 +465,10 @@ function normalizeMessageContext(messageContext) {
     userName: messageContext?.userName ?? '',
     groupId: messageContext?.groupId ?? '',
     groupName: messageContext?.groupName ?? '',
-    platform: messageContext?.platform ?? messageContext?.raw?.type ?? 'unknown',
+    platform: messageContext?.platform ?? 'unknown',
     selfId: messageContext?.selfId,
     targetId: messageContext?.targetId,
+    scope: messageContext?.scope,
     raw: messageContext?.raw ?? null,
   }
 }

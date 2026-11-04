@@ -2,6 +2,7 @@
 
 const http = require('http')
 const realAxios = require('axios')
+const {normalizeRuntimeConfig} = require('../config/runtimeConfig')
 const {readOneBotAccessToken, createOneBotHttpClient} = require('./oneBotHttp')
 
 const secret = 'unit-test-secret'
@@ -39,6 +40,33 @@ describe('OneBot credentials', () => {
     expect(() => readOneBotAccessToken({config, env: {}, readFileSync: missing})).toThrow('ONEBOT_AUTH_REQUIRED')
     expect(() => readOneBotAccessToken({env: {}, readFileSync: () => { throw new Error(secret) }}))
       .toThrow('ONEBOT_AUTH_REQUIRED')
+  })
+
+  test.each(['napcat', 'snowluma', ' NapCat ', ' SnowLuma '])('%s requires credentials even when the default file is absent', (provider) => {
+    for (const settings of [{ONE_BOT_PROVIDER: provider}, normalizeRuntimeConfig({System: {ONE_BOT_PROVIDER: provider}})]) {
+      expect(() => readOneBotAccessToken({config: settings, env: {}, readFileSync: missing}))
+        .toThrow('ONEBOT_AUTH_REQUIRED')
+    }
+  })
+
+  test.each([undefined, 'external', 'go-cqhttp'])('legacy %s only tolerates an implicit absent default file', (provider) => {
+    const system = {ONE_BOT_PROVIDER: provider}
+    for (const settings of [system, normalizeRuntimeConfig({System: system})]) {
+      expect(readOneBotAccessToken({config: settings, env: {}, readFileSync: missing})).toBe('')
+    }
+    for (const file of ['missing.credentials.json', 'config/onebot.credentials.json', '', ' ', null, undefined]) {
+      const declared = {...system, ONE_BOT_CREDENTIALS_FILE: file}
+      for (const settings of [declared, normalizeRuntimeConfig({System: declared})]) {
+        const error = (() => {
+          try { readOneBotAccessToken({config: settings, env: {}, readFileSync: missing}) }
+          catch (error) { return error }
+        })()
+        expect(error).toMatchObject({message: 'ONEBOT_AUTH_REQUIRED', code: 'ONEBOT_AUTH_REQUIRED'})
+        expect(Object.keys(error)).toEqual(['code'])
+        expect(error.cause).toBeUndefined()
+        expect(JSON.stringify(error)).not.toContain(file || 'private file error')
+      }
+    }
   })
 
   test.each(['', undefined, null, 42, 'bad\r\nkey', 'key\n', 'key\r', 'has space', 'x'.repeat(4097)])('rejects explicit invalid tokens %#', (token) => {
@@ -87,8 +115,8 @@ describe('OneBot HTTP proxy', () => {
     expect(axios.get).toHaveBeenLastCalledWith('/action', options)
   })
 
-  test('SnowLuma request with missing token never calls Axios', async () => {
-    const {client, axios} = setup({env: {}})
+  test.each(['napcat', 'snowluma'])('%s request with missing token never calls Axios', async (provider) => {
+    const {client, axios} = setup({config: {...config, ONE_BOT_PROVIDER: provider}, env: {}})
     await expect(client.get(`${config.ONE_BOT_API_URL}/action`)).rejects.toMatchObject({code: 'ONEBOT_AUTH_REQUIRED'})
     expect(axios.get).not.toHaveBeenCalled()
   })
@@ -268,7 +296,7 @@ describe('OneBot HTTP proxy', () => {
   test('legacy missing token works and successful completion clears deadline', async () => {
     jest.useFakeTimers()
     try {
-      const {client, axios} = setup({config: {...config, ONE_BOT_PROVIDER: 'napcat'}, env: {}})
+      const {client, axios} = setup({config: {...config, ONE_BOT_PROVIDER: 'external'}, env: {}})
       await client.get(`${config.ONE_BOT_API_URL}/action`)
       expect(axios.get.mock.calls[0][1].headers).toEqual({})
       expect(jest.getTimerCount()).toBe(0)

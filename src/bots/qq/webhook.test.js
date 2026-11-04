@@ -4,6 +4,7 @@ const {registerOneBotWebhook, captureOneBotRawBody} = require('./webhook')
 const {createHmac} = require('crypto')
 const http = require('http')
 const express = require('express')
+const {normalizeRuntimeConfig} = require('../../config/runtimeConfig')
 
 const missing = () => { throw Object.assign(new Error('private file error'), {code: 'ENOENT'}) }
 
@@ -168,6 +169,9 @@ describe('OneBot webhook authentication', () => {
 
   test.each([
     [{ONE_BOT_PROVIDER: 'snowluma'}, {}], [{ONE_BOT_PROVIDER: 'napcat'}, {CHATDACS_ONEBOT_ACCESS_TOKEN: ''}],
+    [{ONE_BOT_PROVIDER: 'napcat'}, {}], [{ONE_BOT_PROVIDER: 'snowluma'}, {CHATDACS_ONEBOT_ACCESS_TOKEN: ''}],
+    [{ONE_BOT_PROVIDER: 'external', ONE_BOT_CREDENTIALS_FILE: 'synthetic-missing.json'}, {}],
+    [{ONE_BOT_PROVIDER: 'go-cqhttp', ONE_BOT_CREDENTIALS_FILE: ''}, {}],
   ])('unavailable required credentials return 503 %#', async (config, env) => {
     const {handler, handleEvent, logger} = setup({config, env})
     const response = makeResponse()
@@ -176,6 +180,30 @@ describe('OneBot webhook authentication', () => {
     expect(response.status).toHaveBeenCalledWith(503)
     expect(handleEvent).not.toHaveBeenCalled()
     expect(logger.error).toHaveBeenCalledWith('ONEBOT_AUTH_REQUIRED')
+  })
+
+  test.each(['napcat', 'snowluma'])('%s unauthenticated events cannot forge configured self/admin identity', async (provider) => {
+    const config = normalizeRuntimeConfig({System: {ONE_BOT_PROVIDER: provider, ONE_BOT_SELF_ID: ' 987654321 '},
+      qqBot: {QQBOT_ADMIN_LIST: ['123456789']}})
+    const {handler, handleEvent, logger} = setup({config})
+    const event = {post_type: 'message', self_id: '987654321', user_id: '123456789',
+      sender: {user_id: '123456789', role: 'admin'}, message: 'synthetic command'}
+    const response = makeResponse()
+    handler({headers: {}, body: event}, response)
+    await flushPromises()
+    expect(response.status.mock.calls).toEqual([[401]])
+    expect(logger.error.mock.calls).toEqual([['ONEBOT_AUTH_FAILED']])
+    expect(handleEvent).not.toHaveBeenCalled()
+    const accepted = makeResponse()
+    handler({headers: {authorization: `Bearer ${secret}`}, body: event}, accepted)
+    await flushPromises()
+    expect(accepted.status.mock.calls).toEqual([[204]])
+    expect(handleEvent).toHaveBeenCalledWith(event)
+    const mismatch = makeResponse()
+    handler({headers: {authorization: `Bearer ${secret}`}, body: {...event, self_id: '987654322'}}, mismatch)
+    await flushPromises()
+    expect(mismatch.status.mock.calls).toEqual([[403]])
+    expect(handleEvent).toHaveBeenCalledTimes(1)
   })
 
   test.each([{}, {self_id: 456}])('self ID mismatch is 403 after authentication %#', async (event) => {

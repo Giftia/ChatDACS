@@ -4,13 +4,21 @@ const http = require('http')
 const axios = require('axios')
 
 const {probeNapCat} = require('./napcat')
+const token = 'synthetic-napcat-integration-token'
 
 describe('NapCat HTTP integration', () => {
   let server
   let apiUrl
+  let observed
 
   beforeAll((done) => {
+    observed = []
     server = http.createServer((request, response) => {
+      observed.push([request.url, request.headers.authorization])
+      if (request.headers.authorization !== `Bearer ${token}`) {
+        response.writeHead(401).end()
+        return
+      }
       if (request.url !== '/get_version_info') {
         response.writeHead(404).end()
         return
@@ -38,8 +46,9 @@ describe('NapCat HTTP integration', () => {
   afterAll((done) => { server.close(done) })
 
   test('probes a real HTTP endpoint using the production axios client', async () => {
-    await expect(probeNapCat({apiUrl, axios, timeoutMs: 1000, env: {},
-      readFileSync: () => { throw Object.assign(new Error('synthetic absent credentials'), {code: 'ENOENT'}) }})).resolves.toEqual(
+    await expect(probeNapCat({apiUrl, axios, timeoutMs: 1000,
+      env: {CHATDACS_ONEBOT_ACCESS_TOKEN: token},
+      readFileSync: () => { throw new Error('unexpected credential read') }})).resolves.toEqual(
       expect.objectContaining({
         reachable: true,
         compatible: true,
@@ -47,5 +56,6 @@ describe('NapCat HTTP integration', () => {
         protocolVersion: 'v11',
       }),
     )
+    expect(observed).toEqual([['/get_version_info', `Bearer ${token}`]])
   })
 })

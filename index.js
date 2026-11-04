@@ -512,8 +512,17 @@ async function ProcessExecute(msg, userId, userName, groupId, groupName, options
   }
 }
 
+function parseStartupOptions(args = process.argv.slice(2)) {
+  if (args.length === 0) return {}
+  if (args.length !== 2 || args[0] !== '--config' || typeof args[1] !== 'string' ||
+      !args[1].trim() || args[1].startsWith('-') || /[\x00-\x1f]/.test(args[1])) {
+    throw Object.assign(new Error('STARTUP_ARGUMENT_INVALID'), {code: 'STARTUP_ARGUMENT_INVALID'})
+  }
+  return {configPath: path.resolve(args[1])}
+}
+
 if (require.main === module) {
-  main().catch((error) => {
+  Promise.resolve().then(() => main(parseStartupOptions())).catch((error) => {
     logger.error(`ChatDACS 启动失败: ${error?.stack ?? error}`)
     process.exitCode = 1
   })
@@ -528,4 +537,5 @@ module.exports = {
   StartConfiguredAdapters,
   createPluginDependencies,
   main,
+  parseStartupOptions,
 }

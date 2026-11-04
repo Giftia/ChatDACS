@@ -1,3 +1,5 @@
+const {buildOneBotUrl} = require('../src/platforms/oneBotSender')
+
 module.exports = {
   插件名: '日程计划提醒插件',
   指令: '^[/!]?提醒(.*)',
@@ -35,13 +37,16 @@ module.exports = {
     this.logger.info(`创建提醒: ${timeSchedule}`)
 
     this.schedule.scheduleJob(timeSchedule, async () => {
-      this.logger.info(`触发提醒：${text}`)
-      if (this.CONNECT_ONE_BOT_SWITCH) {
-        await this.axios.get(
-          `http://${this.ONE_BOT_API_URL}/send_group_msg?group_id=${groupId}&message=${encodeURI(
-            `小夜提醒${userName}：${text}`,
-          )}`,
-        )
+      try {
+        this.logger.info(`触发提醒：${text}`)
+        if (this.CONNECT_ONE_BOT_SWITCH) {
+          await this.axios.get(buildOneBotUrl(this.ONE_BOT_API_URL, 'send_group_msg', {
+            group_id: groupId,
+            message: `小夜提醒${userName}：${text}`,
+          }))
+        }
+      } catch (_) {
+        this.logger.error('SCHEDULE_REMINDER_FAILED')
       }
     })
 
@@ -58,9 +63,9 @@ module.exports = {
 
     // 统计字符串中，"后天" 前有几个 "大"，1个 "大" 代表1天
     if (text.includes('大后天')) {
-      const x后天 = text.match(/后天/g)[0]
+      const x后天 = text.match(/大+后天/)[0]
       const howManyNextDay = x后天.match(/大/g).length
-      return this.dayjs().add(howManyNextDay, 'days')
+      return this.dayjs().add(2 + howManyNextDay, 'days')
     }
 
     // 获取常规天数

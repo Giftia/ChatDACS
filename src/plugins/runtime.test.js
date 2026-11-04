@@ -1,8 +1,10 @@
 const fs = require('fs')
 const os = require('os')
 const path = require('path')
+const {Sequelize, DataTypes} = require('sequelize')
 
 const {createPluginRuntime, normalizePluginReturn} = require('./runtime')
+const {createConversationPluginStateStore} = require('./conversationState')
 const {createTesterRuntime, run: runPluginTester} = require('../../plugin_tester')
 
 function makePluginDir(files) {
@@ -18,6 +20,49 @@ function makeLogger() {
     info: jest.fn(),
     warn: jest.fn(),
     error: jest.fn(),
+  }
+}
+
+function authorizedContext({userId = 123, platform = 'qq', role = 'member', privateScope = false} = {}) {
+  const scope = privateScope ? 'private' : 'group'
+  return {platform, selfId: 456, userId, groupId: privateScope ? undefined : 789,
+    targetId: privateScope ? userId : 789,
+    raw: {type: platform, selfId: 456, scope, raw: {scope, event: {
+      message_type: scope, self_id: 456, user_id: userId,
+      ...(privateScope ? {} : {group_id: 789}), sender: {user_id: userId, role},
+    }}}}
+}
+
+function memoryStateFixture() {
+  const sequelize = new Sequelize({dialect: 'sqlite', storage: ':memory:', logging: false})
+  let QQGroupModel
+  // Bind the real legacy model to memory without loading its file-backed database module.
+  jest.isolateModules(() => {
+    jest.doMock('../../plugins/system/model/database', () => ({sequelize, DataTypes}))
+    QQGroupModel = require('../../plugins/system/model/qqGroupModel')
+  })
+  jest.dontMock('../../plugins/system/model/database')
+  const conversationState = createConversationPluginStateStore({sequelize})
+  const errors = []
+  async function groupRow(groupId) {
+    try { return (await QQGroupModel.findOrCreate({where: {groupId}}))[0] }
+    catch (error) { errors.push(error); throw error }
+  }
+  return {sequelize, QQGroupModel, conversationState, errors,
+    getPluginStatus: async (groupId, pluginName) => {
+      const row = await groupRow(groupId)
+      if (!Object.prototype.hasOwnProperty.call(row.pluginsList ?? {}, pluginName)) {
+        await row.update({pluginsList: {...row.pluginsList, [pluginName]: true}})
+        return true
+      }
+      return row.pluginsList[pluginName]
+    },
+    setPluginStatus: async (groupId, pluginName) => {
+      const row = await groupRow(groupId)
+      const enabled = !(row.pluginsList?.[pluginName] ?? true)
+      await row.update({pluginsList: {...row.pluginsList, [pluginName]: enabled}})
+      return enabled
+    },
   }
 }
 
@@ -227,7 +272,7 @@ describe('plugin runtime', () => {
     const context = {text: '/ping', groupId: 'g1', selfId: 'bot', platform}
     const pending = runtime.execute(context)
     await Promise.resolve()
-    await runtime.toggle('g1', 'Ping', context)
+    await runtime.toggle('g1', 'Ping', platform === 'test' ? undefined : context)
     resolveRead(true)
     expect(await pending).toMatchObject({content: '群内的 Ping 已关闭，不响应'})
     expect(await runtime.execute(context)).toMatchObject({content: '群内的 Ping 已关闭，不响应'})
@@ -288,7 +333,7 @@ describe('plugin runtime', () => {
     const getPluginStatus = jest.fn().mockResolvedValue(true)
     const runtime = statusFixture({getPluginStatus, logger, setPluginStatus: jest.fn().mockRejectedValue(new Error('SECRET_TOGGLE'))})
     await runtime.execute({text: '/ping', groupId: 'g1'})
-    const result = await runtime.execute({text: '插件关 Ping', userName: 'SECRET_NAME', groupId: 'g1'})
+    const result = await runtime.execute({...authorizedContext({role: 'owner'}), text: '插件关 Ping', userName: 'SECRET_NAME'})
     expect(result).toMatchObject({content: '插件处理失败，请稍后再试', safeError: {code: 'PLUGIN_RUNTIME_ERROR'}})
     expect(JSON.stringify({result, logs: logger.error.mock.calls})).not.toContain('SECRET_')
     expect(await runtime.execute({text: '/ping', groupId: 'g1'})).toMatchObject({content: 'pong'})
@@ -471,5 +516,152 @@ describe('plugin runtime', () => {
     })
 
     await expect(runPluginTester('/ping', runtime)).resolves.toEqual({type: 'text', content: 'test:pong'})
+  })
+
+  function authorizationFixture(options = {}) {
+    const pluginDir = makePluginDir(Object.fromEntries(['wallpaper', 'tray', 'chatPush', 'ping', 'ollama']
+      .map(name => [`${name}.js`, `module.exports = {
+        插件名: '${name}', 指令: '^/${name}$', 版本: 'legacy',
+        execute() {return 'ok'}, executeFallback() {return 'fallback'}
+      }`])))
+    pluginDirs.push(pluginDir)
+    const setPluginStatus = jest.fn().mockResolvedValue(false)
+    const runtime = createPluginRuntime({pluginDir, logger: makeLogger(),
+      dependencies: {config: {QQBOT_ADMIN_LIST: ['123']}}, setPluginStatus, ...options})
+    runtime.load()
+    for (const plugin of Object.values(runtime.plugins)) plugin.execute = jest.fn(() => 'ok')
+    return {runtime, setPluginStatus}
+  }
+
+  test.each(['wallpaper', 'tray', 'chatPush'])('%s execution and switch have independent host guards', async moduleName => {
+    const {runtime, setPluginStatus} = authorizationFixture()
+    const admin = authorizedContext()
+    expect(await runtime.execute({...admin, text: '/' + moduleName})).toMatchObject({content: 'ok'})
+    expect(runtime.plugins[moduleName].execute.mock.calls[0]).toHaveLength(6)
+    expect(runtime.list().find(item => item.moduleName === moduleName)).toMatchObject({version: 'legacy'})
+    runtime.plugins[moduleName].execute.mockClear()
+    for (const context of [authorizedContext({userId: 999, role: 'owner'}),
+      {...admin, platform: 'web'}, {...admin, platform: 'unknown'}, {...admin, userId: ''},
+      {...admin, selfId: undefined}, {...admin, platform: undefined}, {...admin, raw: {type: 'qq', selfId: 456}}]) {
+      expect(await runtime.execute({...context, text: '/' + moduleName}))
+        .toMatchObject({safeError: {code: 'PLUGIN_PERMISSION_DENIED'}})
+      expect(await runtime.execute({...context, text: '插件开 ' + moduleName}))
+        .toMatchObject({safeError: {code: 'PLUGIN_PERMISSION_DENIED'}})
+      expect(await runtime.isEnabled(moduleName, context)).toBe(false)
+    }
+    expect(setPluginStatus).not.toHaveBeenCalled()
+    expect(runtime.plugins[moduleName].execute).not.toHaveBeenCalled()
+    expect(await runtime.execute({...admin, text: '插件关 ' + moduleName})).toMatchObject({content: moduleName + ' 已关闭'})
+    expect(setPluginStatus).toHaveBeenCalledWith(789, moduleName)
+    expect(await runtime.execute({...admin, text: '/' + moduleName})).toMatchObject({content: `群内的 ${moduleName} 已关闭，不响应`})
+    expect(runtime.plugins[moduleName].execute).not.toHaveBeenCalled()
+    expect(await runtime.execute({...authorizedContext({userId: 999}), text: '插件开 ' + moduleName}))
+      .toMatchObject({safeError: {code: 'PLUGIN_PERMISSION_DENIED'}})
+    expect(setPluginStatus).toHaveBeenCalledTimes(1)
+  })
+
+  test('message switches require host admin or authenticated group role; direct internal toggle remains trusted', async () => {
+    const {runtime, setPluginStatus} = authorizationFixture()
+    for (const context of [authorizedContext({userId: 999}), {...authorizedContext({role: 'owner'}), platform: 'web'},
+      {...authorizedContext({role: 'owner'}), groupId: 790}]) {
+      expect(await runtime.execute({...context, text: '插件关 ping'})).toMatchObject({safeError: {code: 'PLUGIN_PERMISSION_DENIED'}})
+    }
+    expect(setPluginStatus).not.toHaveBeenCalled()
+    for (const role of ['admin', 'owner']) {
+      expect(await runtime.execute({...authorizedContext({userId: 999, role}), text: '插件关 ping'})).toMatchObject({content: 'ping 已关闭'})
+    }
+    expect(await runtime.toggle(790, 'ping', authorizedContext({role: 'owner'}))).toMatchObject({ok: false, denied: true})
+    expect(await runtime.toggle(789, 'tray')).toMatchObject({ok: true, status: false})
+    expect(await runtime.execute({...authorizedContext(), text: '/tray'})).toMatchObject({content: '群内的 tray 已关闭，不响应'})
+  })
+
+  test('standalone custom status store without conversationState accepts opaque private keys', async () => {
+    const statuses = new Map()
+    const set = jest.fn(async (key, plugin) => {statuses.set(`${key}-${plugin}`, false); return false})
+    const {runtime} = authorizationFixture({getPluginStatus: async (key, plugin) => statuses.get(`${key}-${plugin}`) ?? true,
+      setPluginStatus: set})
+    const alice = authorizedContext({userId: 999, privateScope: true})
+    const bob = authorizedContext({userId: 888, privateScope: true})
+    expect(await runtime.execute({...alice, text: '插件关 ping'})).toMatchObject({content: 'ping 已关闭'})
+    expect(set).toHaveBeenCalledWith(JSON.stringify(['qq', '456', 'private', '999']), 'ping')
+    expect(await runtime.execute({...alice, text: '/ping'})).toMatchObject({content: '群内的 ping 已关闭，不响应'})
+    expect(await runtime.execute({...bob, text: '/ping'})).toMatchObject({content: 'ok'})
+    expect(await runtime.execute({...alice, targetId: 888, text: '插件关 ping'})).toMatchObject({safeError: {code: 'PLUGIN_PERMISSION_DENIED'}})
+    expect(await runtime.execute({...alice, text: '插件开 tray'})).toMatchObject({safeError: {code: 'PLUGIN_PERMISSION_DENIED'}})
+  })
+
+  test('real SQLite legacy INTEGER accepts opaque text without a ValidationError under current defaults', async () => {
+    const state = memoryStateFixture()
+    try {
+      await state.sequelize.sync()
+      const key = JSON.stringify(['qq', '456', 'private', '999'])
+      expect(state.QQGroupModel.rawAttributes.groupId.type.key).toBe('INTEGER')
+      expect(await state.getPluginStatus(key, 'ping')).toBe(true)
+      expect((await state.QQGroupModel.findOne()).groupId).toBe(key)
+      const [rows] = await state.sequelize.query('SELECT typeof(groupId) AS storageType FROM qqGroups')
+      expect(rows[0].storageType).toBe('text')
+      expect(state.errors).toEqual([])
+    } finally { await state.sequelize.close() }
+  })
+
+  test.each(['qq', 'napcat'])('real SQLite %s private state uses STRING storage and survives reload without user leakage', async platform => {
+    const state = memoryStateFixture()
+    try {
+      await state.sequelize.sync()
+      const {runtime} = authorizationFixture(state)
+      const alice = authorizedContext({platform, userId: 999, privateScope: true})
+      const bob = authorizedContext({platform, userId: 888, privateScope: true})
+      expect(await runtime.execute({...alice, text: '/ping'})).toMatchObject({content: 'ok'})
+      expect(await runtime.execute({...alice, text: '插件关 ping'})).toMatchObject({content: 'ping 已关闭'})
+      runtime.load()
+      expect(await runtime.execute({...alice, text: '/ping'})).toMatchObject({content: '群内的 ping 已关闭，不响应'})
+      expect(await runtime.execute({...bob, text: '/ping'})).toMatchObject({content: 'ok'})
+      expect(await runtime.execute({...bob, text: '插件关 ping'})).toMatchObject({content: 'ping 已关闭'})
+      expect(await runtime.execute({...alice, text: '插件开 ping'})).toMatchObject({content: 'ping 已开启'})
+      runtime.load()
+      expect(await runtime.execute({...alice, text: '/ping'})).toMatchObject({content: 'ok'})
+      expect(await runtime.execute({...bob, text: '/ping'})).toMatchObject({content: '群内的 ping 已关闭，不响应'})
+      const otherBot = {...alice, selfId: 457, raw: {scope: 'private', event: {
+        message_type: 'private', user_id: 999, self_id: 457}}}
+      expect(await runtime.execute({...otherBot, text: '/ping'})).toMatchObject({content: 'ok'})
+      const otherPlatform = authorizedContext({platform: platform === 'qq' ? 'napcat' : 'qq', userId: 888, privateScope: true})
+      expect(await runtime.execute({...otherPlatform, text: '/ping'})).toMatchObject({content: 'ok'})
+      expect(state.errors).toEqual([])
+      expect(await state.QQGroupModel.count()).toBe(0)
+      const rows = await state.sequelize.models.conversationPluginState.findAll()
+      expect(rows).toHaveLength(2)
+      expect(rows.map(row => row.enabled).sort()).toEqual([false, true])
+      expect(new Set(rows.map(row => row.key)).size).toBe(2)
+      expect(rows.map(row => row.key).sort()).toEqual([888, 999].map(userId => JSON.stringify([
+        platform, '456', JSON.stringify([platform, '456', 'private', String(userId)]), 'ping',
+      ])).sort())
+      expect(await runtime.execute({...bob, userId: '888', selfId: '456', text: '/ping'}))
+        .toMatchObject({content: '群内的 ping 已关闭，不响应'})
+
+      const official = {platform: 'qqOfficial', selfId: 'app', groupId: 'c2c:user', text: '插件关 ping'}
+      expect(await runtime.execute(official)).toMatchObject({content: 'ping 已关闭'})
+      expect(await state.sequelize.models.conversationPluginState.findByPk(
+        JSON.stringify(['qqOfficial', 'app', 'c2c:user', 'ping']))).not.toBeNull()
+      expect(await runtime.execute({...authorizedContext({role: 'owner'}), text: '插件关 ping'}))
+        .toMatchObject({content: 'ping 已关闭'})
+      expect((await state.QQGroupModel.findOne()).groupId).toBe(789)
+      expect(await state.QQGroupModel.count()).toBe(1)
+    } finally { await state.sequelize.close() }
+  })
+
+  test('public ping and LLM remain available for ordinary users and Web; official allowlist is unchanged', async () => {
+    const {runtime} = authorizationFixture({conversationState: {get: async () => true, toggle: async () => false}})
+    for (const context of [authorizedContext({userId: 999}), {platform: 'web'}, {platform: 'unknown'}]) {
+      expect(await runtime.execute({...context, text: '/ping'})).toMatchObject({content: 'ok'})
+      expect(await runtime.execute({...context, text: '/ollama'})).toMatchObject({content: 'ok'})
+      expect(await runtime.executeFallback({...context, text: 'ordinary'})).toMatchObject({content: 'fallback'})
+    }
+    for (const platform of ['qqOfficial', 'qqGuildDirect']) {
+      const context = {...authorizedContext(), platform}
+      expect(await runtime.execute({...context, text: '/ping'})).toMatchObject({content: 'ok'})
+      expect(await runtime.execute({...context, text: '/tray'})).toMatchObject({content: '该插件暂不支持官方 QQ 通道'})
+      expect(await runtime.execute({...context, text: '插件开 tray'})).toMatchObject({content: '该插件暂不支持官方 QQ 通道'})
+      expect(await runtime.execute({...context, text: '插件关 ping'})).toMatchObject({content: 'ping 已关闭'})
+    }
   })
 })

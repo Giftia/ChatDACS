@@ -7,17 +7,28 @@ function safeError(code) {
 }
 
 function readOneBotAccessToken({config = {}, env = process.env, readFileSync = fs.readFileSync} = {}) {
-  const required = String(config.ONE_BOT_PROVIDER).trim().toLowerCase() === 'snowluma'
+  const required = ['napcat', 'snowluma'].includes(String(config.ONE_BOT_PROVIDER).trim().toLowerCase())
   let token
   try {
     if (Object.prototype.hasOwnProperty.call(env, 'CHATDACS_ONEBOT_ACCESS_TOKEN')) {
       token = env.CHATDACS_ONEBOT_ACCESS_TOKEN
     } else {
+      const defaultFile = 'config/onebot.credentials.json'
+      // Normalized runtime config carries a default path; only a declared path
+      // (or an overridden effective path) removes legacy missing-file tolerance.
+      const source = config.System ?? config
+      const declaredFile = Object.hasOwn(source, 'ONE_BOT_CREDENTIALS_FILE')
+      const explicitFile = declaredFile ||
+        (config.ONE_BOT_CREDENTIALS_FILE !== undefined && config.ONE_BOT_CREDENTIALS_FILE !== defaultFile)
+      const file = declaredFile ? source.ONE_BOT_CREDENTIALS_FILE : config.ONE_BOT_CREDENTIALS_FILE
+      if (explicitFile && (typeof file !== 'string' || !file.trim())) {
+        throw safeError('ONEBOT_AUTH_REQUIRED')
+      }
       let content
       try {
-        content = readFileSync(config.ONE_BOT_CREDENTIALS_FILE ?? 'config/onebot.credentials.json')
+        content = readFileSync(config.ONE_BOT_CREDENTIALS_FILE ?? defaultFile)
       } catch (error) {
-        if (error?.code === 'ENOENT' && !required) return ''
+        if (error?.code === 'ENOENT' && !required && !explicitFile) return ''
         throw safeError('ONEBOT_AUTH_REQUIRED')
       }
       if (Buffer.byteLength(content) > 65536) throw safeError('ONEBOT_AUTH_REQUIRED')

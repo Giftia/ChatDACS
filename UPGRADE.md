@@ -33,7 +33,7 @@
 - 如果启用了 OneBot，确认 webhook 返回 HTTP `204`，群消息仍通过配置的 API 地址发送。
 - 确认启动日志中没有迁移失败、插件初始化失败或未处理进程异常。
 
-已复现的 Web 入口问题已修复并完成对应复验。Node.js `26.13.0` 已用于本地受限 QQ 验收入口，普通收发已有此前的手机端确认；新增主动发送已取得 OneBot 成功回执，手机端显示仍待确认。完整 `index` 入口的隔离 smoke 验证启动与正常退出，不等于正式全功能上线；云端构建及其他平台结果以实际 Actions 记录为准。
+已复现的 Web 入口问题已修复并完成对应复验。Node.js `26.13.0` 曾用于本地受限 QQ 验收入口，普通收发有此前的手机端确认；主动发送的 OneBot 成功回执不等于手机送达。截至 2026-11-04，用户已批准完整 `index` 接管本机 QQ，但 NapCat 与验收进程均未运行，本轮部署和真实收发验收尚未完成。隔离 smoke 或历史受限入口结果都不能作为本轮上线结论；云端仍有待修项，见下表。
 
 ## 异常通知配置
 
@@ -79,6 +79,14 @@ HTTP 端口占用 `EADDRINUSE` 保留 10 秒重试，但不再调用 `close()` �
 
 主入口已支持 `main({configPath, pluginDependencyOverrides, checkUpdates = true} = {})`，返回 `{http, io, stop}`。省略参数保持原配置、插件依赖和更新检查行为；传入插件依赖覆盖不会跳过真实 main、迁移或插件加载。`checkUpdates: false` 仅关闭更新检查，不能把含真实平台配置的运行自动变成离线测试。
 
+源码完整入口支持在 ChatDACS 根目录运行：
+
+```bash
+node index.js --config /private/local.yml
+```
+
+Windows 可改用 `C:/private/local.yml`。此参数只选择配置文件，不改变 cwd；`ONE_BOT_CREDENTIALS_FILE` 的相对路径仍从 cwd 解析，不从 YAML 目录解析。使用独立 YAML 不需要覆盖原有 `config/config.yml`、`config/db.db` 或个人人设，也不代表数据库已自动隔离；测试隔离仍须遵守下文的数据库路径设置时序。
+
 单个平台连接或启动失败时报告对应固定安全 code，保留 Web 和其他平台继续运行；不会自动切换 provider，也不会把该平台标记为已就绪。配置读取、数据库迁移或控制器契约错误不属于无条件忽略的降级范围。
 
 默认 logger 只启用 Console 与两个本地文件 transport：cwd 下的 `error.log`、`combined.log`，不再默认通过 HTTP 向 `localhost:80` POST 日志。不需要为默认日志额外启动 HTTP 接收服务，也不能据此推断更新检查、聊天 provider 或平台网络均已禁用。
@@ -102,7 +110,9 @@ go-cqhttp 已停止维护，新部署推荐使用外部运行的 NapCatQQ。迁�
 
 生成前须创建并限制访问 `C:/private/` 目录。统一 CLI 仅独占创建私密文件，不覆盖已有输出；生成内容可能包含 token，不得加入 Git、发布包或公共静态目录。
 
-共享 OneBot HTTP client 已支持 scoped Bearer，回调支持原始请求体 HMAC-SHA1 签名并兼容 Bearer；未配置 token 的旧 NapCat 仍兼容。API 仍建议监听 loopback，跨机须配置 TLS 或加密隧道及访问控制，详见 [NapCat 安全边界](./integrations/napcat/README.md#安全边界)。
+共享 OneBot HTTP client 保留 scoped Bearer，回调保留原始请求体 HMAC-SHA1 签名并兼容 Bearer；无效签名不能用 Bearer 绕过。NapCat 与 SnowLuma 默认必须配置真实有效的 `accessToken`，包括回环部署。仅 provider 未声明、`external` 或旧 go-cqhttp 路径，在未设置 token 环境变量、未显式声明凭据文件且默认文件不存在时兼容旧无 token 模式；显式空值、不可读文件、非法 JSON 或无效 token 均拒绝回退。API 仍建议监听 loopback，跨机须配置 TLS 或加密隧道及访问控制，详见 [NapCat 安全边界](./integrations/napcat/README.md#安全边界)。`System.ONE_BOT_SELF_ID` 可校验入站回调的 `self_id`，拒绝账号不匹配的事件，不替代收发验收。
+
+宿主 `wallpaper`、`tray`、`chatPush` 的执行与开关仅允许可信 QQ/NapCat（OneBot）事件中的 `QQBOT_ADMIN_LIST` 宿主管理员。普通群插件切换、群服务启停需群 `admin` / `owner` 或宿主管理员；私聊普通插件开关仅影响调用者本人的会话。公开游戏、语料和 LLM 人设查询不因此封禁；群管理员身份不等于宿主管理员身份。
 
 如果需要暂时回退，停止 NapCatQQ，将 `GO_CQHTTP_SWITCH` 改回 `true` 并启动旧协议端。该开关优先于 `ONE_BOT_PROVIDER`。
 
@@ -122,18 +132,24 @@ go-cqhttp 已停止维护，新部署推荐使用外部运行的 NapCatQQ。迁�
 Canvas 已升级到 3.2.3；SQLite 和分词仍使用原模块。`nodejs-jieba@0.3.0` 的 engines
 声明尚未包含 Node 26，因此 npm 会产生版本警告，不能用修改依赖声明来隐藏。Windows x64 隔离候选已完成安装、原生加载与功能验证，不能据此推断其他平台兼容。
 
-截至 2026-11-03，六平台构建配置和验证状态如下；云端 workflow 本轮未运行：
+截至 2026-11-04，按父任务提供的云端快照记录如下，尚非全通过；后续以最终 run 更新，不重复触发构建：
+
+| 候选 / run | 当前结果 | 待修项 |
+| --- | --- | --- |
+| `3a718` / `41669844909` | 六平台 2/6 成功 | 其余 4 项未通过；不推断具体成功平台 |
+| `9c89` / `41753482691` | `linux-arm64`、`win-arm64` 通过 | 其余 4 平台 `PLUGIN_REPLY` 超时，父任务继续修复 |
+| CI / `41753482345` | 全部 syntax / Jest 检查已过 | startup 超时，整体不算通过 |
 
 | 目标 | 配置的 runner | 运行时架构 | 验证状态 |
 | --- | --- | --- | --- |
-| `linux-x64` | `ubuntu-24.04` | x64 原生 | 云端未运行 |
-| `linux-arm64` | `ubuntu-24.04-arm` | arm64 原生 | 云端未运行 |
-| `win-x64` | `windows-latest` | x64 原生 | 本地隔离候选通过；云端未运行 |
-| `win-arm64` | `windows-11-arm` | x64-emulation | 云端未运行，ARM 真机未验收 |
-| `macos-x64` | `macos-15-intel` | x64 原生 | 云端未运行 |
-| `macos-arm64` | `macos-15` | arm64 原生 | 云端未运行 |
+| `linux-x64` | `ubuntu-24.04` | x64 原生 | 第二轮 `PLUGIN_REPLY` 超时，待修 |
+| `linux-arm64` | `ubuntu-24.04-arm` | arm64 原生 | 第二轮通过；真实 QQ 未验收 |
+| `win-x64` | `windows-latest` | x64 原生 | 第二轮 `PLUGIN_REPLY` 超时，待修 |
+| `win-arm64` | `windows-11-arm` | x64-emulation | 第二轮通过；ARM 真机未验收 |
+| `macos-x64` | `macos-15-intel` | x64 原生 | 第二轮 `PLUGIN_REPLY` 超时，待修 |
+| `macos-arm64` | `macos-15` | arm64 原生 | 第二轮 `PLUGIN_REPLY` 超时，待修 |
 
-ARM 限制：本轮 `linux-arm64` 打包修正将排除仓内 ELF 机器类型为 62（x86-64）的 go-cqhttp，Node 与适配器仍使用原生 ARM64；QQ 接入应使用独立部署的外部 OneBot/NapCat/SnowLuma 服务，不下载或自动替换协议程序。`win-arm64` 为 x64 仿真包，仍可包含 x64 go-cqhttp。Canvas 在 ARM64 上源码编译涉及外部 Cairo/Pango 依赖，构建与运行依赖尚待云端审计，暂不承诺免系统依赖运行；这些限制不代表对应构建已通过。
+ARM 限制：`linux-arm64` 打包排除仓内 ELF 机器类型为 62（x86-64）的 go-cqhttp，Node 与适配器仍使用原生 ARM64；QQ 接入应使用独立部署的外部 OneBot/NapCat/SnowLuma 服务，不下载或自动替换协议程序。`win-arm64` 为 x64 仿真包，仍可包含 x64 go-cqhttp。Canvas 在 ARM64 上源码编译涉及外部 Cairo/Pango 依赖；上述 runner 通过不等于任意 ARM 主机免系统依赖运行或真机验收通过。
 
 Windows x64 的证据覆盖 Node `26.13.0` / ABI `147` 下的干净安装、Canvas/SQLite/分词/Sharp 功能探针、离线测试与烟测、生产依赖安装和实际 ZIP 内运行时、manifest 与文件项检查。验证范围限于对应的 Windows x64 候选；本地受限 QQ 验收入口已切换到 Node 26，但不代表完整 `index` 入口已正式全功能上线。Docker 镜像尚未构建验收，其他平台与云端构建仍以各自实际结果为准。
 

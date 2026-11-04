@@ -47,18 +47,28 @@ test.each(['onebot.invalid:5700', 'http://onebot.invalid:5700/', 'https://onebot
   },
 )
 
-test('mock credential file supplies the bearer without exposing it in query', async () => {
+test.each(['napcat', 'snowluma'])('%s mock credential file supplies the bearer without exposing it in query', async (provider) => {
   const options = setup({env: {}, readFileSync: jest.fn(() => Buffer.from(JSON.stringify({accessToken: secret})))})
+  options.config.ONE_BOT_PROVIDER = provider
   await ProcessGuildMessage(options)
   expect(options.readFileSync).toHaveBeenCalledWith('config/onebot.credentials.json')
   expect(options.axios.get.mock.calls[0][0]).not.toContain(secret)
   expect(options.axios.get.mock.calls[0][1].headers.Authorization).toBe(`Bearer ${secret}`)
 })
 
-test('missing required credentials rejects safely without a transport call', async () => {
+test.each(['napcat', 'snowluma'])('%s missing required credentials rejects safely without a transport call', async (provider) => {
   const options = setup({env: {}})
+  options.config.ONE_BOT_PROVIDER = provider
   await expect(ProcessGuildMessage(options)).rejects.toMatchObject({message: 'ONEBOT_AUTH_REQUIRED', code: 'ONEBOT_AUTH_REQUIRED'})
   expect(options.axios.get).not.toHaveBeenCalled()
+})
+
+test.each(['', 'bad token', undefined])('NapCat invalid explicit token rejects without credential fallback %#', async (token) => {
+  const options = setup({env: {CHATDACS_ONEBOT_ACCESS_TOKEN: token}})
+  options.config.ONE_BOT_PROVIDER = 'napcat'
+  await expect(ProcessGuildMessage(options)).rejects.toMatchObject({message: 'ONEBOT_AUTH_REQUIRED', code: 'ONEBOT_AUTH_REQUIRED'})
+  expect(options.axios.get).not.toHaveBeenCalled()
+  expect(options.readFileSync).not.toHaveBeenCalled()
 })
 
 test.each(['http://user:password@onebot.invalid', 'http://onebot.invalid/api?token=secret', 'ftp://onebot.invalid'])(
@@ -92,13 +102,14 @@ test('transport rejection is sanitized and never retried', async () => {
   expect(options.axios.get).toHaveBeenCalledTimes(1)
 })
 
-test('old call signature uses module Axios by default and allows legacy no-token endpoint', async () => {
-  const options = setup({env: {}, config: {ONE_BOT_API_URL: 'onebot.invalid:5700', ONE_BOT_PROVIDER: 'napcat'}})
+test('old call signature uses module Axios by default and authenticates NapCat', async () => {
+  const options = setup({config: {ONE_BOT_API_URL: 'onebot.invalid:5700', ONE_BOT_PROVIDER: 'napcat'}})
   delete options.axios
   defaultAxios.get.mockResolvedValue(ok)
   await ProcessGuildMessage(options)
   expect(defaultAxios.get).toHaveBeenCalledTimes(1)
-  expect(defaultAxios.get.mock.calls[0][1].headers).toEqual({})
+  expect(defaultAxios.get.mock.calls[0][1].headers).toEqual({Authorization: `Bearer ${secret}`})
+  expect(options.readFileSync).not.toHaveBeenCalled()
 })
 
 test('chat fallback uses the same secure sender and preserves query text', async () => {

@@ -17,6 +17,7 @@ describe('NapCat OneBot integration', () => {
     const config = createNapCatOneBotConfig({
       apiUrl: '127.0.0.1:5700',
       callbackUrl: 'http://127.0.0.1:8080/bot',
+      accessToken: token,
     })
 
     expect(config.network.httpServers).toEqual([
@@ -25,6 +26,7 @@ describe('NapCat OneBot integration', () => {
         host: '127.0.0.1',
         port: 5700,
         messagePostFormat: 'string',
+        token,
       }),
     ])
     expect(config.network.httpClients).toEqual([
@@ -33,6 +35,7 @@ describe('NapCat OneBot integration', () => {
         url: 'http://127.0.0.1:8080/bot',
         messagePostFormat: 'string',
         reportSelfMessage: false,
+        token,
       }),
     ])
   })
@@ -49,6 +52,8 @@ describe('NapCat OneBot integration', () => {
     })
 
     expect(config.network.httpClients[0].url).toBe('http://host.docker.internal:8080/onebot')
+    expect(config.network.httpServers[0].token).toBe(token)
+    expect(config.network.httpClients[0].token).toBe(token)
   })
 
   test('recognizes a compatible NapCat OneBot 11 endpoint', async () => {
@@ -98,6 +103,7 @@ describe('NapCat OneBot integration', () => {
     await expect(probeNapCat({...auth, apiUrl: 'http://onebot.local:5700/', axios})).resolves.toEqual(
       expect.objectContaining({reachable: true, compatible: false, appName: 'AnotherBot'}),
     )
+    expect(axios.get.mock.calls[0][1].headers).toEqual({Authorization: `Bearer ${token}`})
   })
 
   test('keeps ChatDACS startable when NapCat is temporarily offline', async () => {
@@ -144,5 +150,8 @@ describe('NapCat OneBot integration', () => {
     )
     expect(result).not.toHaveProperty('userId')
     expect(result).not.toHaveProperty('nickname')
+    for (const [, request] of axios.get.mock.calls) {
+      expect(request.headers).toEqual({Authorization: `Bearer ${token}`})
+    }
   })
 })

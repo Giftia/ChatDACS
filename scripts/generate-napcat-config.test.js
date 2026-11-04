@@ -6,16 +6,19 @@ const path = require('path')
 
 const {writePrivateConfig} = require('./generate-onebot-config')
 const {generateNapCatConfig, parseArgs, main} = require('./generate-napcat-config')
+const {createOneBotHttpClient} = require('../src/platforms/oneBotHttp')
 
 const secret = 'mock-sensitive-token'
 const missing = () => { throw Object.assign(new Error('mock missing'), {code: 'ENOENT'}) }
 const fixture = ['System:', '  WEB_PORT: 8080', "  ONE_BOT_API_URL: '127.0.0.1:6700'",
   "  ONE_BOT_ANTI_POST_API: '/onebot'"].join('\n')
 
-function generateFixture({yaml = fixture, env = {}} = {}) {
+function generateFixture({yaml = fixture, env = {CHATDACS_ONEBOT_ACCESS_TOKEN: secret}, readFileSync} = {}) {
   return generateNapCatConfig({configPath: 'mock.yml', eventHost: 'host.docker.internal', env,
-    readFileSync: (file) => file === 'mock.yml' ? yaml : missing()})
+    readFileSync: readFileSync ?? ((file) => file === 'mock.yml' ? yaml : missing())})
 }
+
+const tokenlessOutput = () => ({network: {httpServers: [{token: ''}], httpClients: [{token: ''}]}})
 
 function setup(generated = generateFixture()) {
   return {generate: jest.fn(() => generated), stdout: {write: jest.fn()}, stderr: {write: jest.fn()},
@@ -25,13 +28,47 @@ function setup(generated = generateFixture()) {
 describe('NapCat config generator', () => {
   beforeEach(() => { jest.clearAllMocks() })
 
-  test('reads ChatDACS YAML and produces a string-format HTTP bridge', () => {
+  test('reads synthetic YAML and produces an authenticated string-format HTTP bridge', async () => {
     const config = generateFixture()
 
     expect(config.network.httpServers[0]).toEqual(
       expect.objectContaining({host: '127.0.0.1', port: 6700, messagePostFormat: 'string'}),
     )
     expect(config.network.httpClients[0].url).toBe('http://host.docker.internal:8080/onebot')
+    expect(config.network.httpServers[0].token).toBe(secret)
+    expect(config.network.httpClients[0].token).toBe(secret)
+    const axios = {get: jest.fn().mockResolvedValue({status: 200, data: {status: 'ok', retcode: 0}})}
+    const readFileSync = jest.fn(missing)
+    const client = createOneBotHttpClient({axios,
+      config: {ONE_BOT_PROVIDER: 'napcat', ONE_BOT_API_URL: 'http://onebot.invalid'},
+      env: {CHATDACS_ONEBOT_ACCESS_TOKEN: config.network.httpServers[0].token}, readFileSync})
+    await client.get('http://onebot.invalid/get_version_info')
+    expect(axios.get.mock.calls[0][1].headers).toEqual({Authorization: `Bearer ${secret}`})
+    expect(readFileSync).not.toHaveBeenCalled()
+  })
+
+  test('reads a synthetic credential file with an explicitly empty environment', () => {
+    const readFileSync = jest.fn((file) => {
+      if (file === 'mock.yml') return fixture
+      if (file === 'config/onebot.credentials.json') return JSON.stringify({accessToken: secret})
+      throw new Error('unexpected fixture path')
+    })
+    const generated = generateFixture({env: {}, readFileSync})
+    expect(readFileSync.mock.calls.map(([file]) => file)).toEqual(['mock.yml', 'config/onebot.credentials.json'])
+    expect(generated.network.httpServers[0].token).toBe(secret)
+    expect(generated.network.httpClients[0].token).toBe(secret)
+  })
+
+  test.each([{}, {CHATDACS_ONEBOT_ACCESS_TOKEN: ''}, {CHATDACS_ONEBOT_ACCESS_TOKEN: 'bad token'},
+    {CHATDACS_ONEBOT_ACCESS_TOKEN: undefined}])('real generator refuses missing or invalid credentials %#', (env) => {
+    expect(() => generateFixture({env})).toThrow('ONEBOT_AUTH_REQUIRED')
+    const deps = setup(tokenlessOutput())
+    deps.generate.mockImplementation(() => generateFixture({env}))
+    expect(main(['--output', 'mock.credentials.json'], deps)).toBe(1)
+    expect(deps.stderr.write.mock.calls).toEqual([['ONEBOT_AUTH_REQUIRED\n']])
+    expect(deps.stdout.write).not.toHaveBeenCalled()
+    expect(deps.writePrivate).not.toHaveBeenCalled()
+    expect(deps.writeFileSync).not.toHaveBeenCalled()
   })
 
   test('parses supported command line options', () => {
@@ -51,11 +88,11 @@ describe('NapCat config generator', () => {
     })
   })
 
-  test('legacy defaults remain available without reading local configuration', () => {
+  test('legacy address defaults retain authentication without reading local configuration', () => {
     expect(parseArgs([])).toEqual({configPath: path.resolve('config/config.yml'), eventHost: '127.0.0.1'})
     const generated = generateFixture({yaml: 'System: {}'})
-    expect(generated.network.httpServers[0]).toMatchObject({host: '127.0.0.1', port: 5700, token: ''})
-    expect(generated.network.httpClients[0].token).toBe('')
+    expect(generated.network.httpServers[0]).toMatchObject({host: '127.0.0.1', port: 5700, token: secret})
+    expect(generated.network.httpClients[0].token).toBe(secret)
   })
 
   test('token-bearing helper output cannot go to stdout', () => {
@@ -115,8 +152,8 @@ describe('NapCat config generator', () => {
     expect(deps.stderr.write.mock.calls).toEqual([['ONEBOT_OUTPUT_FAILED\n']])
   })
 
-  test('empty token keeps stdout JSON compatibility', () => {
-    const generated = generateFixture()
+  test('injected tokenless fake output keeps independent CLI stdout compatibility', () => {
+    const generated = tokenlessOutput()
     const deps = setup(generated)
     expect(main([], deps)).toBe(0)
     expect(deps.stdout.write.mock.calls).toEqual([[`${JSON.stringify(generated, null, 2)}\n`]])
@@ -124,8 +161,8 @@ describe('NapCat config generator', () => {
     expect(deps.writePrivate).not.toHaveBeenCalled()
   })
 
-  test('empty token keeps ordinary JSON file output but adds exclusive creation', () => {
-    const generated = generateFixture()
+  test('injected tokenless fake output keeps exclusive ordinary JSON file output', () => {
+    const generated = tokenlessOutput()
     const deps = setup(generated)
     expect(main(['--output', 'ordinary.json'], deps)).toBe(0)
     expect(deps.writeFileSync).toHaveBeenCalledWith(path.resolve('ordinary.json'),
@@ -135,7 +172,7 @@ describe('NapCat config generator', () => {
   })
 
   test.each(['mkdir', 'existing', 'write'])('plain output failure %s cannot leak details or overwrite', (stage) => {
-    const deps = setup()
+    const deps = setup(tokenlessOutput())
     const failure = () => { throw Object.assign(new Error(`${secret} C:/private/location`), {code: stage === 'existing' ? 'EEXIST' : 'EACCES'}) }
     if (stage === 'mkdir') deps.mkdirSync.mockImplementation(failure)
     else deps.writeFileSync.mockImplementation(failure)
@@ -180,7 +217,7 @@ describe('NapCat config generator', () => {
     try {
       const deps = setup()
       deps.generate.mockImplementation(() => generateFixture({yaml: `System: {}\nextra: !unknown ${secret}\n`}))
-      expect(main([], deps)).toBe(0)
+      expect(main(['--output', 'mock.credentials.json'], deps)).toBe(0)
       expect(warningSpy).not.toHaveBeenCalled()
       expect(consoleSpy).not.toHaveBeenCalled()
       expect(deps.stderr.write).not.toHaveBeenCalled()
