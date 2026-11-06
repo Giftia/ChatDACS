@@ -1,12 +1,20 @@
 'use strict'
 
 const http = require('http')
+const {createHmac} = require('crypto')
 const axios = require('axios')
 const express = require('express')
 
 const {StartQQBot} = require('../qq')
+const {createOneBotHttpClient} = require('../../platforms/oneBotHttp')
+const {captureOneBotRawBody} = require('./webhook')
 
-describe('NapCat to ChatDACS QQ adapter integration', () => {
+describe.each(['legacy OneBot', 'snowluma'])('%s to ChatDACS QQ adapter integration', (provider) => {
+  const snowluma = provider === 'snowluma'
+  const token = 'synthetic-onebot-integration-token'
+  const originalToken = process.env.CHATDACS_ONEBOT_ACCESS_TOKEN
+  const apiPath = snowluma ? '/api' : ''
+  let controller
   let napCatServer
   let chatdacsServer
   let napCatApiUrl
@@ -14,12 +22,27 @@ describe('NapCat to ChatDACS QQ adapter integration', () => {
   const actions = []
 
   beforeAll(async () => {
+    if (snowluma) process.env.CHATDACS_ONEBOT_ACCESS_TOKEN = token
+    else delete process.env.CHATDACS_ONEBOT_ACCESS_TOKEN
     napCatServer = http.createServer((request, response) => {
       const url = new URL(request.url, 'http://127.0.0.1')
-      actions.push({action: url.pathname.slice(1), params: Object.fromEntries(url.searchParams)})
+      if (snowluma && (request.headers.authorization !== `Bearer ${token}` || !url.pathname.startsWith('/api/'))) {
+        response.writeHead(401).end()
+        return
+      }
+      const action = url.pathname.slice(apiPath.length + 1)
+      actions.push({action, params: Object.fromEntries(url.searchParams)})
       response.setHeader('content-type', 'application/json')
 
-      if (url.pathname === '/get_group_info') {
+      if (action === 'get_login_info') {
+        response.end(JSON.stringify({status: 'ok', retcode: 0, data: {user_id: 10000}}))
+        return
+      }
+      if (action === 'get_status') {
+        response.end(JSON.stringify({status: 'ok', retcode: 0, data: {online: true, good: true}}))
+        return
+      }
+      if (action === 'get_group_info') {
         response.end(JSON.stringify({status: 'ok', data: {group_name: 'Integration Group'}}))
         return
       }
@@ -27,26 +50,29 @@ describe('NapCat to ChatDACS QQ adapter integration', () => {
       response.end(JSON.stringify({status: 'ok', retcode: 0, data: {message_id: 1}}))
     })
     await listen(napCatServer)
-    napCatApiUrl = `127.0.0.1:${napCatServer.address().port}`
+    napCatApiUrl = `127.0.0.1:${napCatServer.address().port}${apiPath}`
 
     const app = express()
-    app.use(express.json())
+    app.use(express.json({verify: captureOneBotRawBody}))
     const utils = {
       InitGroupList: jest.fn().mockResolvedValue(true),
       GetGroupServiceSwitch: jest.fn().mockResolvedValue(true),
       PluginAnswerToGoCqhttpStyle: jest.fn((answer) => answer.content),
     }
 
-    await StartQQBot({
-      config: {
+    const config = {
         ONE_BOT_API_URL: napCatApiUrl,
         ONE_BOT_ANTI_POST_API: '/bot',
         QQBOT_ADMIN_LIST: [],
-        QQBOT_PRIVATE_CHAT_SWITCH: false,
+        QQBOT_PRIVATE_CHAT_SWITCH: snowluma,
         QQBOT_FUDU_PROBABILITY: 0,
         QQBOT_REPLY_PROBABILITY: 0,
         QQBOT_SAVE_ALL_IMAGE_TO_LOCAL_SWITCH: false,
-      },
+        ...(snowluma ? {ONE_BOT_PROVIDER: 'snowluma', ONE_BOT_SELF_ID: '10000'} : {}),
+    }
+    controller = await StartQQBot({
+      config,
+      ...(snowluma ? {conversation: {execute: async () => ({handled: true, type: 'text', content: 'Pong!'})}} : {}),
       ecYWenDa: jest.fn(),
       processExecute: jest.fn().mockResolvedValue({type: 'text', content: 'Pong!'}),
       chatProcess: jest.fn().mockResolvedValue('unused'),
@@ -55,7 +81,7 @@ describe('NapCat to ChatDACS QQ adapter integration', () => {
       app,
       io: {emit: jest.fn()},
       plugins: {},
-      axios,
+      axios: createOneBotHttpClient({config, axios}),
       request: jest.fn(),
     })
 
@@ -65,15 +91,23 @@ describe('NapCat to ChatDACS QQ adapter integration', () => {
   })
 
   afterAll(async () => {
+    if (originalToken === undefined) delete process.env.CHATDACS_ONEBOT_ACCESS_TOKEN
+    else process.env.CHATDACS_ONEBOT_ACCESS_TOKEN = originalToken
+    await controller?.stop()
     await Promise.all([close(chatdacsServer), close(napCatServer)])
   })
+
+  function post(event) {
+    const body = JSON.stringify(event)
+    const headers = {'Content-Type': 'application/json'}
+    if (snowluma) headers['X-Signature'] = `sha1=${createHmac('sha1', token).update(body).digest('hex')}`
+    return axios.post(`http://127.0.0.1:${chatdacsPort}/bot`, body, {headers, validateStatus: () => true})
+  }
 
   test('acknowledges a group event and sends the plugin reply through OneBot HTTP', async () => {
     const random = jest.spyOn(Math, 'random').mockReturnValue(0.99)
     try {
-      const response = await axios.post(
-        `http://127.0.0.1:${chatdacsPort}/bot`,
-        {
+      const response = await post({
           post_type: 'message',
           message_type: 'group',
           sub_type: 'normal',
@@ -82,9 +116,7 @@ describe('NapCat to ChatDACS QQ adapter integration', () => {
           group_id: 30000,
           message: '/ping',
           sender: {nickname: 'Tester'},
-        },
-        {validateStatus: () => true},
-      )
+      })
 
       expect(response.status).toBe(204)
       await waitFor(() => actions.some((item) => item.action === 'send_group_msg'))
@@ -97,6 +129,14 @@ describe('NapCat to ChatDACS QQ adapter integration', () => {
     } finally {
       random.mockRestore()
     }
+  })
+
+  if (snowluma) test('acks a signed private event and sends through the authenticated API prefix', async () => {
+    const response = await post({post_type: 'message', message_type: 'private', sub_type: 'friend',
+      self_id: 10000, user_id: 20000, message_id: 5, message: '/ping', sender: {nickname: 'Tester'}})
+    expect(response.status).toBe(204)
+    await waitFor(() => actions.some((item) => item.action === 'send_private_msg'))
+    expect(actions).toContainEqual({action: 'send_private_msg', params: {user_id: '20000', message: 'Pong!'}})
   })
 })
 

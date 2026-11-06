@@ -16,6 +16,8 @@ const config = {ONE_BOT_PROVIDER: 'snowluma', ONE_BOT_API_URL: '127.0.0.1:5700',
 const env = {CHATDACS_ONEBOT_ACCESS_TOKEN: token}
 const version = (name = 'SnowLuma', protocol = 'v11') => ({data: {status: 'ok', retcode: 0,
   data: {app_name: name, app_version: '2.4.0', protocol_version: protocol}}})
+const login = (user_id) => ({data: {status: 'ok', data: {user_id, nickname: 'synthetic'}}})
+const status = (online = true, good = true) => ({data: {status: 'ok', data: {online, good}}})
 const noFiles = () => { throw new Error('unexpected file access') }
 const yaml = 'System:\n  ONE_BOT_PROVIDER: snowluma\n  ONE_BOT_API_URL: 127.0.0.1:5700\n  WEB_PORT: 8080\n  ONE_BOT_ANTI_POST_API: /onebot\n'
 function deps(extra = {}) {
@@ -117,13 +119,30 @@ describe('OneBot provider config', () => {
 describe('provider readiness without real accounts', () => {
   test('uses authenticated bounded requests and returns only account aggregates', async () => {
     const axios = {get: jest.fn().mockResolvedValueOnce(version())
-      .mockResolvedValueOnce({data: {status: 'ok', data: {user_id: 123, nickname: 'synthetic'}}})
+      .mockResolvedValueOnce(login(123)).mockResolvedValueOnce(status())
       .mockResolvedValueOnce({data: {status: 'ok', data: [{group_id: 42}]}})}
-    const result = await provider.checkOneBotReadiness({config, axios, env, readFileSync: noFiles})
+    const result = await provider.checkOneBotReadiness({config: {...config, ONE_BOT_SELF_ID: '123'}, axios, env, readFileSync: noFiles})
     expect(result).toMatchObject({compatible: true, loggedIn: true, groupCount: 1})
     expect(JSON.stringify(result)).not.toMatch(/synthetic|user_id|group_id/)
-    expect(axios.get).toHaveBeenCalledTimes(3)
+    expect(axios.get.mock.calls.map(([url]) => new URL(url).pathname)).toEqual([
+      '/get_version_info', '/get_login_info', '/get_status', '/get_group_list',
+    ])
     expect(axios.get.mock.calls[0][1]).toMatchObject({headers: {Authorization: `Bearer ${token}`}, maxRedirects: 0, timeout: 100})
+  })
+  test.each([
+    [login(0), undefined, 'ONEBOT_LOGIN_INVALID', 2],
+    [login(456), undefined, 'ONEBOT_SELF_ID_MISMATCH', 2],
+    [login(123), status(false, false), 'ONEBOT_OFFLINE', 3],
+    [login(123), status(true, false), 'ONEBOT_UNHEALTHY', 3],
+    [login(123), status('true', true), 'ONEBOT_STATUS_INVALID', 3],
+  ])('stops the readiness check before fetching groups: %s %s %s', async (identity, health, code, calls) => {
+    const axios = {get: jest.fn().mockResolvedValueOnce(version()).mockResolvedValueOnce(identity)
+      .mockResolvedValueOnce(health)}
+    const context = deps({axios, readFileSync: () => `${yaml}  ONE_BOT_SELF_ID: '123'\n`})
+    expect(await checker.main(['--config', 'synthetic.yml'], context)).toBe(1)
+    expect(axios.get).toHaveBeenCalledTimes(calls)
+    expect(JSON.parse(context.stdout.write.mock.calls[0][0])).toEqual({provider: 'snowluma', compatible: true,
+      loggedIn: false, groupCount: 0, code})
   })
   test.each([['NapCatQQ', 'v11'], ['SnowLuma', 'v12']])('rejects identity/protocol mismatch %s %s', async (name, protocol) => {
     const axios = {get: jest.fn().mockResolvedValue(version(name, protocol))}
@@ -140,7 +159,7 @@ describe('provider readiness without real accounts', () => {
   })
   test('rejects invalid group payload even after login succeeds', async () => {
     const axios = {get: jest.fn().mockResolvedValueOnce(version())
-      .mockResolvedValueOnce({data: {status: 'ok', data: {user_id: 1}}})
+      .mockResolvedValueOnce(login(1)).mockResolvedValueOnce(status())
       .mockResolvedValueOnce({data: {status: 'ok', data: 'not-an-array'}})}
     expect(await provider.checkOneBotReadiness({config, axios, env})).toMatchObject({error: 'ONEBOT_GROUP_LIST_INVALID', groupCount: 0})
   })

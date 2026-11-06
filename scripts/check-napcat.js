@@ -27,7 +27,7 @@ async function main() {
   }
 
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`)
-  if (!report.compatible || !report.loggedIn) process.exitCode = 1
+  if (!report.compatible || !report.loggedIn || report.error) process.exitCode = 1
 }
 
 if (require.main === module) {

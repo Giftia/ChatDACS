@@ -88,6 +88,31 @@ function ok(payload) {
   return payload?.status === 'ok' && (payload.retcode === undefined || payload.retcode === 0)
 }
 
+async function checkOneBotSession({config, client}) {
+  const base = normalizeApiBaseUrl(config.ONE_BOT_API_URL)
+  const options = {timeout: config.ONE_BOT_CONNECT_TIMEOUT_MS ?? 3000}
+  const {data: login} = await client.get(`${base}/get_login_info`, options)
+  const id = login?.data?.user_id
+  const validId = typeof id === 'number' ? Number.isSafeInteger(id) && id > 0
+    : typeof id === 'string' && /^[1-9]\d*$/.test(id)
+  if (!ok(login) || !validId) throw fail('ONEBOT_LOGIN_INVALID')
+  if (config.ONE_BOT_SELF_ID != null && String(id) !== String(config.ONE_BOT_SELF_ID)) {
+    throw fail('ONEBOT_SELF_ID_MISMATCH')
+  }
+  if (config.ONE_BOT_PROVIDER === 'snowluma') {
+    // SnowLuma can return the configured account even while its bridge is offline.
+    const {data: status} = await client.get(`${base}/get_status`, options)
+    if (!ok(status) || typeof status?.data?.online !== 'boolean' || typeof status?.data?.good !== 'boolean') {
+      throw fail('ONEBOT_STATUS_INVALID')
+    }
+    if (!status.data.online) throw fail('ONEBOT_OFFLINE')
+    if (!status.data.good) throw fail('ONEBOT_UNHEALTHY')
+  }
+}
+
+const readinessCodes = new Set([...requestCodes, 'ONEBOT_LOGIN_INVALID', 'ONEBOT_SELF_ID_MISMATCH',
+  'ONEBOT_STATUS_INVALID', 'ONEBOT_OFFLINE', 'ONEBOT_UNHEALTHY'])
+
 async function probeOneBot({config, axios, env, readFileSync}) {
   try {
     if (!Object.hasOwn(names, config?.ONE_BOT_PROVIDER ?? 'external')) throw fail('ONEBOT_PROVIDER_INVALID')
@@ -116,12 +141,13 @@ async function checkOneBotReadiness({config, axios, env, readFileSync}) {
     const client = createOneBotHttpClient({config, axios, env, readFileSync})
     const base = normalizeApiBaseUrl(config.ONE_BOT_API_URL)
     const options = {timeout: config.ONE_BOT_CONNECT_TIMEOUT_MS ?? 3000}
-    const [login, groups] = await Promise.all([client.get(`${base}/get_login_info`, options), client.get(`${base}/get_group_list`, options)])
+    await checkOneBotSession({config, client})
+    const groups = await client.get(`${base}/get_group_list`, options)
     const validGroups = ok(groups.data) && Array.isArray(groups.data.data)
-    return {...connection, loggedIn: ok(login.data) && login.data.data?.user_id != null,
+    return {...connection, loggedIn: true,
       groupCount: validGroups ? groups.data.data.length : 0, ...(validGroups ? {} : {error: 'ONEBOT_GROUP_LIST_INVALID'})}
   } catch (error) {
-    return {...connection, loggedIn: false, groupCount: 0, error: requestCodes.has(error?.code) ? error.code : 'ONEBOT_READINESS_FAILED'}
+    return {...connection, loggedIn: false, groupCount: 0, error: readinessCodes.has(error?.code) ? error.code : 'ONEBOT_READINESS_FAILED'}
   }
 }
 
@@ -134,4 +160,4 @@ async function verifyOneBotConnection({config, axios, logger = console, env, rea
 }
 
 module.exports = {normalizeApiBaseUrl, createNapCatOneBotConfig, createSnowLumaOneBotConfig,
-  buildProviderConfigFromRuntime, probeOneBot, checkOneBotReadiness, verifyOneBotConnection}
+  buildProviderConfigFromRuntime, probeOneBot, checkOneBotSession, checkOneBotReadiness, verifyOneBotConnection}

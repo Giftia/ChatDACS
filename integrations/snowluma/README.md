@@ -24,7 +24,9 @@ node scripts/generate-onebot-config.js --config C:\private\chatdacs.yml --provid
 node scripts/check-onebot.js --config C:\private\chatdacs.yml --provider snowluma
 ```
 
-该命令会实际请求配置中的服务，只能在明确授权后执行。检查版本身份、OneBot 11、登录状态及群数量，不输出账号或群详情。退出码 `0` 表示这些检查通过，`1` 表示参数、配置、鉴权或就绪检查失败；不代表收发消息验收通过。模块被 `require()` 时不会读取配置或请求服务。
+该命令会实际请求配置中的服务，只能在明确授权后执行。它检查版本身份、OneBot 11、`get_login_info` 的账号和 `get_status` 的在线及链路健康状态，通过后才读取群数量。配置 `System.ONE_BOT_SELF_ID` 可要求登录账号与回调账号一致；不输出账号或群详情。退出码 `0` 表示这些检查通过，`1` 表示参数、配置、鉴权或就绪检查失败；不代表收发消息验收通过。模块被 `require()` 时不会读取配置或请求服务。
+
+启动 SnowLuma 适配器时也会校验账号和在线状态。检查失败时 QQ 群服务与主动聊天不会启动，Web 与其他平台继续运行。请先恢复 SnowLuma，再重启 ChatDACS 重新初始化 QQ 适配器。
 
 SnowLuma HTTP 回推使用 `X-Signature: sha1=...`，签名覆盖原始请求体，由 ChatDACS webhook 的 raw-body HMAC 路径验证；此处不另设 Bearer 回推认证。旧 NapCat helper 的入口和探测参数保持兼容，全部委托 generic provider，统一使用鉴权、超时、禁止重定向及安全错误码。
 

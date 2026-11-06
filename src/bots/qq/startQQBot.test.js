@@ -74,6 +74,24 @@ describe('StartQQBot real event pipeline with isolated dependencies', () => {
     registerOneBotWebhook.mockClear()
   })
 
+  test.each([
+    ['snowluma', 12345, {online: false, good: false}],
+    ['snowluma', 12345, {online: true, good: false}],
+    ['napcat', 67890, {online: true, good: true}],
+  ])('does not start QQ group services for an unready %s session', async (provider, userId, health) => {
+    const axios = {get: jest.fn(async (url) => ({data: {status: 'ok', data:
+      url.endsWith('/get_login_info') ? {user_id: userId} : health}}))}
+    const utils = {InitGroupList: jest.fn()}
+    const conversation = {createProactive: jest.fn()}
+    const bot = await start({config: {ONE_BOT_PROVIDER: provider, ONE_BOT_SELF_ID: '12345',
+      ONE_BOT_API_URL: 'mock.invalid:5700', ONE_BOT_ANTI_POST_API: '/mock'}, axios, utils, conversation})
+    expect(utils.InitGroupList).not.toHaveBeenCalled()
+    expect(conversation.createProactive).not.toHaveBeenCalled()
+    expect(registerOneBotWebhook.mock.calls.at(-1)[0].isReady()).toBe(false)
+    expect(bot.logger.error).toHaveBeenCalledWith('ONEBOT_SESSION_NOT_READY')
+    await bot.controller.stop()
+  })
+
   test('a random mine hit without a mine still reaches normal chat', async () => {
     Math.random.mockReturnValue(0)
     const bot = await start()
