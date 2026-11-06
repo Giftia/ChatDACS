@@ -34,6 +34,10 @@ describe.each(['legacy OneBot', 'snowluma'])('%s to ChatDACS QQ adapter integrat
       actions.push({action, params: Object.fromEntries(url.searchParams)})
       response.setHeader('content-type', 'application/json')
 
+      if (action === 'get_version_info') {
+        response.end(JSON.stringify({status: 'ok', retcode: 0, data: {app_name: 'SnowLuma', protocol_version: 'v11'}}))
+        return
+      }
       if (action === 'get_login_info') {
         response.end(JSON.stringify({status: 'ok', retcode: 0, data: {user_id: 10000}}))
         return

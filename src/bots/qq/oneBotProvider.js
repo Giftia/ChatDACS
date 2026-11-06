@@ -113,21 +113,24 @@ async function checkOneBotSession({config, client}) {
 const readinessCodes = new Set([...requestCodes, 'ONEBOT_LOGIN_INVALID', 'ONEBOT_SELF_ID_MISMATCH',
   'ONEBOT_STATUS_INVALID', 'ONEBOT_OFFLINE', 'ONEBOT_UNHEALTHY'])
 
+async function readOneBotVersion({config, client}) {
+  const provider = config?.ONE_BOT_PROVIDER ?? 'external'
+  if (!Object.hasOwn(names, provider)) throw fail('ONEBOT_PROVIDER_INVALID')
+  const {data: payload} = await client.get(`${normalizeApiBaseUrl(config.ONE_BOT_API_URL)}/get_version_info`,
+    {timeout: config.ONE_BOT_CONNECT_TIMEOUT_MS ?? 3000})
+  const info = payload?.data ?? {}
+  const appName = typeof info.app_name === 'string' ? info.app_name : ''
+  const protocolVersion = String(info.protocol_version ?? '')
+  const providerMatches = provider === 'external' || (provider === 'napcat' && /napcat/i.test(appName)) ||
+    (provider === 'snowluma' && /snowluma/i.test(appName))
+  return {reachable: true, compatible: ok(payload) && /^(v)?11$/i.test(protocolVersion) && providerMatches,
+    appName, appVersion: String(info.app_version ?? ''), protocolVersion}
+}
+
 async function probeOneBot({config, axios, env, readFileSync}) {
   try {
-    if (!Object.hasOwn(names, config?.ONE_BOT_PROVIDER ?? 'external')) throw fail('ONEBOT_PROVIDER_INVALID')
     const client = createOneBotHttpClient({config, axios, env, readFileSync})
-    const response = await client.get(`${normalizeApiBaseUrl(config.ONE_BOT_API_URL)}/get_version_info`,
-      {timeout: config.ONE_BOT_CONNECT_TIMEOUT_MS ?? 3000})
-    const payload = response?.data
-    const info = payload?.data ?? {}
-    const appName = typeof info.app_name === 'string' ? info.app_name : ''
-    const protocolVersion = String(info.protocol_version ?? '')
-    const provider = config.ONE_BOT_PROVIDER ?? 'external'
-    const providerMatches = provider === 'external' || (provider === 'napcat' && /napcat/i.test(appName)) ||
-      (provider === 'snowluma' && /snowluma/i.test(appName))
-    return {reachable: true, compatible: ok(payload) && /^(v)?11$/i.test(protocolVersion) && providerMatches,
-      appName, appVersion: String(info.app_version ?? ''), protocolVersion}
+    return await readOneBotVersion({config, client})
   } catch (error) {
     const safeCode = requestCodes.has(error?.code) ? error.code : 'ONEBOT_PROBE_FAILED'
     return {reachable: safeCode === 'ONEBOT_AUTH_FAILED', compatible: false, error: safeCode}
@@ -160,4 +163,4 @@ async function verifyOneBotConnection({config, axios, logger = console, env, rea
 }
 
 module.exports = {normalizeApiBaseUrl, createNapCatOneBotConfig, createSnowLumaOneBotConfig,
-  buildProviderConfigFromRuntime, probeOneBot, checkOneBotSession, checkOneBotReadiness, verifyOneBotConnection}
+  buildProviderConfigFromRuntime, readOneBotVersion, probeOneBot, checkOneBotSession, checkOneBotReadiness, verifyOneBotConnection}

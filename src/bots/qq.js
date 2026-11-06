@@ -19,7 +19,7 @@ const {
 const {handleQQMediaBridge} = require('./qq/mediaBridge')
 const {handleQQPluginReply} = require('./qq/pluginBridge')
 const {registerOneBotWebhook} = require('./qq/webhook')
-const {checkOneBotSession} = require('./qq/oneBotProvider')
+const {checkOneBotSession, readOneBotVersion} = require('./qq/oneBotProvider')
 const {createMessageIngress} = require('./qq/messageIngress')
 const {ProcessGuildMessage} = require('./qqGuild')
 
@@ -955,12 +955,25 @@ async function StartQQBot({
   }
 
   logger.info('正在进行群服务初始化……'.log)
+  const controller = {stop, get ready() { return ready && !stopped }}
+  if (config.ONE_BOT_PROVIDER === 'snowluma') {
+    try {
+      const version = await readOneBotVersion({config, client: axios})
+      if (!version.compatible) {
+        logger.error('ONEBOT_PROVIDER_MISMATCH')
+        return controller
+      }
+    } catch {
+      logger.error('ONEBOT_PROBE_FAILED')
+      return controller
+    }
+  }
   if (config.ONE_BOT_PROVIDER === 'snowluma' || config.ONE_BOT_SELF_ID != null) {
     try {
       await checkOneBotSession({config, client: axios})
     } catch {
       logger.error('ONEBOT_SESSION_NOT_READY')
-      return {stop}
+      return controller
     }
   }
   try {
@@ -982,7 +995,7 @@ async function StartQQBot({
   } catch {
     logger.error('ONEBOT_GROUP_INIT_FAILED')
   }
-  return {stop}
+  return controller
 }
 
 module.exports = {

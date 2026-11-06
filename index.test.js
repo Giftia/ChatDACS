@@ -222,7 +222,7 @@ describe('index adapter and scoped-client integration', () => {
     qqStop = jest.fn(async () => {})
     officialStop = jest.fn(async () => {})
     dispose = jest.fn()
-    qq.StartQQBot.mockResolvedValue({stop: qqStop})
+    qq.StartQQBot.mockResolvedValue({stop: qqStop, ready: true})
     official.startQQOfficial.mockResolvedValue({stop: officialStop})
     legacyStops = Object.fromEntries(legacy.map(([name, start]) => {
       const stop = jest.fn(async () => {})
@@ -318,13 +318,22 @@ describe('index adapter and scoped-client integration', () => {
     expect(officialStop).toHaveBeenCalledTimes(1)
   })
 
-  test.each(['snowluma', 'napcat'])('configured %s probes after QQ startup', async (provider) => {
-    const config = await configure({ONE_BOT_PROVIDER: provider})
+  test('configured NapCat probes after QQ startup', async () => {
+    const config = await configure({ONE_BOT_PROVIDER: 'napcat'})
     const probe = require('./src/bots/qq/oneBotProvider').verifyOneBotConnection
     const controller = await indexModule.StartConfiguredAdapters({app: {}, io: {}, config})
     expect(probe).toHaveBeenCalledWith({config, axios, logger: expect.any(Object)})
     expect(qq.StartQQBot.mock.invocationCallOrder[0]).toBeLessThan(probe.mock.invocationCallOrder[0])
     await controller.stop()
+  })
+
+  test.each([['snowluma', true], ['napcat', false]])('does not repeat or misreport the %s probe (ready=%s)', async (provider, ready) => {
+    const config = await configure({ONE_BOT_PROVIDER: provider})
+    qq.StartQQBot.mockResolvedValueOnce({stop: qqStop, ready})
+    const controller = await indexModule.StartConfiguredAdapters({app: {}, io: {}, config})
+    expect(require('./src/bots/qq/oneBotProvider').verifyOneBotConnection).not.toHaveBeenCalled()
+    await controller.stop()
+    expect(qqStop).toHaveBeenCalledTimes(1)
   })
 
   test.each([

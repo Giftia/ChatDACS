@@ -80,7 +80,8 @@ describe('StartQQBot real event pipeline with isolated dependencies', () => {
     ['napcat', 67890, {online: true, good: true}],
   ])('does not start QQ group services for an unready %s session', async (provider, userId, health) => {
     const axios = {get: jest.fn(async (url) => ({data: {status: 'ok', data:
-      url.endsWith('/get_login_info') ? {user_id: userId} : health}}))}
+      url.endsWith('/get_version_info') ? {app_name: 'SnowLuma', protocol_version: 'v11'}
+        : url.endsWith('/get_login_info') ? {user_id: userId} : health}}))}
     const utils = {InitGroupList: jest.fn()}
     const conversation = {createProactive: jest.fn()}
     const bot = await start({config: {ONE_BOT_PROVIDER: provider, ONE_BOT_SELF_ID: '12345',
@@ -88,7 +89,20 @@ describe('StartQQBot real event pipeline with isolated dependencies', () => {
     expect(utils.InitGroupList).not.toHaveBeenCalled()
     expect(conversation.createProactive).not.toHaveBeenCalled()
     expect(registerOneBotWebhook.mock.calls.at(-1)[0].isReady()).toBe(false)
+    expect(bot.controller.ready).toBe(false)
     expect(bot.logger.error).toHaveBeenCalledWith('ONEBOT_SESSION_NOT_READY')
+    await bot.controller.stop()
+  })
+
+  test('does not initialize a different provider configured as SnowLuma', async () => {
+    const axios = {get: jest.fn(async () => ({data: {status: 'ok', data: {app_name: 'NapCat', protocol_version: 'v11'}}}))}
+    const utils = {InitGroupList: jest.fn()}
+    const bot = await start({config: {ONE_BOT_PROVIDER: 'snowluma', ONE_BOT_API_URL: 'mock.invalid:5700',
+      ONE_BOT_ANTI_POST_API: '/mock'}, axios, utils})
+    expect(axios.get).toHaveBeenCalledTimes(1)
+    expect(utils.InitGroupList).not.toHaveBeenCalled()
+    expect(bot.logger.error).toHaveBeenCalledWith('ONEBOT_PROVIDER_MISMATCH')
+    expect(bot.controller.ready).toBe(false)
     await bot.controller.stop()
   })
 
@@ -242,9 +256,10 @@ describe('StartQQBot real event pipeline with isolated dependencies', () => {
     setTimeout(unrelated, 1000)
     const bot = await startWithGames()
     await bot.handle({message: '击鼓传雷'})
-    expect(bot.controller).toEqual({stop: expect.any(Function)})
+    expect(bot.controller).toEqual({stop: expect.any(Function), ready: true})
     bot.controller.stop()
     bot.controller.stop()
+    expect(bot.controller.ready).toBe(false)
     const calls = bot.calls.length
     await bot.handle({message: '击鼓传雷'})
     await jest.advanceTimersByTimeAsync(61000)

@@ -6,6 +6,7 @@ function normalizeRuntimeConfig(rawConfig = {}, {logger} = {}) {
   const qqBot = rawConfig.qqBot ?? {}
   const others = rawConfig.Others ?? {}
   const legacyGoCqhttpSwitch = system.CONNECT_GO_CQHTTP_SWITCH
+  const callbackRoute = system.ONE_BOT_ANTI_POST_API ?? system.GO_CQHTTP_SERVICE_ANTI_POST_API ?? '/bot'
   const goCqhttpSwitch = system.GO_CQHTTP_SWITCH ?? legacyGoCqhttpSwitch ?? false
   const oneBotProvider = normalizeOneBotProvider(
     goCqhttpSwitch ? 'go-cqhttp' : system.ONE_BOT_PROVIDER,
@@ -46,8 +47,8 @@ function normalizeRuntimeConfig(rawConfig = {}, {logger} = {}) {
     WEB_HOST: system.WEB_HOST,
     PLUGIN_TIMEOUT_MS: system.PLUGIN_TIMEOUT_MS ?? 8000,
     PLUGIN_TIMEOUTS: system.PLUGIN_TIMEOUTS ?? {},
-    ONE_BOT_ANTI_POST_API:
-      system.ONE_BOT_ANTI_POST_API ?? system.GO_CQHTTP_SERVICE_ANTI_POST_API ?? '/bot',
+    ONE_BOT_ANTI_POST_API: typeof callbackRoute === 'string' && callbackRoute && !callbackRoute.startsWith('/')
+      ? `/${callbackRoute}` : callbackRoute,
     ONE_BOT_API_URL: system.ONE_BOT_API_URL ?? system.GO_CQHTTP_SERVICE_API_URL ??
       `127.0.0.1:${oneBotProvider === 'snowluma' ? 3000 : 5700}`,
     ONE_BOT_PROVIDER: oneBotProvider,

@@ -221,6 +221,7 @@ async function StartConfiguredAdapters({app, io, config = globalConfig}) {
     }
     // Contract validation belongs to orchestration, not platform degradation.
     track(controller)
+    return controller
   }
   const stop = () => {
     if (!stopping) {
@@ -306,11 +307,13 @@ async function StartConfiguredAdapters({app, io, config = globalConfig}) {
           config.WEB_PORT
         }${config.ONE_BOT_ANTI_POST_API}\n  ·私聊服务${config.QQBOT_PRIVATE_CHAT_SWITCH ? '开启' : '关闭'}`.on,
       )
-      await startPlatform(() => StartQQBot({config, ...adapterDependencies}), 'QQ_START_FAILED')
-      try {
-        await verifyOneBotConnection({config, axios, logger})
-      } catch {
-        logger.warn('ONEBOT_PROBE_FAILED')
+      const qq = await startPlatform(() => StartQQBot({config, ...adapterDependencies}), 'QQ_START_FAILED')
+      if (qq?.ready && config.ONE_BOT_PROVIDER !== 'snowluma') {
+        try {
+          await verifyOneBotConnection({config, axios, logger})
+        } catch {
+          logger.warn('ONEBOT_PROBE_FAILED')
+        }
       }
     } else {
       logger.info('小夜不启用OneBot协议和go-cqhttp协议'.off)

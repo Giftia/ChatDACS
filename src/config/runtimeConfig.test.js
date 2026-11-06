@@ -2,6 +2,10 @@
 
 const {normalizeRuntimeConfig} = require('./runtimeConfig')
 
+test.each(['ONE_BOT_ANTI_POST_API', 'GO_CQHTTP_SERVICE_ANTI_POST_API'])('normalizes the callback prefix for %s', key => {
+  expect(normalizeRuntimeConfig({System: {[key]: 'bot'}}).ONE_BOT_ANTI_POST_API).toBe('/bot')
+})
+
 describe('runtime config normalization', () => {
   test('preserves an optional Web listen host without changing the legacy default', () => {
     expect(normalizeRuntimeConfig({}).WEB_HOST).toBeUndefined()
