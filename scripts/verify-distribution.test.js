@@ -10,12 +10,15 @@ const {verifyDistribution, verifyLauncher, extractedStartup, extractZip, entryPa
 
 const roots = new Set()
 function temporary() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'chatdacs-distribution-test-'))
+  const root = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), 'chatdacs-distribution-test-'))
   roots.add(root)
   return root
 }
 function remove(root) {
   if (!fs.existsSync(root)) return
+  const resolved = fs.realpathSync(root)
+  if (!roots.has(root) || path.dirname(resolved) !== fs.realpathSync(os.tmpdir()) ||
+      !path.basename(resolved).startsWith('chatdacs-distribution-')) throw new Error('Unowned test directory')
   const restore = file => {
     const stat = fs.lstatSync(file)
     if (stat.isSymbolicLink()) return
@@ -23,7 +26,8 @@ function remove(root) {
     if (stat.isDirectory()) for (const name of fs.readdirSync(file)) restore(path.join(file, name))
   }
   restore(root)
-  fs.rmSync(root, {recursive: true, force: true})
+  // A copied executable may still be briefly locked on Windows after the probe.
+  fs.rmSync(root, {recursive: true, force: true, maxRetries: 6, retryDelay: 100})
 }
 afterEach(() => { for (const root of roots) remove(root); roots.clear() })
 
