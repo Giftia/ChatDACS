@@ -3,6 +3,10 @@
 const {ProcessGuildMessage} = require('../qqGuild')
 const Constants = require('../../../config/constants.js')
 
+function notificationMessage(message) {
+  return typeof message === 'string' ? message.replace(/\[CQ:image(?:,[^\]]*)?\]/g, '[图片]') : message
+}
+
 async function handleQQEventPreflight({
   event,
   config,
@@ -16,7 +20,7 @@ async function handleQQEventPreflight({
 }) {
   if (event.message_type == 'guild') {
     logger.info(
-      `小夜收到频道 ${event.channel_id} 的 ${event.user_id} (${event.sender.nickname}) 发来的消息: ${event.message}`,
+      `小夜收到频道 ${event.channel_id} 的 ${event.user_id} (${event.sender.nickname}) 发来的消息: ${notificationMessage(event.message)}`,
     )
     await processGuildMessage({event, processExecute, chatProcess, config, logger, utils, oneBotSender})
     return true
@@ -77,9 +81,9 @@ function buildQQEventNotification(event) {
   switch (event.sub_type) {
     case 'friend':
     case 'group':
-      return `小夜收到好友 ${event.user_id} (${event.sender.nickname}) 发来的消息: ${event.message}`
+      return `小夜收到好友 ${event.user_id} (${event.sender.nickname}) 发来的消息: ${notificationMessage(event.message)}`
     case 'normal':
-      return `小夜收到群 ${event.group_id} 的 ${event.user_id} (${event.sender.nickname}) 发来的消息: ${event.message}`
+      return `小夜收到群 ${event.group_id} 的 ${event.user_id} (${event.sender.nickname}) 发来的消息: ${notificationMessage(event.message)}`
     case 'approve':
       return `${event.user_id} 加入了群 ${event.group_id}`.log
     case 'ban':

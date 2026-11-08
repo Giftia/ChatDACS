@@ -50,7 +50,7 @@ function createLlmClient({config = {}, axios, env = process.env, readFileSync = 
     }
   }
 
-  async function request(method, url, body) {
+  async function request(method, url, body, hasImages = false) {
     if (typeof axios[method] !== 'function') throw fail('LLM_CONFIG_ERROR')
     const headers = provider === 'openai' ? {Authorization: `Bearer ${readKey()}`} : {}
     const controller = new AbortController()
@@ -75,8 +75,9 @@ function createLlmClient({config = {}, axios, env = process.env, readFileSync = 
       }
     } catch (error) {
       const status = error && error.response && error.response.status
-      const code = controller.signal.aborted || (error && ['ECONNABORTED', 'ETIMEDOUT', 'ERR_CANCELED'].includes(error.code)) ?
+      let code = controller.signal.aborted || (error && ['ECONNABORTED', 'ETIMEDOUT', 'ERR_CANCELED'].includes(error.code)) ?
         'LLM_TIMEOUT_ERROR' : (status === 401 || status === 403 ? 'LLM_AUTH_ERROR' : 'LLM_REQUEST_ERROR')
+      if (code === 'LLM_REQUEST_ERROR' && hasImages && [400, 415, 422].includes(status)) code = 'LLM_VISION_UNSUPPORTED'
       throw fail(code)
     } finally {
       clearTimeout(timer)
@@ -84,7 +85,7 @@ function createLlmClient({config = {}, axios, env = process.env, readFileSync = 
     return response
   }
 
-  async function complete(prompt, {systemPrompt, model: override, history = []} = {}) {
+  async function complete(prompt, {systemPrompt, model: override, history = [], images = []} = {}) {
     if (typeof prompt !== 'string' || (systemPrompt !== undefined && typeof systemPrompt !== 'string') ||
         (override !== undefined && (typeof override !== 'string' || !override || /[\s\x00-\x1f\x7f-\x9f]/.test(override)))) {
       throw fail('LLM_CONFIG_ERROR')
@@ -106,9 +107,40 @@ function createLlmClient({config = {}, axios, env = process.env, readFileSync = 
         previous.push({role, content})
       }
     } catch { throw fail('LLM_CONFIG_ERROR') }
-    const messages = [...previous, {role: 'user', content: prompt}]
+    const attachments = []
+    try {
+      if (!Array.isArray(images) || images.length > 3) throw new Error()
+      const length = images.length
+      const maxImageBytes = 4 * 1024 * 1024
+      let totalBytes = 0
+      for (let index = 0; index < length; index++) {
+        const url = images[index]
+        if (typeof url !== 'string') throw new Error()
+        const prefix = /^data:image\/(?:jpeg|png|webp);base64,/.exec(url)
+        if (!prefix) throw new Error()
+        const base64 = url.slice(prefix[0].length)
+        if (!base64 || base64.length > Math.ceil(maxImageBytes / 3) * 4 ||
+            base64.length % 4 !== 0 || /[^A-Za-z0-9+/=]/.test(base64)) throw new Error()
+        // Buffer's decoder is permissive; round-tripping also rejects invalid padding and pad bits.
+        const bytes = Buffer.from(base64, 'base64')
+        totalBytes += bytes.length
+        if (!bytes.length || bytes.length > maxImageBytes || totalBytes > 8 * 1024 * 1024 ||
+            bytes.toString('base64') !== base64) throw new Error()
+        attachments.push({url, base64})
+      }
+    } catch { throw fail('LLM_CONFIG_ERROR') }
+    const user = {role: 'user', content: prompt}
+    if (attachments.length) {
+      if (provider === 'openai') {
+        user.content = [{type: 'text', text: prompt}, ...attachments.map(({url}) => ({type: 'image_url', image_url: {url}}))]
+      } else {
+        user.images = attachments.map(({base64}) => base64)
+      }
+    }
+    const messages = [...previous, user]
     if (systemPrompt) messages.unshift({role: 'system', content: systemPrompt})
-    const response = await request('post', endpoint, {model: override === undefined ? model : override, messages, stream: false})
+    const response = await request('post', endpoint, {model: override === undefined ? model : override, messages, stream: false},
+      attachments.length > 0)
     const content = provider === 'openai' ? response?.data?.choices?.[0]?.message?.content : response?.data?.message?.content
     if (typeof content !== 'string') throw fail('LLM_EMPTY_RESPONSE')
     const text = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim()

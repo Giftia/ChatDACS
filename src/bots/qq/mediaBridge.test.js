@@ -48,6 +48,13 @@ describe('QQ media bridge', () => {
     })
   })
 
+  test('image forwarding does not consume an image needed by the existing conversation plugin', async () => {
+    const context = makeContext({event: {message: '[CQ:image,file=1,url=https://example.com/a.png?term=3]'}, continueImages: true})
+    expect(handleQQMediaBridge(context)).toBe(false)
+    await Promise.resolve()
+    expect(context.io.emit).toHaveBeenCalledWith('qqImage', '/saved.png')
+  })
+
   test('ignores non-media messages', () => {
     const context = makeContext()
 

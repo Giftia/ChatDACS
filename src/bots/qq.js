@@ -21,6 +21,7 @@ const {handleQQPluginReply} = require('./qq/pluginBridge')
 const {registerOneBotWebhook} = require('./qq/webhook')
 const {checkOneBotSession, readOneBotVersion} = require('./qq/oneBotProvider')
 const {createMessageIngress} = require('./qq/messageIngress')
+const {parseQQImageMessage, toCQMessage} = require('../plugins/qqImageMessage')
 const {ProcessGuildMessage} = require('./qqGuild')
 
 const runtime = {
@@ -198,7 +199,8 @@ async function StartQQBot({
 
   const conversationContext = (event) => {
     const text = getQQChatText(event)
-    if (!text.replace(/\[CQ:[^\]]*\]/g, '').trim() || String(event.user_id) === String(event.self_id)) return null
+    if ((!text.replace(/\[CQ:[^\]]*\]/g, '').trim() && !parseQQImageMessage(text).images.length) ||
+        String(event.user_id) === String(event.self_id)) return null
     const group = event.message_type === 'group'
     return {text, platform: 'qq', selfId: event.self_id, userId: event.user_id, userName: event.sender?.nickname ?? '',
       groupId: group ? event.group_id : undefined, groupName: event.group_name ?? '',
@@ -217,6 +219,7 @@ async function StartQQBot({
   }
   if (conversation) {
     const options = {...conversation, logger, onMessage: notifyMessage,
+      matchChat: text => parseQQImageMessage(text).images.length ? {handled: false} : conversation.matchChat(text),
       send: async (context, reply) => {
         const content = (!reply.type || reply.type === 'text') && typeof reply.content === 'string'
           ? formatQQChatReply(reply.content, context.userId) : utils.PluginAnswerToGoCqhttpStyle(reply)
@@ -233,6 +236,7 @@ async function StartQQBot({
 
   const handleEvent = async (event) => {
     if (!ready || stopped) return 0
+    if (Array.isArray(event?.message)) event = {...event, message: toCQMessage(event.message)}
     if (messageIngress.shouldIgnore(event)) return 0
     try {
       return await processEvent(event)
@@ -268,6 +272,7 @@ async function StartQQBot({
     }
     if (stopped) return 0
 
+    const continueImages = Boolean(conversation && !legacyReplyMode)
     const handledByMediaBridge = handleQQMediaBridge({
       event,
       config,
@@ -275,14 +280,17 @@ async function StartQQBot({
       utils,
       io,
       logger,
+      continueImages,
     })
     if (handledByMediaBridge) {
       return 0
     }
+    const continuedSavedImage = Boolean(continueImages && config.QQBOT_SAVE_ALL_IMAGE_TO_LOCAL_SWITCH &&
+      Constants.isImage_reg.test(event.message))
 
     // 群服务开关判断
     if (isGroupServiceEvent(event)) {
-      const handledOpenServiceCommand = await handleOpenServiceCommand({
+      const handledOpenServiceCommand = !continuedSavedImage && await handleOpenServiceCommand({
         event,
         config,
         constants: Constants,
@@ -322,7 +330,7 @@ async function StartQQBot({
           // 地雷爆炸判断，先判断这条消息是否引爆，再从数据库取来群地雷数组，引爆后删除地雷，原先的地雷是用随机数生成被炸前最大回复作为引信，现在换一种思路，用更简单的随机数引爆
           const boom = Math.floor(Math.random() * 100) < 10 // 踩中地雷的概率为10%
           // 如果判定踩中，检查该群是否有雷
-          if (boom) {
+          if (boom && !continuedSavedImage) {
             const mine = await utils.GetGroupMine(event.group_id)
 
             if (mine) {
@@ -371,7 +379,7 @@ async function StartQQBot({
           }
 
           // 服务停用开关
-          const handledCloseServiceCommand = await handleCloseServiceCommand({
+          const handledCloseServiceCommand = !continuedSavedImage && await handleCloseServiceCommand({
             event,
             config,
             constants: Constants,
@@ -414,6 +422,12 @@ async function StartQQBot({
             utils,
           })
           if (pluginsReply != '') {
+            return 0
+          }
+
+          // Saved images previously stopped at the media bridge; do not introduce game/moderation effects.
+          if (continuedSavedImage && groupContext) {
+            await groupConversation.handle(groupContext)
             return 0
           }
 

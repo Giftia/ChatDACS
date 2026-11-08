@@ -42,6 +42,56 @@ function deferred() {
   return {promise, resolve}
 }
 
+test('images use the existing LLM plugin, current persona and textual history without retaining URLs or image bytes', async () => {
+  const image = 'data:image/png;base64,aW1hZ2U='
+  const imageInput = {prepare: jest.fn(async () => [image])}
+  const {plugin, axios} = setup(config, {imageInput})
+  const options = {platform: 'napcat', selfId: 'bot1', raw: {scope: 'group'}}
+  await plugin.execute('/更换人设 大肥鱼女友版.txt', 'u1', 'Alice', 'g1', 'Group', options)
+  const previous = message('我们在讨论周末去哪里')
+  plugin.observeMessage(previous)
+  plugin.recordReply(previous, '去散步吧')
+  const current = message('这个地方怎么样[CQ:image,file=a.jpg,url=https://gchat.qpic.cn/a?token=private]')
+  plugin.observeMessage(current)
+  axios.post.mockResolvedValue(reply('图片里有公园'))
+  const result = await fallback(plugin, current)
+  expect(result).toEqual({type: 'text', content: '图片里有公园'})
+  expect(imageInput.prepare).toHaveBeenCalledWith([{file: 'a.jpg', url: 'https://gchat.qpic.cn/a?token=private'}])
+  const payload = axios.post.mock.calls[0][1]
+  expect(payload.messages[0].content).toContain('测试女友人设')
+  expect(payload.messages[1].content).toContain('周末')
+  expect(payload.messages.at(-1).content).toEqual([
+    {type: 'text', text: expect.stringContaining('这个地方怎么样')}, {type: 'image_url', image_url: {url: image}},
+  ])
+  expect(JSON.stringify(payload)).not.toContain('token=private')
+  plugin.recordReply(current, result.content)
+  const stored = plugin.contexts.history(JSON.stringify(['napcat','bot1','group','g1']))
+  expect(JSON.stringify(stored)).not.toContain(image)
+  expect(JSON.stringify(stored)).not.toContain('gchat.qpic.cn')
+  expect(stored.at(-1).content).toBe('图片里有公园')
+  expect(new RegExp(plugin.指令).test('[CQ:image,file=a.jpg]')).toBe(false)
+})
+
+test.each(['IMAGE_INPUT_INVALID', 'IMAGE_TOO_LARGE', 'IMAGE_FORMAT_UNSUPPORTED', 'IMAGE_DOWNLOAD_FAILED'])(
+  'image failure %s gives an honest reply and never calls the model', async code => {
+    const imageInput = {prepare: jest.fn(async () => {throw Object.assign(new Error('private image URL'), {code})})}
+    const {plugin, axios} = setup(config, {imageInput})
+    const result = await fallback(plugin, message('[CQ:image,file=a.jpg]'))
+    expect(result.safeError).toBe(true)
+    expect(result.content).not.toContain('private image URL')
+    expect(axios.post).not.toHaveBeenCalled()
+  },
+)
+
+test('unsupported vision does not pretend it saw an image; later text requests remain unchanged', async () => {
+  const {plugin, axios} = setup(config, {imageInput: {prepare: async () => ['data:image/png;base64,aW1hZ2U=']}})
+  axios.post.mockRejectedValueOnce({response: {status: 400}}).mockResolvedValueOnce(reply('文字正常'))
+  const failed = await fallback(plugin, message('[CQ:image,file=a.jpg]'))
+  expect(failed).toMatchObject({safeError: true, content: expect.stringContaining('不支持图片识别')})
+  await fallback(plugin, message('纯文字'))
+  expect(typeof axios.post.mock.calls[1][1].messages.at(-1).content).toBe('string')
+})
+
 test('router observation/delivery produces speaker-aware history without duplicate current users or unsent replies', async () => {
   const {plugin, axios} = setup()
   axios.post.mockResolvedValue(reply('generated but not yet sent'))

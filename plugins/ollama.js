@@ -4,6 +4,9 @@ const {createModelRuntime} = require('../src/plugins/modelRuntime')
 const {createChatContext, MAX_CHARS} = require('../src/plugins/chatContext')
 const nativePersona = require('../src/plugins/nativePersona')
 const path = require('path')
+const {parseQQImageMessage} = require('../src/plugins/qqImageMessage')
+const {createImageInput} = require('../src/plugins/imageInput')
+const {buildOneBotUrl} = require('../src/platforms/oneBotSender')
 
 function conversationKey(userId, groupId, options = {}) {
   options = options ?? {}
@@ -18,6 +21,10 @@ function conversationKey(userId, groupId, options = {}) {
 function userPrompt(context) {
   const prefix = `${String(context.userName || '匿名').slice(0, 80)} (${String(context.userId ?? '').slice(0, 80)})说：`
   return prefix + String(context.text ?? '').slice(0, MAX_CHARS - prefix.length)
+}
+
+function imageCaption(input) {
+  return `[图片] ${input.text || '请描述这张图片。'}`
 }
 
 function keyForContext(context) {
@@ -42,13 +49,17 @@ module.exports = {
   预期返回: '好啊，我也挺想尝试一下当新娘的滋味呢～',
 
   // 初始化方法，用于依赖注入
-  init({logger, axios, config = {}, chatContext}) {
+  init({logger, axios, config = {}, chatContext, imageInput}) {
     this.logger = logger
     this.client = null
     this.models = null
     this.contexts = chatContext ?? createChatContext()
     this.observations = new WeakMap()
     this.rawObservations = new WeakMap()
+    this.imageInput = imageInput ?? {prepare: images => createImageInput({axios, resolveImage: async file => {
+      if (!config.ONE_BOT_API_URL) throw Object.assign(new Error('IMAGE_DOWNLOAD_FAILED'), {code: 'IMAGE_DOWNLOAD_FAILED'})
+      return (await axios.get(buildOneBotUrl(config.ONE_BOT_API_URL, 'get_image', {file})))?.data?.data
+    }}).prepare(images)}
     this.proactiveReplies = new WeakMap()
     this.modelAdmins = new Set((Array.isArray(config.llm?.modelAdminQQs) ? config.llm.modelAdminQQs : []).map(String))
     this.personas = null
@@ -77,12 +88,14 @@ module.exports = {
     try {
       const key = keyForContext(context)
       const lease = this.contexts.capture(key)
-      const prompt = userPrompt(context)
+      const imageMessage = parseQQImageMessage(context.text)
+      const prompt = userPrompt({...context, text: imageMessage.images.length ? imageCaption(imageMessage) : context.text})
       if (!this.contexts.append(lease, 'user', prompt)) return false
       this.proactiveReplies.delete(context)
       this.observations.set(context, {lease, replied: false})
       const source = context.raw && typeof context.raw === 'object' ? context.raw : context
       this.rawObservations.set(source, {key, lease, prompt})
+      if (source.event && typeof source.event === 'object') this.rawObservations.set(source.event, {key, lease, prompt})
       return true
     } catch { return false }
   },
@@ -91,7 +104,9 @@ module.exports = {
     if (!context || typeof context !== 'object' || typeof text !== 'string' || !text.trim() || !this.contexts) return false
     const receipt = this.proactiveReplies.get(context) ?? this.observations.get(context)
     if (!receipt || receipt.replied) return false
-    if (!this.contexts.append(receipt.lease, 'assistant', text)) return false
+    const imageMessage = parseQQImageMessage(text)
+    const content = imageMessage.images.length ? `[图片] ${imageMessage.text}`.trim() : text
+    if (!this.contexts.append(receipt.lease, 'assistant', content)) return false
     receipt.replied = true
     return true
   },
@@ -129,6 +144,8 @@ module.exports = {
   // 插件执行逻辑
   execute: async function (msg, userId, userName, groupId, groupName, options) {
     msg = typeof msg === 'string' ? msg : String(msg ?? '')
+    const imageMessage = parseQQImageMessage(msg)
+    if (imageMessage.images.length) msg = imageCaption(imageMessage)
     const key = conversationKey(userId, groupId, options)
     if (/^\/(?:查询模型|更换模型)(?:\s|$)/.test(msg)) {
       try {
@@ -181,14 +198,16 @@ module.exports = {
     if (!this.client) return {type: 'text', content: '模型服务配置不完整，请联系管理员', safeError: true}
     const prompt = userPrompt({text: msg, userId, userName})
     const source = options?.raw && typeof options.raw === 'object' ? options.raw : options
-    const observed = source && typeof source === 'object' ? this.rawObservations?.get(source) : undefined
+    const observed = source && typeof source === 'object'
+      ? this.rawObservations?.get(source) ?? this.rawObservations?.get(source.event ?? source.raw?.event) : undefined
     const beforeUser = observed?.key === key && observed.prompt === prompt &&
       this.contexts.isCurrent(observed.lease) ? prompt : undefined
 
     try {
-      const replyText = await this.contexts.run(key, () => this.client.complete(prompt, {
+      const replyText = await this.contexts.run(key, async () => this.client.complete(prompt, {
         systemPrompt: personaPrompt(this, key), model: this.models.current(key),
         history: this.contexts.history(key, {beforeUser, budget: MAX_CHARS - prompt.length, limit: 39}),
+        ...(imageMessage.images.length ? {images: await this.imageInput.prepare(imageMessage.images)} : {}),
       }))
       this.logger.info(`LLM 回复成功 provider=${this.client.provider}`)
       return {type: 'text', content: replyText}
@@ -197,6 +216,16 @@ module.exports = {
       const contextMessages = {CHAT_CONTEXT_BUSY: '对话请求过多，请稍后再试',
         CHAT_CONTEXT_CHANGED: '会话人设已更新，请重新发送消息', LLM_PERSONA_ERROR: '人设读取失败，请检查人设配置'}
       if (contextMessages[err?.code]) return {type: 'text', content: contextMessages[err.code], safeError: true}
+      if (imageMessage.images.length) {
+        const visionMessages = {
+          IMAGE_TOO_LARGE: '图片过大，请缩小后重新发送',
+          IMAGE_FORMAT_UNSUPPORTED: '暂不支持这种图片格式，请发送 JPG、PNG 或 WebP 图片',
+          IMAGE_INPUT_INVALID: '图片数量或来源不受支持，请发送最多 3 张 QQ 图片',
+          LLM_VISION_UNSUPPORTED: '当前模型或服务暂不支持图片识别，请更换支持视觉的模型或补充文字描述',
+          LLM_TIMEOUT_ERROR: '图片识别超时，请稍后再试或补充文字描述',
+        }
+        return {type: 'text', content: visionMessages[err?.code] ?? '这张图片暂时无法识别，请重新发送或补充文字描述', safeError: true}
+      }
       if (this.client.provider === 'openai') {
         const messages = {
           LLM_AUTH_ERROR: '模型服务鉴权失败，请检查 API Key',

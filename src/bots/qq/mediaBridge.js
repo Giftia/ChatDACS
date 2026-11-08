@@ -1,6 +1,6 @@
 'use strict'
 
-function handleQQMediaBridge({event, config, constants, utils, io, logger}) {
+function handleQQMediaBridge({event, config, constants, utils, io, logger, continueImages = false}) {
   if (config.QQBOT_SAVE_ALL_IMAGE_TO_LOCAL_SWITCH && constants.isImage_reg.test(event.message)) {
     const imageUrl = constants.img_url_reg.exec(event.message)
     utils
@@ -8,10 +8,10 @@ function handleQQMediaBridge({event, config, constants, utils, io, logger}) {
       .then((savedImage) => {
         io.emit('qqImage', savedImage)
       })
-      .catch((error) => {
-        logger.error(`转发图片失败：${error}`.error)
+      .catch(() => {
+        logger.error('QQ_IMAGE_FORWARD_FAILED')
       })
-    return true
+    return !continueImages
   }
 
   if (constants.isVideo_reg.test(event.message)) {

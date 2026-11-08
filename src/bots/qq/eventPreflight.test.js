@@ -29,6 +29,18 @@ function makeContext(overrides = {}) {
 }
 
 describe('QQ event preflight', () => {
+  test.each(['normal', 'friend'])('image URLs stay out of %s logs and system notifications without mutating the event', async sub_type => {
+    const context = makeContext()
+    const event = {sub_type, group_id: 123, user_id: 456, sender: {nickname: 'User'},
+      message: '看看这里[CQ:image,file=opaque.jpg,url=https://gchat.qpic.cn/x?rkey=private]'}
+    const original = {...event}
+    expect(await handleQQEventPreflight({...context, event})).toBe(false)
+    expect(context.logger.info).toHaveBeenCalledWith(expect.stringContaining('看看这里[图片]'))
+    expect(JSON.stringify(context.logger.info.mock.calls)).not.toContain('rkey')
+    expect(JSON.stringify(context.io.emit.mock.calls)).not.toContain('gchat.qpic.cn')
+    expect(event).toEqual(original)
+  })
+
   test('builds notification text for supported events', () => {
     expect(
       buildQQEventNotification({

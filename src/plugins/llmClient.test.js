@@ -4,6 +4,7 @@ const {createLlmClient} = require('./llmClient')
 
 const baseUrl = 'https://giftina-mbp-m1-max.tail7b4554.ts.net:8443/v1'
 const openaiResponse = (content) => ({data: {choices: [{message: {content}}]}})
+const imageOfSize = (bytes) => `data:image/png;base64,${Buffer.alloc(bytes).toString('base64')}`
 
 function setup(llm = {}, overrides = {}) {
   const axios = {post: jest.fn().mockResolvedValue(openaiResponse(' reply '))}
@@ -14,6 +15,194 @@ function setup(llm = {}, overrides = {}) {
 }
 
 afterEach(() => jest.useRealTimers())
+
+test.each(['openai', 'ollama'])('%s sends validated images only on the current user message', async (provider) => {
+  const {client, axios, readFileSync} = setup({provider})
+  axios.post.mockResolvedValue(provider === 'openai' ? openaiResponse('ok') : {data: {message: {content: 'ok'}}})
+  const images = Object.freeze(['data:image/jpeg;base64,/9j/', 'data:image/png;base64,iVBORw==',
+    'data:image/webp;base64,UklGRg=='])
+  const history = Object.freeze([Object.freeze({role: 'user', content: 'prior'}),
+    Object.freeze({role: 'assistant', content: 'reply'})])
+  const user = provider === 'openai' ? {role: 'user', content: [
+    {type: 'text', text: ' current\nquestion '},
+    {type: 'image_url', image_url: {url: images[0]}},
+    {type: 'image_url', image_url: {url: images[1]}},
+    {type: 'image_url', image_url: {url: images[2]}},
+  ]} : {role: 'user', content: ' current\nquestion ', images: ['/9j/', 'iVBORw==', 'UklGRg==']}
+  await expect(client.complete(' current\nquestion ', {images, history, systemPrompt: ' native\npersona ',
+    model: 'vision-model'})).resolves.toBe('ok')
+  expect(axios.post.mock.calls[0][1]).toEqual({model: 'vision-model', stream: false, messages: [
+    {role: 'system', content: ' native\npersona '}, ...history, user,
+  ]})
+  expect(axios.post).toHaveBeenCalledTimes(1)
+  expect(readFileSync).not.toHaveBeenCalled()
+  expect(client.defaultModel).toBe('gpt-6-luna')
+})
+
+test.each(['openai', 'ollama'])('%s rejects invalid image arrays and data URIs before credentials/network', async (provider) => {
+  const {client, axios, readFileSync} = setup({provider}, {env: {}})
+  const invalid = [null, false, {}, 'data:image/png;base64,YQ==', new Array(1), [null], [1], [{}],
+    [{url: 'data:image/png;base64,YQ=='}], Array(4).fill('data:image/png;base64,YQ=='),
+    ...['', 'https://example.invalid/image.png', 'http://localhost/image.png', 'file:///private/image.png',
+      'C:\\private\\image.png', 'YQ==', 'data:image/svg+xml;base64,PHN2Zy8+', 'data:text/plain;base64,YQ==',
+      'data:image/gif;base64,YQ==', 'data:image/jpg;base64,YQ==', 'data:image/png,YQ==',
+      'data:image/png;charset=utf-8;base64,YQ==', 'data:image/png;base64,', 'data:image/png;base64, ',
+      'data:image/png;base64,YQ', 'data:image/png;base64,YWI', 'data:image/png;base64,YQ===',
+      'data:image/png;base64,=YQ=', 'data:image/png;base64,YQ==\n', 'data:image/png;base64,Y Q==',
+      'data:image/png;base64,YQ-_', 'data:image/png;base64,YQ%3D%3D', 'data:image/png;base64,AB==',
+      'data:image/png;base64,AAB=', ' data:image/png;base64,YQ=='].map((uri) => [uri])]
+  for (const images of invalid) {
+    await expect(client.complete('current', {images})).rejects.toMatchObject({
+      code: 'LLM_CONFIG_ERROR', message: 'LLM_CONFIG_ERROR',
+    })
+  }
+  expect(axios.post).not.toHaveBeenCalled()
+  expect(readFileSync).not.toHaveBeenCalled()
+})
+
+test.each(['openai', 'ollama'])('%s enforces decoded 4 MiB per image and 8 MiB total boundaries', async (provider) => {
+  const {client, axios, readFileSync} = setup({provider})
+  axios.post.mockResolvedValue(provider === 'openai' ? openaiResponse('ok') : {data: {message: {content: 'ok'}}})
+  const atLimit = imageOfSize(4 * 1024 * 1024)
+  await expect(client.complete('x', {images: [atLimit, atLimit]})).resolves.toBe('ok')
+  await expect(client.complete('x', {images: [imageOfSize(4 * 1024 * 1024 + 1)]}))
+    .rejects.toMatchObject({code: 'LLM_CONFIG_ERROR'})
+  await expect(client.complete('x', {images: [imageOfSize(4 * 1024 * 1024 + 3)]}))
+    .rejects.toMatchObject({code: 'LLM_CONFIG_ERROR'})
+  await expect(client.complete('x', {images: [atLimit, atLimit, 'data:image/png;base64,YQ==']}))
+    .rejects.toMatchObject({code: 'LLM_CONFIG_ERROR'})
+  expect(axios.post).toHaveBeenCalledTimes(1)
+  expect(readFileSync).not.toHaveBeenCalled()
+})
+
+test.each(['openai', 'ollama'])('%s snapshots images once without invoking custom iterators or map', async (provider) => {
+  const {client, axios} = setup({provider})
+  axios.post.mockResolvedValue(provider === 'openai' ? openaiResponse('ok') : {data: {message: {content: 'ok'}}})
+  let reads = 0
+  const images = []
+  Object.defineProperty(images, 0, {get() {return ++reads === 1 ? 'data:image/png;base64,YQ==' : 'https://private.invalid/image'}})
+  images[Symbol.iterator] = images.map = () => {throw new Error('custom image iteration')}
+  await client.complete('', {images})
+  expect(axios.post.mock.calls[0][1].messages).toEqual(provider === 'openai' ? [{role: 'user', content: [
+    {type: 'text', text: ''}, {type: 'image_url', image_url: {url: 'data:image/png;base64,YQ=='}},
+  ]}] : [{role: 'user', content: '', images: ['YQ==']}])
+  expect(reads).toBe(1)
+})
+
+test.each(['openai', 'ollama'])('%s keeps text-only bodies identical with omitted, undefined or empty images', async (provider) => {
+  const {client, axios} = setup({provider})
+  axios.post.mockResolvedValue(provider === 'openai' ? openaiResponse('ok') : {data: {message: {content: 'ok'}}})
+  for (const options of [{}, {images: undefined}, {images: []}]) {
+    await client.complete('plain text', options)
+    expect(JSON.stringify(axios.post.mock.calls.at(-1)[1])).toBe(
+      '{"model":"gpt-6-luna","messages":[{"role":"user","content":"plain text"}],"stream":false}')
+  }
+})
+
+test.each(['openai', 'ollama'])('%s images do not change history limits or inject a native persona', async (provider) => {
+  const {client, axios} = setup({provider})
+  axios.post.mockResolvedValue(provider === 'openai' ? openaiResponse('ok') : {data: {message: {content: 'ok'}}})
+  const images = [imageOfSize(16001)]
+  const history = Array.from({length: 40}, () => ({role: 'user', content: 'h'}))
+  await client.complete('x'.repeat(15960), {images, history})
+  const messages = axios.post.mock.calls[0][1].messages
+  expect(messages).toHaveLength(41)
+  expect(messages.slice(0, 40)).toEqual(history)
+  for (const options of [{history: [...history, {role: 'assistant', content: 'extra'}]},
+    {history: [{role: 'user', content: 'h'.repeat(16000)}]},
+    {history: [{role: 'user', content: 'h', images}]}]) {
+    await expect(client.complete('x', {...options, images})).rejects.toMatchObject({code: 'LLM_CONFIG_ERROR'})
+  }
+  await expect(client.complete('x'.repeat(16001), {images})).rejects.toMatchObject({code: 'LLM_CONFIG_ERROR'})
+  expect(axios.post).toHaveBeenCalledTimes(1)
+})
+
+describe.each(['openai', 'ollama'])('%s vision failures', (provider) => {
+  test.each([400, 415, 422])('sanitizes image capability failures at HTTP %s', async (status) => {
+    jest.useFakeTimers()
+    const {client, axios} = setup({provider})
+    for (const message of ['This model does not support image inputs.', 'This model does not support vision.',
+      'Image inputs are not supported by this model.', 'Vision is not supported for this model.',
+      'model "text-only" does not support images', 'image_url is only supported by certain models.',
+      'This model only supports text input.', 'This model is not multimodal.']) {
+      for (const resolved of [false, true]) {
+        const data = provider === 'openai' ? {error: {message, private: 'private-body'}} : {error: message}
+        const response = {status, data, headers: {'x-private': 'private-header'}}
+        if (resolved) axios.post.mockResolvedValue(response)
+        else axios.post.mockRejectedValue(Object.assign(new Error('private-transport'), {response,
+          config: {headers: {Authorization: 'Bearer private-key'}}}))
+        const error = await client.complete('look', {images: ['data:image/png;base64,YQ==']}).catch((error) => error)
+        expect(error).toBeInstanceOf(Error)
+        expect(error.message).toBe('LLM_VISION_UNSUPPORTED')
+        expect(error.code).toBe('LLM_VISION_UNSUPPORTED')
+        expect(Object.keys(error)).toEqual(['code'])
+        expect(error.cause).toBeUndefined()
+        expect(error.response).toBeUndefined()
+        expect(error.headers).toBeUndefined()
+        expect(error.stack).not.toContain('private')
+        expect(jest.getTimerCount()).toBe(0)
+      }
+    }
+    expect(axios.post).toHaveBeenCalledTimes(16)
+  })
+
+  test.each([400, 415, 422])('maps image-bearing HTTP %s without inspecting response bodies', async (status) => {
+    const {client, axios} = setup({provider})
+    for (const resolved of [false, true]) {
+      const response = {status}
+      Object.defineProperty(response, 'data', {get() {throw new Error('response body must not be inspected')}})
+      Object.defineProperty(response, 'headers', {get() {throw new Error('response headers must not be inspected')}})
+      if (resolved) axios.post.mockResolvedValue(response)
+      else axios.post.mockRejectedValue({response})
+      await expect(client.complete('look', {images: ['data:image/png;base64,YQ==']}))
+        .rejects.toMatchObject({code: 'LLM_VISION_UNSUPPORTED', message: 'LLM_VISION_UNSUPPORTED'})
+    }
+  })
+
+  test('only maps image-bearing 400/415/422 completions and preserves other error paths', async () => {
+    const {client, axios} = setup({provider})
+    const unsupported = {error: {message: 'This model does not support images'}}
+    for (const status of [400, 415, 422]) {
+      for (const images of [undefined, []]) {
+        axios.post.mockRejectedValue({response: {status, data: unsupported}})
+        await expect(client.complete('text', {images})).rejects.toMatchObject({code: 'LLM_REQUEST_ERROR'})
+      }
+      axios.get = jest.fn().mockRejectedValue({response: {status, data: unsupported}})
+      await expect(client.listModels()).rejects.toMatchObject({code: 'LLM_REQUEST_ERROR'})
+    }
+    for (const [status, expected] of [[401, 'LLM_AUTH_ERROR'], [403, 'LLM_AUTH_ERROR'],
+      [302, 'LLM_REQUEST_ERROR'], [404, 'LLM_REQUEST_ERROR'], [429, 'LLM_REQUEST_ERROR'], [500, 'LLM_REQUEST_ERROR']]) {
+      axios.post.mockRejectedValue({response: {status, data: unsupported}})
+      await expect(client.complete('look', {images: ['data:image/png;base64,YQ==']}))
+        .rejects.toMatchObject({code: expected})
+    }
+    axios.post.mockRejectedValue({code: 'ETIMEDOUT', response: {status: 400, data: unsupported}})
+    await expect(client.complete('look', {images: ['data:image/png;base64,YQ==']}))
+      .rejects.toMatchObject({code: 'LLM_TIMEOUT_ERROR'})
+  })
+
+  test('preserves missing credentials, empty responses and total deadline with images', async () => {
+    jest.useFakeTimers()
+    const {client, axios, readFileSync} = setup({provider, timeoutMs: 100}, {env: {}})
+    const images = ['data:image/png;base64,YQ==']
+    if (provider === 'openai') {
+      readFileSync.mockImplementation(() => {throw new Error('private credentials')})
+      await expect(client.complete('look', {images})).rejects.toMatchObject({code: 'LLM_AUTH_ERROR'})
+      expect(axios.post).not.toHaveBeenCalled()
+      readFileSync.mockReturnValue('{"apiKey":"test-key"}')
+    }
+    axios.post.mockResolvedValue(provider === 'openai' ? openaiResponse(' ') : {data: {message: {content: ' '}}})
+    await expect(client.complete('look', {images})).rejects.toMatchObject({code: 'LLM_EMPTY_RESPONSE'})
+    axios.post.mockImplementation(() => new Promise(() => {}))
+    const assertion = expect(client.complete('look', {images})).rejects.toMatchObject({code: 'LLM_TIMEOUT_ERROR'})
+    const signal = axios.post.mock.calls.at(-1)[2].signal
+    await jest.advanceTimersByTimeAsync(100)
+    await assertion
+    expect(signal.aborted).toBe(true)
+    expect(jest.getTimerCount()).toBe(0)
+    expect(axios.post).toHaveBeenCalledTimes(2)
+  })
+})
 
 test.each(['openai', 'ollama'])('%s accepts validated user/assistant history with current persona first', async (provider) => {
   const {client, axios} = setup({provider})

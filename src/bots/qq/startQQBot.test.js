@@ -74,6 +74,79 @@ describe('StartQQBot real event pipeline with isolated dependencies', () => {
     registerOneBotWebhook.mockClear()
   })
 
+  test('pure image group messages reach the same plugin path, including array-form OneBot messages', async () => {
+    const conversation = {onMessage: jest.fn(), execute: jest.fn(), matchChat: jest.fn(), fallback: jest.fn()}
+    const bot = await start({conversation})
+    bot.processExecute.mockResolvedValue({type: 'text', content: 'vision reply'})
+    bot.utils.PluginAnswerToGoCqhttpStyle.mockImplementation(reply => reply.content)
+    await bot.handle({message: [{type: 'image', data: {file: 'a.jpg', url: 'https://gchat.qpic.cn/a'}}]})
+    expect(bot.processExecute).toHaveBeenCalledWith(expect.stringContaining('[CQ:image,'), 12345, 'mock', 23456, 'mock group', expect.any(Object))
+    expect(conversation.onMessage).toHaveBeenCalledTimes(1)
+    expect(conversation.fallback).not.toHaveBeenCalled()
+    expect(bot.calls.at(-1).searchParams.get('message')).toBe('vision reply')
+    await bot.controller.stop()
+  })
+
+  test('private image-only array messages reach the existing conversation plugin execution once', async () => {
+    const conversation = {onMessage: jest.fn(), execute: jest.fn(async () => ({handled: true, type: 'text', content: 'private vision'})),
+      matchChat: jest.fn(), fallback: jest.fn()}
+    const bot = await start({conversation})
+    bot.config.QQBOT_PRIVATE_CHAT_SWITCH = true
+    await bot.handle({message_type: 'private', sub_type: 'friend', group_id: undefined,
+      message: [{type: 'image', data: {file: 'a.jpg', url: 'https://gchat.qpic.cn/a'}}]})
+    expect(conversation.execute).toHaveBeenCalledTimes(1)
+    expect(conversation.execute.mock.calls[0][0]).toMatchObject({platform: 'qq', userId: 12345,
+      text: expect.stringContaining('[CQ:image,'), raw: {scope: 'private'}})
+    expect(conversation.onMessage).toHaveBeenCalledTimes(1)
+    expect(conversation.fallback).not.toHaveBeenCalled()
+    expect(bot.calls.at(-1).pathname).toBe('/send_private_msg')
+    expect(bot.calls.at(-1).searchParams.get('message')).toBe('private vision')
+    await bot.controller.stop()
+  })
+
+  test.each(['[CQ:image,file=a.jpg,url=https://gchat.qpic.cn/a?term=3]',
+    '闭菊 [CQ:image,file=a.jpg,url=https://gchat.qpic.cn/a?term=3]',
+    '张菊[CQ:at,qq=34567] [CQ:image,file=a.jpg,url=https://gchat.qpic.cn/a?term=3]'])(
+    'saved images gain plugin vision without new mine, service or game effects: %s', async message => {
+      Math.random.mockReturnValue(0)
+      const conversation = {onMessage: jest.fn(), execute: jest.fn(), matchChat: jest.fn(),
+        fallback: jest.fn(async () => ({handled: true, type: 'text', content: 'vision fallback'}))}
+      const bot = await start({conversation})
+      bot.config.QQBOT_SAVE_ALL_IMAGE_TO_LOCAL_SWITCH = true
+      bot.config.QQBOT_ADMIN_LIST = [12345]
+      bot.utils.SaveQQimg = jest.fn(async () => '/saved.png')
+      bot.utils.GetGroupMine.mockResolvedValue({id: 1, groupId: 23456, owner: 45678})
+      bot.utils.DisableGroupService = jest.fn()
+      bot.utils.EnableGroupService = jest.fn()
+      bot.utils.GetGroupLoopBombGameStatus.mockResolvedValue({loopBombEnabled: true})
+      await bot.handle({message})
+      expect(bot.utils.SaveQQimg).toHaveBeenCalledTimes(1)
+      expect(bot.processExecute).toHaveBeenCalledTimes(1)
+      expect(bot.utils.GetGroupMine).not.toHaveBeenCalled()
+      expect(bot.utils.DeleteGroupMine).not.toHaveBeenCalled()
+      expect(bot.utils.DisableGroupService).not.toHaveBeenCalled()
+      expect(bot.utils.EnableGroupService).not.toHaveBeenCalled()
+      expect(bot.utils.GetGroupLoopBombGameStatus).not.toHaveBeenCalled()
+      expect(bot.calls.some(call => /ban|whole_ban/.test(call.pathname))).toBe(false)
+      expect(conversation.matchChat).not.toHaveBeenCalled()
+      expect(conversation.fallback).toHaveBeenCalledTimes(1)
+      expect(bot.calls.at(-1).searchParams.get('message')).toBe('vision fallback')
+      await bot.controller.stop()
+    })
+
+  test('legacy mode still consumes saved images without new plugin or conversation effects', async () => {
+    const conversation = {onMessage: jest.fn(), execute: jest.fn(), matchChat: jest.fn(), fallback: jest.fn()}
+    const bot = await start({conversation, legacyReplyMode: true})
+    bot.config.QQBOT_SAVE_ALL_IMAGE_TO_LOCAL_SWITCH = true
+    bot.utils.SaveQQimg = jest.fn(async () => '/saved.png')
+    await bot.handle({message: '[CQ:image,file=a.jpg,url=https://gchat.qpic.cn/a?term=3]'})
+    expect(bot.utils.SaveQQimg).toHaveBeenCalledTimes(1)
+    expect(bot.processExecute).not.toHaveBeenCalled()
+    expect(conversation.onMessage).not.toHaveBeenCalled()
+    expect(conversation.fallback).not.toHaveBeenCalled()
+    await bot.controller.stop()
+  })
+
   test.each([
     ['snowluma', 12345, {online: false, good: false}],
     ['snowluma', 12345, {online: true, good: false}],
